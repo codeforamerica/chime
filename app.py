@@ -11,8 +11,8 @@ def index():
     r = Repo('sample-site')
     return repr(r).replace('<', '&lt;')
 
-@app.route('/edit/<path:path>', methods=['GET'])
-def edit(path):
+@app.route('/tree/<branch>/edit/<path:path>', methods=['GET'])
+def branch_edit(branch, path):
     r = Repo('sample-site')
     c = r.commit()
     
@@ -22,19 +22,19 @@ def edit(path):
         html = '''<doctype: html>
 <html>
 <body>
-    <form action="/save/%(path)s" method="POST">
+    <form action="/tree/%(branch)s/save/%(path)s" method="POST">
     <p><input name="title" value="%(title)s" type="text">
     <p><textarea name="body">%(body)s</textarea>
     <p><input name="hexsha" value="%(hexsha)s" type="text">
     <p><input type="submit">
     </form>
 </body>
-</html>''' % dict(path=path, title=front['title'], body=body, hexsha=c.hexsha)
+</html>''' % dict(branch=branch, path=path, title=front['title'], body=body, hexsha=c.hexsha)
         
         return Response(html, headers={'Content-Type': 'text/html'})
 
-@app.route('/save/<path:path>', methods=['POST'])
-def save(path):
+@app.route('/tree/<branch>/save/<path:path>', methods=['POST'])
+def branch_save(branch, path):
     r = Repo('sample-site')
     c = r.commit()
     
@@ -50,7 +50,7 @@ def save(path):
     r.index.add([path])
     r.index.commit('Saved')
     
-    return redirect('/edit/%s' % path, code=303)
+    return redirect('/tree/%s/edit/%s' % (branch, path), code=303)
 
 if __name__ == '__main__':
     app.run(debug=True)
