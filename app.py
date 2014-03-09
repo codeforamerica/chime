@@ -39,11 +39,33 @@ def start_branch():
     
     return redirect('/tree/%s/edit/' % branch.name, code=303)
 
+@app.route('/merge', methods=['POST'])
+def merge_branch():
+    r = Repo(_repo_path)
+    branch_name = request.form.get('branch')
+    branch = r.branches[branch_name]
+    
+    r.branches[_default_branch].checkout()
+    
+    try:
+        r.git.merge(branch.name)
+    
+    except:
+        r.git.reset(hard=True)
+        branch.checkout()
+        
+        return 'FFFuuu'
+    
+    else:
+        r.delete_head([branch])
+    
+        return 'Done'
+
 @app.route('/tree/<branch>/edit/', methods=['GET'])
 @app.route('/tree/<branch>/edit/<path:path>', methods=['GET'])
 def branch_edit(branch, path=None):
     r = Repo(_repo_path)
-    b = [b for b in r.branches if b.name == branch][0]
+    b = r.branches[branch]
     b.checkout()
     c = r.commit()
     
@@ -77,6 +99,10 @@ def branch_edit(branch, path=None):
     <p><input name="hexsha" value="%(hexsha)s" type="text">
     <p><input type="submit">
     </form>
+    <form action="/merge" method="POST">
+    <input name="branch" value="%(branch)s" type="hidden">
+    <input type="submit" value="Merge">
+    </form>
 </body>
 </html>''' % dict(branch=branch, path=path, title=front['title'], body=body, hexsha=c.hexsha)
         
@@ -85,6 +111,8 @@ def branch_edit(branch, path=None):
 @app.route('/tree/<branch>/save/<path:path>', methods=['POST'])
 def branch_save(branch, path):
     r = Repo(_repo_path)
+    b = r.branches[branch]
+    b.checkout()
     c = r.commit()
     
     if c.hexsha != request.form.get('hexsha'):
