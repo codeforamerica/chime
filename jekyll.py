@@ -19,22 +19,28 @@ Input and output are identical:
 Jekyll likes to have the "---" document separator at the top:
 
     >>> file.seek(0)
-    >>> file.read(4) == '---\\n'
+    >>> file.read(4) == _marker
     True
 '''
 import yaml
 
+_marker = "---\n"
+
 def load_jekyll_doc(file):
     ''' Load jekyll front matter and remaining content from a file.
+        
+        Sample output:
+          
+          {"title": "Greetings"}, "Hello world."
     '''
-    # Check for presence of document marker.
+    # Check for presence of document separator.
     file.seek(0)
     
-    if file.read(len("---\n")) != "---\n":
-        raise Exception('File lacks front-matter: %s' % getattr(file, 'name', None))
+    if file.read(len(_marker)) != _marker:
+        raise Exception('No front-matter in %s' % getattr(file, 'name', None))
     
-    # Seek to just after the initial document marker.
-    file.seek(len("---\n"))
+    # Seek to just after the initial document separator.
+    file.seek(len(_marker))
     
     for token in yaml.scan(file):
         # Look for a token that shows we're about to reach the content.
@@ -46,7 +52,7 @@ def load_jekyll_doc(file):
             front_matter = yaml.safe_load(bytes)
             
             # Seek just after the document separator, and get remaining string.
-            file.read(len("\n---\n"))
+            file.read(len("\n" + _marker))
             content = file.read().decode('utf-8')
             
             return front_matter, content
@@ -63,7 +69,7 @@ def dump_jekyll_doc(front_matter, content, file):
         
           ---
           "title": |-
-            Greeatings
+            Greetings
           ---
           Hello world.
     '''
@@ -75,11 +81,11 @@ def dump_jekyll_doc(front_matter, content, file):
     # Write front matter to the start of the file.
     file.seek(0)
     file.truncate()
-    file.write("---\n")
+    file.write(_marker)
     yaml.dump(front_matter, file, **dump_kwargs)
 
     # Write content to the end of the file.
-    file.write("---\n")
+    file.write(_marker)
     file.write(content.encode('utf8'))
 
 if __name__ == '__main__':
