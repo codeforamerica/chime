@@ -1,1 +1,3 @@
 PyYAML==3.10
+GitPython==0.3.2.RC1
+Flask==0.10.1
