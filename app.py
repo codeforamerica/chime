@@ -4,12 +4,39 @@ from os.path import join
 from git import Repo
 from jekyll import load_jekyll_doc, dump_jekyll_doc
 
+_default_branch = 'master'
+
 app = Flask(__name__)
 
 @app.route('/')
 def index():
     r = Repo('sample-site')
-    return repr(r).replace('<', '&lt;')
+    branch_names = [b.name for b in r.branches if b.name != _default_branch]
+    
+    list_item = '<li><a href="/tree/%(branch)s">%(branch)s</a></li>'
+    list_items = [list_item % dict(branch=name) for name in branch_names]
+    
+    html = '''<doctype: html>
+<html>
+<body>
+    <ul>%(list_items)s</ul>
+    <form action="/start" method="POST">
+    <input name="branch" placeholder="branch name" type="text">
+    <input type="submit">
+    </form>
+</body>
+</html>''' % dict(list_items=''.join(list_items))
+    
+    return html
+
+@app.route('/start', methods=['POST'])
+def start_branch():
+    r = Repo('sample-site')
+    branch_name = request.form.get('branch')
+    branch = r.create_head(branch_name)
+    branch.checkout()
+    
+    return redirect('/tree/%s' % branch.name, code=303)
 
 @app.route('/tree/<branch>/edit/<path:path>', methods=['GET'])
 def branch_edit(branch, path):
@@ -31,7 +58,7 @@ def branch_edit(branch, path):
 </body>
 </html>''' % dict(branch=branch, path=path, title=front['title'], body=body, hexsha=c.hexsha)
         
-        return Response(html, headers={'Content-Type': 'text/html'})
+        return html
 
 @app.route('/tree/<branch>/save/<path:path>', methods=['POST'])
 def branch_save(branch, path):
