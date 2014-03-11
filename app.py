@@ -3,7 +3,8 @@ from urllib import quote, unquote
 from os import listdir
 
 from git import Repo
-from flask import Flask, redirect, request, Response, render_template, redirect
+from requests import post
+from flask import Flask, redirect, request, Response, render_template, session
 from jekyll import load_jekyll_doc, dump_jekyll_doc
 
 _default_branch = 'master'
@@ -11,6 +12,7 @@ _repo_path = 'sample-site'
 _user_id = 'mike@localhost'
 
 app = Flask(__name__)
+app.secret_key = 'boop'
 
 def get_repo():
     ''' Gets repository for the current user, cloned from the origin.
@@ -61,7 +63,29 @@ def index():
     list_items = [dict(path=branch_name2path(name), name=name)
                   for name in branch_names]
     
-    return render_template('index.html', list_items=list_items)
+    kwargs = dict(items=list_items, email=session.get('email', None))
+    return render_template('index.html', **kwargs)
+
+@app.route('/sign-in', methods=['POST'])
+def sign_in():
+    posted = post('https://verifier.login.persona.org/verify',
+                  data=dict(assertion=request.form.get('assertion'),
+                            audience='http://127.0.0.1:5000'))
+
+    response = posted.json()
+    
+    if response.get('status', '') == 'okay':
+        session['email'] = response['email']
+        return 'OK'
+    
+    return Response('Failed', code=400)
+
+@app.route('/sign-out', methods=['POST'])
+def sign_out():
+    if 'email' in session:
+        session.pop('email')
+
+    return 'OK'
 
 @app.route('/start', methods=['POST'])
 def start_branch():
