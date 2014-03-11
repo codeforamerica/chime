@@ -1,0 +1,14 @@
+<doctype: html>
+<html>
+<body>
+    <ul>
+      {% for item in list_items %}
+        <li><a href="/tree/{{item.path}}/edit/">{{item.name}}</a></li>
+      {% endfor %}
+    </ul>
+    <form action="/start" method="POST">
+    <input name="branch" placeholder="branch name" type="text">
+    <input type="submit">
+    </form>
+</body>
+</html>

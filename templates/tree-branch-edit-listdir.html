@@ -1,0 +1,14 @@
+<doctype: html>
+<html>
+<body>
+    <ul>
+      {% for path in list_paths %}
+        <li><a href="{{path}}">{{path}}</a></li>
+      {% endfor %}
+    </ul>
+    <form action="/merge" method="POST">
+    <input name="branch" value="{{branch}}" type="hidden">
+    <input type="submit" value="Merge">
+    </form>
+</body>
+</html>

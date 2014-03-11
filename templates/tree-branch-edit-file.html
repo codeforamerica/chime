@@ -1,0 +1,12 @@
+<doctype: html>
+<html>
+<body>
+    <p><a href="./">Up</a></p>
+    <form action="/tree/{{safe_branch}}/save/{{path}}" method="POST">
+    <p><input name="title" value="{{title}}" type="text">
+    <p><textarea name="body">{{body}}</textarea>
+    <p><input name="hexsha" value="{{hexsha}}" type="text">
+    <p><input type="submit">
+    </form>
+</body>
+</html>
