@@ -1,5 +1,6 @@
 from os.path import join, isdir, realpath, basename
 from urllib import quote, unquote
+from functools import wraps
 from os import listdir
 
 from git import Repo
@@ -55,6 +56,22 @@ def branch_var2name(branch_path):
     '''
     return unquote(branch_path)
 
+def login_required(function):
+    ''' Login decorator for route functions.
+    
+        Adapts http://flask.pocoo.org/docs/patterns/viewdecorators/
+    '''
+    @wraps(function)
+    def decorated_function(*args, **kwargs):
+        email = session.get('email', None)
+    
+        if not email:
+            return redirect('/')
+        
+        return function(*args, **kwargs)
+    
+    return decorated_function
+
 @app.route('/')
 def index():
     r = get_repo()
@@ -88,6 +105,7 @@ def sign_out():
     return 'OK'
 
 @app.route('/start', methods=['POST'])
+@login_required
 def start_branch():
     r = get_repo()
     branch_desc = request.form.get('branch')
@@ -101,6 +119,7 @@ def start_branch():
     return redirect('/tree/%s/edit/' % safe_branch, code=303)
 
 @app.route('/merge', methods=['POST'])
+@login_required
 def merge_branch():
     r = get_repo()
     branch_name = request.form.get('branch')
@@ -126,6 +145,7 @@ def merge_branch():
 
 @app.route('/tree/<branch>/edit/', methods=['GET'])
 @app.route('/tree/<branch>/edit/<path:path>', methods=['GET'])
+@login_required
 def branch_edit(branch, path=None):
     branch = branch_var2name(branch)
 
@@ -153,6 +173,7 @@ def branch_edit(branch, path=None):
         return render_template('tree-branch-edit-file.html', **kwargs)
 
 @app.route('/tree/<branch>/save/<path:path>', methods=['POST'])
+@login_required
 def branch_save(branch, path):
     branch = branch_var2name(branch)
 
