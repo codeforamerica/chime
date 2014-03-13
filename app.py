@@ -1,7 +1,7 @@
-from os.path import join, isdir, realpath, basename
+from os.path import join, isdir, exists, realpath, basename, split
 from urllib import quote, unquote
 from functools import wraps
-from os import listdir
+from os import listdir, mkdir
 
 from git import Repo
 from requests import post
@@ -163,7 +163,7 @@ def branch_edit(branch, path=None):
         kwargs = dict(branch=branch, list_paths=map(basename, good_paths))
         return render_template('tree-branch-edit-listdir.html', **kwargs)
     
-    with open(join(r.working_dir, path), 'r') as file:
+    with open(full_path, 'r') as file:
         front, body = load_jekyll_doc(file)
         
         safe_branch = branch_name2path(branch)
@@ -171,6 +171,45 @@ def branch_edit(branch, path=None):
                       title=front['title'], body=body, hexsha=c.hexsha)
 
         return render_template('tree-branch-edit-file.html', **kwargs)
+
+@app.route('/tree/<branch>/edit/', methods=['POST'])
+@app.route('/tree/<branch>/edit/<path:path>', methods=['POST'])
+@login_required
+def branch_edit_add(branch, path=None):
+    branch = branch_var2name(branch)
+
+    r = get_repo()
+    b = r.branches[branch]
+    b.checkout()
+    c = r.commit()
+    
+    file_path = join((path or '').rstrip('/'), request.form['path'])
+    full_path = join(r.working_dir, file_path)
+    
+    head, dirs = split(file_path)[0], []
+    
+    while head:
+        head, dir = split(head)
+        dirs.insert(0, dir)
+    
+    if '..' in dirs:
+        raise Exception('None of that now')
+        
+    stuff = []
+    
+    for i in range(len(dirs)):
+        dir_path = join(r.working_dir, '/'.join(dirs[:i+1]))
+        
+        if not isdir(dir_path):
+            mkdir(dir_path)
+    
+    if not exists(full_path):
+        with open(full_path, 'w') as file:
+            dump_jekyll_doc(dict(title=''), '', file)
+
+    safe_branch = branch_name2path(branch)
+
+    return redirect('/tree/%s/edit/%s' % (safe_branch, file_path), code=303)
 
 @app.route('/tree/<branch>/save/<path:path>', methods=['POST'])
 @login_required
