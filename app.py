@@ -10,7 +10,6 @@ from jekyll import load_jekyll_doc, dump_jekyll_doc
 
 _default_branch = 'master'
 _repo_path = 'sample-site'
-_user_id = 'mike@localhost'
 
 app = Flask(__name__)
 app.secret_key = 'boop'
@@ -18,7 +17,7 @@ app.secret_key = 'boop'
 def get_repo():
     ''' Gets repository for the current user, cloned from the origin.
     '''
-    user_dir = realpath(quote('repo-' + _user_id))
+    user_dir = realpath(quote('repo-' + session.get('email', 'nobody')))
     
     if isdir(user_dir):
         user_repo = Repo(user_dir)
@@ -33,12 +32,12 @@ def get_repo():
 def name_branch(description):
     ''' Generate a name for a branch from a description.
     
-        Prepends with _user_id, and replaces spaces with dashes.
+        Prepends with session.email, and replaces spaces with dashes.
 
         TODO: follow rules in http://git-scm.com/docs/git-check-ref-format.html
     '''
     safe_description = description.replace('.', '-').replace(' ', '-')
-    return quote(_user_id, '@.-_') + '/' + quote(safe_description, '-_!')
+    return quote(session['email'], '@.-_') + '/' + quote(safe_description, '-_!')
 
 def branch_name2path(branch_name):
     ''' Quote the branch name for safe use in URLs.
@@ -74,7 +73,7 @@ def login_required(function):
 
 @app.route('/')
 def index():
-    r = get_repo()
+    r = Repo(_repo_path) # bare repo
     branch_names = [b.name for b in r.branches if b.name != _default_branch]
     
     list_items = [dict(path=branch_name2path(name), name=name)
@@ -150,6 +149,8 @@ def branch_edit(branch, path=None):
     branch = branch_var2name(branch)
 
     r = get_repo()
+    if branch not in r.branches:
+        r.create_head(branch, commit=r.refs['origin/' + branch].commit)
     b = r.branches[branch]
     b.checkout()
     c = r.commit()
