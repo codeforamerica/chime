@@ -6,7 +6,7 @@ from os.path import join
 from uuid import uuid4
 
 from git import Repo
-import bizarro
+import bizarro, jekyll
 
 #
 # Tarball of a single-commit Git repo with files index.md and sub/index.md
@@ -35,10 +35,11 @@ class TestRepo (TestCase):
         self.assertEqual(set(branch_names), set(['master', 'title', 'body']))
     
     def test_start_branch(self):
-        branch1 = bizarro.repo.start_branch(self.clone1, 'master', 'hello')
+        name = str(uuid4())
+        branch1 = bizarro.repo.start_branch(self.clone1, 'master', name)
         
-        self.assertTrue('hello' in self.clone1.branches)
-        self.assertTrue('hello' in self.origin.branches)
+        self.assertTrue(name in self.clone1.branches)
+        self.assertTrue(name in self.origin.branches)
         
         #
         # Make a change to the branch and push it.
@@ -54,11 +55,48 @@ class TestRepo (TestCase):
         #
         # See if the branch made it to clone 2
         #
-        branch2 = bizarro.repo.start_branch(self.clone2, 'master', 'hello')
+        branch2 = bizarro.repo.start_branch(self.clone2, 'master', name)
 
-        self.assertTrue('hello' in self.clone2.branches)
+        self.assertTrue(name in self.clone2.branches)
         self.assertEquals(branch2.commit.hexsha, branch1.commit.hexsha)
         self.assertEquals(branch2.commit.message, message)
+    
+    def test_new_file(self):
+        name = str(uuid4())
+        branch1 = bizarro.repo.start_branch(self.clone1, 'master', name)
+        
+        self.assertTrue(name in self.clone1.branches)
+        self.assertTrue(name in self.origin.branches)
+        
+        #
+        # Make a new file in the branch and push it.
+        #
+        branch1.checkout()
+        message = str(uuid4())
+        
+        repo_path, real_path = bizarro.repo.make_working_file(self.clone1, '', 'hello.md')
+        
+        with open(real_path, 'w') as file:
+            jekyll.dump_jekyll_doc(dict(title='Hello'), 'Hello hello.', file)
+        
+        bizarro.repo.save_working_file(self.clone1, 'hello.md', message, branch1.commit.hexsha)
+        
+        #
+        # See if the branch made it to clone 2
+        #
+        branch2 = bizarro.repo.start_branch(self.clone2, 'master', name)
+
+        self.assertTrue(name in self.clone2.branches)
+        self.assertEquals(branch2.commit.hexsha, branch1.commit.hexsha)
+        self.assertEquals(branch2.commit.message, message)
+        
+        branch2.checkout()
+        
+        with open(join(self.clone2.working_dir, 'hello.md')) as file:
+            front, body = jekyll.load_jekyll_doc(file)
+            
+            self.assertEquals(front['title'], 'Hello')
+            self.assertEquals(body, 'Hello hello.')
     
     def tearDown(self):
         rmtree(self.origin.git_dir)

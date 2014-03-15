@@ -184,25 +184,7 @@ def branch_edit_add(branch, path=None):
     b.checkout()
     c = r.commit()
     
-    file_path = join((path or '').rstrip('/'), request.form['path'])
-    full_path = join(r.working_dir, file_path)
-    
-    head, dirs = split(file_path)[0], []
-    
-    while head:
-        head, dir = split(head)
-        dirs.insert(0, dir)
-    
-    if '..' in dirs:
-        raise Exception('None of that now')
-        
-    stuff = []
-    
-    for i in range(len(dirs)):
-        dir_path = join(r.working_dir, '/'.join(dirs[:i+1]))
-        
-        if not isdir(dir_path):
-            mkdir(dir_path)
+    file_path, full_path = bizarro.repo.make_working_file(r, path, request.form['path'])
     
     if not exists(full_path):
         with open(full_path, 'w') as file:
