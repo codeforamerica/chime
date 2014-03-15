@@ -2,8 +2,11 @@ from tempfile import mkdtemp
 from subprocess import Popen, PIPE
 from unittest import TestCase, main
 from shutil import rmtree
+from os.path import join
+from uuid import uuid4
 
 from git import Repo
+import bizarro
 
 #
 # Tarball of a single-commit Git repo with files index.md and sub/index.md
@@ -14,23 +17,53 @@ _tarball = '\x1f\x8b\x08\x00\xb9\t$S\x00\x03\xed\x9d\x0bt\x14W\x19\xc77@S\x08\x9
 class TestRepo (TestCase):
 
     def setUp(self):
-        dirname = mkdtemp()
+        dirname = mkdtemp(prefix='bizarro-')
         
         tar = Popen(('tar', '-C', dirname, '-xzf', '-'), stdin=PIPE)
         tar.stdin.write(_tarball)
         tar.stdin.close()
         tar.wait()
         
-        self.repo = Repo(dirname)
+        self.origin = Repo(dirname)
+        self.clone1 = self.origin.clone(mkdtemp(prefix='bizarro-'))
+        self.clone2 = self.origin.clone(mkdtemp(prefix='bizarro-'))
     
     def test_repo_features(self):
-        self.assertTrue(self.repo.bare)
+        self.assertTrue(self.origin.bare)
         
-        branch_names = [b.name for b in self.repo.branches]
+        branch_names = [b.name for b in self.origin.branches]
         self.assertEqual(set(branch_names), set(['master', 'title', 'body']))
     
+    def test_start_branch(self):
+        branch1 = bizarro.repo.start_branch(self.clone1, 'master', 'hello')
+        
+        self.assertTrue('hello' in self.clone1.branches)
+        self.assertTrue('hello' in self.origin.branches)
+        
+        #
+        # Make a change to the branch and push it.
+        #
+        branch1.checkout()
+        message = str(uuid4())
+        
+        with open(join(self.clone1.working_dir, 'index.md'), 'a') as file:
+            file.write('\n\n...')
+        
+        bizarro.repo.save_working_file(self.clone1, 'index.md', message, branch1.commit.hexsha)
+        
+        #
+        # See if the branch made it to clone 2
+        #
+        branch2 = bizarro.repo.start_branch(self.clone2, 'master', 'hello')
+
+        self.assertTrue('hello' in self.clone2.branches)
+        self.assertEquals(branch2.commit.hexsha, branch1.commit.hexsha)
+        self.assertEquals(branch2.commit.message, message)
+    
     def tearDown(self):
-        rmtree(self.repo.git_dir)
+        rmtree(self.origin.git_dir)
+        rmtree(self.clone1.working_dir)
+        rmtree(self.clone2.working_dir)
 
 if __name__ == '__main__':
     main()

@@ -8,6 +8,8 @@ from requests import post
 from flask import Flask, redirect, request, Response, render_template, session
 from jekyll import load_jekyll_doc, dump_jekyll_doc
 
+import bizarro
+
 _default_branch = 'master'
 _repo_path = 'sample-site'
 
@@ -109,9 +111,7 @@ def start_branch():
     r = get_repo()
     branch_desc = request.form.get('branch')
     branch_name = name_branch(branch_desc)
-    branch = r.create_head(branch_name, commit=r.branches[_default_branch])
-
-    r.remotes.origin.push(branch.name)
+    branch = bizarro.repo.start_branch(r, _default_branch, branch_name)
     
     safe_branch = branch_name2path(branch.name)
     
@@ -219,12 +219,13 @@ def branch_save(branch, path):
 
     r = get_repo()
     b = r.branches[branch]
-    b.checkout()
-    c = r.commit()
+    c = b.commit
     
     if c.hexsha != request.form.get('hexsha'):
         raise Exception('Out of date SHA: %s' % request.form.get('hexsha'))
     
+    b.checkout()
+
     with open(join(r.working_dir, path), 'w') as file:
         front = dict(title=request.form.get('title'))
         body = request.form.get('body').replace('\r\n', '\n')
