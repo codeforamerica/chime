@@ -52,7 +52,8 @@ class TestRepo (TestCase):
         with open(join(self.clone1.working_dir, 'index.md'), 'a') as file:
             file.write('\n\n...')
         
-        bizarro.repo.save_working_file(self.clone1, 'index.md', message, branch1.commit.hexsha)
+        args = self.clone1, 'index.md', message, branch1.commit.hexsha, 'master'
+        bizarro.repo.save_working_file(*args)
         
         #
         # See if the branch made it to clone 2
@@ -83,7 +84,8 @@ class TestRepo (TestCase):
         with open(real_path, 'w') as file:
             jekyll.dump_jekyll_doc(dict(title='Hello'), 'Hello hello.', file)
         
-        bizarro.repo.save_working_file(self.clone1, 'hello.md', message, branch1.commit.hexsha)
+        args = self.clone1, 'hello.md', message, branch1.commit.hexsha, 'master'
+        bizarro.repo.save_working_file(*args)
         
         #
         # See if the branch made it to clone 2
@@ -127,7 +129,7 @@ class TestRepo (TestCase):
         #
         # Show that the changes from the first branch made it to origin.
         #
-        args1 = self.clone1, 'file1.md', 'Saving', branch1.commit.hexsha
+        args1 = self.clone1, 'file1.md', '...', branch1.commit.hexsha, 'master'
         commit1 = bizarro.repo.save_working_file(*args1)
 
         self.assertEquals(self.origin.branches[name].commit, commit1)
@@ -136,7 +138,7 @@ class TestRepo (TestCase):
         #
         # Show that the changes from the second branch also made it to origin.
         #
-        args2 = self.clone2, 'file2.md', 'Saving', branch2.commit.hexsha
+        args2 = self.clone2, 'file2.md', '...', branch2.commit.hexsha, 'master'
         commit2 = bizarro.repo.save_working_file(*args2)
 
         self.assertEquals(self.origin.branches[name].commit, commit2)
@@ -157,7 +159,7 @@ class TestRepo (TestCase):
         branch2 = bizarro.repo.start_branch(self.clone2, 'master', name)
         
         #
-        # Make a new files in each branch and save them.
+        # Make new files in each branch and save them.
         #
         branch1.checkout()
         branch2.checkout()
@@ -174,7 +176,7 @@ class TestRepo (TestCase):
         #
         # Show that the changes from the first branch made it to origin.
         #
-        args1 = self.clone1, 'conflict.md', 'Saving', branch1.commit.hexsha
+        args1 = self.clone1, 'conflict.md', '...', branch1.commit.hexsha, 'master'
         commit1 = bizarro.repo.save_working_file(*args1)
 
         self.assertEquals(self.origin.branches[name].commit, commit1)
@@ -183,9 +185,58 @@ class TestRepo (TestCase):
         #
         # Show that the changes from the second branch conflict with the first.
         #
-        with self.assertRaises(bizarro.repo.MergeConflict):
-            args2 = self.clone2, 'conflict.md', 'Saving', branch2.commit.hexsha
+        with self.assertRaises(bizarro.repo.MergeConflict) as conflict:
+            args2 = self.clone2, 'conflict.md', '...', branch2.commit.hexsha, 'master'
             commit2 = bizarro.repo.save_working_file(*args2)
+        
+        self.assertEqual(conflict.exception.remote_commit, commit1)
+    
+    def test_upstream_conflict(self):
+        ''' Test that a conflict in two branches appears at the right spot.
+        '''
+        name1, name2 = str(uuid4()), str(uuid4())
+        branch1 = bizarro.repo.start_branch(self.clone1, 'master', name1)
+        branch2 = bizarro.repo.start_branch(self.clone2, 'master', name2)
+        
+        #
+        # Make new files in each branch and save them.
+        #
+        branch1.checkout()
+        branch2.checkout()
+        
+        repo_path1, real_path1 = bizarro.repo.make_working_file(self.clone1, '', 'conflict.md')
+        repo_path2, real_path2 = bizarro.repo.make_working_file(self.clone2, '', 'conflict.md')
+        
+        with open(real_path1, 'w') as file:
+            jekyll.dump_jekyll_doc(dict(title='Hello'), 'Hello hello.', file)
+        
+        with open(real_path2, 'w') as file:
+            jekyll.dump_jekyll_doc(dict(title='Goodbye'), 'Goodbye goodbye.', file)
+        
+        #
+        # Show that the changes from the first branch made it to origin.
+        #
+        args1 = self.clone1, 'conflict.md', '...', branch1.commit.hexsha, 'master'
+        commit1 = bizarro.repo.save_working_file(*args1)
+
+        self.assertEquals(self.origin.branches[name1].commit, commit1)
+        self.assertEquals(commit1, branch1.commit)
+        
+        #
+        # Merge the first branch to master.
+        #
+        self.clone1.git.checkout('master')
+        self.clone1.git.merge(name1)
+        self.clone1.git.push('origin', 'master')
+        
+        #
+        # Show that the changes from the second branch conflict with the first.
+        #
+        with self.assertRaises(bizarro.repo.MergeConflict) as conflict:
+            args2 = self.clone2, 'conflict.md', '...', branch2.commit.hexsha, 'master'
+            bizarro.repo.save_working_file(*args2)
+        
+        self.assertEqual(conflict.exception.remote_commit, commit1)
     
     def tearDown(self):
         rmtree(self.origin.git_dir)

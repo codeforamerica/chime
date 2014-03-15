@@ -2,8 +2,9 @@ import os, logging
 from os.path import join, split
 
 class MergeConflict (Exception):
-    def __init__(self, remote_tree, local_tree):
-        pass
+    def __init__(self, remote_commit, local_commit):
+        self.remote_commit = remote_commit
+        self.local_commit = local_commit
 
 def start_branch(clone, default_branch_name, new_branch_name):
     ''' Start a new repository branch, push it to origin and return it.
@@ -53,7 +54,7 @@ def make_working_file(clone, dir, path):
     
     return repo_path, real_path
 
-def save_working_file(clone, path, message, base_sha):
+def save_working_file(clone, path, message, base_sha, default_branch_name):
     ''' Save a file in the working dir, push it to origin, and return the commit.
     '''
     if clone.active_branch.commit.hexsha != base_sha:
@@ -63,6 +64,9 @@ def save_working_file(clone, path, message, base_sha):
     new_commit = clone.index.commit(message)
     branch_name = clone.active_branch.name
     
+    #
+    # Sync with the upstream branch in case someone has made a change.
+    #
     try:
         # sync: pull --rebase followed by push.
         clone.git.pull('origin', branch_name, rebase=True)
@@ -70,8 +74,24 @@ def save_working_file(clone, path, message, base_sha):
     except:
         # raise the two trees in conflict.
         clone.git.fetch('origin')
-        remote_tree = clone.refs['origin/' + branch_name].commit.tree
-        raise MergeConflict(remote_tree, new_commit.tree)
+        remote_commit = clone.refs['origin/' + branch_name].commit
+        raise MergeConflict(remote_commit, new_commit)
+    
+    else:
+        clone.git.push('origin', clone.active_branch.name)
+    
+    #
+    # Sync with the default branch in case someone has made a change.
+    #
+    try:
+        # sync: pull --rebase followed by push.
+        clone.git.pull('origin', default_branch_name, rebase=True)
+    
+    except:
+        # raise the two trees in conflict.
+        clone.git.fetch('origin')
+        remote_commit = clone.refs['origin/' + default_branch_name].commit
+        raise MergeConflict(remote_commit, new_commit)
     
     else:
         clone.git.push('origin', clone.active_branch.name)
