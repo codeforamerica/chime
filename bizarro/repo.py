@@ -1,6 +1,10 @@
 import os, logging
 from os.path import join, split
 
+class MergeConflict (Exception):
+    def __init__(self, remote_tree, local_tree):
+        pass
+
 def start_branch(clone, default_branch_name, new_branch_name):
     ''' Start a new repository branch, push it to origin and return it.
     '''
@@ -11,8 +15,9 @@ def start_branch(clone, default_branch_name, new_branch_name):
     else:
         start_point = clone.branches[default_branch_name].commit
     
+    # Start or update the branch, letting origin override the local repo.
     logging.debug('start_branch() start_point is %s' % repr(start_point))
-    branch = clone.create_head(new_branch_name, commit=start_point)
+    branch = clone.create_head(new_branch_name, commit=start_point, force=True)
     clone.remotes.origin.push(new_branch_name)
     
     return branch
@@ -49,11 +54,26 @@ def make_working_file(clone, dir, path):
     return repo_path, real_path
 
 def save_working_file(clone, path, message, base_sha):
-    ''' Save a file in the working dir and push it to origin.
+    ''' Save a file in the working dir, push it to origin, and return the commit.
     '''
     if clone.active_branch.commit.hexsha != base_sha:
         raise Exception('Out of date SHA: %s' % base_sha)
     
     clone.index.add([path])
-    clone.index.commit(message)
-    clone.remotes.origin.push(clone.active_branch.name)
+    new_commit = clone.index.commit(message)
+    branch_name = clone.active_branch.name
+    
+    try:
+        # sync: pull --rebase followed by push.
+        clone.remotes.origin.pull(branch_name, rebase=True)
+    
+    except AssertionError:
+        # raise the two trees in conflict.
+        clone.remotes.origin.fetch()
+        remote_tree = clone.refs['origin/' + branch_name].commit.tree
+        raise MergeConflict(remote_tree, new_commit.tree)
+    
+    else:
+        clone.remotes.origin.push(clone.active_branch.name)
+    
+    return clone.active_branch.commit
