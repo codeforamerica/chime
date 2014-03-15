@@ -8,7 +8,7 @@ class MergeConflict (Exception):
 def start_branch(clone, default_branch_name, new_branch_name):
     ''' Start a new repository branch, push it to origin and return it.
     '''
-    clone.remotes.origin.fetch()
+    clone.git.fetch('origin')
     
     if 'origin/' + new_branch_name in clone.refs:
         start_point = clone.refs['origin/' + new_branch_name].commit
@@ -18,7 +18,7 @@ def start_branch(clone, default_branch_name, new_branch_name):
     # Start or update the branch, letting origin override the local repo.
     logging.debug('start_branch() start_point is %s' % repr(start_point))
     branch = clone.create_head(new_branch_name, commit=start_point, force=True)
-    clone.remotes.origin.push(new_branch_name)
+    clone.git.push('origin', new_branch_name)
     
     return branch
 
@@ -65,15 +65,15 @@ def save_working_file(clone, path, message, base_sha):
     
     try:
         # sync: pull --rebase followed by push.
-        clone.remotes.origin.pull(branch_name, rebase=True)
+        clone.git.pull('origin', branch_name, rebase=True)
     
-    except AssertionError:
+    except:
         # raise the two trees in conflict.
-        clone.remotes.origin.fetch()
+        clone.git.fetch('origin')
         remote_tree = clone.refs['origin/' + branch_name].commit.tree
         raise MergeConflict(remote_tree, new_commit.tree)
     
     else:
-        clone.remotes.origin.push(clone.active_branch.name)
+        clone.git.push('origin', clone.active_branch.name)
     
     return clone.active_branch.commit
