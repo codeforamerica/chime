@@ -18,6 +18,12 @@ def start_branch(clone, default_branch_name, new_branch_name):
     
     # Start or update the branch, letting origin override the local repo.
     logging.debug('start_branch() start_point is %s' % repr(start_point))
+
+    # See if it already matches start_point
+    if new_branch_name in clone.branches:
+        if clone.branches[new_branch_name].commit == start_point:
+            return clone.branches[new_branch_name]
+
     branch = clone.create_head(new_branch_name, commit=start_point, force=True)
     clone.git.push('origin', new_branch_name)
     
@@ -61,13 +67,13 @@ def save_working_file(clone, path, message, base_sha, default_branch_name):
         raise Exception('Out of date SHA: %s' % base_sha)
     
     clone.index.add([path])
-    new_commit = clone.index.commit(message)
-    branch_name = clone.active_branch.name
+    clone.index.commit(message)
+    active_branch_name = clone.active_branch.name
     
     #
     # Sync with the default and upstream branches in case someone made a change.
     #
-    for sync_branch_name in (default_branch_name, branch_name):
+    for sync_branch_name in (default_branch_name, active_branch_name):
         try:
             # sync: pull --rebase followed by push.
             clone.git.pull('origin', sync_branch_name, rebase=True)
@@ -77,7 +83,9 @@ def save_working_file(clone, path, message, base_sha, default_branch_name):
             clone.git.fetch('origin')
             remote_commit = clone.refs['origin/' + sync_branch_name].commit
 
-            raise MergeConflict(remote_commit, new_commit)
+            clone.git.rebase(abort=True)
+            clone.git.reset(hard=True)
+            raise MergeConflict(remote_commit, clone.commit())
 
         else:
             clone.git.push('origin', sync_branch_name)

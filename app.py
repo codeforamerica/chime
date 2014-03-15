@@ -214,9 +214,20 @@ def branch_save(branch, path):
         
         dump_jekyll_doc(front, body, file)
     
-    r.index.add([path])
-    r.index.commit('Saved')
-    r.remotes.origin.push(branch)
+    #
+    # Try to merge from the master to the current branch.
+    #
+    try:
+        bizarro.repo.save_working_file(r, path, 'Saved', c.hexsha, _default_branch)
+    
+    except bizarro.repo.MergeConflict as conflict:
+        r.git.reset(c.hexsha, hard=True)
+    
+        print 1, conflict.remote_commit
+        print ' ', repr(conflict.remote_commit.tree[path].data_stream.read())
+        print 2, conflict.local_commit
+        print ' ', repr(conflict.local_commit.tree[path].data_stream.read())
+        raise
     
     safe_branch = branch_name2path(branch)
 
