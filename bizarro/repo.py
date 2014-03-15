@@ -65,35 +65,21 @@ def save_working_file(clone, path, message, base_sha, default_branch_name):
     branch_name = clone.active_branch.name
     
     #
-    # Sync with the upstream branch in case someone has made a change.
+    # Sync with the default and upstream branches in case someone made a change.
     #
-    try:
-        # sync: pull --rebase followed by push.
-        clone.git.pull('origin', branch_name, rebase=True)
-    
-    except:
-        # raise the two trees in conflict.
-        clone.git.fetch('origin')
-        remote_commit = clone.refs['origin/' + branch_name].commit
-        raise MergeConflict(remote_commit, new_commit)
-    
-    else:
-        clone.git.push('origin', clone.active_branch.name)
-    
-    #
-    # Sync with the default branch in case someone has made a change.
-    #
-    try:
-        # sync: pull --rebase followed by push.
-        clone.git.pull('origin', default_branch_name, rebase=True)
-    
-    except:
-        # raise the two trees in conflict.
-        clone.git.fetch('origin')
-        remote_commit = clone.refs['origin/' + default_branch_name].commit
-        raise MergeConflict(remote_commit, new_commit)
-    
-    else:
-        clone.git.push('origin', clone.active_branch.name)
+    for sync_branch_name in (default_branch_name, branch_name):
+        try:
+            # sync: pull --rebase followed by push.
+            clone.git.pull('origin', sync_branch_name, rebase=True)
+
+        except:
+            # raise the two trees in conflict.
+            clone.git.fetch('origin')
+            remote_commit = clone.refs['origin/' + sync_branch_name].commit
+
+            raise MergeConflict(remote_commit, new_commit)
+
+        else:
+            clone.git.push('origin', sync_branch_name)
     
     return clone.active_branch.commit
