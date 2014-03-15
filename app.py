@@ -109,7 +109,7 @@ def start_branch():
     r = get_repo()
     branch_desc = request.form.get('branch')
     branch_name = name_branch(branch_desc)
-    branch = r.create_head(branch_name)
+    branch = r.create_head(branch_name, commit=r.branches[_default_branch])
 
     r.remotes.origin.push(branch.name)
     
