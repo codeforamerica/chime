@@ -124,6 +124,10 @@ def merge_branch():
     branch_name = request.form.get('branch')
     branch = r.branches[branch_name]
     
+    bizarro.repo.complete_branch(r, _default_branch, branch_name)
+    
+    return redirect('/')
+    
     r.branches[_default_branch].checkout()
     
     try:

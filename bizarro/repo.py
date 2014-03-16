@@ -29,6 +29,34 @@ def start_branch(clone, default_branch_name, new_branch_name):
     
     return branch
 
+def complete_branch(clone, default_branch_name, working_branch_name):
+    '''
+    '''
+    clone.git.checkout(working_branch_name)
+
+    try:
+        # sync: pull --rebase followed by push.
+        clone.git.pull('origin', default_branch_name, rebase=True)
+
+    except:
+        # raise the two trees in conflict.
+        clone.git.fetch('origin')
+        remote_commit = clone.refs['origin/' + default_branch_name].commit
+
+        clone.git.rebase(abort=True)
+        clone.git.reset(hard=True)
+        raise MergeConflict(remote_commit, clone.commit())
+
+    else:
+        clone.git.push('origin', working_branch_name)
+
+    #
+    #
+    #
+    clone.git.checkout(default_branch_name)
+    clone.git.merge(working_branch_name)
+    clone.git.push('origin', default_branch_name)
+
 def make_working_file(clone, dir, path):
     ''' Create a new working file, return its local git and real absolute paths.
     '''
