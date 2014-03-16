@@ -12,7 +12,7 @@ class MergeConflict (Exception):
     def __str__(self):
         return 'MergeConflict(%s, %s)' % (self.remote_commit, self.local_commit)
 
-def _prefixed(branch_name):
+def _origin(branch_name):
     return 'origin/' + branch_name
 
 def start_branch(clone, default_branch_name, new_branch_name):
@@ -23,8 +23,8 @@ def start_branch(clone, default_branch_name, new_branch_name):
     '''
     clone.git.fetch('origin')
     
-    if _prefixed(new_branch_name) in clone.refs:
-        start_point = clone.refs[_prefixed(new_branch_name)].commit
+    if _origin(new_branch_name) in clone.refs:
+        start_point = clone.refs[_origin(new_branch_name)].commit
     else:
         start_point = clone.branches[default_branch_name].commit
     
@@ -69,7 +69,7 @@ def complete_branch(clone, default_branch_name, working_branch_name):
 
     except:
         # raise the two commits in conflict.
-        remote_commit = clone.refs[_prefixed(default_branch_name)].commit
+        remote_commit = clone.refs[_origin(default_branch_name)].commit
 
         clone.git.reset(default_branch_name, hard=True)
         clone.git.checkout(working_branch_name)
@@ -96,7 +96,7 @@ def complete_branch(clone, default_branch_name, working_branch_name):
     except:
         # raise the two commits in conflict.
         clone.git.fetch('origin')
-        remote_commit = clone.refs[_prefixed(default_branch_name)].commit
+        remote_commit = clone.refs[_origin(default_branch_name)].commit
 
         clone.git.rebase(abort=True)
         clone.git.reset(hard=True)
@@ -182,7 +182,7 @@ def save_working_file(clone, path, message, base_sha, default_branch_name):
         except:
             # raise the two commits in conflict.
             clone.git.fetch('origin')
-            remote_commit = clone.refs[_prefixed(sync_branch_name)].commit
+            remote_commit = clone.refs[_origin(sync_branch_name)].commit
 
             clone.git.rebase(abort=True)
             clone.git.reset(hard=True)
