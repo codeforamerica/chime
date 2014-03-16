@@ -71,7 +71,8 @@ def complete_branch(clone, default_branch_name, working_branch_name):
         # raise the two commits in conflict.
         remote_commit = clone.refs[_prefixed(default_branch_name)].commit
 
-        clone.git.reset(working_branch_name, hard=True)
+        clone.git.reset(default_branch_name, hard=True)
+        clone.git.checkout(working_branch_name)
         raise MergeConflict(remote_commit, clone.commit())
 
     else:

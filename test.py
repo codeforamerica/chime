@@ -397,6 +397,104 @@ class TestRepo (TestCase):
         self.assertEqual(diffs[0].a_blob.name, 'conflict.md')
         self.assertEqual(diffs[0].b_blob.name, 'conflict.md')
     
+    def test_conflict_resolution_clobber(self):
+        ''' Test that a conflict in two branches can be clobbered.
+        '''
+        name, email = str(uuid4()), str(uuid4())
+        branch1 = bizarro.repo.start_branch(self.clone1, 'master', 'title')
+        branch2 = bizarro.repo.start_branch(self.clone2, 'master', name)
+        
+        #
+        # Change index.md in branch2 so it conflicts with title branch.
+        #
+        branch2.checkout()
+        
+        with open(join(self.clone2.working_dir, 'index.md'), 'w') as file:
+            jekyll.dump_jekyll_doc(dict(title=name), 'Hello hello.', file)
+        
+        with self.app.test_request_context():
+            session['email'] = email
+
+            args = self.clone2, 'index.md', '...', branch2.commit.hexsha, 'master'
+            commit = bizarro.repo.save_working_file(*args)
+
+        #
+        # Merge the original title branch, fail to merge our conflicting branch.
+        #
+        bizarro.repo.complete_branch(self.clone1, 'master', 'title')
+
+        with self.assertRaises(bizarro.repo.MergeConflict) as conflict:
+            bizarro.repo.complete_branch(self.clone2, 'master', name)
+        
+        self.assertEqual(conflict.exception.local_commit, commit)
+        
+        diffs = conflict.exception.remote_commit.diff(conflict.exception.local_commit)
+        
+        self.assertEqual(len(diffs), 1)
+        self.assertEqual(diffs[0].a_blob.name, 'index.md')
+        self.assertEqual(diffs[0].b_blob.name, 'index.md')
+        
+        #
+        # Merge our conflicting branch and clobber the default branch.
+        #
+        self.clone2.branches['master'].checkout()
+        self.clone2.git.pull('origin', 'master')
+        self.clone2.git.merge(name, s='recursive', X='theirs')
+        
+        with open(join(self.clone2.working_dir, 'index.md')) as file:
+            front, body = jekyll.load_jekyll_doc(file)
+        
+        self.assertEqual(front['title'], name)
+    
+    def test_conflict_resolution_abandon(self):
+        ''' Test that a conflict in two branches can be abandoned.
+        '''
+        name, email = str(uuid4()), str(uuid4())
+        branch1 = bizarro.repo.start_branch(self.clone1, 'master', 'title')
+        branch2 = bizarro.repo.start_branch(self.clone2, 'master', name)
+        
+        #
+        # Change index.md in branch2 so it conflicts with title branch.
+        #
+        branch2.checkout()
+        
+        with open(join(self.clone2.working_dir, 'index.md'), 'w') as file:
+            jekyll.dump_jekyll_doc(dict(title=name), 'Hello hello.', file)
+        
+        with self.app.test_request_context():
+            session['email'] = email
+
+            args = self.clone2, 'index.md', '...', branch2.commit.hexsha, 'master'
+            commit = bizarro.repo.save_working_file(*args)
+
+        #
+        # Merge the original title branch, fail to merge our conflicting branch.
+        #
+        bizarro.repo.complete_branch(self.clone1, 'master', 'title')
+
+        with self.assertRaises(bizarro.repo.MergeConflict) as conflict:
+            bizarro.repo.complete_branch(self.clone2, 'master', name)
+        
+        self.assertEqual(conflict.exception.local_commit, commit)
+        
+        diffs = conflict.exception.remote_commit.diff(conflict.exception.local_commit)
+        
+        self.assertEqual(len(diffs), 1)
+        self.assertEqual(diffs[0].a_blob.name, 'index.md')
+        self.assertEqual(diffs[0].b_blob.name, 'index.md')
+        
+        #
+        # Merge our conflicting branch and abandon it to the default branch.
+        #
+        self.clone2.branches['master'].checkout()
+        self.clone2.git.pull('origin', 'master')
+        self.clone2.git.merge(name, s='recursive', X='ours')
+        
+        with open(join(self.clone2.working_dir, 'index.md')) as file:
+            front, body = jekyll.load_jekyll_doc(file)
+        
+        self.assertNotEqual(front['title'], name)
+    
     def tearDown(self):
         rmtree(self.origin.git_dir)
         rmtree(self.clone1.working_dir)
