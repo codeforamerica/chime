@@ -116,8 +116,46 @@ class TestRepo (TestCase):
             self.assertEquals(front['title'], 'Hello')
             self.assertEquals(body, 'Hello hello.')
     
-    def test_simple_merge(self):
-        ''' Test that two simultaneous non-conflicting changes merge cleanly.
+    def test_content_merge(self):
+        ''' Test that non-conflicting changes on the same file merge cleanly.
+        '''
+        email = str(uuid4())
+        branch1 = bizarro.repo.start_branch(self.clone1, 'master', 'title')
+        branch2 = bizarro.repo.start_branch(self.clone2, 'master', 'body')
+        
+        branch1.checkout()
+        branch2.checkout()
+        
+        with open(self.clone1.working_dir + '/index.md') as file:
+            front1, _ = jekyll.load_jekyll_doc(file)
+        
+        with open(self.clone2.working_dir + '/index.md') as file:
+            _, body2 = jekyll.load_jekyll_doc(file)
+        
+        #
+        # Show that only the title branch title is now present on master.
+        #
+        bizarro.repo.complete_branch(self.clone1, 'master', 'title')
+        
+        with open(self.clone1.working_dir + '/index.md') as file:
+            front1b, body1b = jekyll.load_jekyll_doc(file)
+        
+        self.assertEqual(front1b['title'], front1['title'])
+        self.assertNotEqual(body1b, body2)
+        
+        #
+        # Show that the body branch body is also now present on master.
+        #
+        bizarro.repo.complete_branch(self.clone2, 'master', 'body')
+        
+        with open(self.clone2.working_dir + '/index.md') as file:
+            front2b, body2b = jekyll.load_jekyll_doc(file)
+        
+        self.assertEqual(front2b['title'], front1['title'])
+        self.assertEqual(body2b, body2)
+    
+    def test_multifile_merge(self):
+        ''' Test that two non-conflicting new files merge cleanly.
         '''
         name, email = str(uuid4()), str(uuid4())
         branch1 = bizarro.repo.start_branch(self.clone1, 'master', name)

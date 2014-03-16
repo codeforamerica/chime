@@ -44,12 +44,46 @@ def start_branch(clone, default_branch_name, new_branch_name):
 def complete_branch(clone, default_branch_name, working_branch_name):
     ''' Complete work on a branch by merging it to master and deleting it.
     
+        Checks out the default branch, merges the working branch in.
+        Deletes the working branch in the clone and the origin, and leaves
+        the working directory checked out to the merged default branch.
+        
+        In case of merge error, leaves the working directory checked out
+        to the original working branch.
+        
+        Old behavior:
+    
         Checks out the working branch, merges the default branch in, then
         switches to the default branch and merges the working branch back.
         Deletes the working branch in the clone and the origin, and leaves
         the working directory checked out to the merged default branch.
     '''
-    clone.git.checkout(working_branch_name)
+    clone.git.checkout(default_branch_name)
+    clone.git.pull('origin', default_branch_name)
+
+    #
+    # Merge the working branch back to the default branch.
+    #
+    try:
+        clone.git.merge(working_branch_name)
+
+    except:
+        # raise the two commits in conflict.
+        remote_commit = clone.refs[_prefixed(default_branch_name)].commit
+
+        clone.git.reset(working_branch_name, hard=True)
+        raise MergeConflict(remote_commit, clone.commit())
+
+    else:
+        clone.git.push('origin', default_branch_name)
+    
+    #
+    # Delete the working branch.
+    #
+    clone.remotes.origin.push(':' + working_branch_name)
+    clone.delete_head([working_branch_name])
+    
+    return
 
     #
     # First, merge the default branch to the working branch.
