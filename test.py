@@ -226,6 +226,7 @@ class TestRepo (TestCase):
         # Merge the first branch to master.
         #
         bizarro.repo.complete_branch(self.clone1, 'master', name1)
+        self.assertFalse(name1 in self.origin.branches)
         
         #
         # Show that the changes from the second branch conflict with the first.
@@ -271,6 +272,7 @@ class TestRepo (TestCase):
         # Merge the two branches to master; show that second merge will fail.
         #
         bizarro.repo.complete_branch(self.clone1, 'master', name1)
+        self.assertFalse(name1 in self.origin.branches)
         
         with self.assertRaises(bizarro.repo.MergeConflict) as conflict:
             bizarro.repo.complete_branch(self.clone2, 'master', name2)

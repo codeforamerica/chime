@@ -34,6 +34,9 @@ def complete_branch(clone, default_branch_name, working_branch_name):
     '''
     clone.git.checkout(working_branch_name)
 
+    #
+    # First, merge the default branch to the working branch.
+    #
     try:
         # sync: pull --rebase followed by push.
         clone.git.pull('origin', default_branch_name, rebase=True)
@@ -51,11 +54,17 @@ def complete_branch(clone, default_branch_name, working_branch_name):
         clone.git.push('origin', working_branch_name)
 
     #
-    #
+    # Merge the working branch back to the default branch.
     #
     clone.git.checkout(default_branch_name)
     clone.git.merge(working_branch_name)
     clone.git.push('origin', default_branch_name)
+    
+    #
+    # Delete the working branch.
+    #
+    clone.remotes.origin.push(':' + working_branch_name)
+    clone.delete_head([working_branch_name])
 
 def make_working_file(clone, dir, path):
     ''' Create a new working file, return its local git and real absolute paths.
