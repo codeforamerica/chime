@@ -1,5 +1,8 @@
 import os, logging
+from os import environ
 from os.path import join, split
+
+from flask import session
 
 class MergeConflict (Exception):
     def __init__(self, remote_commit, local_commit):
@@ -103,6 +106,9 @@ def save_working_file(clone, path, message, base_sha, default_branch_name):
     if clone.active_branch.commit.hexsha != base_sha:
         raise Exception('Out of date SHA: %s' % base_sha)
     
+    environ['GIT_AUTHOR_NAME'], environ['GIT_AUTHOR_EMAIL'] = '', session['email']
+    environ['GIT_COMMITTER_NAME'], environ['GIT_COMMITTER_EMAIL'] = '', session['email']
+
     clone.index.add([path])
     clone.index.commit(message)
     active_branch_name = clone.active_branch.name
