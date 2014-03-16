@@ -220,6 +220,12 @@ class TestRepo (TestCase):
                 commit2 = bizarro.repo.save_working_file(*args2)
         
         self.assertEqual(conflict.exception.remote_commit, commit1)
+        
+        diffs = conflict.exception.remote_commit.diff(conflict.exception.local_commit)
+        
+        self.assertEqual(len(diffs), 1)
+        self.assertEqual(diffs[0].a_blob.name, 'conflict.md')
+        self.assertEqual(diffs[0].b_blob.name, 'conflict.md')
     
     def test_upstream_pull_conflict(self):
         ''' Test that a conflict in two branches appears at the right spot.
@@ -272,6 +278,12 @@ class TestRepo (TestCase):
                 bizarro.repo.save_working_file(*args2)
         
         self.assertEqual(conflict.exception.remote_commit, commit1)
+        
+        diffs = conflict.exception.remote_commit.diff(conflict.exception.local_commit)
+        
+        self.assertEqual(len(diffs), 1)
+        self.assertEqual(diffs[0].a_blob.name, 'conflict.md')
+        self.assertEqual(diffs[0].b_blob.name, 'conflict.md')
     
     def test_upstream_push_conflict(self):
         ''' Test that a conflict in two branches appears at the right spot.
@@ -318,6 +330,12 @@ class TestRepo (TestCase):
         
         self.assertEqual(conflict.exception.remote_commit, self.origin.commit())
         self.assertEqual(conflict.exception.local_commit, self.clone2.commit())
+        
+        diffs = conflict.exception.remote_commit.diff(conflict.exception.local_commit)
+        
+        self.assertEqual(len(diffs), 1)
+        self.assertEqual(diffs[0].a_blob.name, 'conflict.md')
+        self.assertEqual(diffs[0].b_blob.name, 'conflict.md')
     
     def tearDown(self):
         rmtree(self.origin.git_dir)

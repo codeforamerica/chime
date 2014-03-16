@@ -8,14 +8,23 @@ class MergeConflict (Exception):
     def __init__(self, remote_commit, local_commit):
         self.remote_commit = remote_commit
         self.local_commit = local_commit
+    
+    def __str__(self):
+        return 'MergeConflict(%s, %s)' % (self.remote_commit, self.local_commit)
+
+def _prefixed(branch_name):
+    return 'origin/' + branch_name
 
 def start_branch(clone, default_branch_name, new_branch_name):
     ''' Start a new repository branch, push it to origin and return it.
+    
+        Don't touch the working directory. If an existing branch is found
+        with the same name, use it instead of creating a fresh branch.
     '''
     clone.git.fetch('origin')
     
-    if 'origin/' + new_branch_name in clone.refs:
-        start_point = clone.refs['origin/' + new_branch_name].commit
+    if _prefixed(new_branch_name) in clone.refs:
+        start_point = clone.refs[_prefixed(new_branch_name)].commit
     else:
         start_point = clone.branches[default_branch_name].commit
     
@@ -33,7 +42,12 @@ def start_branch(clone, default_branch_name, new_branch_name):
     return branch
 
 def complete_branch(clone, default_branch_name, working_branch_name):
-    '''
+    ''' Complete work on a branch by merging it to master and deleting it.
+    
+        Checks out the working branch, merges the default branch in, then
+        switches to the default branch and merges the working branch back.
+        Deletes the working branch in the clone and the origin, and leaves
+        the working directory checked out to the merged default branch.
     '''
     clone.git.checkout(working_branch_name)
 
@@ -45,9 +59,9 @@ def complete_branch(clone, default_branch_name, working_branch_name):
         clone.git.pull('origin', default_branch_name, rebase=True)
 
     except:
-        # raise the two trees in conflict.
+        # raise the two commits in conflict.
         clone.git.fetch('origin')
-        remote_commit = clone.refs['origin/' + default_branch_name].commit
+        remote_commit = clone.refs[_prefixed(default_branch_name)].commit
 
         clone.git.rebase(abort=True)
         clone.git.reset(hard=True)
@@ -71,6 +85,9 @@ def complete_branch(clone, default_branch_name, working_branch_name):
 
 def make_working_file(clone, dir, path):
     ''' Create a new working file, return its local git and real absolute paths.
+    
+        Creates a new file under the given directory, building whatever
+        intermediate directories are necessary to write the file.
     '''
     repo_path = join((dir or '').rstrip('/'), path)
     real_path = join(clone.working_dir, repo_path)
@@ -101,7 +118,13 @@ def make_working_file(clone, dir, path):
     return repo_path, real_path
 
 def save_working_file(clone, path, message, base_sha, default_branch_name):
-    ''' Save a file in the working dir, push it to origin, and return the commit.
+    ''' Save a file in the working dir, push it to origin, return the commit.
+    
+        Uses flask.session email for author emails, names are left blank.
+        
+        After committing the new file, attempts to rebase the working branch
+        on the default branch and the origin working branch in turn, to
+        surface possible merge problems early. Might raise a MergeConflict.
     '''
     if clone.active_branch.commit.hexsha != base_sha:
         raise Exception('Out of date SHA: %s' % base_sha)
@@ -122,9 +145,9 @@ def save_working_file(clone, path, message, base_sha, default_branch_name):
             clone.git.pull('origin', sync_branch_name, rebase=True)
 
         except:
-            # raise the two trees in conflict.
+            # raise the two commits in conflict.
             clone.git.fetch('origin')
-            remote_commit = clone.refs['origin/' + sync_branch_name].commit
+            remote_commit = clone.refs[_prefixed(sync_branch_name)].commit
 
             clone.git.rebase(abort=True)
             clone.git.reset(hard=True)
