@@ -153,15 +153,17 @@ def branch_edit(branch, path=None):
     branch = branch_var2name(branch)
 
     r = get_repo()
-    if branch not in r.branches:
-        r.create_head(branch, commit=r.refs['origin/' + branch].commit)
-    b = r.branches[branch]
+    b = bizarro.repo.start_branch(r, _default_branch, branch)
     b.checkout()
     c = r.commit()
     
     full_path = join(r.working_dir, path or '.').rstrip('/')
+    safe_branch = branch_name2path(branch)
     
     if isdir(full_path):
+        if path and not path.endswith('/'):
+            return redirect('/tree/%s/edit/%s' % (safe_branch, path + '/'), code=302)
+    
         full_paths = [join(full_path, name) for name in listdir(full_path)]
         good_paths = [fp for fp in full_paths if realpath(fp) != r.git_dir]
         
@@ -171,7 +173,6 @@ def branch_edit(branch, path=None):
     with open(full_path, 'r') as file:
         front, body = load_jekyll_doc(file)
         
-        safe_branch = branch_name2path(branch)
         kwargs = dict(branch=branch, safe_branch=safe_branch, path=path,
                       title=front['title'], body=body, hexsha=c.hexsha)
 
@@ -184,9 +185,8 @@ def branch_edit_add(branch, path=None):
     branch = branch_var2name(branch)
 
     r = get_repo()
-    b = r.branches[branch]
+    b = bizarro.repo.start_branch(r, _default_branch, branch)
     b.checkout()
-    c = r.commit()
     
     file_path, full_path = bizarro.repo.make_working_file(r, path, request.form['path'])
     
@@ -204,12 +204,15 @@ def branch_save(branch, path):
     branch = branch_var2name(branch)
 
     r = get_repo()
-    b = r.branches[branch]
+    b = bizarro.repo.start_branch(r, _default_branch, branch)
     c = b.commit
     
     if c.hexsha != request.form.get('hexsha'):
         raise Exception('Out of date SHA: %s' % request.form.get('hexsha'))
     
+    #
+    # Write changes.
+    #
     b.checkout()
 
     with open(join(r.working_dir, path), 'w') as file:
