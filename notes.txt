@@ -19,3 +19,15 @@ URLs:
     /tree/<branch>/edit/<path> POST - to add one file
     /tree/<branch>/save/<path> POST - to save one file
   * /tree/<branch>/view/<path> GET - (Jekit?) to preview
+
+To do:
+
+Add file (image) upload.
+Add file deletion.
+Support clobber and abandon branch behaviors.
+
+Ideas:
+
+Indicate branch staleness somehow.
+Generate forms from Jekyll layout front matter.
+
