@@ -437,14 +437,13 @@ class TestRepo (TestCase):
         #
         # Merge our conflicting branch and clobber the default branch.
         #
-        self.clone2.branches['master'].checkout()
-        self.clone2.git.pull('origin', 'master')
-        self.clone2.git.merge(name, s='recursive', X='theirs')
+        bizarro.repo.clobber_default_branch(self.clone2, 'master', name)
         
         with open(join(self.clone2.working_dir, 'index.md')) as file:
             front, body = jekyll.load_jekyll_doc(file)
         
         self.assertEqual(front['title'], name)
+        self.assertFalse(name in self.origin.branches)
     
     def test_conflict_resolution_abandon(self):
         ''' Test that a conflict in two branches can be abandoned.
@@ -486,14 +485,13 @@ class TestRepo (TestCase):
         #
         # Merge our conflicting branch and abandon it to the default branch.
         #
-        self.clone2.branches['master'].checkout()
-        self.clone2.git.pull('origin', 'master')
-        self.clone2.git.merge(name, s='recursive', X='ours')
+        bizarro.repo.abandon_branch(self.clone2, 'master', name)
         
         with open(join(self.clone2.working_dir, 'index.md')) as file:
             front, body = jekyll.load_jekyll_doc(file)
         
         self.assertNotEqual(front['title'], name)
+        self.assertFalse(name in self.origin.branches)
     
     def tearDown(self):
         rmtree(self.origin.git_dir)

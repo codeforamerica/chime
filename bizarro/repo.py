@@ -84,33 +84,57 @@ def complete_branch(clone, default_branch_name, working_branch_name):
     clone.remotes.origin.push(':' + working_branch_name)
     clone.delete_head([working_branch_name])
     
-    return
-
+    # #
+    # # First, merge the default branch to the working branch.
+    # #
+    # try:
+    #     # sync: pull --rebase followed by push.
+    #     clone.git.pull('origin', default_branch_name, rebase=True)
     #
-    # First, merge the default branch to the working branch.
+    # except:
+    #     # raise the two commits in conflict.
+    #     clone.git.fetch('origin')
+    #     remote_commit = clone.refs[_origin(default_branch_name)].commit
     #
-    try:
-        # sync: pull --rebase followed by push.
-        clone.git.pull('origin', default_branch_name, rebase=True)
-
-    except:
-        # raise the two commits in conflict.
-        clone.git.fetch('origin')
-        remote_commit = clone.refs[_origin(default_branch_name)].commit
-
-        clone.git.rebase(abort=True)
-        clone.git.reset(hard=True)
-        raise MergeConflict(remote_commit, clone.commit())
-
-    else:
-        clone.git.push('origin', working_branch_name)
-
+    #     clone.git.rebase(abort=True)
+    #     clone.git.reset(hard=True)
+    #     raise MergeConflict(remote_commit, clone.commit())
     #
-    # Merge the working branch back to the default branch.
+    # else:
+    #     clone.git.push('origin', working_branch_name)
     #
-    clone.git.checkout(default_branch_name)
-    clone.git.merge(working_branch_name)
-    clone.git.push('origin', default_branch_name)
+    # #
+    # # Merge the working branch back to the default branch.
+    # #
+    # clone.git.checkout(default_branch_name)
+    # clone.git.merge(working_branch_name)
+    # clone.git.push('origin', default_branch_name)
+    # 
+    # #
+    # # Delete the working branch.
+    # #
+    # clone.remotes.origin.push(':' + working_branch_name)
+    # clone.delete_head([working_branch_name])
+
+def abandon_branch(clone, default_branch_name, working_branch_name):
+    ''' Complete work on a branch by abandoning and deleting it.
+    '''
+    clone.branches[default_branch_name].checkout()
+    clone.git.pull('origin', default_branch_name)
+    clone.git.merge(working_branch_name, s='recursive', X='ours')
+    
+    #
+    # Delete the working branch.
+    #
+    clone.remotes.origin.push(':' + working_branch_name)
+    clone.delete_head([working_branch_name])
+
+def clobber_default_branch(clone, default_branch_name, working_branch_name):
+    ''' Complete work on a branch by clobbering master and deleting it.
+    '''
+    clone.branches[default_branch_name].checkout()
+    clone.git.pull('origin', default_branch_name)
+    clone.git.merge(working_branch_name, s='recursive', X='theirs')
     
     #
     # Delete the working branch.
