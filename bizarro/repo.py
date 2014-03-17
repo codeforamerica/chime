@@ -119,7 +119,7 @@ def abandon_branch(clone, default_branch_name, working_branch_name):
     '''
     clone.branches[default_branch_name].checkout()
     clone.git.pull('origin', default_branch_name)
-    clone.git.merge(working_branch_name, s='recursive', X='ours')
+    clone.git.merge(working_branch_name, s='recursive', X='ours') # "ours" = default
     
     #
     # Delete the working branch.
@@ -132,7 +132,7 @@ def clobber_default_branch(clone, default_branch_name, working_branch_name):
     '''
     clone.branches[default_branch_name].checkout()
     clone.git.pull('origin', default_branch_name)
-    clone.git.merge(working_branch_name, s='recursive', X='theirs')
+    clone.git.merge(working_branch_name, s='recursive', X='theirs') # "theirs" = working
     
     #
     # Delete the working branch.

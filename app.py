@@ -27,7 +27,7 @@ def get_repo():
         return user_repo
     
     source_repo = Repo(_repo_path)
-    user_repo = source_repo.clone(user_dir)
+    user_repo = source_repo.clone(user_dir, bare=False)
     
     return user_repo
 
@@ -146,7 +146,7 @@ def merge_branch():
         
         new_files = [d.b_blob.name for d in diffs if d.new_file]
         gone_files = [d.a_blob.name for d in diffs if d.deleted_file]
-        changed_files = [d.a_blob.name for d in diffs if not d.deleted_file and not d.new_file]
+        changed_files = [d.a_blob.name for d in diffs if not (d.deleted_file or d.new_file)]
         
         kwargs = dict(branch=branch_name, new_files=new_files,
                       gone_files=gone_files, changed_files=changed_files)
