@@ -129,26 +129,31 @@ def merge_branch():
     branch_name = request.form.get('branch')
     branch = r.branches[branch_name]
     
-    bizarro.repo.complete_branch(r, _default_branch, branch_name)
-    
-    return redirect('/')
-    
-    r.branches[_default_branch].checkout()
-    
     try:
-        r.git.merge(branch.name)
-    
-    except:
-        r.git.reset(hard=True)
-        branch.checkout()
+        action = request.form.get('action', '').lower()
+        args = r, _default_branch, branch_name
         
-        return 'FFFuuu'
+        if action == 'merge':
+            bizarro.repo.complete_branch(*args)
+        elif action == 'abandon':
+            bizarro.repo.abandon_branch(*args)
+        elif action == 'clobber':
+            bizarro.repo.clobber_default_branch(*args)
+    
+    except bizarro.repo.MergeConflict as conflict:
+    
+        diffs = conflict.remote_commit.diff(conflict.local_commit)
+        
+        new_files = [d.b_blob.name for d in diffs if d.new_file]
+        gone_files = [d.a_blob.name for d in diffs if d.deleted_file]
+        changed_files = [d.a_blob.name for d in diffs if not d.deleted_file and not d.new_file]
+        
+        kwargs = dict(branch=branch_name, new_files=new_files,
+                      gone_files=gone_files, changed_files=changed_files)
+        
+        return render_template('merge-conflict.html', **kwargs)
     
     else:
-        r.remotes.origin.push(_default_branch)
-        r.remotes.origin.push(':' + branch.name)
-        r.delete_head([branch])
-    
         return redirect('/')
 
 @app.route('/tree/<branch>/edit/', methods=['GET'])

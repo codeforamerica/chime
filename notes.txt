@@ -24,7 +24,6 @@ To do:
 
 Add file (image) upload.
 Add file deletion.
-Support clobber and abandon branch behaviors.
 
 Ideas:
 

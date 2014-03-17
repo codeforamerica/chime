@@ -1,0 +1,25 @@
+<doctype: html>
+<html>
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+</head>
+<body>
+
+    <p><b>Merge conflict.</b></p>
+    
+    <ul>
+      {% for file in new_files %}
+        <li>{{ file }} <i>new</i></li>
+      {% endfor %}
+      {% for file in changed_files %}
+        <li>{{ file }} <i>different</i></li>
+      {% endfor %}
+    </ul>
+    <form action="/merge" method="POST">
+    <input name="branch" value="{{branch}}" type="hidden">
+    <input name="action" type="submit" value="Clobber">
+    <input name="action" type="submit" value="Abandon">
+    </form>
+
+</body>
+</html>

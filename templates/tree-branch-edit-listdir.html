@@ -8,7 +8,8 @@
     </ul>
     <form action="/merge" method="POST">
     <input name="branch" value="{{branch}}" type="hidden">
-    <input type="submit" value="Merge">
+    <input name="action" type="submit" value="Merge">
+    <input name="action" type="submit" value="Abandon">
     </form>
     <form action="." method="POST">
     <input name="path" placeholder="thing/stuff" type="text">
