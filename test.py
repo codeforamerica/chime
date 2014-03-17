@@ -6,9 +6,9 @@ from unittest import TestCase, main
 from shutil import rmtree
 from os.path import join
 from uuid import uuid4
+from os import environ
 
 from git import Repo
-from flask import Flask, session
 
 import bizarro, jekyll
 
@@ -52,9 +52,13 @@ class TestRepo (TestCase):
         self.clone1 = self.origin.clone(mkdtemp(prefix='bizarro-'))
         self.clone2 = self.origin.clone(mkdtemp(prefix='bizarro-'))
         
-        self.app = Flask(__name__)
-        self.app.secret_key = str(uuid4())
+        self.session = dict(email=str(uuid4()))
     
+        environ['GIT_AUTHOR_NAME'] = ' '
+        environ['GIT_COMMITTER_NAME'] = ' '
+        environ['GIT_AUTHOR_EMAIL'] = self.session['email']
+        environ['GIT_COMMITTER_EMAIL'] = self.session['email']
+
     def test_repo_features(self):
         self.assertTrue(self.origin.bare)
         
@@ -64,7 +68,7 @@ class TestRepo (TestCase):
     def test_start_branch(self):
         ''' Make a simple edit in a clone, verify that it appears in the other.
         '''
-        name, email = str(uuid4()), str(uuid4())
+        name = str(uuid4())
         branch1 = bizarro.repo.start_branch(self.clone1, 'master', name)
         
         self.assertTrue(name in self.clone1.branches)
@@ -79,10 +83,8 @@ class TestRepo (TestCase):
         with open(join(self.clone1.working_dir, 'index.md'), 'a') as file:
             file.write('\n\n...')
         
-        with self.app.test_request_context():
-            session['email'] = email
-            args = self.clone1, 'index.md', message, branch1.commit.hexsha, 'master'
-            bizarro.repo.save_working_file(*args)
+        args = self.clone1, 'index.md', message, branch1.commit.hexsha, 'master'
+        bizarro.repo.save_working_file(*args)
         
         #
         # See if the branch made it to clone 2
@@ -96,7 +98,7 @@ class TestRepo (TestCase):
     def test_new_file(self):
         ''' Make a new file in a clone, verify that it appears in the other.
         '''
-        name, email = str(uuid4()), str(uuid4())
+        name = str(uuid4())
         branch1 = bizarro.repo.start_branch(self.clone1, 'master', name)
         
         self.assertTrue(name in self.clone1.branches)
@@ -113,11 +115,8 @@ class TestRepo (TestCase):
         with open(real_path, 'w') as file:
             jekyll.dump_jekyll_doc(dict(title='Hello'), 'Hello hello.', file)
         
-        with self.app.test_request_context():
-            session['email'] = email
-
-            args = self.clone1, 'hello.md', message, branch1.commit.hexsha, 'master'
-            bizarro.repo.save_working_file(*args)
+        args = self.clone1, 'hello.md', message, branch1.commit.hexsha, 'master'
+        bizarro.repo.save_working_file(*args)
         
         #
         # See if the branch made it to clone 2
@@ -127,8 +126,8 @@ class TestRepo (TestCase):
         self.assertTrue(name in self.clone2.branches)
         self.assertEquals(branch2.commit.hexsha, branch1.commit.hexsha)
         self.assertEquals(branch2.commit.message, message)
-        self.assertEquals(branch2.commit.author.email, email)
-        self.assertEquals(branch2.commit.committer.email, email)
+        self.assertEquals(branch2.commit.author.email, self.session['email'])
+        self.assertEquals(branch2.commit.committer.email, self.session['email'])
         
         branch2.checkout()
         
@@ -141,7 +140,6 @@ class TestRepo (TestCase):
     def test_content_merge(self):
         ''' Test that non-conflicting changes on the same file merge cleanly.
         '''
-        email = str(uuid4())
         branch1 = bizarro.repo.start_branch(self.clone1, 'master', 'title')
         branch2 = bizarro.repo.start_branch(self.clone2, 'master', 'body')
         
@@ -179,7 +177,7 @@ class TestRepo (TestCase):
     def test_multifile_merge(self):
         ''' Test that two non-conflicting new files merge cleanly.
         '''
-        name, email = str(uuid4()), str(uuid4())
+        name = str(uuid4())
         branch1 = bizarro.repo.start_branch(self.clone1, 'master', name)
         branch2 = bizarro.repo.start_branch(self.clone2, 'master', name)
         
@@ -201,29 +199,23 @@ class TestRepo (TestCase):
         #
         # Show that the changes from the first branch made it to origin.
         #
-        with self.app.test_request_context():
-            session['email'] = email
-
-            args1 = self.clone1, 'file1.md', '...', branch1.commit.hexsha, 'master'
-            commit1 = bizarro.repo.save_working_file(*args1)
+        args1 = self.clone1, 'file1.md', '...', branch1.commit.hexsha, 'master'
+        commit1 = bizarro.repo.save_working_file(*args1)
 
         self.assertEquals(self.origin.branches[name].commit, commit1)
-        self.assertEquals(self.origin.branches[name].commit.author.email, email)
-        self.assertEquals(self.origin.branches[name].commit.committer.email, email)
+        self.assertEquals(self.origin.branches[name].commit.author.email, self.session['email'])
+        self.assertEquals(self.origin.branches[name].commit.committer.email, self.session['email'])
         self.assertEquals(commit1, branch1.commit)
         
         #
         # Show that the changes from the second branch also made it to origin.
         #
-        with self.app.test_request_context():
-            session['email'] = email
-
-            args2 = self.clone2, 'file2.md', '...', branch2.commit.hexsha, 'master'
-            commit2 = bizarro.repo.save_working_file(*args2)
+        args2 = self.clone2, 'file2.md', '...', branch2.commit.hexsha, 'master'
+        commit2 = bizarro.repo.save_working_file(*args2)
 
         self.assertEquals(self.origin.branches[name].commit, commit2)
-        self.assertEquals(self.origin.branches[name].commit.author.email, email)
-        self.assertEquals(self.origin.branches[name].commit.committer.email, email)
+        self.assertEquals(self.origin.branches[name].commit.author.email, self.session['email'])
+        self.assertEquals(self.origin.branches[name].commit.committer.email, self.session['email'])
         self.assertEquals(commit2, branch2.commit)
         
         #
@@ -232,13 +224,13 @@ class TestRepo (TestCase):
         branch1b = bizarro.repo.start_branch(self.clone1, 'master', name)
 
         self.assertEquals(branch1b.commit, branch2.commit)
-        self.assertEquals(branch1b.commit.author.email, email)
-        self.assertEquals(branch1b.commit.committer.email, email)
+        self.assertEquals(branch1b.commit.author.email, self.session['email'])
+        self.assertEquals(branch1b.commit.committer.email, self.session['email'])
     
     def test_same_branch_conflict(self):
         ''' Test that a conflict in two branches appears at the right spot.
         '''
-        name, email = str(uuid4()), str(uuid4())
+        name = str(uuid4())
         branch1 = bizarro.repo.start_branch(self.clone1, 'master', name)
         branch2 = bizarro.repo.start_branch(self.clone2, 'master', name)
         
@@ -260,11 +252,8 @@ class TestRepo (TestCase):
         #
         # Show that the changes from the first branch made it to origin.
         #
-        with self.app.test_request_context():
-            session['email'] = email
-
-            args1 = self.clone1, 'conflict.md', '...', branch1.commit.hexsha, 'master'
-            commit1 = bizarro.repo.save_working_file(*args1)
+        args1 = self.clone1, 'conflict.md', '...', branch1.commit.hexsha, 'master'
+        commit1 = bizarro.repo.save_working_file(*args1)
 
         self.assertEquals(self.origin.branches[name].commit, commit1)
         self.assertEquals(commit1, branch1.commit)
@@ -273,11 +262,8 @@ class TestRepo (TestCase):
         # Show that the changes from the second branch conflict with the first.
         #
         with self.assertRaises(bizarro.repo.MergeConflict) as conflict:
-            with self.app.test_request_context():
-                session['email'] = email
-
-                args2 = self.clone2, 'conflict.md', '...', branch2.commit.hexsha, 'master'
-                commit2 = bizarro.repo.save_working_file(*args2)
+            args2 = self.clone2, 'conflict.md', '...', branch2.commit.hexsha, 'master'
+            commit2 = bizarro.repo.save_working_file(*args2)
         
         self.assertEqual(conflict.exception.remote_commit, commit1)
         
@@ -290,7 +276,7 @@ class TestRepo (TestCase):
     def test_upstream_pull_conflict(self):
         ''' Test that a conflict in two branches appears at the right spot.
         '''
-        name1, name2, email = str(uuid4()), str(uuid4()), str(uuid4())
+        name1, name2 = str(uuid4()), str(uuid4())
         branch1 = bizarro.repo.start_branch(self.clone1, 'master', name1)
         branch2 = bizarro.repo.start_branch(self.clone2, 'master', name2)
         
@@ -312,11 +298,8 @@ class TestRepo (TestCase):
         #
         # Show that the changes from the first branch made it to origin.
         #
-        with self.app.test_request_context():
-            session['email'] = email
-
-            args1 = self.clone1, 'conflict.md', '...', branch1.commit.hexsha, 'master'
-            commit1 = bizarro.repo.save_working_file(*args1)
+        args1 = self.clone1, 'conflict.md', '...', branch1.commit.hexsha, 'master'
+        commit1 = bizarro.repo.save_working_file(*args1)
 
         self.assertEquals(self.origin.branches[name1].commit, commit1)
         self.assertEquals(commit1, branch1.commit)
@@ -331,11 +314,8 @@ class TestRepo (TestCase):
         # Show that the changes from the second branch conflict with the first.
         #
         with self.assertRaises(bizarro.repo.MergeConflict) as conflict:
-            with self.app.test_request_context():
-                session['email'] = email
-
-                args2 = self.clone2, 'conflict.md', '...', branch2.commit.hexsha, 'master'
-                bizarro.repo.save_working_file(*args2)
+            args2 = self.clone2, 'conflict.md', '...', branch2.commit.hexsha, 'master'
+            bizarro.repo.save_working_file(*args2)
         
         self.assertEqual(conflict.exception.remote_commit, commit1)
         
@@ -348,7 +328,7 @@ class TestRepo (TestCase):
     def test_upstream_push_conflict(self):
         ''' Test that a conflict in two branches appears at the right spot.
         '''
-        name1, name2, email = str(uuid4()), str(uuid4()), str(uuid4())
+        name1, name2 = str(uuid4()), str(uuid4())
         branch1 = bizarro.repo.start_branch(self.clone1, 'master', name1)
         branch2 = bizarro.repo.start_branch(self.clone2, 'master', name2)
         
@@ -370,14 +350,11 @@ class TestRepo (TestCase):
         #
         # Push changes from the two branches to origin.
         #
-        with self.app.test_request_context():
-            session['email'] = email
-        
-            args1 = self.clone1, 'conflict.md', '...', branch1.commit.hexsha, 'master'
-            commit1 = bizarro.repo.save_working_file(*args1)
+        args1 = self.clone1, 'conflict.md', '...', branch1.commit.hexsha, 'master'
+        commit1 = bizarro.repo.save_working_file(*args1)
 
-            args2 = self.clone2, 'conflict.md', '...', branch2.commit.hexsha, 'master'
-            commit2 = bizarro.repo.save_working_file(*args2)
+        args2 = self.clone2, 'conflict.md', '...', branch2.commit.hexsha, 'master'
+        commit2 = bizarro.repo.save_working_file(*args2)
         
         #
         # Merge the two branches to master; show that second merge will fail.
@@ -400,7 +377,7 @@ class TestRepo (TestCase):
     def test_conflict_resolution_clobber(self):
         ''' Test that a conflict in two branches can be clobbered.
         '''
-        name, email = str(uuid4()), str(uuid4())
+        name = str(uuid4())
         branch1 = bizarro.repo.start_branch(self.clone1, 'master', 'title')
         branch2 = bizarro.repo.start_branch(self.clone2, 'master', name)
         
@@ -412,11 +389,8 @@ class TestRepo (TestCase):
         with open(join(self.clone2.working_dir, 'index.md'), 'w') as file:
             jekyll.dump_jekyll_doc(dict(title=name), 'Hello hello.', file)
         
-        with self.app.test_request_context():
-            session['email'] = email
-
-            args = self.clone2, 'index.md', '...', branch2.commit.hexsha, 'master'
-            commit = bizarro.repo.save_working_file(*args)
+        args = self.clone2, 'index.md', '...', branch2.commit.hexsha, 'master'
+        commit = bizarro.repo.save_working_file(*args)
 
         #
         # Merge the original title branch, fail to merge our conflicting branch.
@@ -448,7 +422,7 @@ class TestRepo (TestCase):
     def test_conflict_resolution_abandon(self):
         ''' Test that a conflict in two branches can be abandoned.
         '''
-        name, email = str(uuid4()), str(uuid4())
+        name = str(uuid4())
         branch1 = bizarro.repo.start_branch(self.clone1, 'master', 'title')
         branch2 = bizarro.repo.start_branch(self.clone2, 'master', name)
         
@@ -460,11 +434,8 @@ class TestRepo (TestCase):
         with open(join(self.clone2.working_dir, 'index.md'), 'w') as file:
             jekyll.dump_jekyll_doc(dict(title=name), 'Hello hello.', file)
         
-        with self.app.test_request_context():
-            session['email'] = email
-
-            args = self.clone2, 'index.md', '...', branch2.commit.hexsha, 'master'
-            commit = bizarro.repo.save_working_file(*args)
+        args = self.clone2, 'index.md', '...', branch2.commit.hexsha, 'master'
+        commit = bizarro.repo.save_working_file(*args)
 
         #
         # Merge the original title branch, fail to merge our conflicting branch.

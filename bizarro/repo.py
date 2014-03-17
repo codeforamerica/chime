@@ -2,8 +2,6 @@ import os, logging
 from os import environ
 from os.path import join, split
 
-from flask import session
-
 class MergeConflict (Exception):
     def __init__(self, remote_commit, local_commit):
         self.remote_commit = remote_commit
@@ -179,7 +177,7 @@ def make_working_file(clone, dir, path):
 def save_working_file(clone, path, message, base_sha, default_branch_name):
     ''' Save a file in the working dir, push it to origin, return the commit.
     
-        Uses flask.session email for author emails, names are left blank.
+        Rely on Git environment variables for author emails and names.
         
         After committing the new file, attempts to rebase the working branch
         on the default branch and the origin working branch in turn, to
@@ -188,9 +186,6 @@ def save_working_file(clone, path, message, base_sha, default_branch_name):
     if clone.active_branch.commit.hexsha != base_sha:
         raise Exception('Out of date SHA: %s' % base_sha)
     
-    environ['GIT_AUTHOR_NAME'], environ['GIT_AUTHOR_EMAIL'] = ' ', session['email']
-    environ['GIT_COMMITTER_NAME'], environ['GIT_COMMITTER_EMAIL'] = ' ', session['email']
-
     clone.index.add([path])
     clone.index.commit(message)
     active_branch_name = clone.active_branch.name

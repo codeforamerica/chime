@@ -1,7 +1,7 @@
 from os.path import join, isdir, exists, realpath, basename, split
+from os import listdir, mkdir, environ
 from urllib import quote, unquote
 from functools import wraps
-from os import listdir, mkdir
 
 from git import Repo
 from requests import post
@@ -69,6 +69,11 @@ def login_required(function):
         if not email:
             return redirect('/')
         
+        environ['GIT_AUTHOR_NAME'] = ' '
+        environ['GIT_AUTHOR_EMAIL'] = email
+        environ['GIT_COMMITTER_NAME'] = ' '
+        environ['GIT_COMMITTER_EMAIL'] = email
+
         return function(*args, **kwargs)
     
     return decorated_function
