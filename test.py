@@ -307,7 +307,7 @@ class TestRepo (TestCase):
         #
         # Merge the first branch to master.
         #
-        bizarro.repo.complete_branch(self.clone1, 'master', name1)
+        commit2 = bizarro.repo.complete_branch(self.clone1, 'master', name1)
         self.assertFalse(name1 in self.origin.branches)
         
         #
@@ -317,7 +317,7 @@ class TestRepo (TestCase):
             args2 = self.clone2, 'conflict.md', '...', branch2.commit.hexsha, 'master'
             bizarro.repo.save_working_file(*args2)
         
-        self.assertEqual(conflict.exception.remote_commit, commit1)
+        self.assertEqual(conflict.exception.remote_commit, commit2)
         
         diffs = conflict.exception.remote_commit.diff(conflict.exception.local_commit)
         

@@ -40,7 +40,7 @@ def start_branch(clone, default_branch_name, new_branch_name):
     return branch
 
 def complete_branch(clone, default_branch_name, working_branch_name):
-    ''' Complete work on a branch by merging it to master and deleting it.
+    ''' Complete a branch merging, deleting it, and returning the merge commit.
     
         Checks out the default branch, merges the working branch in.
         Deletes the working branch in the clone and the origin, and leaves
@@ -63,7 +63,7 @@ def complete_branch(clone, default_branch_name, working_branch_name):
     # Merge the working branch back to the default branch.
     #
     try:
-        clone.git.merge(working_branch_name)
+        clone.git.merge(working_branch_name, '--no-ff')
 
     except:
         # raise the two commits in conflict.
@@ -81,6 +81,8 @@ def complete_branch(clone, default_branch_name, working_branch_name):
     #
     clone.remotes.origin.push(':' + working_branch_name)
     clone.delete_head([working_branch_name])
+    
+    return clone.commit()
     
     # #
     # # First, merge the default branch to the working branch.
