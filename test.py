@@ -382,6 +382,17 @@ class TestRepo (TestCase):
         branch2 = bizarro.repo.start_branch(self.clone2, 'master', name)
         
         #
+        # Add goner.md in branch1.
+        #
+        branch1.checkout()
+        
+        with open(join(self.clone1.working_dir, 'goner.md'), 'w') as file:
+            jekyll.dump_jekyll_doc(dict(title=name), 'Woooo woooo.', file)
+        
+        args = self.clone1, 'goner.md', '...', branch1.commit.hexsha, 'master'
+        commit = bizarro.repo.save_working_file(*args)
+
+        #
         # Change index.md in branch2 so it conflicts with title branch.
         #
         branch2.checkout()
@@ -404,9 +415,9 @@ class TestRepo (TestCase):
         
         diffs = conflict.exception.remote_commit.diff(conflict.exception.local_commit)
         
-        self.assertEqual(len(diffs), 1)
-        self.assertEqual(diffs[0].a_blob.name, 'index.md')
-        self.assertEqual(diffs[0].b_blob.name, 'index.md')
+        self.assertEqual(len(diffs), 2)
+        self.assertTrue(diffs[0].a_blob.name in ('index.md', 'goner.md'))
+        self.assertTrue(diffs[1].a_blob.name in ('index.md', 'goner.md'))
         
         #
         # Merge our conflicting branch and clobber the default branch.
@@ -418,6 +429,11 @@ class TestRepo (TestCase):
         
         self.assertEqual(front['title'], name)
         self.assertFalse(name in self.origin.branches)
+        
+        # If goner.md is still around, then master wasn't fully clobbered.
+        self.clone1.branches['master'].checkout()
+        self.clone1.git.pull('origin', 'master')
+        self.assertFalse(exists(join(self.clone2.working_dir, 'goner.md')))
     
     def test_conflict_resolution_abandon(self):
         ''' Test that a conflict in two branches can be abandoned.

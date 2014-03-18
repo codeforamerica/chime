@@ -132,9 +132,17 @@ def abandon_branch(clone, default_branch_name, working_branch_name):
 def clobber_default_branch(clone, default_branch_name, working_branch_name):
     ''' Complete work on a branch by clobbering master and deleting it.
     '''
+    #
+    # First merge default to working branch, because
+    # git does not provide a "theirs" strategy.
+    #
+    clone.branches[working_branch_name].checkout()
+    clone.git.fetch('origin', default_branch_name)
+    clone.git.merge('FETCH_HEAD', '--no-ff', s='ours') # "ours" = working
+    
     clone.branches[default_branch_name].checkout()
     clone.git.pull('origin', default_branch_name)
-    clone.git.merge(working_branch_name, s='recursive', X='theirs') # "theirs" = working
+    clone.git.merge(working_branch_name, '--ff-only')
     
     #
     # Delete the working branch.
