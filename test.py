@@ -3,8 +3,8 @@ from tempfile import mkdtemp
 from StringIO import StringIO
 from subprocess import Popen, PIPE
 from unittest import TestCase, main
+from os.path import join, exists
 from shutil import rmtree
-from os.path import join
 from uuid import uuid4
 from os import environ
 
@@ -428,13 +428,20 @@ class TestRepo (TestCase):
         
         #
         # Change index.md in branch2 so it conflicts with title branch.
+        # Also add goner.md, which we'll later want to disappear.
         #
         branch2.checkout()
         
         with open(join(self.clone2.working_dir, 'index.md'), 'w') as file:
             jekyll.dump_jekyll_doc(dict(title=name), 'Hello hello.', file)
         
+        with open(join(self.clone2.working_dir, 'goner.md'), 'w') as file:
+            jekyll.dump_jekyll_doc(dict(title=name), 'Woooo woooo.', file)
+        
         args = self.clone2, 'index.md', '...', branch2.commit.hexsha, 'master'
+        commit = bizarro.repo.save_working_file(*args)
+
+        args = self.clone2, 'goner.md', '...', branch2.commit.hexsha, 'master'
         commit = bizarro.repo.save_working_file(*args)
 
         #
@@ -449,9 +456,9 @@ class TestRepo (TestCase):
         
         diffs = conflict.exception.remote_commit.diff(conflict.exception.local_commit)
         
-        self.assertEqual(len(diffs), 1)
-        self.assertEqual(diffs[0].a_blob.name, 'index.md')
-        self.assertEqual(diffs[0].b_blob.name, 'index.md')
+        self.assertEqual(len(diffs), 2)
+        self.assertTrue(diffs[0].b_blob.name in ('index.md', 'goner.md'))
+        self.assertTrue(diffs[1].b_blob.name in ('index.md', 'goner.md'))
         
         #
         # Merge our conflicting branch and abandon it to the default branch.
@@ -463,6 +470,9 @@ class TestRepo (TestCase):
         
         self.assertNotEqual(front['title'], name)
         self.assertFalse(name in self.origin.branches)
+        
+        # If goner.md is still around, then the branch wasn't fully abandoned.
+        self.assertFalse(exists(join(self.clone2.working_dir, 'goner.md')))
     
     def tearDown(self):
         rmtree(self.origin.git_dir)

@@ -121,7 +121,7 @@ def abandon_branch(clone, default_branch_name, working_branch_name):
     '''
     clone.branches[default_branch_name].checkout()
     clone.git.pull('origin', default_branch_name)
-    clone.git.merge(working_branch_name, s='recursive', X='ours') # "ours" = default
+    clone.git.merge(working_branch_name, '--no-ff', s='ours') # "ours" = default
     
     #
     # Delete the working branch.
