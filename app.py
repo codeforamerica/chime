@@ -210,7 +210,7 @@ def branch_edit_file(branch, path=None):
             with open(full_path, 'w') as file:
                 request.files['file'].save(file)
         
-        message = 'Created'
+        message = 'Created new file "%s"' % file_path
         path_303 = path or ''
     
     elif action == 'add' and 'path' in request.form:
@@ -221,7 +221,7 @@ def branch_edit_file(branch, path=None):
             with open(full_path, 'w') as file:
                 dump_jekyll_doc(dict(title=''), '', file)
         
-        message = 'Created'
+        message = 'Uploaded new file "%s"' % file_path
         path_303 = file_path
     
     elif action == 'delete' and 'path' in request.form:
@@ -234,7 +234,7 @@ def branch_edit_file(branch, path=None):
         else:
             remove(full_path)
         
-        message = 'Deleted'
+        message = 'Deleted file "%s"' % file_path
         path_303 = path or ''
     
     else:
@@ -274,7 +274,8 @@ def branch_save(branch, path):
     # Try to merge from the master to the current branch.
     #
     try:
-        bizarro.repo.save_working_file(r, path, 'Saved', c.hexsha, _default_branch)
+        message = 'Saved file "%s"' % path
+        bizarro.repo.save_working_file(r, path, message, c.hexsha, _default_branch)
     
     except bizarro.repo.MergeConflict as conflict:
         r.git.reset(c.hexsha, hard=True)

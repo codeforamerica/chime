@@ -56,6 +56,8 @@ def complete_branch(clone, default_branch_name, working_branch_name):
         Deletes the working branch in the clone and the origin, and leaves
         the working directory checked out to the merged default branch.
     '''
+    message = 'Merged work from "%s"' % working_branch_name
+    
     clone.git.checkout(default_branch_name)
     clone.git.pull('origin', default_branch_name)
 
@@ -63,7 +65,7 @@ def complete_branch(clone, default_branch_name, working_branch_name):
     # Merge the working branch back to the default branch.
     #
     try:
-        clone.git.merge(working_branch_name, '--no-ff')
+        clone.git.merge(working_branch_name, '--no-ff', m=message)
 
     except:
         # raise the two commits in conflict.
@@ -119,9 +121,11 @@ def complete_branch(clone, default_branch_name, working_branch_name):
 def abandon_branch(clone, default_branch_name, working_branch_name):
     ''' Complete work on a branch by abandoning and deleting it.
     '''
+    msg = 'Abandoned work from "%s"' % working_branch_name
+    
     clone.branches[default_branch_name].checkout()
     clone.git.pull('origin', default_branch_name)
-    clone.git.merge(working_branch_name, '--no-ff', s='ours') # "ours" = default
+    clone.git.merge(working_branch_name, '--no-ff', s='ours', m=msg) # "ours" = default
     
     #
     # Delete the working branch.
@@ -132,13 +136,15 @@ def abandon_branch(clone, default_branch_name, working_branch_name):
 def clobber_default_branch(clone, default_branch_name, working_branch_name):
     ''' Complete work on a branch by clobbering master and deleting it.
     '''
+    msg = 'Clobbered with work from "%s"' % working_branch_name
+    
     #
     # First merge default to working branch, because
     # git does not provide a "theirs" strategy.
     #
     clone.branches[working_branch_name].checkout()
     clone.git.fetch('origin', default_branch_name)
-    clone.git.merge('FETCH_HEAD', '--no-ff', s='ours') # "ours" = working
+    clone.git.merge('FETCH_HEAD', '--no-ff', s='ours', m=msg) # "ours" = working
     
     clone.branches[default_branch_name].checkout()
     clone.git.pull('origin', default_branch_name)

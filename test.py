@@ -184,6 +184,7 @@ class TestRepo (TestCase):
         
         self.assertEqual(front2b['title'], front1['title'])
         self.assertEqual(body2b, body2)
+        self.assertTrue(self.clone2.commit().message.startswith('Merged work from'))
     
     def test_multifile_merge(self):
         ''' Test that two non-conflicting new files merge cleanly.
@@ -445,6 +446,7 @@ class TestRepo (TestCase):
         self.clone1.branches['master'].checkout()
         self.clone1.git.pull('origin', 'master')
         self.assertFalse(exists(join(self.clone2.working_dir, 'goner.md')))
+        self.assertTrue(self.clone2.commit().message.startswith('Clobbered with work from'))
     
     def test_conflict_resolution_abandon(self):
         ''' Test that a conflict in two branches can be abandoned.
@@ -500,6 +502,7 @@ class TestRepo (TestCase):
         
         # If goner.md is still around, then the branch wasn't fully abandoned.
         self.assertFalse(exists(join(self.clone2.working_dir, 'goner.md')))
+        self.assertTrue(self.clone2.commit().message.startswith('Abandoned work from'))
     
     def tearDown(self):
         rmtree(self.origin.git_dir)
