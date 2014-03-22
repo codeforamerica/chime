@@ -4,9 +4,9 @@ from StringIO import StringIO
 from subprocess import Popen, PIPE
 from unittest import TestCase, main
 from os.path import join, exists
+from os import environ, unlink
 from shutil import rmtree
 from uuid import uuid4
-from os import environ
 
 from git import Repo
 
@@ -96,7 +96,7 @@ class TestRepo (TestCase):
         self.assertEquals(branch2.commit.message, message)
     
     def test_new_file(self):
-        ''' Make a new file in a clone, verify that it appears in the other.
+        ''' Make a new file and delete an old file in a clone, verify that it appears in the other.
         '''
         name = str(uuid4())
         branch1 = bizarro.repo.start_branch(self.clone1, 'master', name)
@@ -108,14 +108,23 @@ class TestRepo (TestCase):
         # Make a new file in the branch and push it.
         #
         branch1.checkout()
-        message = str(uuid4())
         
         repo_path, real_path = bizarro.repo.make_working_file(self.clone1, '', 'hello.md')
         
         with open(real_path, 'w') as file:
             jekyll.dump_jekyll_doc(dict(title='Hello'), 'Hello hello.', file)
         
-        args = self.clone1, 'hello.md', message, branch1.commit.hexsha, 'master'
+        args = self.clone1, 'hello.md', str(uuid4()), branch1.commit.hexsha, 'master'
+        bizarro.repo.save_working_file(*args)
+        
+        #
+        # Delete an existing file in the branch and push it.
+        #
+        message = str(uuid4())
+        
+        unlink(join(self.clone1.working_dir, 'index.md'))
+        
+        args = self.clone1, 'index.md', message, branch1.commit.hexsha, 'master'
         bizarro.repo.save_working_file(*args)
         
         #
@@ -136,6 +145,8 @@ class TestRepo (TestCase):
             
             self.assertEquals(front['title'], 'Hello')
             self.assertEquals(body, 'Hello hello.')
+        
+        self.assertFalse(exists(join(self.clone2.working_dir, 'index.md')))
     
     def test_content_merge(self):
         ''' Test that non-conflicting changes on the same file merge cleanly.

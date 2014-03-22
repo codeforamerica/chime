@@ -1,6 +1,6 @@
 import os, logging
 from os import environ
-from os.path import join, split
+from os.path import join, split, exists
 
 class MergeConflict (Exception):
     def __init__(self, remote_commit, local_commit):
@@ -196,7 +196,11 @@ def save_working_file(clone, path, message, base_sha, default_branch_name):
     if clone.active_branch.commit.hexsha != base_sha:
         raise Exception('Out of date SHA: %s' % base_sha)
     
-    clone.index.add([path])
+    if exists(join(clone.working_dir, path)):
+        clone.index.add([path])
+    else:
+        clone.index.remove([path])
+
     clone.index.commit(message)
     active_branch_name = clone.active_branch.name
     
