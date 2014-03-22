@@ -109,10 +109,8 @@ class TestRepo (TestCase):
         #
         branch1.checkout()
         
-        repo_path, real_path = bizarro.repo.make_working_file(self.clone1, '', 'hello.md')
-        
-        with open(real_path, 'w') as file:
-            jekyll.dump_jekyll_doc(dict(title='Hello'), 'Hello hello.', file)
+        bizarro.edit.create_new_page(self.clone1, '', 'hello.md',
+                                     dict(title='Hello'), 'Hello hello.')
         
         args = self.clone1, 'hello.md', str(uuid4()), branch1.commit.hexsha, 'master'
         bizarro.repo.save_working_file(*args)
@@ -122,7 +120,7 @@ class TestRepo (TestCase):
         #
         message = str(uuid4())
         
-        unlink(join(self.clone1.working_dir, 'index.md'))
+        bizarro.edit.delete_file(self.clone1, '', 'index.md')
         
         args = self.clone1, 'index.md', message, branch1.commit.hexsha, 'master'
         bizarro.repo.save_working_file(*args)
@@ -194,20 +192,17 @@ class TestRepo (TestCase):
         branch2 = bizarro.repo.start_branch(self.clone2, 'master', name)
         
         #
-        # Make a new files in each branch and save them.
+        # Make new files in each branch and save them.
         #
         branch1.checkout()
         branch2.checkout()
         
-        repo_path1, real_path1 = bizarro.repo.make_working_file(self.clone1, '', 'file1.md')
-        repo_path2, real_path2 = bizarro.repo.make_working_file(self.clone2, '', 'file2.md')
-        
-        with open(real_path1, 'w') as file:
-            jekyll.dump_jekyll_doc(dict(title='Hello'), 'Hello hello.', file)
-        
-        with open(real_path2, 'w') as file:
-            jekyll.dump_jekyll_doc(dict(title='Goodbye'), 'Goodbye goodbye.', file)
-        
+        bizarro.edit.create_new_page(self.clone1, '', 'file1.md',
+                                     dict(title='Hello'), 'Hello hello.')
+
+        bizarro.edit.create_new_page(self.clone2, '', 'file2.md',
+                                     dict(title='Goodbye'), 'Goodbye goodbye.')
+
         #
         # Show that the changes from the first branch made it to origin.
         #
@@ -252,15 +247,12 @@ class TestRepo (TestCase):
         branch1.checkout()
         branch2.checkout()
         
-        repo_path1, real_path1 = bizarro.repo.make_working_file(self.clone1, '', 'conflict.md')
-        repo_path2, real_path2 = bizarro.repo.make_working_file(self.clone2, '', 'conflict.md')
-        
-        with open(real_path1, 'w') as file:
-            jekyll.dump_jekyll_doc(dict(title='Hello'), 'Hello hello.', file)
-        
-        with open(real_path2, 'w') as file:
-            jekyll.dump_jekyll_doc(dict(title='Goodbye'), 'Goodbye goodbye.', file)
-        
+        bizarro.edit.create_new_page(self.clone1, '', 'conflict.md',
+                                     dict(title='Hello'), 'Hello hello.')
+
+        bizarro.edit.create_new_page(self.clone2, '', 'conflict.md',
+                                     dict(title='Goodbye'), 'Goodbye goodbye.')
+
         #
         # Show that the changes from the first branch made it to origin.
         #
@@ -298,15 +290,12 @@ class TestRepo (TestCase):
         branch1.checkout()
         branch2.checkout()
         
-        repo_path1, real_path1 = bizarro.repo.make_working_file(self.clone1, '', 'conflict.md')
-        repo_path2, real_path2 = bizarro.repo.make_working_file(self.clone2, '', 'conflict.md')
-        
-        with open(real_path1, 'w') as file:
-            jekyll.dump_jekyll_doc(dict(title='Hello'), 'Hello hello.', file)
-        
-        with open(real_path2, 'w') as file:
-            jekyll.dump_jekyll_doc(dict(title='Goodbye'), 'Goodbye goodbye.', file)
-        
+        bizarro.edit.create_new_page(self.clone1, '', 'conflict.md',
+                                     dict(title='Hello'), 'Hello hello.')
+
+        bizarro.edit.create_new_page(self.clone2, '', 'conflict.md',
+                                     dict(title='Goodbye'), 'Goodbye goodbye.')
+
         #
         # Show that the changes from the first branch made it to origin.
         #
@@ -350,15 +339,12 @@ class TestRepo (TestCase):
         branch1.checkout()
         branch2.checkout()
         
-        repo_path1, real_path1 = bizarro.repo.make_working_file(self.clone1, '', 'conflict.md')
-        repo_path2, real_path2 = bizarro.repo.make_working_file(self.clone2, '', 'conflict.md')
-        
-        with open(real_path1, 'w') as file:
-            jekyll.dump_jekyll_doc(dict(title='Hello'), 'Hello hello.', file)
-        
-        with open(real_path2, 'w') as file:
-            jekyll.dump_jekyll_doc(dict(title='Goodbye'), 'Goodbye goodbye.', file)
-        
+        bizarro.edit.create_new_page(self.clone1, '', 'conflict.md',
+                                     dict(title='Hello'), 'Hello hello.')
+
+        bizarro.edit.create_new_page(self.clone2, '', 'conflict.md',
+                                     dict(title='Goodbye'), 'Goodbye goodbye.')
+
         #
         # Push changes from the two branches to origin.
         #
@@ -398,9 +384,9 @@ class TestRepo (TestCase):
         #
         branch1.checkout()
         
-        with open(join(self.clone1.working_dir, 'goner.md'), 'w') as file:
-            jekyll.dump_jekyll_doc(dict(title=name), 'Woooo woooo.', file)
-        
+        bizarro.edit.create_new_page(self.clone1, '', 'goner.md',
+                                     dict(title=name), 'Woooo woooo.')
+
         args = self.clone1, 'goner.md', '...', branch1.commit.hexsha, 'master'
         commit = bizarro.repo.save_working_file(*args)
 
@@ -409,8 +395,8 @@ class TestRepo (TestCase):
         #
         branch2.checkout()
         
-        with open(join(self.clone2.working_dir, 'index.md'), 'w') as file:
-            jekyll.dump_jekyll_doc(dict(title=name), 'Hello hello.', file)
+        bizarro.edit.update_page(self.clone2, 'index.md',
+                                 dict(title=name), 'Hello hello.')
         
         args = self.clone2, 'index.md', '...', branch2.commit.hexsha, 'master'
         commit = bizarro.repo.save_working_file(*args)
@@ -461,12 +447,12 @@ class TestRepo (TestCase):
         #
         branch2.checkout()
         
-        with open(join(self.clone2.working_dir, 'index.md'), 'w') as file:
-            jekyll.dump_jekyll_doc(dict(title=name), 'Hello hello.', file)
+        bizarro.edit.update_page(self.clone2, 'index.md',
+                                 dict(title=name), 'Hello hello.')
         
-        with open(join(self.clone2.working_dir, 'goner.md'), 'w') as file:
-            jekyll.dump_jekyll_doc(dict(title=name), 'Woooo woooo.', file)
-        
+        bizarro.edit.create_new_page(self.clone2, '', 'goner.md',
+                                     dict(title=name), 'Woooo woooo.')
+
         args = self.clone2, 'index.md', '...', branch2.commit.hexsha, 'master'
         commit = bizarro.repo.save_working_file(*args)
 

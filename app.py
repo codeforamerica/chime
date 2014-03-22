@@ -1,12 +1,12 @@
 from os.path import join, isdir, exists, realpath, basename, split
-from os import listdir, mkdir, rmdir, environ, remove
+from os import listdir, environ
 from urllib import quote, unquote
 from functools import wraps
 
 from git import Repo
 from requests import post
 from flask import Flask, redirect, request, Response, render_template, session
-from jekyll import load_jekyll_doc, dump_jekyll_doc
+from jekyll import load_jekyll_doc
 
 import bizarro
 
@@ -203,37 +203,18 @@ def branch_edit_file(branch, path=None):
     do_save = True
     
     if action == 'upload' and 'file' in request.files:
-        file_path, full_path \
-        = bizarro.repo.make_working_file(r, path, request.files['file'].filename)
-        
-        if not exists(full_path):
-            with open(full_path, 'w') as file:
-                request.files['file'].save(file)
-        
-        message = 'Created new file "%s"' % file_path
+        file_path = bizarro.edit.upload_new_file(r, path, request.files['file'])
+        message = 'Uploaded new file "%s"' % file_path
         path_303 = path or ''
     
     elif action == 'add' and 'path' in request.form:
-        file_path, full_path \
-        = bizarro.repo.make_working_file(r, path, request.form['path'])
-    
-        if not exists(full_path):
-            with open(full_path, 'w') as file:
-                dump_jekyll_doc(dict(title=''), '', file)
-        
-        message = 'Uploaded new file "%s"' % file_path
+        name, front, body = request.form['path'], dict(title=''), ''
+        file_path = bizarro.edit.create_new_page(r, path, name, front, body)
+        message = 'Created new file "%s"' % file_path
         path_303 = file_path
     
     elif action == 'delete' and 'path' in request.form:
-        file_path = join(path or '', request.form['path'])
-        full_path = join(r.working_dir, file_path)
-        
-        if isdir(full_path):
-            rmdir(full_path)
-            do_save = False
-        else:
-            remove(full_path)
-        
+        file_path = bizarro.edit.delete_file(r, path, request.form['path'])
         message = 'Deleted file "%s"' % file_path
         path_303 = path or ''
     
@@ -263,12 +244,10 @@ def branch_save(branch, path):
     # Write changes.
     #
     b.checkout()
-
-    with open(join(r.working_dir, path), 'w') as file:
-        front = dict(title=request.form.get('title'))
-        body = request.form.get('body').replace('\r\n', '\n')
-        
-        dump_jekyll_doc(front, body, file)
+    
+    front = dict(title=request.form.get('title'))
+    body = request.form.get('body').replace('\r\n', '\n')
+    bizarro.edit.update_page(r, path, front, body)
     
     #
     # Try to merge from the master to the current branch.
