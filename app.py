@@ -197,16 +197,36 @@ def branch_edit_add(branch, path=None):
     r = get_repo()
     b = bizarro.repo.start_branch(r, _default_branch, branch)
     b.checkout()
+    c = b.commit
     
-    file_path, full_path = bizarro.repo.make_working_file(r, path, request.form['path'])
+    if 'file' in request.files:
+        file_path, full_path \
+        = bizarro.repo.make_working_file(r, path, request.files['file'].filename)
+        
+        if not exists(full_path):
+            with open(full_path, 'w') as file:
+                request.files['file'].save(file)
+        
+        path_303 = path or ''
     
-    if not exists(full_path):
-        with open(full_path, 'w') as file:
-            dump_jekyll_doc(dict(title=''), '', file)
+    elif 'path' in request.form:
+        file_path, full_path \
+        = bizarro.repo.make_working_file(r, path, request.form['path'])
+    
+        if not exists(full_path):
+            with open(full_path, 'w') as file:
+                dump_jekyll_doc(dict(title=''), '', file)
+        
+        path_303 = file_path
+    
+    else:
+        raise Exception()
+    
+    bizarro.repo.save_working_file(r, file_path, 'Created', c.hexsha, _default_branch)
 
     safe_branch = branch_name2path(branch)
 
-    return redirect('/tree/%s/edit/%s' % (safe_branch, file_path), code=303)
+    return redirect('/tree/%s/edit/%s' % (safe_branch, path_303), code=303)
 
 @app.route('/tree/<branch>/save/<path:path>', methods=['POST'])
 @login_required
