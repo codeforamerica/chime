@@ -3,7 +3,13 @@
 <body>
     <ul>
       {% for path in list_paths %}
-        <li><a href="{{path}}">{{path}}</a></li>
+        <li>
+        <form action="." method="POST">
+        <a href="{{path}}">{{path}}</a>
+        <input name="path" value="{{path}}" type="hidden">
+        <input name="action" type="submit" value="Delete">
+        </form>
+        </li>
       {% endfor %}
     </ul>
     <form action="/merge" method="POST">
@@ -13,11 +19,11 @@
     </form>
     <form action="." method="POST">
     <input name="path" placeholder="thing/stuff" type="text">
-    <input type="submit" value="Add">
+    <input name="action" type="submit" value="Add">
     </form>
     <form action="." method="POST" enctype="multipart/form-data">
     <input name="file" type="file">
-    <input type="submit" value="Upload">
+    <input name="action" type="submit" value="Upload">
     </form>
 </body>
 </html>

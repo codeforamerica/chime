@@ -1,5 +1,5 @@
 from os.path import join, isdir, exists, realpath, basename, split
-from os import listdir, mkdir, environ
+from os import listdir, mkdir, rmdir, environ, remove
 from urllib import quote, unquote
 from functools import wraps
 
@@ -191,7 +191,7 @@ def branch_edit(branch, path=None):
 @app.route('/tree/<branch>/edit/', methods=['POST'])
 @app.route('/tree/<branch>/edit/<path:path>', methods=['POST'])
 @login_required
-def branch_edit_add(branch, path=None):
+def branch_edit_file(branch, path=None):
     branch = branch_var2name(branch)
 
     r = get_repo()
@@ -199,7 +199,10 @@ def branch_edit_add(branch, path=None):
     b.checkout()
     c = b.commit
     
-    if 'file' in request.files:
+    action = request.form.get('action', '').lower()
+    do_save = True
+    
+    if action == 'upload' and 'file' in request.files:
         file_path, full_path \
         = bizarro.repo.make_working_file(r, path, request.files['file'].filename)
         
@@ -207,9 +210,10 @@ def branch_edit_add(branch, path=None):
             with open(full_path, 'w') as file:
                 request.files['file'].save(file)
         
+        message = 'Created'
         path_303 = path or ''
     
-    elif 'path' in request.form:
+    elif action == 'add' and 'path' in request.form:
         file_path, full_path \
         = bizarro.repo.make_working_file(r, path, request.form['path'])
     
@@ -217,12 +221,27 @@ def branch_edit_add(branch, path=None):
             with open(full_path, 'w') as file:
                 dump_jekyll_doc(dict(title=''), '', file)
         
+        message = 'Created'
         path_303 = file_path
+    
+    elif action == 'delete' and 'path' in request.form:
+        file_path = join(path or '', request.form['path'])
+        full_path = join(r.working_dir, file_path)
+        
+        if isdir(full_path):
+            rmdir(full_path)
+            do_save = False
+        else:
+            remove(full_path)
+        
+        message = 'Deleted'
+        path_303 = path or ''
     
     else:
         raise Exception()
     
-    bizarro.repo.save_working_file(r, file_path, 'Created', c.hexsha, _default_branch)
+    if do_save:
+        bizarro.repo.save_working_file(r, file_path, message, c.hexsha, _default_branch)
 
     safe_branch = branch_name2path(branch)
 

@@ -20,11 +20,6 @@ URLs:
     /tree/<branch>/save/<path> POST - to save one file
   * /tree/<branch>/view/<path> GET - (Jekit?) to preview
 
-To do:
-
-Add file (image) upload.
-Add file deletion.
-
 Ideas:
 
 Indicate branch staleness somehow.
