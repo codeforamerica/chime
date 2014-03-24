@@ -14,11 +14,15 @@ URLs:
   * /view/<path> GET - preview the default branch
   * /tree/<branch> GET - shows branch history, links to preview
     /start POST - to create new branch
-  ~ /merge POST - to merge back to master
+    /merge POST - to merge back to master
     /tree/<branch>/edit/<path> GET - to edit one file
     /tree/<branch>/edit/<path> POST - to add one file
     /tree/<branch>/save/<path> POST - to save one file
   * /tree/<branch>/view/<path> GET - (Jekit?) to preview
+
+To do:
+
+Determine what's breaking with pull --rebase in repo.save_working_file().
 
 Ideas:
 

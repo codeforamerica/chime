@@ -215,7 +215,7 @@ def save_working_file(clone, path, message, base_sha, default_branch_name):
     #
     # Sync with the default and upstream branches in case someone made a change.
     #
-    for sync_branch_name in (default_branch_name, active_branch_name):
+    for sync_branch_name in (active_branch_name, default_branch_name):
         try:
             # sync: pull --rebase followed by push.
             clone.git.pull('origin', sync_branch_name, rebase=True)
