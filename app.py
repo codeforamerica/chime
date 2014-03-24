@@ -1,6 +1,7 @@
 from os.path import join, isdir, exists, realpath, basename, split
 from os import listdir, environ
 from urllib import quote, unquote
+from re import compile, MULTILINE
 from functools import wraps
 
 from git import Repo
@@ -83,8 +84,22 @@ def index():
     r = Repo(_repo_path) # bare repo
     branch_names = [b.name for b in r.branches if b.name != _default_branch]
     
-    list_items = [dict(path=branch_name2path(name), name=name)
-                  for name in branch_names]
+    list_items = []
+    
+    for name in branch_names:
+        path = branch_name2path(name)
+
+        base = r.git.merge_base(_default_branch, name)
+        behind_raw = r.git.log(base+'..'+_default_branch, format='%H %at %ae')
+        ahead_raw = r.git.log(base+'..'+name, format='%H %at %ae')
+        
+        pattern = compile(r'^(\w+) (\d+) (.+)$', MULTILINE)
+        # behind = [r.commit(sha) for (sha, t, e) in pattern.findall(behind_raw)]
+        # ahead = [r.commit(sha) for (sha, t, e) in pattern.findall(ahead_raw)]
+        behind = pattern.findall(behind_raw)
+        ahead = pattern.findall(ahead_raw)
+        
+        list_items.append(dict(name=name, path=path, behind=behind, ahead=ahead))
     
     kwargs = dict(items=list_items, email=session.get('email', None))
     return render_template('index.html', **kwargs)

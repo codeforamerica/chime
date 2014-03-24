@@ -19,7 +19,7 @@
     {% if email %}
     <ul>
       {% for item in items %}
-        <li><a href="/tree/{{item.path}}/edit/">{{item.name}}</a></li>
+        <li><a href="/tree/{{item.path}}/edit/">{{item.name}}</a> ({{item.ahead|count}} ahead, {{item.behind|count}} behind)</li>
       {% endfor %}
     </ul>
     <form action="/start" method="POST">
