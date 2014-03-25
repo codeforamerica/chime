@@ -184,6 +184,51 @@ class TestRepo (TestCase):
         self.assertEqual(body2b, body2)
         self.assertTrue(self.clone2.commit().message.startswith('Merged work from'))
     
+    def test_content_merge_extra_change(self):
+        ''' Test that non-conflicting changes on the same file merge cleanly.
+        '''
+        branch1 = bizarro.repo.start_branch(self.clone1, 'master', 'title')
+        branch2 = bizarro.repo.start_branch(self.clone2, 'master', 'body')
+        
+        branch1.checkout()
+        branch2.checkout()
+        
+        with open(self.clone1.working_dir + '/index.md') as file:
+            front1, _ = jekyll.load_jekyll_doc(file)
+        
+        with open(self.clone2.working_dir + '/index.md') as file:
+            front2, body2 = jekyll.load_jekyll_doc(file)
+        
+        #
+        # Show that only the title branch title is now present on master.
+        #
+        bizarro.repo.complete_branch(self.clone1, 'master', 'title')
+        
+        with open(self.clone1.working_dir + '/index.md') as file:
+            front1b, body1b = jekyll.load_jekyll_doc(file)
+        
+        self.assertEqual(front1b['title'], front1['title'])
+        self.assertNotEqual(body1b, body2)
+        
+        #
+        # Show that the body branch body is also now present on master.
+        #
+        bizarro.edit.update_page(self.clone2, 'index.md',
+                                 front2, 'Another change to the body')
+        
+        bizarro.repo.save_working_file(self.clone2, 'index.md', 'A new change',
+                                       self.clone2.commit().hexsha, 'master')
+        
+        #
+        # Show that upstream changes from master have been merged here.
+        #
+        with open(self.clone2.working_dir + '/index.md') as file:
+            front2b, body2b = jekyll.load_jekyll_doc(file)
+        
+        self.assertEqual(front2b['title'], front1['title'])
+        self.assertEqual(body2b.strip(), 'Another change to the body')
+        self.assertTrue(self.clone2.commit().message.startswith('Merged work from'))
+    
     def test_multifile_merge(self):
         ''' Test that two non-conflicting new files merge cleanly.
         '''

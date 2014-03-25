@@ -20,10 +20,6 @@ URLs:
     /tree/<branch>/save/<path> POST - to save one file
   * /tree/<branch>/view/<path> GET - (Jekit?) to preview
 
-To do:
-
-Determine what's breaking with pull --rebase in repo.save_working_file().
-
 Ideas:
 
 Indicate branch staleness somehow.

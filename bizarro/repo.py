@@ -197,9 +197,9 @@ def save_working_file(clone, path, message, base_sha, default_branch_name):
     
         Rely on Git environment variables for author emails and names.
         
-        After committing the new file, attempts to rebase the working branch
-        on the default branch and the origin working branch in turn, to
-        surface possible merge problems early. Might raise a MergeConflict.
+        After committing the new file, attempts to merge the origin working
+        branch and the origin default branches in turn, to surface possible
+        merge problems early. Might raise a MergeConflict.
     '''
     if clone.active_branch.commit.hexsha != base_sha:
         raise Exception('Out of date SHA: %s' % base_sha)
@@ -216,20 +216,19 @@ def save_working_file(clone, path, message, base_sha, default_branch_name):
     # Sync with the default and upstream branches in case someone made a change.
     #
     for sync_branch_name in (active_branch_name, default_branch_name):
+        msg = 'Merged work from "%s"' % sync_branch_name
+        clone.git.fetch('origin', sync_branch_name)
+
         try:
-            # sync: pull --rebase followed by push.
-            clone.git.pull('origin', sync_branch_name, rebase=True)
+            clone.git.merge('FETCH_HEAD', '--no-ff', m=msg)
 
         except:
             # raise the two commits in conflict.
-            clone.git.fetch('origin')
             remote_commit = clone.refs[_origin(sync_branch_name)].commit
 
-            clone.git.rebase(abort=True)
             clone.git.reset(hard=True)
             raise MergeConflict(remote_commit, clone.commit())
 
-        else:
-            clone.git.push('origin', sync_branch_name)
+    clone.git.push('origin', active_branch_name)
     
     return clone.active_branch.commit
