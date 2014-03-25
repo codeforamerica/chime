@@ -189,7 +189,8 @@ def branch_edit(branch, path=None):
         if path and not path.endswith('/'):
             return redirect('/tree/%s/edit/%s' % (safe_branch, path + '/'), code=302)
     
-        full_paths = [join(full_path, name) for name in listdir(full_path)]
+        file_names = [n for n in listdir(full_path) if not n.startswith('_')]
+        full_paths = [join(full_path, name) for name in file_names]
         good_paths = [fp for fp in full_paths if realpath(fp) != r.git_dir]
         
         kwargs = dict(branch=branch, list_paths=map(basename, good_paths))
@@ -199,7 +200,9 @@ def branch_edit(branch, path=None):
         front, body = load_jekyll_doc(file)
         
         kwargs = dict(branch=branch, safe_branch=safe_branch, path=path,
-                      title=front['title'], body=body, hexsha=c.hexsha)
+                      body=body, hexsha=c.hexsha)
+        
+        kwargs.update(front)
 
         return render_template('tree-branch-edit-file.html', **kwargs)
 
@@ -260,7 +263,7 @@ def branch_save(branch, path):
     #
     b.checkout()
     
-    front = dict(title=request.form.get('title'))
+    front = dict(title=request.form.get('title'), layout=request.form.get('layout'))
     body = request.form.get('body').replace('\r\n', '\n')
     bizarro.edit.update_page(r, path, front, body)
     

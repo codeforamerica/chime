@@ -5,7 +5,8 @@
     <form action="/tree/{{safe_branch}}/save/{{path}}" method="POST">
     <p><input name="title" value="{{title}}" type="text">
     <p><textarea name="body">{{body}}</textarea>
-    <p><input name="hexsha" value="{{hexsha}}" type="text">
+    <p><input name="layout" value="{{layout}}" type="hidden">
+    <p><input name="hexsha" value="{{hexsha}}" type="hidden">
     <p><input type="submit">
     </form>
 </body>
