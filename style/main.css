@@ -41,12 +41,15 @@ body .nav-tabs{
 .detailed-info{
 	float:right;
 	padding:0;
-	margin:0;
+	margin:0 1.5em 0 0;
 }
 .detailed-info li{
 	padding:0;
 	margin:0;
 	display:inline;
+	list-style-type:none;
+	list-style-image: none;
+	background-image:none;
 }
 .button-group{
 	padding-left:1.5em;
