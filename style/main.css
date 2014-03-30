@@ -1,0 +1,50 @@
+body{
+	background-color:#fff;
+}
+body h1{
+	background-color:#e5e5e5;
+	margin:0;
+	font-size:2em;
+	padding:0.5em;
+}
+body .nav-tabs{
+	margin-top:0;
+	padding-top:0;
+	margin-bottom:0;
+	padding-bottom:0;
+}
+#statistics h2{
+	font-size:1em;
+}
+#statistics span{
+	display:block;
+}
+#statistics .big-number{
+	font-weight:bold;
+	color:black;
+	text-align:center;
+	font-size:2em;
+}
+
+.layout-breve{
+	padding-top:0;
+}
+.layout-minor{
+	float:right;
+}
+.layout-major{
+	float:left;
+}
+.info{
+	padding:0.5em;
+}
+.detailed-info{
+	float:right;
+	padding:0;
+	margin:0;
+}
+.detailed-info li{
+	padding:0;
+	margin:0;
+	display:inline;
+}
