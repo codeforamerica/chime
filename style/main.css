@@ -63,3 +63,9 @@ body .nav-tabs{
 .badge-heading a{
 	font-size:14px;
 }
+.badge-heading h2{
+	margin:0;
+}
+.badge-heading h3{
+	color:#bbb;
+}
