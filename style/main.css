@@ -59,9 +59,7 @@ body .nav-tabs{
 	list-style-image: none;
 	background-image:none;
 }
-.button-group{
-	padding-left:1.5em;
-}
+
 .badge-heading a{
 	font-size:14px;
 }
