@@ -62,3 +62,6 @@ body .nav-tabs{
 .button-group{
 	padding-left:1.5em;
 }
+.badge-heading a{
+	font-size:14px;
+}
