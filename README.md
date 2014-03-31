@@ -1,4 +1,4 @@
-bizzaro
+bizarro
 =======
 
 Noodling
