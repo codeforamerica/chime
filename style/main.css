@@ -14,16 +14,24 @@ body .nav-tabs{
 	padding-bottom:0;
 }
 #statistics h2{
+	font-family: "Gotham A", "Gotham B", "Open Sans Regular", "Verdana", "Helvetica", "Arial";
 	font-size:1em;
+	background-color:white;
+	padding:0.5em;
+	border-radius: 10px;
+	border:1px solid white;
 }
 #statistics span{
 	display:block;
+	text-align:center;
 }
 #statistics .big-number{
 	font-weight:bold;
 	color:black;
 	text-align:center;
-	font-size:2em;
+	font-size:3em;
+	display:block;
+	
 }
 
 .layout-breve{
