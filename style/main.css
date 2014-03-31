@@ -69,3 +69,10 @@ body .nav-tabs{
 .badge-heading h3{
 	color:#bbb;
 }
+#statistics ul li{
+	background-image:none;
+}
+#statistics ul li span{
+	font-size:2em;
+	display:inline;
+}
