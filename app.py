@@ -280,7 +280,12 @@ def branch_save(branch, path):
     #
     try:
         message = 'Saved file "%s"' % path
-        bizarro.repo.save_working_file(r, path, message, c.hexsha, _default_branch)
+        c2 = bizarro.repo.save_working_file(r, path, message, c.hexsha, _default_branch)
+        new_path = request.form.get('url-slug') + splitext(path)[1]
+        
+        if new_path != path:
+            bizarro.repo.move_existing_file(r, path, new_path, c2.hexsha, _default_branch)
+            path = new_path
     
     except bizarro.repo.MergeConflict as conflict:
         r.git.reset(c.hexsha, hard=True)
