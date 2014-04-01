@@ -38,32 +38,83 @@
     </script>
 </head>
 <body>
-    <p><a href="./">Up</a></p>
-    <form action="/tree/{{safe_branch}}/save/{{path}}" method="POST">
-    <p>[SLUG]
-    <p>
-        <button onclick="return showEnglish()">English</button>
-        <button onclick="return showSpanish()">Spanish</button>
-        <button onclick="return showChinese()">Chinese</button>
-    </p>
-    <div id="english" style="display: block">
-        <p>(English)
-        <p><input name="title" value="{{title}}" type="text">
-        <p><textarea name="body">{{body}}</textarea>
-    </div>
-    <div id="spanish" style="display: none">
-        <p>(Spanish)
-        <p><input name="title_es" value="{{title_es}}" type="text">
-        <p><textarea name="body_es">{{body_es}}</textarea>
-    </div>
-    <div id="chinese" style="display: none">
-        <p>(Chinese)
-        <p><input name="title_cn" value="{{title_cn}}" type="text">
-        <p><textarea name="body_cn">{{body_cn}}</textarea>
-    </div>
-    <p><input name="layout" value="{{layout}}" type="hidden">
-    <p><input name="hexsha" value="{{hexsha}}" type="hidden">
-    <p><input type="submit">
+    <h1>Bizarro editor <a href="./">Up</a> [slug]</h1>
+
+        <nav class="nav-tabs" role="navigation">
+            <ul class="layout-semibreve layout-tight">
+                <li class="nav-tab state-active"><a class="nav-tab-link" href="edit.html" onclick="return showEnglish()">English</a></li>
+                <li class="nav-tab"><a class="nav-tab-link" href="edit-spanish.html" onclick="return showSpanish()">Spanish</a></li>
+                <li class="nav-tab"><a class="nav-tab-link" href="#" onclick="return showChinese()">Chinese</a></li>
+            </ul>
+        </nav>
+
+
+        <div class="layout-breve">
+            <form action="/tree/{{safe_branch}}/save/{{path}}" method="POST">
+                <div id="english" style="display: block" class="layout-minim layout-major">
+                    <div class="badge-heading badge-gov badge-teal">
+                        <h2><input name="title" value="{{title}}" type="text"></h2>
+                    </div>
+                    <ul class="list-form">
+                        <li class="form-field">
+                            <label for="invitee-name">Content</label>
+                            <textarea id="en-body" class="textarea" name="body" type="text">{{body}}</textarea>
+                        </li>                      
+                    </ul>
+                </div>
+                <div id="spanish" style="display: none" class="layout-minim layout-major">
+                    <div class="badge-heading badge-gov badge-teal">
+                        <h2><input name="title_es" value="{{title_es}}" type="text"></h2>
+                    </div> 
+                    <ul class="list-form">
+                        <li class="form-field">
+                            <label for="en-body">Content</label>
+                            <textarea id="en-body" class="textarea" name="body_es" type="text">{{body_es}}</textarea>
+                        </li>
+                    </ul> 
+                </div>
+                <div id="chinese" style="display: none" class="layout-minim layout-major">
+                    <div class="badge-heading badge-gov badge-teal">
+                        <h2><input name="title_cn" value="{{title_cn}}" type="text"></h2>
+                    </div>
+                        <ul class="list-form">
+                            <li class="form-field">
+                                <label for="cn-body">Content</label>
+                                <textarea id="cn-body" class="textarea" name="body_cn" type="text">{{body_cn}}</textarea>
+                            </li>             
+                        </ul> 
+                </div>
+                <div class="button-group" style="clear:both">
+                    <input name="layout" value="{{layout}}" type="hidden" />
+                    <input name="hexsha" value="{{hexsha}}" type="hidden" />
+                    <input type="submit" class="primary-button" value="Save"/>
+                    <input type="button" class="button" value="Send for review" disabled/>
+                    <input type="button" class="button" value="Publish" disabled/>
+                    <a class="button button-unstyled" href="#">Archive</a>
+                </div>
+            </form>
+            <!-- dummy right hand section -->
+            <div class="layout-minim layout-minor" id="statistics">
+                <div class="slab-blue info">
+                        <h2><span class="big-number">247</span> <span>people viewed this information this week</span></h2>
+                        <ul>
+                            <li><span>65%</span> came from <a href="">Vehicle licences</a></li>
+                            <li><span>45%</span> continued on to <a href="">Home page</a></li>
+                        </ul>
+                        <p><a href="">Read more about your users</a></p>
+                    </div>
+                </div>
+                
+            </div>
+        </div>            
+        
+        
+
+    
+
+ 
+    
+
     </form>
 </body>
 </html>
