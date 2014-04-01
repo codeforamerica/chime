@@ -21,14 +21,13 @@
         <table>
             <thead>
                 <tr>
-                    <th colspan="5">All content</th>
+                    <th colspan="4">Your content</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
                     <th>Status</th>
                     <th>Topic</th> 
-                    <th>Last author</th>
                     <th>Reviewer</th>
                     <th>Options</th>
                 </tr>
@@ -37,13 +36,32 @@
                         <tr>
                             <td>Draft</td>
                             <td><a href="{{path}}">{{path}}</a></td>
-                            <td><strong>You</strong></td>
                             <td>&nbsp;</td>
                             <td><input name="action" type="submit" value="Delete"> <a href="{{path}}">Edit</a></td>
                         </tr>
                         <input name="path" value="{{path}}" type="hidden">
                     </form>
                 {% endfor %}  
+                <tr>
+                    <th colspan="4">Actions</th>
+                </tr>
+                <tr>
+                    <td>
+                        <form action="/merge" method="POST">
+                            <input name="branch" value="{{branch}}" type="hidden" />
+                            <input name="action" type="submit" value="Merge" />
+                            <input name="action" type="submit" value="Abandon" />
+                        </form>
+                        <form action="." method="POST">
+                            <input name="path" placeholder="thing/stuff" type="text" />
+                            <input name="action" type="submit" value="Add" />
+                        </form>
+                        <form action="." method="POST" enctype="multipart/form-data" />
+                            <input name="file" type="file" />
+                            <input name="action" type="submit" value="Upload" />
+                        </form>
+                </td>
+                </tr>
             </tbody>
         </table>
     </div>
@@ -51,18 +69,6 @@
     <ul>
       
     </ul>
-    <form action="/merge" method="POST">
-    <input name="branch" value="{{branch}}" type="hidden">
-    <input name="action" type="submit" value="Merge">
-    <input name="action" type="submit" value="Abandon">
-    </form>
-    <form action="." method="POST">
-    <input name="path" placeholder="thing/stuff" type="text">
-    <input name="action" type="submit" value="Add">
-    </form>
-    <form action="." method="POST" enctype="multipart/form-data">
-    <input name="file" type="file">
-    <input name="action" type="submit" value="Upload">
-    </form>
+    
 </body>
 </html>
