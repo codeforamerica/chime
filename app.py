@@ -1,4 +1,4 @@
-from os.path import join, isdir, exists, realpath, basename, split
+from os.path import join, isdir, exists, realpath, basename, split, splitext
 from os import listdir, environ
 from urllib import quote, unquote
 from re import compile, MULTILINE
@@ -199,8 +199,10 @@ def branch_edit(branch, path=None):
     with open(full_path, 'r') as file:
         front, body = load_jekyll_doc(file)
         
+        url_slug, _ = splitext(path)
+        
         kwargs = dict(branch=branch, safe_branch=safe_branch, path=path,
-                      body=body, hexsha=c.hexsha)
+                      body=body, hexsha=c.hexsha, url_slug=url_slug)
         
         kwargs.update(front)
 

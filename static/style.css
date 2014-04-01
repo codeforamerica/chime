@@ -13,6 +13,9 @@ body .nav-tabs{
 	margin-bottom:0;
 	padding-bottom:0;
 }
+body .nav-tabs>p {
+	text-align: left;
+}
 #statistics h2{
 	font-family: "Gotham A", "Gotham B", "Open Sans Regular", "Verdana", "Helvetica", "Arial";
 	font-size:1em;
