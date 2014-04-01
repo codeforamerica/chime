@@ -263,9 +263,12 @@ def branch_save(branch, path):
     #
     b.checkout()
     
-    front = dict(layout=request.form.get('layout'), title=request.form.get('title'),
-                 title_es=request.form.get('title_es'), body_es=request.form.get('body_es'),
-                 title_cn=request.form.get('title_cn'), body_cn=request.form.get('body_cn'))
+    front = dict(layout=request.form.get('layout'),
+                 title=request.form.get('title'),
+                 title_es=request.form.get('title_es'),
+                 title_cn=request.form.get('title_cn'),
+                 body_es=request.form.get('body_es').replace('\r\n', '\n'),
+                 body_cn=request.form.get('body_cn').replace('\r\n', '\n'))
 
     body = request.form.get('body').replace('\r\n', '\n')
     bizarro.edit.update_page(r, path, front, body)
