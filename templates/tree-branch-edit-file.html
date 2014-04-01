@@ -16,6 +16,10 @@
             document.getElementById('english').style.display = 'block';
             document.getElementById('spanish').style.display = 'none';
             document.getElementById('chinese').style.display = 'none';
+            var d = document.getElementById("en-nav");
+            d.className = d.className + " state-active";
+            document.getElementById("es-nav").className = "nav-tab";
+            document.getElementById("cn-nav").className = "nav-tab";
             return false;
         }
 
@@ -24,6 +28,10 @@
             document.getElementById('english').style.display = 'none';
             document.getElementById('spanish').style.display = 'block';
             document.getElementById('chinese').style.display = 'none';
+            var d = document.getElementById("es-nav");
+            d.className = d.className + " state-active";
+            document.getElementById("en-nav").className = "nav-tab";
+            document.getElementById("cn-nav").className = "nav-tab";
             return false;
         }
 
@@ -32,6 +40,10 @@
             document.getElementById('english').style.display = 'none';
             document.getElementById('spanish').style.display = 'none';
             document.getElementById('chinese').style.display = 'block';
+            var d = document.getElementById("cn-nav");
+            d.className = d.className + " state-active";
+            document.getElementById("en-nav").className = "nav-tab";
+            document.getElementById("es-nav").className = "nav-tab";
             return false;
         }
 
@@ -42,9 +54,9 @@
 
         <nav class="nav-tabs" role="navigation">
             <ul class="layout-semibreve layout-tight">
-                <li class="nav-tab state-active"><a class="nav-tab-link" href="edit.html" onclick="return showEnglish()">English</a></li>
-                <li class="nav-tab"><a class="nav-tab-link" href="edit-spanish.html" onclick="return showSpanish()">Spanish</a></li>
-                <li class="nav-tab"><a class="nav-tab-link" href="#" onclick="return showChinese()">Chinese</a></li>
+                <li id="en-nav" class="nav-tab state-active"><a class="nav-tab-link" href="edit.html" onclick="return showEnglish()">English</a></li>
+                <li id="es-nav" class="nav-tab"><a class="nav-tab-link" href="edit-spanish.html" onclick="return showSpanish()">Spanish</a></li>
+                <li id="cn-nav" class="nav-tab"><a class="nav-tab-link" href="#" onclick="return showChinese()">Chinese</a></li>
             </ul>
         </nav>
 
