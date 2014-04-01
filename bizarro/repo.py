@@ -1,6 +1,6 @@
 import os, logging
-from os import environ
-from os.path import join, split, exists
+from os import environ, mkdir
+from os.path import join, split, exists, isdir
 
 class MergeConflict (Exception):
     def __init__(self, remote_commit, local_commit):
@@ -210,6 +210,45 @@ def save_working_file(clone, path, message, base_sha, default_branch_name):
         clone.index.remove([path])
 
     clone.index.commit(message)
+    active_branch_name = clone.active_branch.name
+    
+    #
+    # Sync with the default and upstream branches in case someone made a change.
+    #
+    for sync_branch_name in (active_branch_name, default_branch_name):
+        msg = 'Merged work from "%s"' % sync_branch_name
+        clone.git.fetch('origin', sync_branch_name)
+
+        try:
+            clone.git.merge('FETCH_HEAD', '--no-ff', m=msg)
+
+        except:
+            # raise the two commits in conflict.
+            remote_commit = clone.refs[_origin(sync_branch_name)].commit
+
+            clone.git.reset(hard=True)
+            raise MergeConflict(remote_commit, clone.commit())
+
+    clone.git.push('origin', active_branch_name)
+    
+    return clone.active_branch.commit
+
+def move_existing_file(clone, old_path, new_path, base_sha, default_branch_name):
+    ''' Move a file in the working dir, push it to origin, return the commit.
+    
+        Rely on Git environment variables for author emails and names.
+        
+        After committing the new file, attempts to merge the origin working
+        branch and the origin default branches in turn, to surface possible
+        merge problems early. Might raise a MergeConflict.
+    '''
+    if clone.active_branch.commit.hexsha != base_sha:
+        raise Exception('Out of date SHA: %s' % base_sha)
+    
+    new_repo_path, new_real_path = make_working_file(clone, '', new_path)
+    clone.git.mv(old_path, new_path, f=True)
+    
+    clone.index.commit('Renamed "%s" to "%s"' % (old_path, new_path))
     active_branch_name = clone.active_branch.name
     
     #

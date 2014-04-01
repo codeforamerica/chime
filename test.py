@@ -146,6 +146,32 @@ class TestRepo (TestCase):
         
         self.assertFalse(exists(join(self.clone2.working_dir, 'index.md')))
     
+    def test_move_file(self):
+        ''' Change the path of a file.
+        '''
+        name = str(uuid4())
+        branch1 = bizarro.repo.start_branch(self.clone1, 'master', name)
+        
+        self.assertTrue(name in self.clone1.branches)
+        self.assertTrue(name in self.origin.branches)
+        
+        #
+        # Rename a file in the branch.
+        #
+        branch1.checkout()
+
+        args = self.clone1, 'index.md', 'hello/world.md', branch1.commit.hexsha, 'master'
+        bizarro.repo.move_existing_file(*args)
+        
+        #
+        # See if the new file made it to clone 2
+        #
+        branch2 = bizarro.repo.start_branch(self.clone2, 'master', name)
+        branch2.checkout()
+        
+        self.assertTrue(exists(join(self.clone2.working_dir, 'hello/world.md')))
+        self.assertFalse(exists(join(self.clone2.working_dir, 'index.md')))
+    
     def test_content_merge(self):
         ''' Test that non-conflicting changes on the same file merge cleanly.
         '''
