@@ -51,18 +51,28 @@
                   <td><button class="button-alternative" href="/tree/{{item.path}}/edit/">Make more changes</button></td>
                 </tr>
                 {% endfor %}
+
+                <tr>
+                    <th>Create a new task</th>
+                    <td>
+                        <form action="/start" method="POST">
+                          <input name="branch" placeholder="branch name" type="text">
+                          <input type="submit">
+                        </form>  
+                    </td>
+                </tr>
         </table>
+
+
+
+
+
+
+      
     </div>
-
-
-
-
-
-    <form action="/start" method="POST">
-    <input name="branch" placeholder="branch name" type="text">
-    <input type="submit">
-    </form>
     {% endif %}
+
+
     <script type="text/javascript">
       var signinLink = document.getElementById('signin');
       if (signinLink) {
