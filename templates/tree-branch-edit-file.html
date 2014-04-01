@@ -1,10 +1,58 @@
 <doctype: html>
 <html>
+<head>
+    <script type="text/javascript">
+    
+        function showEnglish()
+        {
+            document.getElementById('english').style.display = 'block';
+            document.getElementById('spanish').style.display = 'none';
+            document.getElementById('chinese').style.display = 'none';
+            return false;
+        }
+
+        function showSpanish()
+        {
+            document.getElementById('english').style.display = 'none';
+            document.getElementById('spanish').style.display = 'block';
+            document.getElementById('chinese').style.display = 'none';
+            return false;
+        }
+
+        function showChinese()
+        {
+            document.getElementById('english').style.display = 'none';
+            document.getElementById('spanish').style.display = 'none';
+            document.getElementById('chinese').style.display = 'block';
+            return false;
+        }
+
+    </script>
+</head>
 <body>
     <p><a href="./">Up</a></p>
     <form action="/tree/{{safe_branch}}/save/{{path}}" method="POST">
-    <p><input name="title" value="{{title}}" type="text">
-    <p><textarea name="body">{{body}}</textarea>
+    <p>[SLUG]
+    <p>
+        <button onclick="return showEnglish()">English</button>
+        <button onclick="return showSpanish()">Spanish</button>
+        <button onclick="return showChinese()">Chinese</button>
+    </p>
+    <div id="english" style="display: block">
+        <p>(English)
+        <p><input name="title" value="{{title_en}}" type="text">
+        <p><textarea name="body">{{body_en}}</textarea>
+    </div>
+    <div id="spanish" style="display: none">
+        <p>(Spanish)
+        <p><input name="title" value="{{title_es}}" type="text">
+        <p><textarea name="body">{{body_es}}</textarea>
+    </div>
+    <div id="chinese" style="display: none">
+        <p>(Chinese)
+        <p><input name="title" value="{{title_cn}}" type="text">
+        <p><textarea name="body">{{body_cn}}</textarea>
+    </div>
     <p><input name="layout" value="{{layout}}" type="hidden">
     <p><input name="hexsha" value="{{hexsha}}" type="hidden">
     <p><input type="submit">
