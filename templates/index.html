@@ -19,13 +19,14 @@
     <body>
       <h1>Bizarro editor</h1>
       <form>
-        {% if email %}
-          <input type="button" id="signout" value="Sign out">
-        {% else %}
-          <input type="button" id="signin" value="Sign in">
-        {% endif %}
+        <div class="signon">
+          {% if email %}
+            <input type="button" id="signout" value="Sign out">
+          {% else %}
+            <input type="button" id="signin" value="Sign in">
+          {% endif %}
+        </div>
       </form>
-
 
     {% if email %}
     <div class="layout-breve">

@@ -76,3 +76,9 @@ body .nav-tabs{
 	font-size:2em;
 	display:inline;
 }
+.signon{
+	display:inline;
+	position:absolute;
+	top:1em;
+	right:1em;
+}
