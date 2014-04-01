@@ -1,1 +1,78 @@
-style.css
+body{
+	background-color:#fff;
+}
+body h1{
+	background-color:#e5e5e5;
+	margin:0;
+	font-size:2em;
+	padding:0.5em;
+}
+body .nav-tabs{
+	margin-top:0;
+	padding-top:0;
+	margin-bottom:0;
+	padding-bottom:0;
+}
+#statistics h2{
+	font-family: "Gotham A", "Gotham B", "Open Sans Regular", "Verdana", "Helvetica", "Arial";
+	font-size:1em;
+	background-color:white;
+	padding:0.5em;
+	border-radius: 10px;
+	border:1px solid white;
+}
+#statistics span{
+	display:block;
+	text-align:center;
+}
+#statistics .big-number{
+	font-weight:bold;
+	color:black;
+	text-align:center;
+	font-size:3em;
+	display:block;
+	
+}
+
+.layout-breve{
+	padding-top:0;
+}
+.layout-minor{
+	float:right;
+}
+.layout-major{
+	float:left;
+}
+.info{
+	padding:0.5em;
+}
+.detailed-info{
+	float:right;
+	padding:0;
+	margin:0 1.5em 0 0;
+}
+.detailed-info li{
+	padding:0;
+	margin:0;
+	display:inline;
+	list-style-type:none;
+	list-style-image: none;
+	background-image:none;
+}
+
+.badge-heading a{
+	font-size:14px;
+}
+.badge-heading h2{
+	margin:0;
+}
+.badge-heading h3{
+	color:#bbb;
+}
+#statistics ul li{
+	background-image:none;
+}
+#statistics ul li span{
+	font-size:2em;
+	display:inline;
+}
