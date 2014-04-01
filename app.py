@@ -154,7 +154,7 @@ def merge_branch():
             bizarro.repo.abandon_branch(*args)
         elif action == 'clobber':
             bizarro.repo.clobber_default_branch(*args)
-        elif:
+        else:
             raise Exception('I do not know what "%s" means' % action)
     
     except bizarro.repo.MergeConflict as conflict:
