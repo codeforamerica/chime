@@ -21,7 +21,7 @@
         <table>
             <thead>
                 <tr>
-                    <th colspan="4">Your content</th>
+                    <th colspan="4">Your current working changes</th>
                 </tr>
             </thead>
             <tbody>
@@ -34,7 +34,7 @@
                 {% for path in list_paths %}
                     <form action="." method="POST">
                         <tr>
-                            <td>Draft</td>
+                            <td>Changed</td>
                             <td><a href="{{path}}">{{path}}</a></td>
                             <td>&nbsp;</td>
                             <td><input name="action" type="submit" value="Delete"> <a href="{{path}}">Edit</a></td>
@@ -43,23 +43,35 @@
                     </form>
                 {% endfor %}  
                 <tr>
-                    <th colspan="4">Actions</th>
-                </tr>
-                <tr>
-                    <td>
-                        <form action="/merge" method="POST">
-                            <input name="branch" value="{{branch}}" type="hidden" />
-                            <input name="action" type="submit" value="Merge" />
-                            <input name="action" type="submit" value="Abandon" />
-                        </form>
+                    <th>Add new content</th>
+                    <td colspan="3">
                         <form action="." method="POST">
                             <input name="path" placeholder="thing/stuff" type="text" />
                             <input name="action" type="submit" value="Add" />
                         </form>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Add a new file</th>
+                    <td colspan="3">
                         <form action="." method="POST" enctype="multipart/form-data" />
                             <input name="file" type="file" />
                             <input name="action" type="submit" value="Upload" />
                         </form>
+                    </td>
+                </tr>
+                <tr>
+                    <th colspan="4">Actions</th>
+                </tr>
+                <tr>
+                    <td colspan="4">
+                        <form action="/merge" method="POST">
+                            <input name="branch" value="{{branch}}" type="hidden" />
+                            <input name="action" type="submit" value="Submit changes for merge" class="button-alternative" />
+                            <input name="action" type="submit" value="Abandon all changes" class="button-prominent" />
+                        </form>
+                        
+                        
                 </td>
                 </tr>
             </tbody>
