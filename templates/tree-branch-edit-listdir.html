@@ -10,16 +10,46 @@
         <title>Bizarro edit</title>
 </head>
 <body>
+    <h1>Bizarro editor</h1>
+
+
+    <div class="layout-breve">
+        <div class="badge-heading badge-gov badge-teal">
+            <h2>Overview</h2>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th colspan="5">All content</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <th>Status</th>
+                    <th>Topic</th> 
+                    <th>Last author</th>
+                    <th>Reviewer</th>
+                    <th>Options</th>
+                </tr>
+                {% for path in list_paths %}
+                    <form action="." method="POST">
+                        <tr>
+                            <td>Draft</td>
+                            <td><a href="{{path}}">{{path}}</a></td>
+                            <td><strong>You</strong></td>
+                            <td>&nbsp;</td>
+                            <td><input name="action" type="submit" value="Delete"> <a href="{{path}}">Edit</a></td>
+                        </tr>
+                        <input name="path" value="{{path}}" type="hidden">
+                    </form>
+                {% endfor %}  
+            </tbody>
+        </table>
+    </div>
+
     <ul>
-      {% for path in list_paths %}
-        <li>
-        <form action="." method="POST">
-        <a href="{{path}}">{{path}}</a>
-        <input name="path" value="{{path}}" type="hidden">
-        <input name="action" type="submit" value="Delete">
-        </form>
-        </li>
-      {% endfor %}
+      
     </ul>
     <form action="/merge" method="POST">
     <input name="branch" value="{{branch}}" type="hidden">
