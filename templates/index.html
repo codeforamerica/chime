@@ -25,12 +25,38 @@
           <input type="button" id="signin" value="Sign in">
         {% endif %}
       </form>
+
+
     {% if email %}
-    <ul>
-      {% for item in items %}
-        <li><a href="/tree/{{item.path}}/edit/">{{item.name}}</a> ({{item.ahead|count}} ahead, {{item.behind|count}} behind)</li>
-      {% endfor %}
-    </ul>
+    <div class="layout-breve">
+        <div class="badge-heading badge-gov badge-teal">
+            <h2>Overview</h2>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th colspan="2">Your tasklist</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <th>Task name</th>
+                    <th>Action</th> 
+                </tr>
+                {% for item in items %}
+                <tr>
+                  <td><a href="/tree/{{item.path}}/edit/">{{item.name}}</a> ({{item.ahead|count}} ahead, {{item.behind|count}} behind)</td>
+                  <td><button class="button-alternative" href="/tree/{{item.path}}/edit/">Make more changes</button></td>
+                </tr>
+                {% endfor %}
+        </table>
+    </div>
+
+
+
+
+
     <form action="/start" method="POST">
     <input name="branch" placeholder="branch name" type="text">
     <input type="submit">
