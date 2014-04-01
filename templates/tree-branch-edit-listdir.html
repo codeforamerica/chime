@@ -21,7 +21,7 @@
         <table>
             <thead>
                 <tr>
-                    <th colspan="4">Your current working changes</th>
+                    <th colspan="4">Your current changes to this task</th>
                 </tr>
             </thead>
             <tbody>
@@ -68,6 +68,7 @@
                         <form action="/merge" method="POST">
                             <input name="branch" value="{{branch}}" type="hidden" />
                             <input name="action" type="submit" value="Submit changes for merge" class="button-alternative" />
+                            <a href="/" class="button-alternative">Create new task</a>
                             <input name="action" type="submit" value="Abandon all changes" class="button-prominent" />
                         </form>    
                     </td>
