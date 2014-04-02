@@ -48,7 +48,7 @@
                 {% for item in items %}
                 <tr>
                   <td><a href="/tree/{{item.path}}/edit/">{{item.name}}</a> ({{item.ahead|count}} ahead, {{item.behind|count}} behind)</td>
-                  <td><a class="button-alternative" href="/tree/{{item.path}}/edit/" type="button">Make more changes</a></td>
+                  <td><a class="button-alternative" href="/tree/{{item.path}}/edit/" type="button">Make more changes</a> <button name="action" value="abandon" type="submit" class="button-prominent">Delete</button>
                 </tr>
                 {% endfor %}
 
