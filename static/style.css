@@ -101,6 +101,8 @@ body .nav-tabs>p {
 h1 span{
 	text-transform: lowercase;
 	font-size:0.5em;
+	font-weight:normal;
+	letter-spacing:0;
 }
 ul.slug{
 	margin:0 1.25em;
