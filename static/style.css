@@ -16,6 +16,11 @@ body .nav-tabs{
 body .nav-tabs>p {
 	text-align: left;
 }
+#statistics{
+	float:right;
+	width:25%;
+}
+/*
 #statistics h2{
 	font-family: "Gotham A", "Gotham B", "Open Sans Regular", "Verdana", "Helvetica", "Arial";
 	font-size:1em;
@@ -35,20 +40,21 @@ body .nav-tabs>p {
 	font-size:3em;
 	display:block;
 	
-}
+}*/
 
 .layout-breve{
 	padding-top:0;
 }
-.layout-minor{
-	float:right;
-}
-.layout-major{
+
+.language-edit{
+	overflow:auto;
+	width:70%;
 	float:left;
 }
+/*
 .info{
 	padding:0.5em;
-}
+}*/
 .detailed-info{
 	float:right;
 	padding:0;
@@ -84,4 +90,19 @@ body .nav-tabs>p {
 	position:absolute;
 	top:1em;
 	right:1em;
+}
+h1 span{
+	display:block;
+	text-transform: lowercase;
+	font-size:0.5em;
+}
+
+
+
+
+/*test*/
+
+.layout-minim{
+	border:1px solid red;
+	display:block;
 }

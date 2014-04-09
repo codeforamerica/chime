@@ -50,15 +50,20 @@
     </script>
 </head>
 <body>
-    <h1>Bizarro editor <a href="./">Up</a></h1>
+    <h1>Bizarro editor <span><a href="./">{{branch}}</a></span></h1>
 
         <form action="/tree/{{safe_branch}}/save/{{path}}" method="POST">
         
-        <nav class="nav-tabs" role="navigation">
-            <p class="layout-semibreve">
-                <input name="url-slug" type="text" value="{{url_slug}}">
-            </p>
-
+        <nav class="nav-tabs" role="navigation" style="text-align:left;">
+            <div class="layout-breve">
+            <ul class="list-form">
+                <li class="form-field">
+                    <label for="invitee-name">Slug</label>
+                    <input name="url-slug" type="text" value="{{url_slug}}" />  
+                </li>                      
+            </ul>
+            </div>
+        
             <ul class="layout-semibreve layout-tight">
                 <li id="en-nav" class="nav-tab state-active"><a class="nav-tab-link" href="" onclick="return showEnglish()">English</a></li>
                 <li id="es-nav" class="nav-tab"><a class="nav-tab-link" href="" onclick="return showSpanish()">Spanish</a></li>
@@ -68,7 +73,7 @@
 
 
         <div class="layout-breve">
-                <div id="english" style="display: block" class="layout-minim layout-major">
+                <div id="english" style="display: block" class="glayout-minim glayout-major language-edit">
                     <div class="badge-heading badge-gov badge-teal">
                         <h2><input name="title" value="{{title}}" type="text"></h2>
                     </div>
@@ -79,7 +84,7 @@
                         </li>                      
                     </ul>
                 </div>
-                <div id="spanish" style="display: none" class="layout-minim layout-major">
+                <div id="spanish" style="display: none" class="glayout-minim glayout-major language-edit">
                     <div class="badge-heading badge-gov badge-teal">
                         <h2><input name="title_es" value="{{title_es}}" type="text"></h2>
                     </div> 
@@ -90,7 +95,7 @@
                         </li>
                     </ul> 
                 </div>
-                <div id="chinese" style="display: none" class="layout-minim layout-major">
+                <div id="chinese" style="display: none" class="glayout-minim glayout-major language-edit">
                     <div class="badge-heading badge-gov badge-teal">
                         <h2><input name="title_cn" value="{{title_cn}}" type="text"></h2>
                     </div>
@@ -101,17 +106,7 @@
                             </li>             
                         </ul> 
                 </div>
-                <div class="button-group" style="clear:both">
-                    <input name="layout" value="{{layout}}" type="hidden" />
-                    <input name="hexsha" value="{{hexsha}}" type="hidden" />
-                    <input type="submit" class="primary-button" value="Save"/>
-                    <input type="button" class="button" value="Send for review" disabled/>
-                    <input type="button" class="button" value="Publish" disabled/>
-                    <a class="button button-unstyled" href="#">Archive</a>
-                </div>
-            </form>
-            <!-- dummy right hand section -->
-            <div class="layout-minim layout-minor" id="statistics">
+                <div id="statistics">
                 <div class="slab-blue info">
                         <h2><span class="big-number">247</span> <span>people viewed this information this week</span></h2>
                         <ul>
@@ -123,6 +118,17 @@
                 </div>
                 
             </div>
+                <div class="button-group" style="clear:both">
+                    <input name="layout" value="{{layout}}" type="hidden" />
+                    <input name="hexsha" value="{{hexsha}}" type="hidden" />
+                    <input type="submit" class="primary-button" value="Save"/>
+                    <input type="button" class="button" value="Send for review" disabled/>
+                    <input type="button" class="button" value="Publish" disabled/>
+                    <a class="button button-unstyled" href="#">Archive</a>
+                </div>
+            </form>
+            <!-- dummy right hand section -->
+            
         </div>            
         
         
