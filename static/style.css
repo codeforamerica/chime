@@ -99,12 +99,11 @@ body .nav-tabs>p {
 	right:1em;
 }
 h1 span{
-	
 	text-transform: lowercase;
 	font-size:0.5em;
 }
 ul.slug{
-	margin:0 1em;
+	margin:0 1.25em;
 	padding:0;
 }
 ul.slug label, 
