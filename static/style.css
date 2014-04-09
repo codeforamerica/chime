@@ -99,7 +99,18 @@ body .nav-tabs>p {
 	right:1em;
 }
 h1 span{
-	display:block;
+	
 	text-transform: lowercase;
 	font-size:0.5em;
+}
+ul.slug{
+	margin:0 1em;
+	padding:0;
+}
+ul.slug label, 
+ul.slug input{
+	display:inline-block;
+}
+ul.slug .form-field input{
+	width:40%;
 }

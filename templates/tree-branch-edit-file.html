@@ -55,14 +55,14 @@
         <form action="/tree/{{safe_branch}}/save/{{path}}" method="POST">
         
         <nav class="nav-tabs" role="navigation" style="text-align:left;">
-            <div class="layout-breve">
-            <ul class="list-form">
+            <!--div class="layout-breve"-->
+            <ul class="list-form slug">
                 <li class="form-field">
-                    <label for="invitee-name">Slug</label>
+                    <label for="url-slug">Slug</label>
                     <input name="url-slug" type="text" value="{{url_slug}}" />  
                 </li>                      
             </ul>
-            </div>
+            <!--/div-->
         
             <ul class="layout-semibreve layout-tight">
                 <li id="en-nav" class="nav-tab state-active"><a class="nav-tab-link" href="" onclick="return showEnglish()">English</a></li>
