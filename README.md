@@ -26,7 +26,7 @@ Install
 Who maintains this?
 -------------------
 
-[Mike Migursky](http://github.com/phae) and [Frances Berriman](http://github.com/phae)
+[Mike Migurski](http://github.com/migurski) and [Frances Berriman](http://github.com/phae)
 
 You can read a bit more about what we're up to over here http://digifrodo.tumblr.com
 
