@@ -14,7 +14,7 @@
         </script>
         <script src="{{ url_for('static', filename='script.js') }}"></script>
         <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet" />
-        <title>Bizarro overview</title>
+        <title>{% block title %}{% endblock %} | Bizarro</title>
     </head>
     <body>
     {% block content %}{% endblock %}
