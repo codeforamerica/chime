@@ -8,46 +8,6 @@
         <link href="http://style.codeforamerica.org/0/style/css/prism.css" rel="stylesheet" />
         <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet" />
         <title>Bizarro edit</title>
-
-    <script type="text/javascript">
-    
-        function showEnglish()
-        {
-            document.getElementById('english').style.display = 'block';
-            document.getElementById('spanish').style.display = 'none';
-            document.getElementById('chinese').style.display = 'none';
-            var d = document.getElementById("en-nav");
-            d.className = d.className + " state-active";
-            document.getElementById("es-nav").className = "nav-tab";
-            document.getElementById("cn-nav").className = "nav-tab";
-            return false;
-        }
-
-        function showSpanish()
-        {
-            document.getElementById('english').style.display = 'none';
-            document.getElementById('spanish').style.display = 'block';
-            document.getElementById('chinese').style.display = 'none';
-            var d = document.getElementById("es-nav");
-            d.className = d.className + " state-active";
-            document.getElementById("en-nav").className = "nav-tab";
-            document.getElementById("cn-nav").className = "nav-tab";
-            return false;
-        }
-
-        function showChinese()
-        {
-            document.getElementById('english').style.display = 'none';
-            document.getElementById('spanish').style.display = 'none';
-            document.getElementById('chinese').style.display = 'block';
-            var d = document.getElementById("cn-nav");
-            d.className = d.className + " state-active";
-            document.getElementById("en-nav").className = "nav-tab";
-            document.getElementById("es-nav").className = "nav-tab";
-            return false;
-        }
-
-    </script>
 </head>
 <body>
     <h1>Bizarro editor <span><a href="/">tasks</a> &rarr; <a href="./">{{branch}}</a></span></h1>
@@ -142,5 +102,44 @@
     
 
     </form>
+    <script type="text/javascript">
+    
+        function showEnglish()
+        {
+            document.getElementById('english').style.display = 'block';
+            document.getElementById('spanish').style.display = 'none';
+            document.getElementById('chinese').style.display = 'none';
+            var d = document.getElementById("en-nav");
+            d.className = d.className + " state-active";
+            document.getElementById("es-nav").className = "nav-tab";
+            document.getElementById("cn-nav").className = "nav-tab";
+            return false;
+        }
+
+        function showSpanish()
+        {
+            document.getElementById('english').style.display = 'none';
+            document.getElementById('spanish').style.display = 'block';
+            document.getElementById('chinese').style.display = 'none';
+            var d = document.getElementById("es-nav");
+            d.className = d.className + " state-active";
+            document.getElementById("en-nav").className = "nav-tab";
+            document.getElementById("cn-nav").className = "nav-tab";
+            return false;
+        }
+
+        function showChinese()
+        {
+            document.getElementById('english').style.display = 'none';
+            document.getElementById('spanish').style.display = 'none';
+            document.getElementById('chinese').style.display = 'block';
+            var d = document.getElementById("cn-nav");
+            d.className = d.className + " state-active";
+            document.getElementById("en-nav").className = "nav-tab";
+            document.getElementById("es-nav").className = "nav-tab";
+            return false;
+        }
+
+    </script>
 </body>
 </html>
