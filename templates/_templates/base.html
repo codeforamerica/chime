@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <link rel="stylesheet" href="http://style.codeforamerica.org/0/style/css/main.css">
+        <link rel="stylesheet" href="http://style.codeforamerica.org/0/style/css/layout.css" media="all and (min-width: 40em)">
+        <link href="http://style.codeforamerica.org/0/style/css/prism.css" rel="stylesheet" />
+        <link href="style/main.css" rel="stylesheet" />
+        <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+        <script src="https://login.persona.org/include.js"></script>
+        <script type="text/javascript">
+          var currentUser = {{email|tojson|safe}};
+        </script>
+        <script src="{{ url_for('static', filename='script.js') }}"></script>
+        <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet" />
+        <title>Bizarro overview</title>
+    </head>
+    
+    {% block content %}{% endblock %}
+</html>
