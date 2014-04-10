@@ -2,3 +2,4 @@ PyYAML==3.10
 GitPython==0.3.2.RC1
 Flask==0.10.1
 requests==2.2.1
+Jinja2==2.7.2
