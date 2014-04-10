@@ -20,6 +20,7 @@ body .nav-tabs>p {
 	float:right;
 	width:25%;
 	padding:1em;
+	text-align: center;
 }
 
 #statistics h2{
@@ -87,10 +88,10 @@ body .nav-tabs>p {
 }
 #statistics ul li{
 	background-image:none;
+	padding-bottom:0.5em;
 }
 #statistics ul li span{
 	font-size:2em;
-	display:inline;
 }
 .signon{
 	display:inline;

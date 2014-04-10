@@ -22,3 +22,13 @@ Install
    or its Python port [Honcho](https://pypi.python.org/pypi/honcho):
    
         $ honcho start
+
+Who maintains this?
+-------------------
+
+[Mike Migursky](http://github.com/phae) and [Frances Berriman](http://github.com/phae)
+
+You can read a bit more about what we're up to over here http://digifrodo.tumblr.com
+
+
+
