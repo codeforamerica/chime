@@ -1,7 +1,7 @@
 Bizarro
 =======
 
-An experimental CMS that edits Jekyll sites and uses Git persistence and history.
+An experimental CMS that edits Jekyll sites and uses Git persistence and history.  Very much a WIP that is entirely untested and unproven, consider this "Reckon 0.1".
 
 Install
 -------
