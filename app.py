@@ -204,7 +204,7 @@ def branch_edit(branch, path=None):
         url_slug, _ = splitext(path)
         
         kwargs = dict(branch=branch, safe_branch=safe_branch, path=path,
-                      body=body, hexsha=c.hexsha, url_slug=url_slug)
+                      body=body, hexsha=c.hexsha, url_slug=url_slug, email=session['email'])
         
         kwargs.update(front)
 
