@@ -1,15 +1,6 @@
-<doctype: html>
-<html>
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-        <link rel="stylesheet" href="http://style.codeforamerica.org/0/style/css/main.css">
-        <link rel="stylesheet" href="http://style.codeforamerica.org/0/style/css/layout.css" media="all and (min-width: 40em)">
-        <link href="http://style.codeforamerica.org/0/style/css/prism.css" rel="stylesheet" />
-        <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet" />
-        <title>Bizarro edit</title>
-</head>
-<body>
+{% extends "_templates/base.html" %}
+{% block title %}Tasks{% endblock %}
+{% block content %}
     <h1>Bizarro editor <span><a href="/">tasks</a></span></h1>
 
 
@@ -78,5 +69,4 @@
             </tbody>
         </table>
     </div>
-</body>
-</html>
+{% endblock %}

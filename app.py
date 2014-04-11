@@ -195,7 +195,7 @@ def branch_edit(branch, path=None):
         full_paths = [join(full_path, name) for name in file_names]
         good_paths = [fp for fp in full_paths if realpath(fp) != r.git_dir]
         
-        kwargs = dict(branch=branch, list_paths=map(basename, good_paths))
+        kwargs = dict(branch=branch, list_paths=map(basename, good_paths), email=session['email'])
         return render_template('tree-branch-edit-listdir.html', **kwargs)
     
     with open(full_path, 'r') as file:
