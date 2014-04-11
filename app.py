@@ -17,6 +17,11 @@ _repo_path = 'sample-site'
 app = Flask(__name__)
 app.secret_key = 'boop'
 
+def dos2unix(string):
+    ''' Returns a copy of the strings with line-endings corrected.
+    '''
+    return string.replace('\r\n', '\n').replace('\r', '\n')
+
 def get_repo():
     ''' Gets repository for the current user, cloned from the origin.
     '''
@@ -204,9 +209,8 @@ def branch_edit(branch, path=None):
         url_slug, _ = splitext(path)
         
         kwargs = dict(branch=branch, safe_branch=safe_branch, path=path,
-                      body=body, hexsha=c.hexsha, url_slug=url_slug, email=session['email'])
-        
-        kwargs.update(front)
+                      body=body, hexsha=c.hexsha, url_slug=url_slug,
+                      front=front, email=session['email'])
 
         return render_template('tree-branch-edit-file.html', **kwargs)
 
@@ -267,14 +271,14 @@ def branch_save(branch, path):
     #
     b.checkout()
     
-    front = dict(layout=request.form.get('layout'),
-                 title=request.form.get('title'),
-                 title_es=request.form.get('title_es'),
-                 title_cn=request.form.get('title_cn'),
-                 body_es=request.form.get('body_es').replace('\r\n', '\n'),
-                 body_cn=request.form.get('body_cn').replace('\r\n', '\n'))
+    front = {'layout': dos2unix(request.form.get('layout')),
+             'title':  dos2unix(request.form.get('title')),
+             'title-es': dos2unix(request.form.get('title-es')),
+             'body-es':  dos2unix(request.form.get('body-es')),
+             'title-zh-cn': dos2unix(request.form.get('title-zh-cn')),
+             'body-zh-cn':  dos2unix(request.form.get('body-zh-cn'))}
 
-    body = request.form.get('body').replace('\r\n', '\n')
+    body = dos2unix(request.form.get('body'))
     bizarro.edit.update_page(r, path, front, body)
     
     #

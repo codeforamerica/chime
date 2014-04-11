@@ -29,7 +29,7 @@
         <div class="layout-breve">
                 <div id="english" style="display: block" class="glayout-minim glayout-major language-edit">
                     <div class="badge-heading badge-gov badge-teal">
-                        <h2><input name="title" value="{{title}}" type="text"></h2>
+                        <h2><input name="title" value="{{front['title']}}" type="text"></h2>
                     </div>
                     <ul class="list-form">
                         <li class="form-field">
@@ -40,23 +40,23 @@
                 </div>
                 <div id="spanish" style="display: none" class="glayout-minim glayout-major language-edit">
                     <div class="badge-heading badge-gov badge-teal">
-                        <h2><input name="title_es" value="{{title_es}}" type="text"></h2>
+                        <h2><input name="title-es" value="{{front['title-es']}}" type="text"></h2>
                     </div> 
                     <ul class="list-form">
                         <li class="form-field">
                             <label for="en-body">Content</label>
-                            <textarea id="en-body" class="textarea" name="body_es" type="text">{{body_es}}</textarea>
+                            <textarea id="en-body" class="textarea" name="body-es" type="text">{{front['body-es']}}</textarea>
                         </li>
                     </ul> 
                 </div>
                 <div id="chinese" style="display: none" class="glayout-minim glayout-major language-edit">
                     <div class="badge-heading badge-gov badge-teal">
-                        <h2><input name="title_cn" value="{{title_cn}}" type="text"></h2>
+                        <h2><input name="title-zh-cn" value="{{front['title-zh-cn']}}" type="text"></h2>
                     </div>
                         <ul class="list-form">
                             <li class="form-field">
                                 <label for="cn-body">Content</label>
-                                <textarea id="cn-body" class="textarea" name="body_cn" type="text">{{body_cn}}</textarea>
+                                <textarea id="cn-body" class="textarea" name="body-zh-cn" type="text">{{front['body-zh-cn']}}</textarea>
                             </li>             
                         </ul> 
                 </div>
