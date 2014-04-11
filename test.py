@@ -9,8 +9,12 @@ from shutil import rmtree
 from uuid import uuid4
 
 from git import Repo
+from box.util.rotunicode import RotUnicode
 
 import bizarro, jekyll
+
+import codecs
+codecs.register(RotUnicode.search_function)
 
 #
 # Tarball of a single-commit Git repo with files index.md and sub/index.md
@@ -21,7 +25,8 @@ _tarball = '\x1f\x8b\x08\x00\xb9\t$S\x00\x03\xed\x9d\x0bt\x14W\x19\xc77@S\x08\x9
 class TestJekyll (TestCase):
 
     def test_good_files(self):
-        front, body, file = dict(title='Greeting'), u'World: Hello. 你好世界.', StringIO()
+        front = dict(title='Greeting'.encode('rotunicode'))
+        body, file = u'World: Hello.'.encode('rotunicode'), StringIO()
 
         jekyll.dump_jekyll_doc(front, body, file)
         _front, _body = jekyll.load_jekyll_doc(file)
