@@ -46,14 +46,15 @@ def load_jekyll_doc(file):
         # Look for a token that shows we're about to reach the content.
         if type(token) is yaml.DocumentStartToken:
         
-            # Seek to the beginning, and load the front matter as a document.
+            # Seek to the beginning, and load the complete content.
             file.seek(0)
-            bytes = file.read(token.end_mark.index)
-            front_matter = yaml.safe_load(bytes)
+            chars = file.read().decode('utf8')
+
+            # Load the front matter as a document.
+            front_matter = yaml.safe_load(chars[:token.end_mark.index])
             
             # Seek just after the document separator, and get remaining string.
-            file.read(len("\n" + _marker))
-            content = file.read().decode('utf-8')
+            content = chars[token.end_mark.index + len("\n" + _marker):]
             
             return front_matter, content
     
@@ -76,7 +77,8 @@ def dump_jekyll_doc(front_matter, content, file):
     # Use newline-preserving block literal form.
     # yaml.SafeDumper ensures best unicode output.
     dump_kwargs = dict(Dumper=yaml.SafeDumper, default_flow_style=False,
-                       canonical=False, default_style='|', indent=2)
+                       canonical=False, default_style='|', indent=2,
+                       allow_unicode=True)
     
     # Write front matter to the start of the file.
     file.seek(0)
