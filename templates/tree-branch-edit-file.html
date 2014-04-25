@@ -3,7 +3,7 @@
 {% block content %}
     <h1>Bizarro editor <span><a href="/">tasks</a> &rarr; <a href="./">{{branch}}</a></span></h1>
     
-        <form action="/tree/{{safe_branch}}/save/{{path}}" method="POST">
+        <form action="/tree/{{safe_branch}}/save/{{edit_path}}" method="POST">
         
         <nav class="nav-tabs" role="navigation" style="text-align:left;">
             <!--div class="layout-breve"-->
@@ -74,7 +74,7 @@
                     <input name="layout" value="{{layout}}" type="hidden" />
                     <input name="hexsha" value="{{hexsha}}" type="hidden" />
                     <input type="submit" class="primary-button" value="Save"/>
-                    <input type="submit" class="primary-button" value="Preview" />
+                    <a href="{{view_path}}" class="button primary-button">Preview</a>
                     <a class="button button-unstyled" href="#">Archive</a>
                 </div>
             </div>
