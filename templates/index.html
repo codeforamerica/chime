@@ -21,24 +21,45 @@
         <table>
             <thead>
                 <tr>
-                    <th colspan="2">Your tasklist</th>
+                    <th colspan="4">Tasklist</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
+                    <th>Owner</th>
                     <th>Task name</th>
+                    <th>Reviewer</th>
                     <th>Action</th> 
                 </tr>
                 {% for item in items %}
                 <tr>
+                  <td><em>Task owner name</em></td>
                   <td><a href="/tree/{{item.path}}/edit/">{{item.name}}</a> ({{item.ahead|count}} ahead, {{item.behind|count}} behind)</td>
-                  <td><a class="button-alternative" href="/tree/{{item.path}}/edit/" type="button">Make more changes</a> <button name="action" value="abandon" type="submit" class="button-prominent">Delete</button>
+                  <td><em>Reviewers name</em></td>
+                  <td><a class="button-alternative" href="/tree/{{item.path}}/edit/" type="button">Make more changes</a> <button name="action" value="#" type="submit" class="button">Send for review</button> <button name="action" value="abandon" type="submit" class="button-prominent">Delete</button>
                 </tr>
                 {% endfor %}
 
+                <!-- dummy row to show what you'd see if you submitted something for review -->
+                <tr>
+                  <td><strong>You</strong></td>
+                  <td><a href="#">Added parking information</a> (8 ahead, 2 behind)</td>
+                  <td>Mike Migurski</td>
+                  <td><a class="button-alternative" href="#" type="button">Make more changes</a> <button name="action" value="#" type="submit" class="button">Change reviewer</button> <button name="action" value="abandon" type="submit" class="button-prominent">Delete</button>
+                </tr>
+
+                <!-- dummy row to show what you'd see if you were supposed to review something -->
+
+                <tr>
+                  <td>Mike Mirgusku</td>
+                  <td><a href="#">Created trash pick-up collectino page</a> (8 ahead, 2 behind)</td>
+                  <td><strong>You</strong></td>
+                  <td><a class="button" href="#" type="button">Suggest changes</a> <a class="button-alternative" href="#" type="button">Approve changes</a>
+                </tr>
+
                 <tr>
                     <th>Create a new task</th>
-                    <td>
+                    <td colspan="3">
                         <form action="/start" method="POST">
                           <input name="branch" placeholder="task name" type="text">
                           <button type="submit">Create</button>
