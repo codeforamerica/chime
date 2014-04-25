@@ -227,10 +227,15 @@ def branch_edit(branch, path=None):
             return redirect('/tree/%s/edit/%s' % (safe_branch, path + '/'), code=302)
     
         file_names = [n for n in listdir(full_path) if not n.startswith('_')]
-        full_paths = [join(full_path, name) for name in file_names]
-        good_paths = [fp for fp in full_paths if realpath(fp) != r.git_dir]
+        view_paths = [join('/tree/%s/view' % branch_name2path(branch), path)
+                      for path in file_names]
         
-        kwargs = dict(branch=branch, list_paths=map(basename, good_paths), email=session['email'])
+        full_paths = [join(full_path, name) for name in file_names]
+        path_pairs = zip(full_paths, view_paths)
+        
+        list_paths = [(basename(fp), vp) for (fp, vp) in path_pairs if realpath(fp) != r.git_dir]
+        kwargs = dict(branch=branch, email=session['email'], list_paths=list_paths)
+
         return render_template('tree-branch-edit-listdir.html', **kwargs)
     
     with open(full_path, 'r') as file:
