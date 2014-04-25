@@ -36,7 +36,7 @@
                   <td><em>Task owner name</em></td>
                   <td><a href="/tree/{{item.path}}/edit/">{{item.name}}</a> ({{item.ahead|count}} ahead, {{item.behind|count}} behind)</td>
                   <td><em>Reviewers name</em></td>
-                  <td><a class="button-alternative" href="/tree/{{item.path}}/edit/" type="button">Make more changes</a> <button name="action" value="#" type="submit" class="button">Send for review</button> <button name="action" value="abandon" type="submit" class="button-prominent">Delete</button>
+                  <td><form><a class="button-alternative" href="/tree/{{item.path}}/edit/" type="button">Make more changes</a> <button name="action" value="#" type="submit" class="button">Send for review</button> <button name="action" value="abandon" type="submit" class="button-prominent">Delete</button></form>
                 </tr>
                 {% endfor %}
 
