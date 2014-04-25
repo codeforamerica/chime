@@ -227,8 +227,8 @@ def branch_edit(branch, path=None):
             return redirect('/tree/%s/edit/%s' % (safe_branch, path + '/'), code=302)
     
         file_names = [n for n in listdir(full_path) if not n.startswith('_')]
-        view_paths = [join('/tree/%s/view' % branch_name2path(branch), path)
-                      for path in file_names]
+        view_paths = [join('/tree/%s/view' % branch_name2path(branch), join(path, fn))
+                      for fn in file_names]
         
         full_paths = [join(full_path, name) for name in file_names]
         path_pairs = zip(full_paths, view_paths)
