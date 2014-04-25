@@ -2,12 +2,14 @@ from os.path import join, isdir, exists, realpath, basename, split, splitext
 from os import listdir, environ
 from urllib import quote, unquote
 from re import compile, MULTILINE
+from mimetypes import guess_type
 from functools import wraps
+from glob import glob
 
 from git import Repo
 from requests import post
 from flask import Flask, redirect, request, Response, render_template, session
-from jekyll import load_jekyll_doc
+from jekyll import load_jekyll_doc, build_jekyll_site
 
 import bizarro
 
@@ -177,6 +179,34 @@ def merge_branch():
     
     else:
         return redirect('/')
+
+@app.route('/tree/<branch>/view/', methods=['GET'])
+@app.route('/tree/<branch>/view/<path:path>', methods=['GET'])
+@login_required
+def branch_view(branch, path=None):
+    branch = branch_var2name(branch)
+
+    r = get_repo()
+    b = bizarro.repo.start_branch(r, _default_branch, branch)
+    b.checkout()
+    c = r.commit()
+    
+    build_jekyll_site(r.working_dir)
+    
+    local_base, _ = splitext(join(join(r.working_dir, '_site'), path or ''))
+    
+    if isdir(local_base):
+        local_base += '/index'
+    
+    local_paths = glob(local_base + '.*')
+    
+    if not local_paths:
+        return 404
+    
+    local_path = local_paths[0]
+    mime_type, _ = guess_type(local_path)
+    
+    return Response(open(local_path).read(), 200, {'Content-Type': mime_type})
 
 @app.route('/tree/<branch>/edit/', methods=['GET'])
 @app.route('/tree/<branch>/edit/<path:path>', methods=['GET'])

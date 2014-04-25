@@ -90,6 +90,14 @@ def dump_jekyll_doc(front_matter, content, file):
     file.write(_marker)
     file.write(content.encode('utf8'))
 
+def build_jekyll_site(dirname):
+    '''
+    '''
+    from subprocess import Popen
+    
+    build = Popen(['jekyll', 'build'], cwd=dirname)
+    build.wait()
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
