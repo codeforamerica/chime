@@ -13,14 +13,13 @@
         <table>
             <thead>
                 <tr>
-                    <th colspan="4">Changes</th>
+                    <th colspan="3">Changes</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
                     <th>Status</th>
                     <th>Topic</th> 
-                    <th>Reviewer</th>
                     <th>Options</th>
                 </tr>
                 {% for path in list_paths %}
@@ -28,7 +27,6 @@
                         <tr>
                             <td>&nbsp;</td>
                             <td><a href="{{path}}">{{path}}</a></td>
-                            <td>&nbsp;</td>
                             <td><a href="{{path}}" class="button-alternative">Edit</a> <input type="button" class="button" value="Preview" /> <input name="action" type="submit" value="Delete" class="button-prominent" /></td>
                         </tr>
                         <input name="path" value="{{path}}" type="hidden">
@@ -36,7 +34,7 @@
                 {% endfor %}  
                 <tr>
                     <th>Add new page</th>
-                    <td colspan="3">
+                    <td colspan="2">
                         <form action="." method="POST">
                             <input name="path" placeholder="thing/stuff" type="text" />
                             <input name="action" type="submit" value="Add" />
@@ -45,7 +43,7 @@
                 </tr>
                 <tr>
                     <th>Add a new file</th>
-                    <td colspan="3">
+                    <td colspan="2">
                         <form action="." method="POST" enctype="multipart/form-data" />
                             <input name="file" type="file" />
                             <input name="action" type="submit" value="Upload" />
@@ -53,10 +51,10 @@
                     </td>
                 </tr>
                 <tr>
-                    <th colspan="4">Actions</th>
+                    <th colspan="3">Actions</th>
                 </tr>
                 <tr>
-                    <td colspan="4">
+                    <td colspan="2">
                         <form action="/merge" method="POST">
                             <input name="branch" value="{{branch}}" type="hidden" />
                             <a class="button-alternative" href="">Submit for review</a>
