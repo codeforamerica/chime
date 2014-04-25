@@ -271,7 +271,7 @@ def branch_edit_file(branch, path=None):
         path_303 = path or ''
     
     elif action == 'add' and 'path' in request.form:
-        front, body = dict(title=''), ''
+        front, body = dict(title='', layout='multi'), ''
         name = splitext(request.form['path'])[0] + '.md'
 
         file_path = bizarro.edit.create_new_page(r, path, name, front, body)
