@@ -36,7 +36,13 @@
                   <td><em>Task owner name</em></td>
                   <td><a href="/tree/{{item.path}}/edit/">{{item.name}}</a> ({{item.ahead|count}} ahead, {{item.behind|count}} behind)</td>
                   <td><em>Reviewers name</em></td>
-                  <td><form><a class="button-alternative" href="/tree/{{item.path}}/edit/" type="button">Make more changes</a> <button name="action" value="#" type="submit" class="button">Send for review</button> <button name="action" value="abandon" type="submit" class="button-prominent">Delete</button></form>
+                  <td>
+                    <form action="/merge" method="POST">
+                        <a class="button-alternative" href="/tree/{{item.path}}/edit/" type="button">Make more changes</a>
+                        <button name="action" value="merge" type="submit" class="button">Send for review</button>
+                        <button name="action" value="abandon" type="submit" class="button-prominent">Delete</button>
+                        <input type="hidden" name="branch" value="{{item.name}}">
+                    </form>
                 </tr>
                 {% endfor %}
 
