@@ -227,7 +227,7 @@ def branch_edit(branch, path=None):
             return redirect('/tree/%s/edit/%s' % (safe_branch, path + '/'), code=302)
     
         file_names = [n for n in listdir(full_path) if not n.startswith('_')]
-        view_paths = [join('/tree/%s/view' % branch_name2path(branch), join(path, fn))
+        view_paths = [join('/tree/%s/view' % branch_name2path(branch), join(path or '', fn))
                       for fn in file_names]
         
         full_paths = [join(full_path, name) for name in file_names]
@@ -271,7 +271,9 @@ def branch_edit_file(branch, path=None):
         path_303 = path or ''
     
     elif action == 'add' and 'path' in request.form:
-        name, front, body = request.form['path'], dict(title=''), ''
+        front, body = dict(title=''), ''
+        name = splitext(request.form['path'])[0] + '.md'
+
         file_path = bizarro.edit.create_new_page(r, path, name, front, body)
         message = 'Created new file "%s"' % file_path
         path_303 = file_path
