@@ -286,7 +286,12 @@ def is_peer_reviewed(clone):
     ''' Returns true if the active branch appears peer-reviewed.
     '''
     commit_log = reversed(clone.active_branch.log())
-    last_commit = commit_log.next()
+    
+    try:
+        last_commit = commit_log.next()
+    except StopIteration:
+        # No commits means no review.
+        return False
 
     if 'Approved changes.' not in last_commit.message:
         # To do: why does "commit: " get prefixed to the message?

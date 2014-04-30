@@ -577,6 +577,7 @@ class TestRepo (TestCase):
         #
         branch1.checkout()
         self.assertFalse(bizarro.repo.needs_peer_review(self.clone1))
+        self.assertFalse(bizarro.repo.is_peer_reviewed(self.clone1))
         
         bizarro.edit.update_page(self.clone1, 'index.md',
                                  dict(title=name), 'Hello you-all.')
