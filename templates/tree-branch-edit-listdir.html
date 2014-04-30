@@ -80,8 +80,16 @@
                     <td colspan="2">
                         <form action="/merge" method="POST">
                             <input name="branch" value="{{branch}}" type="hidden" />
-                            <a class="button-alternative" href="">Submit for review</a>
-                            <button name="action" value="merge" type="submit" class="button-alternative" disabled>Publish (awaiting review)</button>
+                            {% if needs_peer_review %}
+                                <button name="action" value="merge" type="submit" class="button-alternative">Submit for review</button>
+                            {% else %}
+                                <button name="action" value="merge" type="submit" class="button-alternative" disabled>[can't submit]</button>
+                            {% endif %}
+                            {% if is_peer_reviewed %}
+                                <button name="action" value="merge" type="submit" class="button-alternative">Publish</button>
+                            {% else %}
+                                <button name="action" value="merge" type="submit" class="button-alternative" disabled>Publish (awaiting review)</button>
+                            {% endif %}
                         </form>    
                     </td>
                 </tr>
