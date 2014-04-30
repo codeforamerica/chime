@@ -37,7 +37,26 @@
                     </form>
                 {% endfor %}  
                 <tr>
-                    <th>Add new page</th>
+                    <th colspan="3">
+                        <label>Edit existing page 
+                          <input type="text" name="pages" list="pages" placeholder="thing/stuff"  />
+                          <datalist id="pages">
+
+                          <label> or select one from the list:
+                          <select name="pages">
+                            {% for (edit_path, view_path) in list_paths %}
+                                <option value="{{edit_path}}" />
+                            {% endfor %}  
+                          </select>
+                           </label>
+
+                          </datalist>
+                         </label>
+                         <a href="{{edit_path}}" class="button-alternative">Edit</a>
+                    </th>
+                </tr>
+                <tr>
+                    <th>Create new page</th>
                     <td colspan="2">
                         <form action="." method="POST">
                             <input name="path" placeholder="thing/stuff" type="text" />
