@@ -575,6 +575,11 @@ class TestRepo (TestCase):
         #
         # Make a commit.
         #
+        environ['GIT_AUTHOR_NAME'] = 'Jim Content Creator'
+        environ['GIT_COMMITTER_NAME'] = 'Jim Content Creator'
+        environ['GIT_AUTHOR_EMAIL'] = 'creator@example.com'
+        environ['GIT_COMMITTER_EMAIL'] = 'creator@example.com'
+        
         branch1.checkout()
         self.assertFalse(bizarro.repo.needs_peer_review(self.clone1, 'master'))
         self.assertFalse(bizarro.repo.is_peer_reviewed(self.clone1, 'master'))
@@ -587,6 +592,7 @@ class TestRepo (TestCase):
         
         self.assertTrue(bizarro.repo.needs_peer_review(self.clone1, 'master'))
         self.assertFalse(bizarro.repo.is_peer_reviewed(self.clone1, 'master'))
+        self.assertEqual(bizarro.repo.ineligible_peer(self.clone1, 'master'), 'creator@example.com')
         
         #
         # Approve the work as someone else.
@@ -600,6 +606,7 @@ class TestRepo (TestCase):
 
         self.assertFalse(bizarro.repo.needs_peer_review(self.clone1, 'master'))
         self.assertTrue(bizarro.repo.is_peer_reviewed(self.clone1, 'master'))
+        self.assertEqual(bizarro.repo.ineligible_peer(self.clone1, 'master'), None)
         
         #
         # Make another commit.
@@ -612,6 +619,7 @@ class TestRepo (TestCase):
         
         self.assertTrue(bizarro.repo.needs_peer_review(self.clone1, 'master'))
         self.assertFalse(bizarro.repo.is_peer_reviewed(self.clone1, 'master'))
+        self.assertEqual(bizarro.repo.ineligible_peer(self.clone1, 'master'), 'reviewer@example.com')
         
         #
         # Approve the work as someone else.
@@ -625,6 +633,7 @@ class TestRepo (TestCase):
 
         self.assertFalse(bizarro.repo.needs_peer_review(self.clone1, 'master'))
         self.assertTrue(bizarro.repo.is_peer_reviewed(self.clone1, 'master'))
+        self.assertEqual(bizarro.repo.ineligible_peer(self.clone1, 'master'), None)
     
     def tearDown(self):
         rmtree(self.origin.git_dir)

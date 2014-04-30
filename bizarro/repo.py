@@ -283,6 +283,14 @@ def needs_peer_review(clone, default_branch_name):
     
     return not is_peer_reviewed(clone, default_branch_name)
 
+def ineligible_peer(clone, default_branch_name):
+    ''' Returns the email address of a peer who shouldn't review this branch.
+    '''
+    if needs_peer_review(clone, default_branch_name):
+        return clone.active_branch.commit.author.email
+    
+    return None
+
 def is_peer_reviewed(clone, default_branch_name):
     ''' Returns true if the active branch appears peer-reviewed.
     '''
