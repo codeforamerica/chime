@@ -272,35 +272,35 @@ def move_existing_file(clone, old_path, new_path, base_sha, default_branch_name)
     
     return clone.active_branch.commit
 
-def needs_peer_review(clone):
+def needs_peer_review(clone, default_branch_name):
     ''' Returns true if the active branch appears to be in need of review.
     '''
-    commit_log = list(clone.active_branch.log())
+    base_commit = clone.git.merge_base(_origin(default_branch_name), clone.active_branch.name)
+    last_commit = clone.active_branch.commit.hexsha
     
-    if len(commit_log) == 0:
+    if base_commit == last_commit:
         return False
     
-    return not is_peer_reviewed(clone)
+    return not is_peer_reviewed(clone, default_branch_name)
 
-def is_peer_reviewed(clone):
+def is_peer_reviewed(clone, default_branch_name):
     ''' Returns true if the active branch appears peer-reviewed.
     '''
-    commit_log = reversed(clone.active_branch.log())
+    base_commit = clone.git.merge_base(_origin(default_branch_name), clone.active_branch.name)
+    last_commit = clone.active_branch.commit
     
-    try:
-        last_commit = commit_log.next()
-    except StopIteration:
-        # No commits means no review.
-        return False
-
-    if 'Approved changes.' not in last_commit.message:
+    if 'Approved changes.' not in clone.active_branch.commit.message:
         # To do: why does "commit: " get prefixed to the message?
         return False
     
-    reviewer_email = last_commit.actor.email
+    reviewer_email = last_commit.author.email
+    commit_log = clone.active_branch.commit.iter_parents() # reversed(clone.active_branch.log())
     
     for commit in commit_log:
-        if reviewer_email and commit.actor.email != reviewer_email:
+        if commit == base_commit:
+            break
+        
+        if reviewer_email and commit.author.email != reviewer_email:
             return True
     
     return False

@@ -576,8 +576,8 @@ class TestRepo (TestCase):
         # Make a commit.
         #
         branch1.checkout()
-        self.assertFalse(bizarro.repo.needs_peer_review(self.clone1))
-        self.assertFalse(bizarro.repo.is_peer_reviewed(self.clone1))
+        self.assertFalse(bizarro.repo.needs_peer_review(self.clone1, 'master'))
+        self.assertFalse(bizarro.repo.is_peer_reviewed(self.clone1, 'master'))
         
         bizarro.edit.update_page(self.clone1, 'index.md',
                                  dict(title=name), 'Hello you-all.')
@@ -585,8 +585,8 @@ class TestRepo (TestCase):
         bizarro.repo.save_working_file(self.clone1, 'index.md', 'I made a change',
                                        self.clone1.commit().hexsha, 'master')
         
-        self.assertTrue(bizarro.repo.needs_peer_review(self.clone1))
-        self.assertFalse(bizarro.repo.is_peer_reviewed(self.clone1))
+        self.assertTrue(bizarro.repo.needs_peer_review(self.clone1, 'master'))
+        self.assertFalse(bizarro.repo.is_peer_reviewed(self.clone1, 'master'))
         
         #
         # Approve the work as someone else.
@@ -598,8 +598,8 @@ class TestRepo (TestCase):
         
         bizarro.repo.mark_as_reviewed(self.clone1)
 
-        self.assertFalse(bizarro.repo.needs_peer_review(self.clone1))
-        self.assertTrue(bizarro.repo.is_peer_reviewed(self.clone1))
+        self.assertFalse(bizarro.repo.needs_peer_review(self.clone1, 'master'))
+        self.assertTrue(bizarro.repo.is_peer_reviewed(self.clone1, 'master'))
         
         #
         # Make another commit.
@@ -610,8 +610,8 @@ class TestRepo (TestCase):
         bizarro.repo.save_working_file(self.clone1, 'index.md', 'I made a change',
                                        self.clone1.commit().hexsha, 'master')
         
-        self.assertTrue(bizarro.repo.needs_peer_review(self.clone1))
-        self.assertFalse(bizarro.repo.is_peer_reviewed(self.clone1))
+        self.assertTrue(bizarro.repo.needs_peer_review(self.clone1, 'master'))
+        self.assertFalse(bizarro.repo.is_peer_reviewed(self.clone1, 'master'))
         
         #
         # Approve the work as someone else.
@@ -623,8 +623,8 @@ class TestRepo (TestCase):
         
         bizarro.repo.mark_as_reviewed(self.clone1)
 
-        self.assertFalse(bizarro.repo.needs_peer_review(self.clone1))
-        self.assertTrue(bizarro.repo.is_peer_reviewed(self.clone1))
+        self.assertFalse(bizarro.repo.needs_peer_review(self.clone1, 'master'))
+        self.assertTrue(bizarro.repo.is_peer_reviewed(self.clone1, 'master'))
     
     def tearDown(self):
         rmtree(self.origin.git_dir)
