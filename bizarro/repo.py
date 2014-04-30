@@ -272,6 +272,16 @@ def move_existing_file(clone, old_path, new_path, base_sha, default_branch_name)
     
     return clone.active_branch.commit
 
+def needs_peer_review(clone):
+    ''' Returns true if the active branch appears to be in need of review.
+    '''
+    commit_log = list(clone.active_branch.log())
+    
+    if len(commit_log) == 0:
+        return False
+    
+    return not is_peer_reviewed(clone)
+
 def is_peer_reviewed(clone):
     ''' Returns true if the active branch appears peer-reviewed.
     '''
