@@ -126,5 +126,23 @@
                 </tr-->
             </tbody>
         </table>
+
+        <hr><!-- to move into reviewer comment template -->
+        <h1>Bizarro editor <span><a href="/">tasks</a></span></h1>
+        <div class="layout-breve">
+            <div class="badge-heading badge-gov badge-teal">
+                <h2>Task review changes</h2>
+                <h3>{{branch}}</h3>
+            </div>
+            <form>
+            <ul class="list-form">
+                <li class="form-field">
+                    <label for="review-changes">Write the changes you think should be made to this task before it's published.</label>
+                    <textarea id="review-changes" class="textarea" name="review-changes" type="text"></textarea>
+                </li>                      
+            </ul>
+            <button name="review-feedback" type="submit" />Send feedback</button>  
+            </form>
+        </div>
     </div>
 {% endblock %}
