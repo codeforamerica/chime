@@ -88,7 +88,11 @@
                             {% if is_peer_reviewed %}
                                 <button name="action" value="merge" type="submit" class="button-alternative">Publish</button>
                             {% else %}
-                                <button name="action" value="merge" type="submit" class="button-alternative" disabled>Publish (awaiting review)</button>
+                                {% if eligible_peer %}
+                                    <button name="action" value="" type="submit" class="button-alternative">Say A-Okay</button>
+                                {% else %}
+                                    <button name="action" value="merge" type="submit" class="button-alternative" disabled>Publish (awaiting review)</button>
+                                {% endif %}
                             {% endif %}
                         </form>    
                     </td>
