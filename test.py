@@ -566,6 +566,60 @@ class TestRepo (TestCase):
         self.assertFalse(exists(join(self.clone2.working_dir, 'goner.md')))
         self.assertTrue(self.clone2.commit().message.startswith('Abandoned work from'))
     
+    def test_peer_review(self):
+        ''' Change the path of a file.
+        '''
+        name = str(uuid4())
+        branch1 = bizarro.repo.start_branch(self.clone1, 'master', name)
+        
+        #
+        # Make a commit.
+        #
+        branch1.checkout()
+        
+        bizarro.edit.update_page(self.clone1, 'index.md',
+                                 dict(title=name), 'Hello you-all.')
+        
+        bizarro.repo.save_working_file(self.clone1, 'index.md', 'I made a change',
+                                       self.clone1.commit().hexsha, 'master')
+        
+        self.assertFalse(bizarro.repo.is_peer_reviewed(self.clone1))
+        
+        #
+        # Approve the work as someone else.
+        #
+        environ['GIT_AUTHOR_NAME'] = 'Joe Reviewer'
+        environ['GIT_COMMITTER_NAME'] = 'Joe Reviewer'
+        environ['GIT_AUTHOR_EMAIL'] = 'reviewer@example.com'
+        environ['GIT_COMMITTER_EMAIL'] = 'reviewer@example.com'
+        
+        bizarro.repo.mark_as_reviewed(self.clone1)
+
+        self.assertTrue(bizarro.repo.is_peer_reviewed(self.clone1))
+        
+        #
+        # Make another commit.
+        #
+        bizarro.edit.update_page(self.clone1, 'index.md',
+                                 dict(title=name), 'Hello you there.')
+        
+        bizarro.repo.save_working_file(self.clone1, 'index.md', 'I made a change',
+                                       self.clone1.commit().hexsha, 'master')
+        
+        self.assertFalse(bizarro.repo.is_peer_reviewed(self.clone1))
+        
+        #
+        # Approve the work as someone else.
+        #
+        environ['GIT_AUTHOR_NAME'] = 'Jane Reviewer'
+        environ['GIT_COMMITTER_NAME'] = 'Jane Reviewer'
+        environ['GIT_AUTHOR_EMAIL'] = 'reviewer@example.org'
+        environ['GIT_COMMITTER_EMAIL'] = 'reviewer@example.org'
+        
+        bizarro.repo.mark_as_reviewed(self.clone1)
+
+        self.assertTrue(bizarro.repo.is_peer_reviewed(self.clone1))
+    
     def tearDown(self):
         rmtree(self.origin.git_dir)
         rmtree(self.clone1.working_dir)

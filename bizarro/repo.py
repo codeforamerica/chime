@@ -271,3 +271,48 @@ def move_existing_file(clone, old_path, new_path, base_sha, default_branch_name)
     clone.git.push('origin', active_branch_name)
     
     return clone.active_branch.commit
+
+def is_peer_reviewed(clone):
+    ''' Returns true if the active branch appears peer-reviewed.
+    '''
+    commit_log = reversed(clone.active_branch.log())
+    last_commit = commit_log.next()
+
+    if 'Approved changes.' not in last_commit.message:
+        # To do: why does "commit: " get prefixed to the message?
+        return False
+    
+    reviewer_email = last_commit.actor.email
+    
+    for commit in commit_log:
+        if reviewer_email and commit.actor.email != reviewer_email:
+            return True
+    
+    return False
+
+def mark_as_reviewed(clone):
+    ''' Adds a new empty commit with the message "Approved changes."
+    '''
+    clone.index.commit('Approved changes.')
+    active_branch_name = clone.active_branch.name
+    
+    #
+    # Sync with the default and upstream branches in case someone made a change.
+    #
+    for sync_branch_name in (active_branch_name, ):
+        msg = 'Merged work from "%s"' % sync_branch_name
+        clone.git.fetch('origin', sync_branch_name)
+
+        try:
+            clone.git.merge('FETCH_HEAD', '--no-ff', m=msg)
+
+        except:
+            # raise the two commits in conflict.
+            remote_commit = clone.refs[_origin(sync_branch_name)].commit
+
+            clone.git.reset(hard=True)
+            raise MergeConflict(remote_commit, clone.commit())
+
+    clone.git.push('origin', active_branch_name)
+    
+    return clone.active_branch.commit
