@@ -76,29 +76,18 @@
                 <tr>
                     <th colspan="3">Actions</th>
                 </tr>
-                <tr><!-- Author options, before sending for review<-->
+                {% if needs_peer_review and not eligible_peer %}
+                  <tr><!-- Author options, before sending for review<-->
                     <td colspan="2">
                         <form action="/merge" method="POST">
                             <input name="branch" value="{{branch}}" type="hidden" />
-                            {% if needs_peer_review %}
-                                <button name="action" value="merge" type="submit" class="button-alternative">Submit for review</button>
-                            {% else %}
-                                <button name="action" value="merge" type="submit" class="button-alternative" disabled>[can't submit]</button>
-                            {% endif %}
-                            {% if is_peer_reviewed %}
-                                <button name="action" value="merge" type="submit" class="button-alternative">Publish</button>
-                            {% else %}
-                                {% if eligible_peer %}
-                                    <button name="action" value="" type="submit" class="button-alternative">Say A-Okay</button>
-                                {% else %}
-                                    <button name="action" value="merge" type="submit" class="button-alternative" disabled>Publish (awaiting review)</button>
-                                {% endif %}
-                            {% endif %}
+                            <button name="action" value="merge" type="submit" class="button-alternative">Submit for review</button>
+                            <button name="action" value="merge" type="submit" class="button-alternative" disabled>Publish (awaiting review)</button>
                         </form>    
                     </td>
-                </tr>
+                  </tr>
 
-                <!--tr>[ Author options, after sending for review ]>
+                  <!--tr>[ Author options, after sending for review ]>
                     <td colspan="2">
                         <form action="/merge" method="POST">
                             <input name="branch" value="{{branch}}" type="hidden" />
@@ -106,18 +95,18 @@
                             <button name="action" value="merge" type="submit" class="button-alternative" disabled>Publish (awaiting review)</button>
                         </form>    
                     </td>
-                </tr>
-
-                <tr> [ Author options, after getting a good review with no more changes made ]
+                  </tr>-->
+                {% elif is_peer_reviewed and eligible_peer %}
+                  <tr><!-- Author options, after getting a good review with no more changes made -->
                     <td colspan="2">
                         <form action="/merge" method="POST">
                             <input name="branch" value="{{branch}}" type="hidden" />
                             <button name="action" value="merge" type="submit" class="button-alternative">Publish</button>
                         </form>    
                     </td>
-                </tr>
+                  </tr>
 
-                <tr>[ Author options, after getting a bad review ]
+                  <!--tr>[ Author options, after getting a bad review ]
                     <td colspan="2">
                         <form action="/merge" method="POST">
                             <input name="branch" value="{{branch}}" type="hidden" />
@@ -125,9 +114,9 @@
                             <a class="button-alternative" href="">Submit for review</a>
                         </form>    
                     </td>
-                </tr>
-
-                <tr>[ Reviewer options ]
+                  </tr-->
+                {% elif needs_peer_review and eligible_peer %}
+                  <tr><!-- Reviewer options -->
                     <td colspan="2">
                         <form action="/merge" method="POST">
                             <input name="branch" value="{{branch}}" type="hidden" />
@@ -135,7 +124,16 @@
                             <button name="action" value="merge" type="submit" class="button-alternative">Reviewed OK</button>
                         </form>    
                     </td>
-                </tr-->
+                  </tr>
+                {% else %}
+                  <tr><!-- Reviewer options -->
+                    <td colspan="2">
+                        Needs review? {{ needs_peer_review }}.
+                        Is reviewed? {{ is_peer_reviewed }}.
+                        Eligible peer? {{ eligible_peer }}.
+                    </td>
+                  </tr>
+                {% endif %}
             </tbody>
         </table>
 
