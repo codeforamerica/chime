@@ -165,12 +165,7 @@ def merge_branch():
             raise Exception('I do not know what "%s" means' % action)
     
     except bizarro.repo.MergeConflict as conflict:
-    
-        diffs = conflict.remote_commit.diff(conflict.local_commit)
-        
-        new_files = [d.b_blob.name for d in diffs if d.new_file]
-        gone_files = [d.a_blob.name for d in diffs if d.deleted_file]
-        changed_files = [d.a_blob.name for d in diffs if not (d.deleted_file or d.new_file)]
+        new_files, gone_files, changed_files = conflict.files()
         
         kwargs = dict(branch=branch_name, new_files=new_files,
                       gone_files=gone_files, changed_files=changed_files)
@@ -197,13 +192,8 @@ def review_branch():
             raise Exception('I do not know what "%s" means' % action)
     
     except bizarro.repo.MergeConflict as conflict:
+        new_files, gone_files, changed_files = conflict.files()
     
-        diffs = conflict.remote_commit.diff(conflict.local_commit)
-        
-        new_files = [d.b_blob.name for d in diffs if d.new_file]
-        gone_files = [d.a_blob.name for d in diffs if d.deleted_file]
-        changed_files = [d.a_blob.name for d in diffs if not (d.deleted_file or d.new_file)]
-        
         kwargs = dict(branch=branch_name, new_files=new_files,
                       gone_files=gone_files, changed_files=changed_files)
         
