@@ -14,17 +14,17 @@ from jekyll import load_jekyll_doc, build_jekyll_site
 import bizarro
 
 _default_branch = 'master'
-_repo_path = 'sample-site'
 
 app = Flask(__name__)
 app.secret_key = 'boop'
+app.config['REPO_PATH'] = 'sample-site'
 
 def dos2unix(string):
     ''' Returns a copy of the strings with line-endings corrected.
     '''
     return string.replace('\r\n', '\n').replace('\r', '\n')
 
-def get_repo():
+def get_repo(flask_app):
     ''' Gets repository for the current user, cloned from the origin.
     '''
     user_dir = realpath(quote('repo-' + session.get('email', 'nobody')))
@@ -34,7 +34,7 @@ def get_repo():
         user_repo.remotes.origin.fetch()
         return user_repo
     
-    source_repo = Repo(_repo_path)
+    source_repo = Repo(flask_app.config['REPO_PATH'])
     user_repo = source_repo.clone(user_dir, bare=False)
     
     return user_repo
@@ -88,7 +88,7 @@ def login_required(function):
 
 @app.route('/')
 def index():
-    r = Repo(_repo_path) # bare repo
+    r = Repo(app.config['REPO_PATH']) # bare repo
     branch_names = [b.name for b in r.branches if b.name != _default_branch]
     
     list_items = []
@@ -135,7 +135,7 @@ def sign_out():
 @app.route('/start', methods=['POST'])
 @login_required
 def start_branch():
-    r = get_repo()
+    r = get_repo(app)
     branch_desc = request.form.get('branch')
     branch_name = name_branch(branch_desc)
     branch = bizarro.repo.start_branch(r, _default_branch, branch_name)
@@ -147,7 +147,7 @@ def start_branch():
 @app.route('/merge', methods=['POST'])
 @login_required
 def merge_branch():
-    r = get_repo()
+    r = get_repo(app)
     branch_name = request.form.get('branch')
     branch = r.branches[branch_name]
     
@@ -178,7 +178,7 @@ def merge_branch():
 @app.route('/review', methods=['POST'])
 @login_required
 def review_branch():
-    r = get_repo()
+    r = get_repo(app)
     branch_name = request.form.get('branch')
     branch = r.branches[branch_name]
     branch.checkout()
@@ -210,7 +210,7 @@ def review_branch():
 def branch_view(branch, path=None):
     branch = branch_var2name(branch)
 
-    r = get_repo()
+    r = get_repo(app)
     b = bizarro.repo.start_branch(r, _default_branch, branch)
     b.checkout()
     c = r.commit()
@@ -238,7 +238,7 @@ def branch_view(branch, path=None):
 def branch_edit(branch, path=None):
     branch = branch_var2name(branch)
 
-    r = get_repo()
+    r = get_repo(app)
     b = bizarro.repo.start_branch(r, _default_branch, branch)
     b.checkout()
     c = r.commit()
@@ -285,7 +285,7 @@ def branch_edit(branch, path=None):
 def branch_edit_file(branch, path=None):
     branch = branch_var2name(branch)
 
-    r = get_repo()
+    r = get_repo(app)
     b = bizarro.repo.start_branch(r, _default_branch, branch)
     b.checkout()
     c = b.commit
@@ -326,7 +326,7 @@ def branch_edit_file(branch, path=None):
 def branch_save(branch, path):
     branch = branch_var2name(branch)
 
-    r = get_repo()
+    r = get_repo(app)
     b = bizarro.repo.start_branch(r, _default_branch, branch)
     c = b.commit
     
