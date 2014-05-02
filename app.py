@@ -17,6 +17,7 @@ _default_branch = 'master'
 
 app = Flask(__name__)
 app.secret_key = 'boop'
+app.config['WORK_PATH'] = '.'
 app.config['REPO_PATH'] = 'sample-site'
 
 def dos2unix(string):
@@ -27,7 +28,8 @@ def dos2unix(string):
 def get_repo(flask_app):
     ''' Gets repository for the current user, cloned from the origin.
     '''
-    user_dir = realpath(quote('repo-' + session.get('email', 'nobody')))
+    dir_name = 'repo-' + session.get('email', 'nobody')
+    user_dir = realpath(join(flask_app.config['WORK_PATH'], quote(dir_name)))
     
     if isdir(user_dir):
         user_repo = Repo(user_dir)
@@ -123,7 +125,7 @@ def sign_in():
         session['email'] = response['email']
         return 'OK'
     
-    return Response('Failed', code=400)
+    return Response('Failed', status=400)
 
 @app.route('/sign-out', methods=['POST'])
 def sign_out():

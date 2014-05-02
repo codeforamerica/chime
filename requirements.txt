@@ -4,3 +4,4 @@ Flask==0.10.1
 requests==2.2.1
 Jinja2==2.7.2
 rotunicode==1.0.2
+httmock==1.2.2

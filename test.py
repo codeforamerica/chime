@@ -10,8 +10,10 @@ from uuid import uuid4
 
 from git import Repo
 from box.util.rotunicode import RotUnicode
+from httmock import response, HTTMock
 
 import bizarro, jekyll
+from app import app
 
 import codecs
 codecs.register(RotUnicode.search_function)
@@ -639,6 +641,52 @@ class TestRepo (TestCase):
         rmtree(self.origin.git_dir)
         rmtree(self.clone1.working_dir)
         rmtree(self.clone2.working_dir)
+
+class TestApp (TestCase):
+
+    def setUp(self):
+        work_path = mkdtemp(prefix='bizarro-repo-clones-')
+        repo_path = mkdtemp(prefix='bizarro-sample-site-')
+        
+        tar = Popen(('tar', '-C', repo_path, '-xzf', '-'), stdin=PIPE)
+        tar.stdin.write(_tarball)
+        tar.stdin.close()
+        tar.wait()
+        
+        app.config['WORK_PATH'] = work_path
+        app.config['REPO_PATH'] = repo_path
+
+        self.app = app.test_client()
+    
+    def persona_verify(self, url, request):
+        if url.geturl() == 'https://verifier.login.persona.org/verify':
+            return response(200, '''{"status": "okay", "email": "user@example.com"}''', headers=dict(Link='<https://api.github.com/user/337792/repos?page=1>; rel="prev", <https://api.github.com/user/337792/repos?page=1>; rel="first"'))
+
+        else:
+            raise Exception('Asked for unknown URL ' + url.geturl())
+
+    def test_login(self):
+        ''' Check basic log in / log out flow without talking to Persona.
+        '''
+        response = self.app.get('/')
+        self.assertFalse('user@example.com' in response.data)
+
+        with HTTMock(self.persona_verify):
+            response = self.app.post('/sign-in', data={'email': 'user@example.com'})
+            self.assertEquals(response.status_code, 200)
+
+        response = self.app.get('/')
+        self.assertTrue('user@example.com' in response.data)
+
+        response = self.app.post('/sign-out')
+        self.assertEquals(response.status_code, 200)
+    
+        response = self.app.get('/')
+        self.assertFalse('user@example.com' in response.data)
+    
+    def tearDown(self):
+        rmtree(app.config['WORK_PATH'])
+        rmtree(app.config['REPO_PATH'])
 
 if __name__ == '__main__':
     main()
