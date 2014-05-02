@@ -180,6 +180,40 @@ def merge_branch():
     else:
         return redirect('/')
 
+@app.route('/review', methods=['POST'])
+@login_required
+def review_branch():
+    r = get_repo()
+    branch_name = request.form.get('branch')
+    branch = r.branches[branch_name]
+    branch.checkout()
+    
+    try:
+        action = request.form.get('action', '').lower()
+        
+        if action == 'approve':
+            bizarro.repo.mark_as_reviewed(r)
+        else:
+            raise Exception('I do not know what "%s" means' % action)
+    
+    except bizarro.repo.MergeConflict as conflict:
+    
+        diffs = conflict.remote_commit.diff(conflict.local_commit)
+        
+        new_files = [d.b_blob.name for d in diffs if d.new_file]
+        gone_files = [d.a_blob.name for d in diffs if d.deleted_file]
+        changed_files = [d.a_blob.name for d in diffs if not (d.deleted_file or d.new_file)]
+        
+        kwargs = dict(branch=branch_name, new_files=new_files,
+                      gone_files=gone_files, changed_files=changed_files)
+        
+        return render_template('merge-conflict.html', **kwargs)
+    
+    else:
+        safe_branch = branch_name2path(branch_name)
+
+        return redirect('/tree/%s/edit/' % safe_branch, code=303)
+
 @app.route('/tree/<branch>/view/', methods=['GET'])
 @app.route('/tree/<branch>/view/<path:path>', methods=['GET'])
 @login_required

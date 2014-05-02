@@ -118,10 +118,10 @@
                 {% elif needs_peer_review and eligible_peer %}
                   <tr><!-- Reviewer options -->
                     <td colspan="2">
-                        <form action="/merge" method="POST">
+                        <form action="/review" method="POST">
                             <input name="branch" value="{{branch}}" type="hidden" />
                             <a class="button-alternative" href="">Suggest changes</a>
-                            <button name="action" value="merge" type="submit" class="button-alternative">Reviewed OK</button>
+                            <button name="action" value="approve" type="submit" class="button-alternative">Reviewed OK</button>
                         </form>    
                     </td>
                   </tr>
