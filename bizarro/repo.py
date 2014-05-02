@@ -275,7 +275,7 @@ def move_existing_file(clone, old_path, new_path, base_sha, default_branch_name)
 def needs_peer_review(clone, default_branch_name):
     ''' Returns true if the active branch appears to be in need of review.
     '''
-    base_commit = clone.git.merge_base(_origin(default_branch_name), clone.active_branch.name)
+    base_commit = clone.git.merge_base(default_branch_name, clone.active_branch.name)
     last_commit = clone.active_branch.commit.hexsha
     
     if base_commit == last_commit:
@@ -294,7 +294,7 @@ def ineligible_peer(clone, default_branch_name):
 def is_peer_reviewed(clone, default_branch_name):
     ''' Returns true if the active branch appears peer-reviewed.
     '''
-    base_commit = clone.git.merge_base(_origin(default_branch_name), clone.active_branch.name)
+    base_commit = clone.git.merge_base(default_branch_name, clone.active_branch.name)
     last_commit = clone.active_branch.commit
     
     if 'Approved changes.' not in clone.active_branch.commit.message:
