@@ -7,6 +7,7 @@ from os.path import join, exists
 from os import environ, unlink
 from shutil import rmtree
 from uuid import uuid4
+from re import search
 
 from git import Repo
 from box.util.rotunicode import RotUnicode
@@ -683,6 +684,40 @@ class TestApp (TestCase):
     
         response = self.app.get('/')
         self.assertFalse('user@example.com' in response.data)
+    
+    def test_branches(self):
+        ''' Check basic branching functionality.
+        '''
+        with HTTMock(self.persona_verify):
+            self.app.post('/sign-in', data={'email': 'user@example.com'})
+        
+        response = self.app.post('/start', data={'branch': 'do things'},
+                                 follow_redirects=True)
+
+        self.assertTrue('user@example.com/do-things' in response.data)
+        
+        response = self.app.post('/tree/user@example.com%252Fdo-things/edit/',
+                                 data={'action': 'add', 'path': 'hello.md'},
+                                 follow_redirects=True)
+
+        self.assertEquals(response.status_code, 200)
+        
+        response = self.app.get('/tree/user@example.com%252Fdo-things/edit/')
+
+        self.assertTrue('hello.md' in response.data)
+        
+        response = self.app.get('/tree/user@example.com%252Fdo-things/edit/hello.md')
+        hexsha = search(r'<input name="hexsha" value="(\w+)"', response.data).group(1)
+
+        response = self.app.post('/tree/user@example.com%252Fdo-things/save/hello.md',
+                                 data={'layout': 'multi', 'hexsha': hexsha,
+                                       'title': 'Greetings', 'body': 'Hello world.\n',
+                                       'title-es': '', 'title-zh-cn': '',
+                                       'body-es': '', 'body-zh-cn': '',
+                                       'url-slug': 'hello'},
+                                 follow_redirects=True)
+
+        self.assertEquals(response.status_code, 200)
     
     def tearDown(self):
         rmtree(app.config['WORK_PATH'])
