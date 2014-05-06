@@ -262,9 +262,9 @@ def branch_edit(branch, path=None):
         list_paths = [(basename(fp), vp) for (fp, vp) in path_pairs if realpath(fp) != r.git_dir]
         kwargs = dict(branch=branch, email=session['email'], list_paths=list_paths)
 
-        kwargs['needs_peer_review'] = bizarro.repo.needs_peer_review(r, _default_branch)
-        kwargs['is_peer_reviewed'] = bizarro.repo.is_peer_reviewed(r, _default_branch)
-        kwargs['eligible_peer'] = session['email'] != bizarro.repo.ineligible_peer(r, _default_branch)
+        kwargs['needs_peer_review'] = bizarro.repo.needs_peer_review(r, _default_branch, branch)
+        kwargs['is_peer_reviewed'] = bizarro.repo.is_peer_reviewed(r, _default_branch, branch)
+        kwargs['eligible_peer'] = session['email'] != bizarro.repo.ineligible_peer(r, _default_branch, branch)
 
         kwargs['review_subject'] = 'Plz review this thing'
         kwargs['review_body'] = request.url

@@ -281,37 +281,37 @@ def move_existing_file(clone, old_path, new_path, base_sha, default_branch_name)
     
     return clone.active_branch.commit
 
-def needs_peer_review(clone, default_branch_name):
+def needs_peer_review(repo, default_branch_name, working_branch_name):
     ''' Returns true if the active branch appears to be in need of review.
     '''
-    base_commit = clone.git.merge_base(default_branch_name, clone.active_branch.name)
-    last_commit = clone.active_branch.commit.hexsha
+    base_commit = repo.git.merge_base(default_branch_name, working_branch_name)
+    last_commit = repo.branches[working_branch_name].commit.hexsha
     
     if base_commit == last_commit:
         return False
     
-    return not is_peer_reviewed(clone, default_branch_name)
+    return not is_peer_reviewed(repo, default_branch_name, working_branch_name)
 
-def ineligible_peer(clone, default_branch_name):
+def ineligible_peer(repo, default_branch_name, working_branch_name):
     ''' Returns the email address of a peer who shouldn't review this branch.
     '''
-    if needs_peer_review(clone, default_branch_name):
-        return clone.active_branch.commit.author.email
+    if needs_peer_review(repo, default_branch_name, working_branch_name):
+        return repo.branches[working_branch_name].commit.author.email
     
     return None
 
-def is_peer_reviewed(clone, default_branch_name):
+def is_peer_reviewed(repo, default_branch_name, working_branch_name):
     ''' Returns true if the active branch appears peer-reviewed.
     '''
-    base_commit = clone.git.merge_base(default_branch_name, clone.active_branch.name)
-    last_commit = clone.active_branch.commit
+    base_commit = repo.git.merge_base(default_branch_name, working_branch_name)
+    last_commit = repo.branches[working_branch_name].commit
     
-    if 'Approved changes.' not in clone.active_branch.commit.message:
+    if 'Approved changes.' not in last_commit.message:
         # To do: why does "commit: " get prefixed to the message?
         return False
     
     reviewer_email = last_commit.author.email
-    commit_log = clone.active_branch.commit.iter_parents() # reversed(clone.active_branch.log())
+    commit_log = last_commit.iter_parents() # reversed(repo.branches[working_branch_name].log())
     
     for commit in commit_log:
         if commit == base_commit:
