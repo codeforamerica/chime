@@ -33,6 +33,7 @@ def get_repo(flask_app):
     
     if isdir(user_dir):
         user_repo = Repo(user_dir)
+        user_repo.git.reset(hard=True)
         user_repo.remotes.origin.fetch()
         return user_repo
     
