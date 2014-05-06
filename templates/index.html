@@ -44,27 +44,13 @@
                         {% endif %}
                         <button name="action" value="abandon" type="submit" class="button-prominent">Delete</button>
                         <input type="hidden" name="branch" value="{{item.name}}">
-                        Is reviewed? {{item.is_peer_reviewed}}
+
+                        {% if item.is_peer_reviewed %}
+                            <button name="action" value="merge" type="submit" class="button">Publish</button>
+                        {% endif %}
                     </form>
                 </tr>
                 {% endfor %}
-
-                <!-- dummy row to show what you'd see if you submitted something for review -->
-                <tr>
-                  <td><strong>You</strong></td>
-                  <td><a href="#">Added parking information</a> (8 ahead, 2 behind)</td>
-                  <td>Mike Migurski</td>
-                  <td><a class="button-alternative" href="#" type="button">Make more changes</a> <button name="action" value="#" type="submit" class="button">Change reviewer</button> <button name="action" value="abandon" type="submit" class="button-prominent">Delete</button>
-                </tr>
-
-                <!-- dummy row to show what you'd see if you were supposed to review something -->
-
-                <tr>
-                  <td>Mike Mirguski</td>
-                  <td><a href="#">Created trash pick-up collectino page</a> (8 ahead, 2 behind)</td>
-                  <td><strong>You</strong></td>
-                  <td><a class="button" href="#" type="button">Suggest changes</a> <a class="button-alternative" href="#" type="button">Approve changes</a>
-                </tr>
 
                 <tr>
                     <th>Create a new task</th>
