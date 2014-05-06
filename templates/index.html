@@ -39,9 +39,12 @@
                   <td>
                     <form action="/merge" method="POST">
                         <a class="button-alternative" href="/tree/{{item.path}}/edit/" type="button">Make more changes</a>
-                        <button name="action" value="merge" type="submit" class="button">Send for review</button>
+                        {% if item.needs_peer_review %}
+                            <a href="mailto:?to=&amp;subject={{item.review_subject|urlencode}}&amp;body={{item.review_body|urlencode}}" class="button">Submit for review</a>
+                        {% endif %}
                         <button name="action" value="abandon" type="submit" class="button-prominent">Delete</button>
                         <input type="hidden" name="branch" value="{{item.name}}">
+                        Is reviewed? {{item.is_peer_reviewed}}
                     </form>
                 </tr>
                 {% endfor %}

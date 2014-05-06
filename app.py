@@ -108,7 +108,17 @@ def index():
         behind = pattern.findall(behind_raw)
         ahead = pattern.findall(ahead_raw)
         
-        list_items.append(dict(name=name, path=path, behind=behind, ahead=ahead))
+        needs_peer_review = bizarro.repo.needs_peer_review(r, _default_branch, name)
+        is_peer_reviewed = bizarro.repo.is_peer_reviewed(r, _default_branch, name)
+        
+        review_subject = 'Plz review this thing'
+        review_body = '%s/tree/%s/edit' % (request.url, path)
+
+        list_items.append(dict(name=name, path=path, behind=behind, ahead=ahead,
+                               needs_peer_review=needs_peer_review,
+                               is_peer_reviewed=is_peer_reviewed,
+                               review_subject=review_subject,
+                               review_body=review_body))
     
     kwargs = dict(items=list_items, email=session.get('email', None))
     return render_template('index.html', **kwargs)
