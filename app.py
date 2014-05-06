@@ -266,6 +266,9 @@ def branch_edit(branch, path=None):
         kwargs['is_peer_reviewed'] = bizarro.repo.is_peer_reviewed(r, _default_branch)
         kwargs['eligible_peer'] = session['email'] != bizarro.repo.ineligible_peer(r, _default_branch)
 
+        kwargs['review_subject'] = 'Plz review this thing'
+        kwargs['review_body'] = request.url
+
         return render_template('tree-branch-edit-listdir.html', **kwargs)
     
     with open(full_path, 'r') as file:

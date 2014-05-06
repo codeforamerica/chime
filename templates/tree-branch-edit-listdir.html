@@ -81,7 +81,7 @@
                     <td colspan="2">
                         <form action="/merge" method="POST">
                             <input name="branch" value="{{branch}}" type="hidden" />
-                            <button name="action" value="merge" type="submit" class="button-alternative">Submit for review</button>
+                            <a href="mailto:?to=&amp;subject={{review_subject|urlencode}}&amp;body={{review_body|urlencode}}" class="button button-alternative">Submit for review</a>
                             <button name="action" value="merge" type="submit" class="button-alternative" disabled>Publish (awaiting review)</button>
                         </form>    
                     </td>
