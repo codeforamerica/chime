@@ -34,7 +34,7 @@
                 {% for item in items %}
                 <tr>
                   <td><em>Task owner name</em></td>
-                  <td><a href="/tree/{{item.path}}/edit/">{{item.name}}</a> ({{item.ahead|count}} ahead, {{item.behind|count}} behind)</td>
+                  <td><a href="/tree/{{item.path}}/edit/">{{item.name}}</a> <!--({{item.ahead|count}} ahead, {{item.behind|count}} behind)--></td>
                   <td><em>Reviewers name</em></td>
                   <td>
                     <form action="/merge" method="POST">
