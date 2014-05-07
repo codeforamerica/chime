@@ -201,6 +201,9 @@ def review_branch():
         
         if action == 'approve':
             bizarro.repo.mark_as_reviewed(r)
+        elif action == 'feedback':
+            comments = request.form.get('comments')
+            bizarro.repo.provide_feedback(r, comments)
         else:
             raise Exception('I do not know what "%s" means' % action)
     
@@ -271,7 +274,8 @@ def branch_edit(branch, path=None):
         path_pairs = zip(full_paths, view_paths)
         
         list_paths = [(basename(fp), vp) for (fp, vp) in path_pairs if realpath(fp) != r.git_dir]
-        kwargs = dict(branch=branch, email=session['email'], list_paths=list_paths)
+        kwargs = dict(branch=branch, safe_branch=safe_branch,
+                      email=session['email'], list_paths=list_paths)
 
         kwargs['needs_peer_review'] = bizarro.repo.needs_peer_review(r, _default_branch, branch)
         kwargs['is_peer_reviewed'] = bizarro.repo.is_peer_reviewed(r, _default_branch, branch)
@@ -336,6 +340,21 @@ def branch_edit_file(branch, path=None):
     safe_branch = branch_name2path(branch)
 
     return redirect('/tree/%s/edit/%s' % (safe_branch, path_303), code=303)
+
+@app.route('/tree/<branch>/review/', methods=['GET'])
+@login_required
+def branch_review(branch):
+    branch = branch_var2name(branch)
+
+    r = get_repo(app)
+    b = bizarro.repo.start_branch(r, _default_branch, branch)
+    b.checkout()
+    c = r.commit()
+
+    kwargs = dict(branch=branch, safe_branch=branch_name2path(branch),
+                  hexsha=c.hexsha, email=session['email'])
+
+    return render_template('tree-branch-review.html', **kwargs)
 
 @app.route('/tree/<branch>/save/<path:path>', methods=['POST'])
 @login_required

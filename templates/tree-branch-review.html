@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Task Review{% endblock %}
+{% block content %}
+    <h1>Bizarro editor <span><a href="/">tasks</a></span></h1>
+
+    <div class="layout-breve">
+        <div class="badge-heading badge-gov badge-teal">
+            <h2>Task review changes</h2>
+            <h3>{{branch}}</h3>
+        </div>
+
+        <form action="/review" method="post">
+        <ul class="list-form">
+            <li class="form-field">
+                <label for="comments">Write the changes you think should be made to this task before it's published.</label>
+                <textarea name="comments" class="textarea"></textarea>
+            </li>                      
+        </ul>
+        <input name="hexsha" value="{{hexsha}}" type="hidden" />
+        <input name="branch" value="{{branch}}" type="hidden" />
+        <button name="action" value="feedback" type="submit" />Send feedback</button>
+        </form>
+    </div>
+{% endblock %}

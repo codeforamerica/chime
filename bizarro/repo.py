@@ -348,3 +348,30 @@ def mark_as_reviewed(clone):
     clone.git.push('origin', active_branch_name)
     
     return clone.active_branch.commit
+
+def provide_feedback(clone, comments):
+    ''' Adds a new empty commit with the message "Provided feedback."
+    '''
+    clone.index.commit('Provided feedback.\n\n' + comments)
+    active_branch_name = clone.active_branch.name
+    
+    #
+    # Sync with the default and upstream branches in case someone made a change.
+    #
+    for sync_branch_name in (active_branch_name, ):
+        msg = 'Merged work from "%s"' % sync_branch_name
+        clone.git.fetch('origin', sync_branch_name)
+
+        try:
+            clone.git.merge('FETCH_HEAD', '--no-ff', m=msg)
+
+        except:
+            # raise the two commits in conflict.
+            remote_commit = clone.refs[_origin(sync_branch_name)].commit
+
+            clone.git.reset(hard=True)
+            raise MergeConflict(remote_commit, clone.commit())
+
+    clone.git.push('origin', active_branch_name)
+    
+    return clone.active_branch.commit
