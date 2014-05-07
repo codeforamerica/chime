@@ -26,14 +26,12 @@
             </thead>
             <tbody>
                 <tr>
-                    <th>Owner</th>
                     <th>Task name</th>
                     <th>Reviewer</th>
                     <th>Action</th> 
                 </tr>
                 {% for item in items %}
                 <tr>
-                  <td><em>Task owner name</em></td>
                   <td><a href="/tree/{{item.path}}/edit/">{{item.name}}</a> <!--({{item.ahead|count}} ahead, {{item.behind|count}} behind)--></td>
                   <td><em>Reviewers name</em></td>
                   <td>
@@ -49,6 +47,7 @@
                             <button name="action" value="merge" type="submit" class="button">Publish</button>
                         {% endif %}
                     </form>
+                  </td>
                 </tr>
                 {% endfor %}
 
