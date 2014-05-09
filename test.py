@@ -675,7 +675,7 @@ class TestRepo (TestCase):
         environ['GIT_AUTHOR_EMAIL'] = 'reviewer@example.com'
         environ['GIT_COMMITTER_EMAIL'] = 'reviewer@example.com'
         
-        bizarro.repo.provide_feedback(self.clone1, 'This sucks')
+        bizarro.repo.provide_feedback(self.clone1, 'This sucks.')
 
         self.assertFalse(bizarro.repo.needs_peer_review(self.clone1, 'master', name))
         self.assertFalse(bizarro.repo.is_peer_approved(self.clone1, 'master', name))
@@ -704,12 +704,21 @@ class TestRepo (TestCase):
         environ['GIT_AUTHOR_EMAIL'] = 'reviewer@example.org'
         environ['GIT_COMMITTER_EMAIL'] = 'reviewer@example.org'
         
-        bizarro.repo.provide_feedback(self.clone1, 'This sucks')
+        bizarro.repo.provide_feedback(self.clone1, 'This still sucks.')
 
         self.assertFalse(bizarro.repo.needs_peer_review(self.clone1, 'master', name))
         self.assertFalse(bizarro.repo.is_peer_approved(self.clone1, 'master', name))
         self.assertTrue(bizarro.repo.is_peer_rejected(self.clone1, 'master', name))
         self.assertEqual(bizarro.repo.ineligible_peer(self.clone1, 'master', name), None)
+        
+        #
+        
+        (email2, message2), (email1, message1) = bizarro.repo.get_rejection_messages(self.clone1, 'master', name)
+
+        self.assertEqual(email1, 'reviewer@example.com')
+        self.assertTrue('This sucks.' in message1)
+        self.assertEqual(email2, 'reviewer@example.org')
+        self.assertTrue('This still sucks.' in message2)
     
     def tearDown(self):
         rmtree(self.origin.git_dir)

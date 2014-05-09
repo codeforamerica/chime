@@ -1,6 +1,7 @@
 import os, logging
 from os import environ, mkdir
 from os.path import join, split, exists, isdir
+from itertools import chain
 
 class MergeConflict (Exception):
     def __init__(self, remote_commit, local_commit):
@@ -398,3 +399,21 @@ def provide_feedback(clone, comments):
     clone.git.push('origin', active_branch_name)
     
     return clone.active_branch.commit
+
+def get_rejection_messages(repo, default_branch_name, working_branch_name):
+    ''' 
+    '''
+    messages = []
+
+    base_commit = repo.git.merge_base(default_branch_name, working_branch_name)
+    last_commit = repo.branches[working_branch_name].commit
+    commit_log = chain([last_commit], last_commit.iter_parents())
+    
+    for commit in commit_log:
+        if commit == base_commit:
+            break
+        
+        if 'Provided feedback.' in commit.message:
+            email = commit.author.email
+            message = commit.message
+            yield (email, message)
