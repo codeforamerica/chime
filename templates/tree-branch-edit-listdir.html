@@ -96,7 +96,7 @@
                         </form>    
                     </td>
                   </tr>-->
-                {% elif is_peer_reviewed and eligible_peer %}
+                {% elif is_peer_approved and eligible_peer %}
                   <tr><!-- Author options, after getting a good review with no more changes made -->
                     <td colspan="2">
                         <form action="/merge" method="POST">
@@ -129,7 +129,8 @@
                   <tr><!-- Reviewer options -->
                     <td colspan="2">
                         Needs review? {{ needs_peer_review }}.
-                        Is reviewed? {{ is_peer_reviewed }}.
+                        Is approved? {{ is_peer_approved }}.
+                        Is rejected? {{ is_peer_rejected }}.
                         Eligible peer? {{ eligible_peer }}.
                     </td>
                   </tr>

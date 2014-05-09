@@ -290,7 +290,7 @@ def needs_peer_review(repo, default_branch_name, working_branch_name):
     if base_commit == last_commit:
         return False
     
-    return not is_peer_reviewed(repo, default_branch_name, working_branch_name) \
+    return not is_peer_approved(repo, default_branch_name, working_branch_name) \
        and not is_peer_rejected(repo, default_branch_name, working_branch_name)
 
 def ineligible_peer(repo, default_branch_name, working_branch_name):
@@ -301,7 +301,7 @@ def ineligible_peer(repo, default_branch_name, working_branch_name):
     
     return None
 
-def is_peer_reviewed(repo, default_branch_name, working_branch_name):
+def is_peer_approved(repo, default_branch_name, working_branch_name):
     ''' Returns true if the active branch appears peer-reviewed.
     '''
     base_commit = repo.git.merge_base(default_branch_name, working_branch_name)

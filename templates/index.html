@@ -43,7 +43,7 @@
                         <button name="action" value="abandon" type="submit" class="button-prominent">Delete</button>
                         <input type="hidden" name="branch" value="{{item.name}}">
 
-                        {% if item.is_peer_reviewed %}
+                        {% if item.is_peer_approved %}
                             <button name="action" value="merge" type="submit" class="button">Publish</button>
                         {% endif %}
                     </form>

@@ -110,14 +110,16 @@ def index():
         ahead = pattern.findall(ahead_raw)
         
         needs_peer_review = bizarro.repo.needs_peer_review(r, _default_branch, name)
-        is_peer_reviewed = bizarro.repo.is_peer_reviewed(r, _default_branch, name)
+        is_peer_approved = bizarro.repo.is_peer_approved(r, _default_branch, name)
+        is_peer_rejected = bizarro.repo.is_peer_rejected(r, _default_branch, name)
         
         review_subject = 'Plz review this thing'
         review_body = '%s/tree/%s/edit' % (request.url, path)
 
         list_items.append(dict(name=name, path=path, behind=behind, ahead=ahead,
                                needs_peer_review=needs_peer_review,
-                               is_peer_reviewed=is_peer_reviewed,
+                               is_peer_approved=is_peer_approved,
+                               is_peer_rejected=is_peer_rejected,
                                review_subject=review_subject,
                                review_body=review_body))
     
@@ -278,7 +280,8 @@ def branch_edit(branch, path=None):
                       email=session['email'], list_paths=list_paths)
 
         kwargs['needs_peer_review'] = bizarro.repo.needs_peer_review(r, _default_branch, branch)
-        kwargs['is_peer_reviewed'] = bizarro.repo.is_peer_reviewed(r, _default_branch, branch)
+        kwargs['is_peer_approved'] = bizarro.repo.is_peer_approved(r, _default_branch, branch)
+        kwargs['is_peer_rejected'] = bizarro.repo.is_peer_rejected(r, _default_branch, branch)
         kwargs['eligible_peer'] = session['email'] != bizarro.repo.ineligible_peer(r, _default_branch, branch)
 
         kwargs['review_subject'] = 'Plz review this thing'

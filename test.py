@@ -585,7 +585,7 @@ class TestRepo (TestCase):
         
         branch1.checkout()
         self.assertFalse(bizarro.repo.needs_peer_review(self.clone1, 'master', name))
-        self.assertFalse(bizarro.repo.is_peer_reviewed(self.clone1, 'master', name))
+        self.assertFalse(bizarro.repo.is_peer_approved(self.clone1, 'master', name))
         
         bizarro.edit.update_page(self.clone1, 'index.md',
                                  dict(title=name), 'Hello you-all.')
@@ -594,7 +594,7 @@ class TestRepo (TestCase):
                                        self.clone1.commit().hexsha, 'master')
         
         self.assertTrue(bizarro.repo.needs_peer_review(self.clone1, 'master', name))
-        self.assertFalse(bizarro.repo.is_peer_reviewed(self.clone1, 'master', name))
+        self.assertFalse(bizarro.repo.is_peer_approved(self.clone1, 'master', name))
         self.assertEqual(bizarro.repo.ineligible_peer(self.clone1, 'master', name), 'creator@example.com')
         
         #
@@ -608,7 +608,7 @@ class TestRepo (TestCase):
         bizarro.repo.mark_as_reviewed(self.clone1)
 
         self.assertFalse(bizarro.repo.needs_peer_review(self.clone1, 'master', name))
-        self.assertTrue(bizarro.repo.is_peer_reviewed(self.clone1, 'master', name))
+        self.assertTrue(bizarro.repo.is_peer_approved(self.clone1, 'master', name))
         self.assertEqual(bizarro.repo.ineligible_peer(self.clone1, 'master', name), None)
         
         #
@@ -621,7 +621,7 @@ class TestRepo (TestCase):
                                        self.clone1.commit().hexsha, 'master')
         
         self.assertTrue(bizarro.repo.needs_peer_review(self.clone1, 'master', name))
-        self.assertFalse(bizarro.repo.is_peer_reviewed(self.clone1, 'master', name))
+        self.assertFalse(bizarro.repo.is_peer_approved(self.clone1, 'master', name))
         self.assertEqual(bizarro.repo.ineligible_peer(self.clone1, 'master', name), 'reviewer@example.com')
         
         #
@@ -635,7 +635,7 @@ class TestRepo (TestCase):
         bizarro.repo.mark_as_reviewed(self.clone1)
 
         self.assertFalse(bizarro.repo.needs_peer_review(self.clone1, 'master', name))
-        self.assertTrue(bizarro.repo.is_peer_reviewed(self.clone1, 'master', name))
+        self.assertTrue(bizarro.repo.is_peer_approved(self.clone1, 'master', name))
         self.assertEqual(bizarro.repo.ineligible_peer(self.clone1, 'master', name), None)
     
     def test_peer_rejected(self):
@@ -654,7 +654,7 @@ class TestRepo (TestCase):
         
         branch1.checkout()
         self.assertFalse(bizarro.repo.needs_peer_review(self.clone1, 'master', name))
-        self.assertFalse(bizarro.repo.is_peer_reviewed(self.clone1, 'master', name))
+        self.assertFalse(bizarro.repo.is_peer_approved(self.clone1, 'master', name))
         
         bizarro.edit.update_page(self.clone1, 'index.md',
                                  dict(title=name), 'Hello you-all.')
@@ -663,7 +663,7 @@ class TestRepo (TestCase):
                                        self.clone1.commit().hexsha, 'master')
         
         self.assertTrue(bizarro.repo.needs_peer_review(self.clone1, 'master', name))
-        self.assertFalse(bizarro.repo.is_peer_reviewed(self.clone1, 'master', name))
+        self.assertFalse(bizarro.repo.is_peer_approved(self.clone1, 'master', name))
         self.assertFalse(bizarro.repo.is_peer_rejected(self.clone1, 'master', name))
         self.assertEqual(bizarro.repo.ineligible_peer(self.clone1, 'master', name), 'creator@example.com')
         
@@ -678,7 +678,7 @@ class TestRepo (TestCase):
         bizarro.repo.provide_feedback(self.clone1, 'This sucks')
 
         self.assertFalse(bizarro.repo.needs_peer_review(self.clone1, 'master', name))
-        self.assertFalse(bizarro.repo.is_peer_reviewed(self.clone1, 'master', name))
+        self.assertFalse(bizarro.repo.is_peer_approved(self.clone1, 'master', name))
         self.assertTrue(bizarro.repo.is_peer_rejected(self.clone1, 'master', name))
         self.assertEqual(bizarro.repo.ineligible_peer(self.clone1, 'master', name), None)
         
@@ -692,7 +692,7 @@ class TestRepo (TestCase):
                                        self.clone1.commit().hexsha, 'master')
         
         self.assertTrue(bizarro.repo.needs_peer_review(self.clone1, 'master', name))
-        self.assertFalse(bizarro.repo.is_peer_reviewed(self.clone1, 'master', name))
+        self.assertFalse(bizarro.repo.is_peer_approved(self.clone1, 'master', name))
         self.assertFalse(bizarro.repo.is_peer_rejected(self.clone1, 'master', name))
         self.assertEqual(bizarro.repo.ineligible_peer(self.clone1, 'master', name), 'reviewer@example.com')
         
@@ -707,7 +707,7 @@ class TestRepo (TestCase):
         bizarro.repo.provide_feedback(self.clone1, 'This sucks')
 
         self.assertFalse(bizarro.repo.needs_peer_review(self.clone1, 'master', name))
-        self.assertFalse(bizarro.repo.is_peer_reviewed(self.clone1, 'master', name))
+        self.assertFalse(bizarro.repo.is_peer_approved(self.clone1, 'master', name))
         self.assertTrue(bizarro.repo.is_peer_rejected(self.clone1, 'master', name))
         self.assertEqual(bizarro.repo.ineligible_peer(self.clone1, 'master', name), None)
     
