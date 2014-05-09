@@ -290,7 +290,8 @@ def needs_peer_review(repo, default_branch_name, working_branch_name):
     if base_commit == last_commit:
         return False
     
-    return not is_peer_reviewed(repo, default_branch_name, working_branch_name)
+    return not is_peer_reviewed(repo, default_branch_name, working_branch_name) \
+       and not is_peer_rejected(repo, default_branch_name, working_branch_name)
 
 def ineligible_peer(repo, default_branch_name, working_branch_name):
     ''' Returns the email address of a peer who shouldn't review this branch.
@@ -307,6 +308,28 @@ def is_peer_reviewed(repo, default_branch_name, working_branch_name):
     last_commit = repo.branches[working_branch_name].commit
     
     if 'Approved changes.' not in last_commit.message:
+        # To do: why does "commit: " get prefixed to the message?
+        return False
+    
+    reviewer_email = last_commit.author.email
+    commit_log = last_commit.iter_parents() # reversed(repo.branches[working_branch_name].log())
+    
+    for commit in commit_log:
+        if commit == base_commit:
+            break
+        
+        if reviewer_email and commit.author.email != reviewer_email:
+            return True
+    
+    return False
+
+def is_peer_rejected(repo, default_branch_name, working_branch_name):
+    ''' Returns true if the active branch appears to have suggestion from a peer.
+    '''
+    base_commit = repo.git.merge_base(default_branch_name, working_branch_name)
+    last_commit = repo.branches[working_branch_name].commit
+    
+    if 'Provided feedback.' not in last_commit.message:
         # To do: why does "commit: " get prefixed to the message?
         return False
     
