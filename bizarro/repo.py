@@ -410,10 +410,10 @@ def get_rejection_messages(repo, default_branch_name, working_branch_name):
     commit_log = chain([last_commit], last_commit.iter_parents())
     
     for commit in commit_log:
-        if commit == base_commit:
+        if commit.hexsha == base_commit:
             break
         
         if 'Provided feedback.' in commit.message:
             email = commit.author.email
-            message = commit.message
+            message = commit.message[commit.message.index('Provided feedback.'):][len('Provided feedback.'):]
             yield (email, message)

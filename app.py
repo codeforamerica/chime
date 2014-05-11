@@ -283,9 +283,10 @@ def branch_edit(branch, path=None):
         kwargs['is_peer_approved'] = bizarro.repo.is_peer_approved(r, _default_branch, branch)
         kwargs['is_peer_rejected'] = bizarro.repo.is_peer_rejected(r, _default_branch, branch)
         kwargs['eligible_peer'] = session['email'] != bizarro.repo.ineligible_peer(r, _default_branch, branch)
-
-        kwargs['review_subject'] = 'Plz review this thing'
-        kwargs['review_body'] = request.url
+        kwargs['rejection_messages'] = list(bizarro.repo.get_rejection_messages(r, _default_branch, branch))
+        
+        if kwargs['is_peer_rejected']:
+            kwargs['rejecting_peer'], kwargs['rejection_message'] = kwargs['rejection_messages'].pop(0)
 
         return render_template('tree-branch-edit-listdir.html', **kwargs)
     

@@ -106,6 +106,20 @@
                     </td>
                   </tr>
 
+                {% elif is_peer_rejected and eligible_peer %}
+                  <tr><!-- Author options, after getting a good review with no more changes made -->
+                    <td colspan="2">
+                        <h5>Current feedback</h5>
+                        <p>{{rejection_message}}<br>— {{rejecting_peer}}</p>
+                        <!--
+                        <form action="/merge" method="POST">
+                            <input name="branch" value="{{branch}}" type="hidden" />
+                            <button name="action" value="merge" type="submit" class="button-alternative">Publish</button>
+                        </form>    
+                        -->
+                    </td>
+                  </tr>
+
                   <!--tr>[ Author options, after getting a bad review ]
                     <td colspan="2">
                         <form action="/merge" method="POST">
@@ -134,6 +148,18 @@
                         Eligible peer? {{ eligible_peer }}.
                     </td>
                   </tr>
+                {% endif %}
+                {% if rejection_messages %}
+                <tr><!-- Reviewer options -->
+                  <td colspan="2">
+                    <h5>All feedback</h5>
+                    <ul>
+                      {% for (email, message) in rejection_messages %}
+                        <li>{{message}}<br>— {{email}}</li>
+                      {% endfor %}
+                    </ul>
+                  </td>
+                </tr>
                 {% endif %}
             </tbody>
         </table>
