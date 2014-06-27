@@ -18,7 +18,7 @@ _default_branch = 'master'
 app = Flask(__name__)
 app.secret_key = 'boop'
 app.config['WORK_PATH'] = '.'
-app.config['REPO_PATH'] = 'sample-site'
+app.config['REPO_PATH'] = environ['REPO_PATH'] or 'sample-site'
 
 def dos2unix(string):
     ''' Returns a copy of the strings with line-endings corrected.
@@ -107,7 +107,7 @@ def synch_required(function):
     def decorated_function(*args, **kwargs):
         r = Repo(app.config['REPO_PATH'])
 
-        if 'origin' in r.remotes:
+        if r.remotes['origin']:
             print '<' * 80
             print r
             print r.git.fetch('origin', with_exceptions=True)
@@ -115,7 +115,7 @@ def synch_required(function):
 
         results = function(*args, **kwargs)
         
-        if 'origin' in r.remotes:
+        if r.remotes['origin']:
             print '- ' * 40
             print r
             print r.git.push('origin', with_exceptions=True)
@@ -217,7 +217,7 @@ def merge_branch():
 
         # TODO wrap this up
         o = Repo(app.config['REPO_PATH'])
-        if 'origin' in o.remotes:
+        if o.remotes['origin']:
             o.git.push('origin', with_exceptions=True)
     
     except bizarro.repo.MergeConflict as conflict:
@@ -445,7 +445,7 @@ def branch_save(branch, path):
         
         # TODO wrap this up
         o = Repo(app.config['REPO_PATH'])
-        if 'origin' in o.remotes:
+        if o.remotes['origin']:
             o.git.push('origin', with_exceptions=True)
     
     except bizarro.repo.MergeConflict as conflict:
