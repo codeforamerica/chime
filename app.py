@@ -100,6 +100,29 @@ def login_required(function):
     
     return decorated_function
 
+def synch_required(function):
+    '''
+    '''
+    @wraps(function)
+    def decorated_function(*args, **kwargs):
+        print '<' * 80
+        r = Repo(app.config['REPO_PATH'])
+        print r
+        print r.git.fetch('origin', with_exceptions=True)
+        print '- ' * 40
+
+        results = function(*args, **kwargs)
+        
+        print '- ' * 40
+        r = Repo(app.config['REPO_PATH'])
+        print r
+        print r.git.push('origin', with_exceptions=True)
+        print '>' * 80
+
+        return results
+    
+    return decorated_function
+
 @app.route('/')
 def index():
     r = Repo(app.config['REPO_PATH']) # bare repo
@@ -189,6 +212,10 @@ def merge_branch():
             bizarro.repo.clobber_default_branch(*args)
         else:
             raise Exception('I do not know what "%s" means' % action)
+
+        # TODO wrap this up
+        o = Repo(app.config['REPO_PATH'])
+        o.git.push('origin', with_exceptions=True)
     
     except bizarro.repo.MergeConflict as conflict:
         new_files, gone_files, changed_files = conflict.files()
@@ -264,6 +291,7 @@ def branch_view(branch, path=None):
 @app.route('/tree/<branch>/edit/', methods=['GET'])
 @app.route('/tree/<branch>/edit/<path:path>', methods=['GET'])
 @login_required
+@synch_required
 def branch_edit(branch, path=None):
     branch = branch_var2name(branch)
 
@@ -411,6 +439,10 @@ def branch_save(branch, path):
         if new_path != path:
             bizarro.repo.move_existing_file(r, path, new_path, c2.hexsha, _default_branch)
             path = new_path
+        
+        # TODO wrap this up
+        o = Repo(app.config['REPO_PATH'])
+        o.git.push('origin', with_exceptions=True)
     
     except bizarro.repo.MergeConflict as conflict:
         r.git.reset(c.hexsha, hard=True)
