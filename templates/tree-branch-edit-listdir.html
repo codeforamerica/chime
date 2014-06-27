@@ -70,15 +70,6 @@
                     </td>
                   </tr>
 
-                  <!--tr>[ Author options, after sending for review ]>
-                    <td colspan="2">
-                        <form action="/merge" method="POST">
-                            <input name="branch" value="{{branch}}" type="hidden" />
-                            <a class="button-alternative" href="">Retract review</a>
-                            <button name="action" value="merge" type="submit" class="button-alternative" disabled>Publish (awaiting review)</button>
-                        </form>    
-                    </td>
-                  </tr>-->
                 {% elif is_peer_approved and eligible_peer %}
                   <tr><!-- Author options, after getting a good review with no more changes made -->
                     <td colspan="2">
