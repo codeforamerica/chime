@@ -68,6 +68,17 @@ def branch_var2name(branch_path):
     '''
     return unquote(branch_path)
 
+def path_type(file_path):
+    '''
+    '''
+    if isdir(file_path):
+        return 'folder'
+    
+    if str(guess_type(file_path)[0]).startswith('image/'):
+        return 'image'
+    
+    return 'file'
+
 def login_required(function):
     ''' Login decorator for route functions.
     
@@ -275,7 +286,9 @@ def branch_edit(branch, path=None):
         full_paths = [join(full_path, name) for name in file_names]
         path_pairs = zip(full_paths, view_paths)
         
-        list_paths = [(basename(fp), vp) for (fp, vp) in path_pairs if realpath(fp) != r.git_dir]
+        list_paths = [(basename(fp), vp, path_type(fp))
+                      for (fp, vp) in path_pairs if realpath(fp) != r.git_dir]
+
         kwargs = dict(branch=branch, safe_branch=safe_branch,
                       email=session['email'], list_paths=list_paths)
 

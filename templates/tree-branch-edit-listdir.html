@@ -40,11 +40,11 @@
                         <input name="action" type="submit" value="Delete" class="button-prominent button-delete">
                     </td>
                 </tr>
-                {% for (edit_path, view_path) in list_paths %}
+                {% for (edit_path, view_path, item_type) in list_paths %}
                     <form action="." method="POST">
                         <tr>
                             <td><!-- probably something like one of these statuses --><em>Changed / New / Deleted</em></td>
-                            <td><a class="file" href="{{edit_path}}">{{edit_path}}</a></td>
+                            <td><a class="{{ item_type }}" href="{{edit_path}}">{{edit_path}}</a></td>
                             <td>
                                 <a href="{{edit_path}}" class="button-edit">Edit</a>
                                 <a href="{{view_path}}" class="button-preview" target="_blank">Preview</a>
@@ -62,7 +62,7 @@
 
                           <label> or select one from the list:
                           <select name="pages">
-                            {% for (edit_path, view_path) in list_paths %}
+                            {% for (edit_path, view_path, item_type) in list_paths %}
                                 <option value="{{edit_path}}" />
                             {% endfor %}  
                           </select>
