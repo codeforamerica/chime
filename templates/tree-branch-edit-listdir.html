@@ -22,15 +22,33 @@
                     <th>Topic</th> 
                     <th>Options</th>
                 </tr>
+                <tr>
+                    <td><!-- probably something like one of these statuses --><em>Changed</em></td>
+                    <td><a class="folder" href="">directory</a></td>
+                    <td>
+                        <a href="" class="button-edit">Edit</a>
+                        <a href="" class="button-preview" target="_blank">Preview</a>
+                        <input name="action" type="submit" value="Delete" class="button-prominent button-delete">
+                    </td>
+                </tr>
+                <tr>
+                    <td><!-- probably something like one of these statuses --><em>New</em></td>
+                    <td><a class="image" href="">picture.png</a></td>
+                    <td>
+                        <a href="" class="button-edit">Edit</a>
+                        <a href="" class="button-preview" target="_blank">Preview</a>
+                        <input name="action" type="submit" value="Delete" class="button-prominent button-delete">
+                    </td>
+                </tr>
                 {% for (edit_path, view_path) in list_paths %}
                     <form action="." method="POST">
                         <tr>
                             <td><!-- probably something like one of these statuses --><em>Changed / New / Deleted</em></td>
-                            <td><a href="{{edit_path}}">{{edit_path}}</a></td>
+                            <td><a class="file" href="{{edit_path}}">{{edit_path}}</a></td>
                             <td>
-                                <a href="{{edit_path}}" class="button-alternative">Edit</a>
-                                <a href="{{view_path}}" class="button" target="_blank">Preview</a>
-                                <input name="action" type="submit" value="Delete" class="button-prominent">
+                                <a href="{{edit_path}}" class="button-edit">Edit</a>
+                                <a href="{{view_path}}" class="button-preview" target="_blank">Preview</a>
+                                <input name="action" type="submit" value="Delete" class="button-prominent button-delete">
                             </td>
                         </tr>
                         <input name="path" value="{{edit_path}}" type="hidden">

@@ -117,3 +117,33 @@ ul.slug input{
 ul.slug .form-field input{
 	width:40%;
 }
+
+/* New buttons */
+
+.button-edit{
+	background:url(images/icons/png/16px/pencil.png) no-repeat center;
+	padding-top:2em;
+}
+
+.button-preview{
+	background:url(images/icons/png/16px/eye.png) no-repeat center;
+	padding-top:2em;
+}
+
+.button-delete{
+	background:url(images/icons/png/16px/blocked.png) no-repeat center;
+	padding-top:2em;
+}
+
+.file{
+	background:url(images/icons/png/16px/file2.png) no-repeat;
+	padding-left:1.45em;
+}
+.folder{
+	background:url(images/icons/png/16px/folder.png) no-repeat;
+	padding-left:1.45em;
+}
+.image{
+	background:url(images/icons/png/16px/image.png) no-repeat;
+	padding-left:1.45em;
+}
