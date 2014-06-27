@@ -105,19 +105,21 @@ def synch_required(function):
     '''
     @wraps(function)
     def decorated_function(*args, **kwargs):
-        print '<' * 80
         r = Repo(app.config['REPO_PATH'])
-        print r
-        print r.git.fetch('origin', with_exceptions=True)
-        print '- ' * 40
+
+        if 'origin' in r.remotes:
+            print '<' * 80
+            print r
+            print r.git.fetch('origin', with_exceptions=True)
+            print '- ' * 40
 
         results = function(*args, **kwargs)
         
-        print '- ' * 40
-        r = Repo(app.config['REPO_PATH'])
-        print r
-        print r.git.push('origin', with_exceptions=True)
-        print '>' * 80
+        if 'origin' in r.remotes:
+            print '- ' * 40
+            print r
+            print r.git.push('origin', with_exceptions=True)
+            print '>' * 80
 
         return results
     
@@ -215,7 +217,8 @@ def merge_branch():
 
         # TODO wrap this up
         o = Repo(app.config['REPO_PATH'])
-        o.git.push('origin', with_exceptions=True)
+        if 'origin' in o.remotes:
+            o.git.push('origin', with_exceptions=True)
     
     except bizarro.repo.MergeConflict as conflict:
         new_files, gone_files, changed_files = conflict.files()
@@ -442,7 +445,8 @@ def branch_save(branch, path):
         
         # TODO wrap this up
         o = Repo(app.config['REPO_PATH'])
-        o.git.push('origin', with_exceptions=True)
+        if 'origin' in o.remotes:
+            o.git.push('origin', with_exceptions=True)
     
     except bizarro.repo.MergeConflict as conflict:
         r.git.reset(c.hexsha, hard=True)
