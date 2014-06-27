@@ -22,24 +22,7 @@
                     <th>Topic</th> 
                     <th>Options</th>
                 </tr>
-                <tr>
-                    <td><!-- probably something like one of these statuses --><em>Changed</em></td>
-                    <td><a class="folder" href="">directory</a></td>
-                    <td>
-                        <a href="" class="button-edit">Edit</a>
-                        <a href="" class="button-preview" target="_blank">Preview</a>
-                        <input name="action" type="submit" value="Delete" class="button-prominent button-delete">
-                    </td>
-                </tr>
-                <tr>
-                    <td><!-- probably something like one of these statuses --><em>New</em></td>
-                    <td><a class="image" href="">picture.png</a></td>
-                    <td>
-                        <a href="" class="button-edit">Edit</a>
-                        <a href="" class="button-preview" target="_blank">Preview</a>
-                        <input name="action" type="submit" value="Delete" class="button-prominent button-delete">
-                    </td>
-                </tr>
+                
                 {% for (edit_path, view_path, item_type) in list_paths %}
                     <form action="." method="POST">
                         <tr>
@@ -54,25 +37,7 @@
                         <input name="path" value="{{edit_path}}" type="hidden">
                     </form>
                 {% endfor %}  
-                <tr>
-                    <th colspan="3">
-                        <label>Edit existing page 
-                          <input type="text" name="pages" list="pages" placeholder="thing/stuff"  />
-                          <datalist id="pages">
-
-                          <label> or select one from the list:
-                          <select name="pages">
-                            {% for (edit_path, view_path, item_type) in list_paths %}
-                                <option value="{{edit_path}}" />
-                            {% endfor %}  
-                          </select>
-                           </label>
-
-                          </datalist>
-                         </label>
-                         <a href="{{edit_path}}" class="button-alternative">Edit</a>
-                    </th>
-                </tr>
+                
                 <tr>
                     <th>Create new page</th>
                     <td colspan="2">
