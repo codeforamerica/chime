@@ -100,28 +100,40 @@ def login_required(function):
     
     return decorated_function
 
-def synch_required(function):
-    '''
+def checkout_required(function):
+    ''' Decorator for routes needing a repository checked out to a branch.
+    
+        Syncs with upstream origin before and after. Use below @login_required.
     '''
     @wraps(function)
     def decorated_function(*args, **kwargs):
-        r = Repo(app.config['REPO_PATH'])
+        print '<' * 40 + '-' * 40
 
-        if r.remotes['origin']:
-            print '<' * 80
-            print r
-            print r.git.fetch('origin', with_exceptions=True)
-            print '- ' * 40
+        repo = Repo(app.config['REPO_PATH'])
+    
+        if repo.remotes['origin']:
+            print '  fetching origin', repo
+            repo.git.fetch('origin', with_exceptions=True)
 
-        results = function(*args, **kwargs)
+        checkout = get_repo(app)
+        branch_name = branch_var2name(kwargs['branch'])
+        branch = bizarro.repo.start_branch(checkout, _default_branch, branch_name)
+        branch.checkout()
+
+        print '  checked out to', branch
+        print '- ' * 40
+
+        response = function(*args, **kwargs)
         
-        if r.remotes['origin']:
-            print '- ' * 40
-            print r
-            print r.git.push('origin', with_exceptions=True)
-            print '>' * 80
+        print '- ' * 40
 
-        return results
+        if repo.remotes['origin']:
+            print '  pushing origin', repo
+            repo.git.push('origin', with_exceptions=True)
+
+        print '-' * 40 + '>' * 40
+
+        return response
     
     return decorated_function
 
@@ -294,13 +306,11 @@ def branch_view(branch, path=None):
 @app.route('/tree/<branch>/edit/', methods=['GET'])
 @app.route('/tree/<branch>/edit/<path:path>', methods=['GET'])
 @login_required
-@synch_required
+@checkout_required
 def branch_edit(branch, path=None):
     branch = branch_var2name(branch)
 
     r = get_repo(app)
-    b = bizarro.repo.start_branch(r, _default_branch, branch)
-    b.checkout()
     c = r.commit()
     
     full_path = join(r.working_dir, path or '.').rstrip('/')
