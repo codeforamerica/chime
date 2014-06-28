@@ -18,7 +18,7 @@ _default_branch = 'master'
 app = Flask(__name__)
 app.secret_key = 'boop'
 app.config['WORK_PATH'] = '.'
-app.config['REPO_PATH'] = environ['REPO_PATH'] or 'sample-site'
+app.config['REPO_PATH'] = environ.get('REPO_PATH', 'sample-site')
 
 def dos2unix(string):
     ''' Returns a copy of the strings with line-endings corrected.
@@ -79,12 +79,12 @@ def path_type(file_path):
     
     return 'file'
 
-def login_required(function):
+def login_required(route_function):
     ''' Login decorator for route functions.
     
         Adapts http://flask.pocoo.org/docs/patterns/viewdecorators/
     '''
-    @wraps(function)
+    @wraps(route_function)
     def decorated_function(*args, **kwargs):
         email = session.get('email', None)
     
@@ -96,22 +96,67 @@ def login_required(function):
         environ['GIT_COMMITTER_NAME'] = ' '
         environ['GIT_COMMITTER_EMAIL'] = email
 
-        return function(*args, **kwargs)
+        return route_function(*args, **kwargs)
     
     return decorated_function
 
-def checkout_required(function):
-    ''' Decorator for routes needing a repository checked out to a branch.
+def synch_required(route_function):
+    ''' Decorator for routes needing a repository synched to upstream.
     
         Syncs with upstream origin before and after. Use below @login_required.
     '''
-    @wraps(function)
+    @wraps(route_function)
     def decorated_function(*args, **kwargs):
         print '<' * 40 + '-' * 40
 
         repo = Repo(app.config['REPO_PATH'])
     
-        if repo.remotes['origin']:
+        try:
+            repo.remotes['origin']
+        except IndexError:
+            pass # https://github.com/gitpython-developers/GitPython/issues/11
+        else:
+            print '  fetching origin', repo
+            repo.git.fetch('origin', with_exceptions=True)
+
+        print '- ' * 40
+
+        response = route_function(*args, **kwargs)
+        
+        # Push to origin only if the request method indicates a change.
+        if request.method in ('PUT', 'POST', 'DELETE'):
+            print '- ' * 40
+
+            try:
+                repo.remotes['origin']
+            except IndexError:
+                pass # https://github.com/gitpython-developers/GitPython/issues/11
+            else:
+                print '  pushing origin', repo
+                repo.git.push('origin', with_exceptions=True)
+
+        print '-' * 40 + '>' * 40
+
+        return response
+    
+    return decorated_function
+
+def synched_checkout_required(route_function):
+    ''' Decorator for routes needing a repository checked out to a branch.
+    
+        Syncs with upstream origin before and after. Use below @login_required.
+    '''
+    @wraps(route_function)
+    def decorated_function(*args, **kwargs):
+        print '<' * 40 + '-' * 40
+
+        repo = Repo(app.config['REPO_PATH'])
+        
+        try:
+            repo.remotes['origin']
+        except IndexError:
+            pass # https://github.com/gitpython-developers/GitPython/issues/11
+        else:
             print '  fetching origin', repo
             repo.git.fetch('origin', with_exceptions=True)
 
@@ -123,13 +168,17 @@ def checkout_required(function):
         print '  checked out to', branch
         print '- ' * 40
 
-        response = function(*args, **kwargs)
+        response = route_function(*args, **kwargs)
         
         # Push to origin only if the request method indicates a change.
         if request.method in ('PUT', 'POST', 'DELETE'):
             print '- ' * 40
 
-            if repo.remotes['origin']:
+            try:
+                repo.remotes['origin']
+            except IndexError:
+                pass # https://github.com/gitpython-developers/GitPython/issues/11
+            else:
                 print '  pushing origin', repo
                 repo.git.push('origin', with_exceptions=True)
 
@@ -211,6 +260,7 @@ def start_branch():
 
 @app.route('/merge', methods=['POST'])
 @login_required
+@synch_required
 def merge_branch():
     r = get_repo(app)
     branch_name = request.form.get('branch')
@@ -228,11 +278,6 @@ def merge_branch():
             bizarro.repo.clobber_default_branch(*args)
         else:
             raise Exception('I do not know what "%s" means' % action)
-
-        # TODO wrap this up
-        o = Repo(app.config['REPO_PATH'])
-        if o.remotes['origin']:
-            o.git.push('origin', with_exceptions=True)
     
     except bizarro.repo.MergeConflict as conflict:
         new_files, gone_files, changed_files = conflict.files()
@@ -280,7 +325,7 @@ def review_branch():
 @app.route('/tree/<branch>/view/', methods=['GET'])
 @app.route('/tree/<branch>/view/<path:path>', methods=['GET'])
 @login_required
-@checkout_required
+@synched_checkout_required
 def branch_view(branch, path=None):
     r = get_repo(app)
     
@@ -304,7 +349,7 @@ def branch_view(branch, path=None):
 @app.route('/tree/<branch>/edit/', methods=['GET'])
 @app.route('/tree/<branch>/edit/<path:path>', methods=['GET'])
 @login_required
-@checkout_required
+@synched_checkout_required
 def branch_edit(branch, path=None):
     branch = branch_var2name(branch)
 
@@ -358,10 +403,10 @@ def branch_edit(branch, path=None):
 @app.route('/tree/<branch>/edit/', methods=['POST'])
 @app.route('/tree/<branch>/edit/<path:path>', methods=['POST'])
 @login_required
-@checkout_required
+@synched_checkout_required
 def branch_edit_file(branch, path=None):
     r = get_repo(app)
-    c = b.commit
+    c = r.commit()
     
     action = request.form.get('action', '').lower()
     do_save = True
@@ -396,7 +441,7 @@ def branch_edit_file(branch, path=None):
 
 @app.route('/tree/<branch>/review/', methods=['GET'])
 @login_required
-@checkout_required
+@synched_checkout_required
 def branch_review(branch):
     branch = branch_var2name(branch)
 
@@ -410,6 +455,7 @@ def branch_review(branch):
 
 @app.route('/tree/<branch>/save/<path:path>', methods=['POST'])
 @login_required
+@synch_required
 def branch_save(branch, path):
     branch = branch_var2name(branch)
 
@@ -447,11 +493,6 @@ def branch_save(branch, path):
             bizarro.repo.move_existing_file(r, path, new_path, c2.hexsha, _default_branch)
             path = new_path
         
-        # TODO wrap this up
-        o = Repo(app.config['REPO_PATH'])
-        if o.remotes['origin']:
-            o.git.push('origin', with_exceptions=True)
-    
     except bizarro.repo.MergeConflict as conflict:
         r.git.reset(c.hexsha, hard=True)
     
