@@ -189,6 +189,7 @@ def synched_checkout_required(route_function):
     return decorated_function
 
 @app.route('/')
+@synch_required
 def index():
     r = Repo(app.config['REPO_PATH']) # bare repo
     branch_names = [b.name for b in r.branches if b.name != _default_branch]
@@ -248,6 +249,7 @@ def sign_out():
 
 @app.route('/start', methods=['POST'])
 @login_required
+@synch_required
 def start_branch():
     r = get_repo(app)
     branch_desc = request.form.get('branch')
