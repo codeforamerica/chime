@@ -125,11 +125,13 @@ def checkout_required(function):
 
         response = function(*args, **kwargs)
         
-        print '- ' * 40
+        # Push to origin only if the request method indicates a change.
+        if request.method in ('PUT', 'POST', 'DELETE'):
+            print '- ' * 40
 
-        if repo.remotes['origin']:
-            print '  pushing origin', repo
-            repo.git.push('origin', with_exceptions=True)
+            if repo.remotes['origin']:
+                print '  pushing origin', repo
+                repo.git.push('origin', with_exceptions=True)
 
         print '-' * 40 + '>' * 40
 
@@ -278,13 +280,9 @@ def review_branch():
 @app.route('/tree/<branch>/view/', methods=['GET'])
 @app.route('/tree/<branch>/view/<path:path>', methods=['GET'])
 @login_required
+@checkout_required
 def branch_view(branch, path=None):
-    branch = branch_var2name(branch)
-
     r = get_repo(app)
-    b = bizarro.repo.start_branch(r, _default_branch, branch)
-    b.checkout()
-    c = r.commit()
     
     build_jekyll_site(r.working_dir)
     
@@ -296,7 +294,7 @@ def branch_view(branch, path=None):
     local_paths = glob(local_base + '.*')
     
     if not local_paths:
-        return 404
+        return '404: ' + local_base
     
     local_path = local_paths[0]
     mime_type, _ = guess_type(local_path)
@@ -360,12 +358,9 @@ def branch_edit(branch, path=None):
 @app.route('/tree/<branch>/edit/', methods=['POST'])
 @app.route('/tree/<branch>/edit/<path:path>', methods=['POST'])
 @login_required
+@checkout_required
 def branch_edit_file(branch, path=None):
-    branch = branch_var2name(branch)
-
     r = get_repo(app)
-    b = bizarro.repo.start_branch(r, _default_branch, branch)
-    b.checkout()
     c = b.commit
     
     action = request.form.get('action', '').lower()
@@ -395,18 +390,17 @@ def branch_edit_file(branch, path=None):
     if do_save:
         bizarro.repo.save_working_file(r, file_path, message, c.hexsha, _default_branch)
 
-    safe_branch = branch_name2path(branch)
+    safe_branch = branch_name2path(branch_var2name(branch))
 
     return redirect('/tree/%s/edit/%s' % (safe_branch, path_303), code=303)
 
 @app.route('/tree/<branch>/review/', methods=['GET'])
 @login_required
+@checkout_required
 def branch_review(branch):
     branch = branch_var2name(branch)
 
     r = get_repo(app)
-    b = bizarro.repo.start_branch(r, _default_branch, branch)
-    b.checkout()
     c = r.commit()
 
     kwargs = dict(branch=branch, safe_branch=branch_name2path(branch),
