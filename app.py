@@ -100,6 +100,23 @@ def login_required(route_function):
     
     return decorated_function
 
+def _remote_exists(repo, remote):
+    ''' Check whether a named remote exists in a repository.
+    
+        This should be as simple as `remote in repo.remotes`,
+        but GitPython has a bug in git.util.IterableList:
+
+            https://github.com/gitpython-developers/GitPython/issues/11
+    '''
+    try:
+        repo.remotes[remote]
+
+    except IndexError:
+        return False
+
+    else:
+        return True
+
 def synch_required(route_function):
     ''' Decorator for routes needing a repository synched to upstream.
     
@@ -111,11 +128,7 @@ def synch_required(route_function):
 
         repo = Repo(app.config['REPO_PATH'])
     
-        try:
-            repo.remotes['origin']
-        except IndexError:
-            pass # https://github.com/gitpython-developers/GitPython/issues/11
-        else:
+        if _remote_exists(repo, 'origin'):
             print '  fetching origin', repo
             repo.git.fetch('origin', with_exceptions=True)
 
@@ -127,11 +140,7 @@ def synch_required(route_function):
         if request.method in ('PUT', 'POST', 'DELETE'):
             print '- ' * 40
 
-            try:
-                repo.remotes['origin']
-            except IndexError:
-                pass # https://github.com/gitpython-developers/GitPython/issues/11
-            else:
+            if _remote_exists(repo, 'origin'):
                 print '  pushing origin', repo
                 repo.git.push('origin', with_exceptions=True)
 
@@ -152,11 +161,7 @@ def synched_checkout_required(route_function):
 
         repo = Repo(app.config['REPO_PATH'])
         
-        try:
-            repo.remotes['origin']
-        except IndexError:
-            pass # https://github.com/gitpython-developers/GitPython/issues/11
-        else:
+        if _remote_exists(repo, 'origin'):
             print '  fetching origin', repo
             repo.git.fetch('origin', with_exceptions=True)
 
@@ -174,11 +179,7 @@ def synched_checkout_required(route_function):
         if request.method in ('PUT', 'POST', 'DELETE'):
             print '- ' * 40
 
-            try:
-                repo.remotes['origin']
-            except IndexError:
-                pass # https://github.com/gitpython-developers/GitPython/issues/11
-            else:
+            if _remote_exists(repo, 'origin'):
                 print '  pushing origin', repo
                 repo.git.push('origin', with_exceptions=True)
 
