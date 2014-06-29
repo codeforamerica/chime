@@ -139,11 +139,18 @@ File explorer icons
 
 
 
-.button{
-	background-color:red;
+.button.button-preview{
+	background-color:#B7D5F8;
+	color:#000;
 }
 
-input[type=submit].button-delete{
+.button.button-edit{
+	background-color:#8EB85B;
+	color:fff;
+}
+
+input[type=submit].button-delete,
+button[type=submit].button-delete{
 	background-color:transparent;
 	color:red;
 }
