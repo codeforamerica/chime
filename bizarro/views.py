@@ -1,193 +1,23 @@
-from os.path import join, isdir, exists, realpath, basename, split, splitext
+from os.path import join, isdir, realpath, basename, splitext
 from os import listdir, environ
-from urllib import quote, unquote
 from re import compile, MULTILINE
 from mimetypes import guess_type
-from functools import wraps
 from glob import glob
 
 from git import Repo
 from requests import post
-from flask import Flask, redirect, request, Response, render_template, session, current_app
+from flask import redirect, request, Response, render_template, session, current_app
 from jekyll import load_jekyll_doc, build_jekyll_site
 
-import bizarro
+from . import app
+from . import repo as bizarro_repo
+from . import edit as bizarro_edit
+from .view_functions import (
+  branch_name2path, branch_var2name, get_repo, path_type, name_branch, dos2unix,
+  login_required, synch_required, synched_checkout_required
+  )
 
 _default_branch = 'master'
-
-app = Flask(__name__)
-app.secret_key = 'boop'
-app.config['WORK_PATH'] = '.'
-app.config['REPO_PATH'] = environ.get('REPO_PATH', 'sample-site')
-
-def dos2unix(string):
-    ''' Returns a copy of the strings with line-endings corrected.
-    '''
-    return string.replace('\r\n', '\n').replace('\r', '\n')
-
-def get_repo(flask_app):
-    ''' Gets repository for the current user, cloned from the origin.
-    '''
-    dir_name = 'repo-' + session.get('email', 'nobody')
-    user_dir = realpath(join(flask_app.config['WORK_PATH'], quote(dir_name)))
-    
-    if isdir(user_dir):
-        user_repo = Repo(user_dir)
-        user_repo.git.reset(hard=True)
-        user_repo.remotes.origin.fetch()
-        return user_repo
-    
-    source_repo = Repo(flask_app.config['REPO_PATH'])
-    user_repo = source_repo.clone(user_dir, bare=False)
-    
-    return user_repo
-
-def name_branch(description):
-    ''' Generate a name for a branch from a description.
-    
-        Prepends with session.email, and replaces spaces with dashes.
-
-        TODO: follow rules in http://git-scm.com/docs/git-check-ref-format.html
-    '''
-    safe_description = description.replace('.', '-').replace(' ', '-')
-    return quote(session['email'], '@.-_') + '/' + quote(safe_description, '-_!')
-
-def branch_name2path(branch_name):
-    ''' Quote the branch name for safe use in URLs.
-    
-        Uses urllib.quote() *twice* because Flask still interprets
-        '%2F' in a path as '/', so it must be double-escaped to '%252F'.
-    '''
-    return quote(quote(branch_name, ''), '')
-
-def branch_var2name(branch_path):
-    ''' Unquote the branch name for use by Git.
-    
-        Uses urllib.unquote() *once* because Flask routing already converts
-        raw paths to variables before they arrive here.
-    '''
-    return unquote(branch_path)
-
-def path_type(file_path):
-    '''
-    '''
-    if isdir(file_path):
-        return 'folder'
-    
-    if str(guess_type(file_path)[0]).startswith('image/'):
-        return 'image'
-    
-    return 'file'
-
-def login_required(route_function):
-    ''' Login decorator for route functions.
-    
-        Adapts http://flask.pocoo.org/docs/patterns/viewdecorators/
-    '''
-    @wraps(route_function)
-    def decorated_function(*args, **kwargs):
-        email = session.get('email', None)
-    
-        if not email:
-            return redirect('/')
-        
-        environ['GIT_AUTHOR_NAME'] = ' '
-        environ['GIT_AUTHOR_EMAIL'] = email
-        environ['GIT_COMMITTER_NAME'] = ' '
-        environ['GIT_COMMITTER_EMAIL'] = email
-
-        return route_function(*args, **kwargs)
-    
-    return decorated_function
-
-def _remote_exists(repo, remote):
-    ''' Check whether a named remote exists in a repository.
-    
-        This should be as simple as `remote in repo.remotes`,
-        but GitPython has a bug in git.util.IterableList:
-
-            https://github.com/gitpython-developers/GitPython/issues/11
-    '''
-    try:
-        repo.remotes[remote]
-
-    except IndexError:
-        return False
-
-    else:
-        return True
-
-def synch_required(route_function):
-    ''' Decorator for routes needing a repository synched to upstream.
-    
-        Syncs with upstream origin before and after. Use below @login_required.
-    '''
-    @wraps(route_function)
-    def decorated_function(*args, **kwargs):
-        print '<' * 40 + '-' * 40
-
-        repo = Repo(current_app.config['REPO_PATH'])
-    
-        if _remote_exists(repo, 'origin'):
-            print '  fetching origin', repo
-            repo.git.fetch('origin', with_exceptions=True)
-
-        print '- ' * 40
-
-        response = route_function(*args, **kwargs)
-        
-        # Push to origin only if the request method indicates a change.
-        if request.method in ('PUT', 'POST', 'DELETE'):
-            print '- ' * 40
-
-            if _remote_exists(repo, 'origin'):
-                print '  pushing origin', repo
-                repo.git.push('origin', with_exceptions=True)
-
-        print '-' * 40 + '>' * 40
-
-        return response
-    
-    return decorated_function
-
-def synched_checkout_required(route_function):
-    ''' Decorator for routes needing a repository checked out to a branch.
-    
-        Syncs with upstream origin before and after. Use below @login_required.
-    '''
-    @wraps(route_function)
-    def decorated_function(*args, **kwargs):
-        print '<' * 40 + '-' * 40
-
-        repo = Repo(current_app.config['REPO_PATH'])
-        
-        if _remote_exists(repo, 'origin'):
-            print '  fetching origin', repo
-            repo.git.fetch('origin', with_exceptions=True)
-
-        checkout = get_repo(current_app)
-        branch_name = branch_var2name(kwargs['branch'])
-        branch = bizarro.repo.start_branch(checkout, _default_branch, branch_name)
-        branch.checkout()
-
-        print '  checked out to', branch
-        print '- ' * 40
-
-        response = route_function(*args, **kwargs)
-        
-        # Push to origin only if the request method indicates a change.
-        if request.method in ('PUT', 'POST', 'DELETE'):
-            print '- ' * 40
-
-            if _remote_exists(repo, 'origin'):
-                print '  pushing origin', repo
-                repo.git.push('origin', with_exceptions=True)
-
-        print '-' * 40 + '>' * 40
-
-        return response
-    
-    return decorated_function
 
 @app.route('/')
 @synch_required
@@ -210,9 +40,9 @@ def index():
         behind = pattern.findall(behind_raw)
         ahead = pattern.findall(ahead_raw)
         
-        needs_peer_review = bizarro.repo.needs_peer_review(r, _default_branch, name)
-        is_peer_approved = bizarro.repo.is_peer_approved(r, _default_branch, name)
-        is_peer_rejected = bizarro.repo.is_peer_rejected(r, _default_branch, name)
+        needs_peer_review = bizarro_repo.needs_peer_review(r, _default_branch, name)
+        is_peer_approved = bizarro_repo.is_peer_approved(r, _default_branch, name)
+        is_peer_rejected = bizarro_repo.is_peer_rejected(r, _default_branch, name)
         
         review_subject = 'Plz review this thing'
         review_body = '%s/tree/%s/edit' % (request.url, path)
@@ -255,7 +85,7 @@ def start_branch():
     r = get_repo(current_app)
     branch_desc = request.form.get('branch')
     branch_name = name_branch(branch_desc)
-    branch = bizarro.repo.start_branch(r, _default_branch, branch_name)
+    branch = bizarro_repo.start_branch(r, _default_branch, branch_name)
     
     safe_branch = branch_name2path(branch.name)
     
@@ -274,15 +104,15 @@ def merge_branch():
         args = r, _default_branch, branch_name
         
         if action == 'merge':
-            bizarro.repo.complete_branch(*args)
+            bizarro_repo.complete_branch(*args)
         elif action == 'abandon':
-            bizarro.repo.abandon_branch(*args)
+            bizarro_repo.abandon_branch(*args)
         elif action == 'clobber':
-            bizarro.repo.clobber_default_branch(*args)
+            bizarro_repo.clobber_default_branch(*args)
         else:
             raise Exception('I do not know what "%s" means' % action)
     
-    except bizarro.repo.MergeConflict as conflict:
+    except bizarro_repo.MergeConflict as conflict:
         new_files, gone_files, changed_files = conflict.files()
         
         kwargs = dict(branch=branch_name, new_files=new_files,
@@ -305,14 +135,14 @@ def review_branch():
         action = request.form.get('action', '').lower()
         
         if action == 'approve':
-            bizarro.repo.mark_as_reviewed(r)
+            bizarro_repo.mark_as_reviewed(r)
         elif action == 'feedback':
             comments = request.form.get('comments')
-            bizarro.repo.provide_feedback(r, comments)
+            bizarro_repo.provide_feedback(r, comments)
         else:
             raise Exception('I do not know what "%s" means' % action)
     
-    except bizarro.repo.MergeConflict as conflict:
+    except bizarro_repo.MergeConflict as conflict:
         new_files, gone_files, changed_files = conflict.files()
     
         kwargs = dict(branch=branch_name, new_files=new_files,
@@ -379,11 +209,11 @@ def branch_edit(branch, path=None):
         kwargs = dict(branch=branch, safe_branch=safe_branch,
                       email=session['email'], list_paths=list_paths)
 
-        kwargs['needs_peer_review'] = bizarro.repo.needs_peer_review(r, _default_branch, branch)
-        kwargs['is_peer_approved'] = bizarro.repo.is_peer_approved(r, _default_branch, branch)
-        kwargs['is_peer_rejected'] = bizarro.repo.is_peer_rejected(r, _default_branch, branch)
-        kwargs['eligible_peer'] = session['email'] != bizarro.repo.ineligible_peer(r, _default_branch, branch)
-        kwargs['rejection_messages'] = list(bizarro.repo.get_rejection_messages(r, _default_branch, branch))
+        kwargs['needs_peer_review'] = bizarro_repo.needs_peer_review(r, _default_branch, branch)
+        kwargs['is_peer_approved'] = bizarro_repo.is_peer_approved(r, _default_branch, branch)
+        kwargs['is_peer_rejected'] = bizarro_repo.is_peer_rejected(r, _default_branch, branch)
+        kwargs['eligible_peer'] = session['email'] != bizarro_repo.ineligible_peer(r, _default_branch, branch)
+        kwargs['rejection_messages'] = list(bizarro_repo.get_rejection_messages(r, _default_branch, branch))
         
         if kwargs['is_peer_rejected']:
             kwargs['rejecting_peer'], kwargs['rejection_message'] = kwargs['rejection_messages'].pop(0)
@@ -415,7 +245,7 @@ def branch_edit_file(branch, path=None):
     do_save = True
     
     if action == 'upload' and 'file' in request.files:
-        file_path = bizarro.edit.upload_new_file(r, path, request.files['file'])
+        file_path = bizarro_edit.upload_new_file(r, path, request.files['file'])
         message = 'Uploaded new file "%s"' % file_path
         path_303 = path or ''
     
@@ -423,12 +253,12 @@ def branch_edit_file(branch, path=None):
         front, body = dict(title='', layout='multi'), ''
         name = splitext(request.form['path'])[0] + '.md'
 
-        file_path = bizarro.edit.create_new_page(r, path, name, front, body)
+        file_path = bizarro_edit.create_new_page(r, path, name, front, body)
         message = 'Created new file "%s"' % file_path
         path_303 = file_path
     
     elif action == 'delete' and 'path' in request.form:
-        file_path = bizarro.edit.delete_file(r, path, request.form['path'])
+        file_path = bizarro_edit.delete_file(r, path, request.form['path'])
         message = 'Deleted file "%s"' % file_path
         path_303 = path or ''
     
@@ -436,7 +266,7 @@ def branch_edit_file(branch, path=None):
         raise Exception()
     
     if do_save:
-        bizarro.repo.save_working_file(r, file_path, message, c.hexsha, _default_branch)
+        bizarro_repo.save_working_file(r, file_path, message, c.hexsha, _default_branch)
 
     safe_branch = branch_name2path(branch_var2name(branch))
 
@@ -463,7 +293,7 @@ def branch_save(branch, path):
     branch = branch_var2name(branch)
 
     r = get_repo(current_app)
-    b = bizarro.repo.start_branch(r, _default_branch, branch)
+    b = bizarro_repo.start_branch(r, _default_branch, branch)
     c = b.commit
     
     if c.hexsha != request.form.get('hexsha'):
@@ -482,21 +312,21 @@ def branch_save(branch, path):
              'body-zh-cn':  dos2unix(request.form.get('body-zh-cn'))}
 
     body = dos2unix(request.form.get('body'))
-    bizarro.edit.update_page(r, path, front, body)
+    bizarro_edit.update_page(r, path, front, body)
     
     #
     # Try to merge from the master to the current branch.
     #
     try:
         message = 'Saved file "%s"' % path
-        c2 = bizarro.repo.save_working_file(r, path, message, c.hexsha, _default_branch)
+        c2 = bizarro_repo.save_working_file(r, path, message, c.hexsha, _default_branch)
         new_path = request.form.get('url-slug') + splitext(path)[1]
         
         if new_path != path:
-            bizarro.repo.move_existing_file(r, path, new_path, c2.hexsha, _default_branch)
+            bizarro_repo.move_existing_file(r, path, new_path, c2.hexsha, _default_branch)
             path = new_path
         
-    except bizarro.repo.MergeConflict as conflict:
+    except bizarro_repo.MergeConflict as conflict:
         r.git.reset(c.hexsha, hard=True)
     
         print 1, conflict.remote_commit
@@ -508,6 +338,3 @@ def branch_save(branch, path):
     safe_branch = branch_name2path(branch)
 
     return redirect('/tree/%s/edit/%s' % (safe_branch, path), code=303)
-
-if __name__ == '__main__':
-    app.run(debug=True)

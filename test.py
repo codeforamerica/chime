@@ -14,7 +14,7 @@ from box.util.rotunicode import RotUnicode
 from httmock import response, HTTMock
 
 import bizarro, jekyll
-from app import app
+from bizarro import app
 
 import codecs
 codecs.register(RotUnicode.search_function)
