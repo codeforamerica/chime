@@ -117,9 +117,9 @@ ul.slug input{
 ul.slug .form-field input{
 	width:40%;
 }
-
-/* New buttons */
-
+/* 
+File explorer icons
+*/
 
 .file{
 	background:url(images/icons/png/16px/file2.png) no-repeat;
@@ -135,6 +135,15 @@ ul.slug .form-field input{
 }
 
 
+/* New buttons */
+
+
+
 .button{
 	background-color:red;
+}
+
+input[type=submit].button-delete{
+	background-color:transparent;
+	color:red;
 }
