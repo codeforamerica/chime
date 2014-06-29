@@ -134,7 +134,16 @@ File explorer icons
 	padding-left:1.45em;
 }
 
-
+.directory-crumb,
+.directory-crumb a{
+	font-weight:normal;
+	text-transform: lowercase;
+	font-size:0.85em;
+}
+.directory-crumb{
+		background:url(images/icons/png/16px/folder-open.png) no-repeat 0 10px;
+		padding-left:1.2em;
+}
 /* New buttons */
 
 
@@ -154,3 +163,4 @@ button[type=submit].button-delete{
 	background-color:transparent;
 	color:red;
 }
+
