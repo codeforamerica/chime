@@ -14,7 +14,7 @@ from box.util.rotunicode import RotUnicode
 from httmock import response, HTTMock
 
 import bizarro
-from bizarro import app, jekyll
+from bizarro import app, jekyll, repo_functions
 
 import codecs
 codecs.register(RotUnicode.search_function)
@@ -77,7 +77,7 @@ class TestRepo (TestCase):
         ''' Make a simple edit in a clone, verify that it appears in the other.
         '''
         name = str(uuid4())
-        branch1 = bizarro.repo.start_branch(self.clone1, 'master', name)
+        branch1 = repo_functions.start_branch(self.clone1, 'master', name)
         
         self.assertTrue(name in self.clone1.branches)
         self.assertTrue(name in self.origin.branches)
@@ -92,12 +92,12 @@ class TestRepo (TestCase):
             file.write('\n\n...')
         
         args = self.clone1, 'index.md', message, branch1.commit.hexsha, 'master'
-        bizarro.repo.save_working_file(*args)
+        repo_functions.save_working_file(*args)
         
         #
         # See if the branch made it to clone 2
         #
-        branch2 = bizarro.repo.start_branch(self.clone2, 'master', name)
+        branch2 = repo_functions.start_branch(self.clone2, 'master', name)
 
         self.assertTrue(name in self.clone2.branches)
         self.assertEquals(branch2.commit.hexsha, branch1.commit.hexsha)
@@ -107,7 +107,7 @@ class TestRepo (TestCase):
         ''' Make a new file and delete an old file in a clone, verify that it appears in the other.
         '''
         name = str(uuid4())
-        branch1 = bizarro.repo.start_branch(self.clone1, 'master', name)
+        branch1 = repo_functions.start_branch(self.clone1, 'master', name)
         
         self.assertTrue(name in self.clone1.branches)
         self.assertTrue(name in self.origin.branches)
@@ -121,7 +121,7 @@ class TestRepo (TestCase):
                                      dict(title='Hello'), 'Hello hello.')
         
         args = self.clone1, 'hello.md', str(uuid4()), branch1.commit.hexsha, 'master'
-        bizarro.repo.save_working_file(*args)
+        repo_functions.save_working_file(*args)
         
         #
         # Delete an existing file in the branch and push it.
@@ -131,12 +131,12 @@ class TestRepo (TestCase):
         bizarro.edit.delete_file(self.clone1, '', 'index.md')
         
         args = self.clone1, 'index.md', message, branch1.commit.hexsha, 'master'
-        bizarro.repo.save_working_file(*args)
+        repo_functions.save_working_file(*args)
         
         #
         # See if the branch made it to clone 2
         #
-        branch2 = bizarro.repo.start_branch(self.clone2, 'master', name)
+        branch2 = repo_functions.start_branch(self.clone2, 'master', name)
 
         self.assertTrue(name in self.clone2.branches)
         self.assertEquals(branch2.commit.hexsha, branch1.commit.hexsha)
@@ -158,7 +158,7 @@ class TestRepo (TestCase):
         ''' Change the path of a file.
         '''
         name = str(uuid4())
-        branch1 = bizarro.repo.start_branch(self.clone1, 'master', name)
+        branch1 = repo_functions.start_branch(self.clone1, 'master', name)
         
         self.assertTrue(name in self.clone1.branches)
         self.assertTrue(name in self.origin.branches)
@@ -169,12 +169,12 @@ class TestRepo (TestCase):
         branch1.checkout()
 
         args = self.clone1, 'index.md', 'hello/world.md', branch1.commit.hexsha, 'master'
-        bizarro.repo.move_existing_file(*args)
+        repo_functions.move_existing_file(*args)
         
         #
         # See if the new file made it to clone 2
         #
-        branch2 = bizarro.repo.start_branch(self.clone2, 'master', name)
+        branch2 = repo_functions.start_branch(self.clone2, 'master', name)
         branch2.checkout()
         
         self.assertTrue(exists(join(self.clone2.working_dir, 'hello/world.md')))
@@ -183,8 +183,8 @@ class TestRepo (TestCase):
     def test_content_merge(self):
         ''' Test that non-conflicting changes on the same file merge cleanly.
         '''
-        branch1 = bizarro.repo.start_branch(self.clone1, 'master', 'title')
-        branch2 = bizarro.repo.start_branch(self.clone2, 'master', 'body')
+        branch1 = repo_functions.start_branch(self.clone1, 'master', 'title')
+        branch2 = repo_functions.start_branch(self.clone2, 'master', 'body')
         
         branch1.checkout()
         branch2.checkout()
@@ -198,7 +198,7 @@ class TestRepo (TestCase):
         #
         # Show that only the title branch title is now present on master.
         #
-        bizarro.repo.complete_branch(self.clone1, 'master', 'title')
+        repo_functions.complete_branch(self.clone1, 'master', 'title')
         
         with open(self.clone1.working_dir + '/index.md') as file:
             front1b, body1b = jekyll.load_jekyll_doc(file)
@@ -209,7 +209,7 @@ class TestRepo (TestCase):
         #
         # Show that the body branch body is also now present on master.
         #
-        bizarro.repo.complete_branch(self.clone2, 'master', 'body')
+        repo_functions.complete_branch(self.clone2, 'master', 'body')
         
         with open(self.clone2.working_dir + '/index.md') as file:
             front2b, body2b = jekyll.load_jekyll_doc(file)
@@ -221,8 +221,8 @@ class TestRepo (TestCase):
     def test_content_merge_extra_change(self):
         ''' Test that non-conflicting changes on the same file merge cleanly.
         '''
-        branch1 = bizarro.repo.start_branch(self.clone1, 'master', 'title')
-        branch2 = bizarro.repo.start_branch(self.clone2, 'master', 'body')
+        branch1 = repo_functions.start_branch(self.clone1, 'master', 'title')
+        branch2 = repo_functions.start_branch(self.clone2, 'master', 'body')
         
         branch1.checkout()
         branch2.checkout()
@@ -236,7 +236,7 @@ class TestRepo (TestCase):
         #
         # Show that only the title branch title is now present on master.
         #
-        bizarro.repo.complete_branch(self.clone1, 'master', 'title')
+        repo_functions.complete_branch(self.clone1, 'master', 'title')
         
         with open(self.clone1.working_dir + '/index.md') as file:
             front1b, body1b = jekyll.load_jekyll_doc(file)
@@ -250,8 +250,8 @@ class TestRepo (TestCase):
         bizarro.edit.update_page(self.clone2, 'index.md',
                                  front2, 'Another change to the body')
         
-        bizarro.repo.save_working_file(self.clone2, 'index.md', 'A new change',
-                                       self.clone2.commit().hexsha, 'master')
+        repo_functions.save_working_file(self.clone2, 'index.md', 'A new change',
+                                         self.clone2.commit().hexsha, 'master')
         
         #
         # Show that upstream changes from master have been merged here.
@@ -267,8 +267,8 @@ class TestRepo (TestCase):
         ''' Test that two non-conflicting new files merge cleanly.
         '''
         name = str(uuid4())
-        branch1 = bizarro.repo.start_branch(self.clone1, 'master', name)
-        branch2 = bizarro.repo.start_branch(self.clone2, 'master', name)
+        branch1 = repo_functions.start_branch(self.clone1, 'master', name)
+        branch2 = repo_functions.start_branch(self.clone2, 'master', name)
         
         #
         # Make new files in each branch and save them.
@@ -286,7 +286,7 @@ class TestRepo (TestCase):
         # Show that the changes from the first branch made it to origin.
         #
         args1 = self.clone1, 'file1.md', '...', branch1.commit.hexsha, 'master'
-        commit1 = bizarro.repo.save_working_file(*args1)
+        commit1 = repo_functions.save_working_file(*args1)
 
         self.assertEquals(self.origin.branches[name].commit, commit1)
         self.assertEquals(self.origin.branches[name].commit.author.email, self.session['email'])
@@ -297,7 +297,7 @@ class TestRepo (TestCase):
         # Show that the changes from the second branch also made it to origin.
         #
         args2 = self.clone2, 'file2.md', '...', branch2.commit.hexsha, 'master'
-        commit2 = bizarro.repo.save_working_file(*args2)
+        commit2 = repo_functions.save_working_file(*args2)
 
         self.assertEquals(self.origin.branches[name].commit, commit2)
         self.assertEquals(self.origin.branches[name].commit.author.email, self.session['email'])
@@ -307,7 +307,7 @@ class TestRepo (TestCase):
         #
         # Show that the merge from the second branch made it back to the first. 
         #
-        branch1b = bizarro.repo.start_branch(self.clone1, 'master', name)
+        branch1b = repo_functions.start_branch(self.clone1, 'master', name)
 
         self.assertEquals(branch1b.commit, branch2.commit)
         self.assertEquals(branch1b.commit.author.email, self.session['email'])
@@ -317,8 +317,8 @@ class TestRepo (TestCase):
         ''' Test that a conflict in two branches appears at the right spot.
         '''
         name = str(uuid4())
-        branch1 = bizarro.repo.start_branch(self.clone1, 'master', name)
-        branch2 = bizarro.repo.start_branch(self.clone2, 'master', name)
+        branch1 = repo_functions.start_branch(self.clone1, 'master', name)
+        branch2 = repo_functions.start_branch(self.clone2, 'master', name)
         
         #
         # Make new files in each branch and save them.
@@ -336,7 +336,7 @@ class TestRepo (TestCase):
         # Show that the changes from the first branch made it to origin.
         #
         args1 = self.clone1, 'conflict.md', '...', branch1.commit.hexsha, 'master'
-        commit1 = bizarro.repo.save_working_file(*args1)
+        commit1 = repo_functions.save_working_file(*args1)
 
         self.assertEquals(self.origin.branches[name].commit, commit1)
         self.assertEquals(commit1, branch1.commit)
@@ -344,9 +344,9 @@ class TestRepo (TestCase):
         #
         # Show that the changes from the second branch conflict with the first.
         #
-        with self.assertRaises(bizarro.repo.MergeConflict) as conflict:
+        with self.assertRaises(repo_functions.MergeConflict) as conflict:
             args2 = self.clone2, 'conflict.md', '...', branch2.commit.hexsha, 'master'
-            commit2 = bizarro.repo.save_working_file(*args2)
+            commit2 = repo_functions.save_working_file(*args2)
         
         self.assertEqual(conflict.exception.remote_commit, commit1)
         
@@ -360,8 +360,8 @@ class TestRepo (TestCase):
         ''' Test that a conflict in two branches appears at the right spot.
         '''
         name1, name2 = str(uuid4()), str(uuid4())
-        branch1 = bizarro.repo.start_branch(self.clone1, 'master', name1)
-        branch2 = bizarro.repo.start_branch(self.clone2, 'master', name2)
+        branch1 = repo_functions.start_branch(self.clone1, 'master', name1)
+        branch2 = repo_functions.start_branch(self.clone2, 'master', name2)
         
         #
         # Make new files in each branch and save them.
@@ -379,7 +379,7 @@ class TestRepo (TestCase):
         # Show that the changes from the first branch made it to origin.
         #
         args1 = self.clone1, 'conflict.md', '...', branch1.commit.hexsha, 'master'
-        commit1 = bizarro.repo.save_working_file(*args1)
+        commit1 = repo_functions.save_working_file(*args1)
 
         self.assertEquals(self.origin.branches[name1].commit, commit1)
         self.assertEquals(commit1, branch1.commit)
@@ -387,15 +387,15 @@ class TestRepo (TestCase):
         #
         # Merge the first branch to master.
         #
-        commit2 = bizarro.repo.complete_branch(self.clone1, 'master', name1)
+        commit2 = repo_functions.complete_branch(self.clone1, 'master', name1)
         self.assertFalse(name1 in self.origin.branches)
         
         #
         # Show that the changes from the second branch conflict with the first.
         #
-        with self.assertRaises(bizarro.repo.MergeConflict) as conflict:
+        with self.assertRaises(repo_functions.MergeConflict) as conflict:
             args2 = self.clone2, 'conflict.md', '...', branch2.commit.hexsha, 'master'
-            bizarro.repo.save_working_file(*args2)
+            repo_functions.save_working_file(*args2)
         
         self.assertEqual(conflict.exception.remote_commit, commit2)
         
@@ -409,8 +409,8 @@ class TestRepo (TestCase):
         ''' Test that a conflict in two branches appears at the right spot.
         '''
         name1, name2 = str(uuid4()), str(uuid4())
-        branch1 = bizarro.repo.start_branch(self.clone1, 'master', name1)
-        branch2 = bizarro.repo.start_branch(self.clone2, 'master', name2)
+        branch1 = repo_functions.start_branch(self.clone1, 'master', name1)
+        branch2 = repo_functions.start_branch(self.clone2, 'master', name2)
         
         #
         # Make new files in each branch and save them.
@@ -428,19 +428,19 @@ class TestRepo (TestCase):
         # Push changes from the two branches to origin.
         #
         args1 = self.clone1, 'conflict.md', '...', branch1.commit.hexsha, 'master'
-        commit1 = bizarro.repo.save_working_file(*args1)
+        commit1 = repo_functions.save_working_file(*args1)
 
         args2 = self.clone2, 'conflict.md', '...', branch2.commit.hexsha, 'master'
-        commit2 = bizarro.repo.save_working_file(*args2)
+        commit2 = repo_functions.save_working_file(*args2)
         
         #
         # Merge the two branches to master; show that second merge will fail.
         #
-        bizarro.repo.complete_branch(self.clone1, 'master', name1)
+        repo_functions.complete_branch(self.clone1, 'master', name1)
         self.assertFalse(name1 in self.origin.branches)
         
-        with self.assertRaises(bizarro.repo.MergeConflict) as conflict:
-            bizarro.repo.complete_branch(self.clone2, 'master', name2)
+        with self.assertRaises(repo_functions.MergeConflict) as conflict:
+            repo_functions.complete_branch(self.clone2, 'master', name2)
         
         self.assertEqual(conflict.exception.remote_commit, self.origin.commit())
         self.assertEqual(conflict.exception.local_commit, self.clone2.commit())
@@ -455,8 +455,8 @@ class TestRepo (TestCase):
         ''' Test that a conflict in two branches can be clobbered.
         '''
         name = str(uuid4())
-        branch1 = bizarro.repo.start_branch(self.clone1, 'master', 'title')
-        branch2 = bizarro.repo.start_branch(self.clone2, 'master', name)
+        branch1 = repo_functions.start_branch(self.clone1, 'master', 'title')
+        branch2 = repo_functions.start_branch(self.clone2, 'master', name)
         
         #
         # Add goner.md in branch1.
@@ -467,7 +467,7 @@ class TestRepo (TestCase):
                                      dict(title=name), 'Woooo woooo.')
 
         args = self.clone1, 'goner.md', '...', branch1.commit.hexsha, 'master'
-        commit = bizarro.repo.save_working_file(*args)
+        commit = repo_functions.save_working_file(*args)
 
         #
         # Change index.md in branch2 so it conflicts with title branch.
@@ -478,15 +478,15 @@ class TestRepo (TestCase):
                                  dict(title=name), 'Hello hello.')
         
         args = self.clone2, 'index.md', '...', branch2.commit.hexsha, 'master'
-        commit = bizarro.repo.save_working_file(*args)
+        commit = repo_functions.save_working_file(*args)
 
         #
         # Merge the original title branch, fail to merge our conflicting branch.
         #
-        bizarro.repo.complete_branch(self.clone1, 'master', 'title')
+        repo_functions.complete_branch(self.clone1, 'master', 'title')
 
-        with self.assertRaises(bizarro.repo.MergeConflict) as conflict:
-            bizarro.repo.complete_branch(self.clone2, 'master', name)
+        with self.assertRaises(repo_functions.MergeConflict) as conflict:
+            repo_functions.complete_branch(self.clone2, 'master', name)
         
         self.assertEqual(conflict.exception.local_commit, commit)
         
@@ -499,7 +499,7 @@ class TestRepo (TestCase):
         #
         # Merge our conflicting branch and clobber the default branch.
         #
-        bizarro.repo.clobber_default_branch(self.clone2, 'master', name)
+        repo_functions.clobber_default_branch(self.clone2, 'master', name)
         
         with open(join(self.clone2.working_dir, 'index.md')) as file:
             front, body = jekyll.load_jekyll_doc(file)
@@ -517,8 +517,8 @@ class TestRepo (TestCase):
         ''' Test that a conflict in two branches can be abandoned.
         '''
         name = str(uuid4())
-        branch1 = bizarro.repo.start_branch(self.clone1, 'master', 'title')
-        branch2 = bizarro.repo.start_branch(self.clone2, 'master', name)
+        branch1 = repo_functions.start_branch(self.clone1, 'master', 'title')
+        branch2 = repo_functions.start_branch(self.clone2, 'master', name)
         
         #
         # Change index.md in branch2 so it conflicts with title branch.
@@ -533,18 +533,18 @@ class TestRepo (TestCase):
                                      dict(title=name), 'Woooo woooo.')
 
         args = self.clone2, 'index.md', '...', branch2.commit.hexsha, 'master'
-        commit = bizarro.repo.save_working_file(*args)
+        commit = repo_functions.save_working_file(*args)
 
         args = self.clone2, 'goner.md', '...', branch2.commit.hexsha, 'master'
-        commit = bizarro.repo.save_working_file(*args)
+        commit = repo_functions.save_working_file(*args)
 
         #
         # Merge the original title branch, fail to merge our conflicting branch.
         #
-        bizarro.repo.complete_branch(self.clone1, 'master', 'title')
+        repo_functions.complete_branch(self.clone1, 'master', 'title')
 
-        with self.assertRaises(bizarro.repo.MergeConflict) as conflict:
-            bizarro.repo.complete_branch(self.clone2, 'master', name)
+        with self.assertRaises(repo_functions.MergeConflict) as conflict:
+            repo_functions.complete_branch(self.clone2, 'master', name)
         
         self.assertEqual(conflict.exception.local_commit, commit)
         
@@ -557,7 +557,7 @@ class TestRepo (TestCase):
         #
         # Merge our conflicting branch and abandon it to the default branch.
         #
-        bizarro.repo.abandon_branch(self.clone2, 'master', name)
+        repo_functions.abandon_branch(self.clone2, 'master', name)
         
         with open(join(self.clone2.working_dir, 'index.md')) as file:
             front, body = jekyll.load_jekyll_doc(file)
@@ -573,7 +573,7 @@ class TestRepo (TestCase):
         ''' Change the path of a file.
         '''
         name = str(uuid4())
-        branch1 = bizarro.repo.start_branch(self.clone1, 'master', name)
+        branch1 = repo_functions.start_branch(self.clone1, 'master', name)
         
         #
         # Make a commit.
@@ -584,18 +584,18 @@ class TestRepo (TestCase):
         environ['GIT_COMMITTER_EMAIL'] = 'creator@example.com'
         
         branch1.checkout()
-        self.assertFalse(bizarro.repo.needs_peer_review(self.clone1, 'master', name))
-        self.assertFalse(bizarro.repo.is_peer_approved(self.clone1, 'master', name))
+        self.assertFalse(repo_functions.needs_peer_review(self.clone1, 'master', name))
+        self.assertFalse(repo_functions.is_peer_approved(self.clone1, 'master', name))
         
         bizarro.edit.update_page(self.clone1, 'index.md',
                                  dict(title=name), 'Hello you-all.')
         
-        bizarro.repo.save_working_file(self.clone1, 'index.md', 'I made a change',
-                                       self.clone1.commit().hexsha, 'master')
+        repo_functions.save_working_file(self.clone1, 'index.md', 'I made a change',
+                                         self.clone1.commit().hexsha, 'master')
         
-        self.assertTrue(bizarro.repo.needs_peer_review(self.clone1, 'master', name))
-        self.assertFalse(bizarro.repo.is_peer_approved(self.clone1, 'master', name))
-        self.assertEqual(bizarro.repo.ineligible_peer(self.clone1, 'master', name), 'creator@example.com')
+        self.assertTrue(repo_functions.needs_peer_review(self.clone1, 'master', name))
+        self.assertFalse(repo_functions.is_peer_approved(self.clone1, 'master', name))
+        self.assertEqual(repo_functions.ineligible_peer(self.clone1, 'master', name), 'creator@example.com')
         
         #
         # Approve the work as someone else.
@@ -605,11 +605,11 @@ class TestRepo (TestCase):
         environ['GIT_AUTHOR_EMAIL'] = 'reviewer@example.com'
         environ['GIT_COMMITTER_EMAIL'] = 'reviewer@example.com'
         
-        bizarro.repo.mark_as_reviewed(self.clone1)
+        repo_functions.mark_as_reviewed(self.clone1)
 
-        self.assertFalse(bizarro.repo.needs_peer_review(self.clone1, 'master', name))
-        self.assertTrue(bizarro.repo.is_peer_approved(self.clone1, 'master', name))
-        self.assertEqual(bizarro.repo.ineligible_peer(self.clone1, 'master', name), None)
+        self.assertFalse(repo_functions.needs_peer_review(self.clone1, 'master', name))
+        self.assertTrue(repo_functions.is_peer_approved(self.clone1, 'master', name))
+        self.assertEqual(repo_functions.ineligible_peer(self.clone1, 'master', name), None)
         
         #
         # Make another commit.
@@ -617,12 +617,12 @@ class TestRepo (TestCase):
         bizarro.edit.update_page(self.clone1, 'index.md',
                                  dict(title=name), 'Hello you there.')
         
-        bizarro.repo.save_working_file(self.clone1, 'index.md', 'I made a change',
-                                       self.clone1.commit().hexsha, 'master')
+        repo_functions.save_working_file(self.clone1, 'index.md', 'I made a change',
+                                         self.clone1.commit().hexsha, 'master')
         
-        self.assertTrue(bizarro.repo.needs_peer_review(self.clone1, 'master', name))
-        self.assertFalse(bizarro.repo.is_peer_approved(self.clone1, 'master', name))
-        self.assertEqual(bizarro.repo.ineligible_peer(self.clone1, 'master', name), 'reviewer@example.com')
+        self.assertTrue(repo_functions.needs_peer_review(self.clone1, 'master', name))
+        self.assertFalse(repo_functions.is_peer_approved(self.clone1, 'master', name))
+        self.assertEqual(repo_functions.ineligible_peer(self.clone1, 'master', name), 'reviewer@example.com')
         
         #
         # Approve the work as someone else.
@@ -632,17 +632,17 @@ class TestRepo (TestCase):
         environ['GIT_AUTHOR_EMAIL'] = 'reviewer@example.org'
         environ['GIT_COMMITTER_EMAIL'] = 'reviewer@example.org'
         
-        bizarro.repo.mark_as_reviewed(self.clone1)
+        repo_functions.mark_as_reviewed(self.clone1)
 
-        self.assertFalse(bizarro.repo.needs_peer_review(self.clone1, 'master', name))
-        self.assertTrue(bizarro.repo.is_peer_approved(self.clone1, 'master', name))
-        self.assertEqual(bizarro.repo.ineligible_peer(self.clone1, 'master', name), None)
+        self.assertFalse(repo_functions.needs_peer_review(self.clone1, 'master', name))
+        self.assertTrue(repo_functions.is_peer_approved(self.clone1, 'master', name))
+        self.assertEqual(repo_functions.ineligible_peer(self.clone1, 'master', name), None)
     
     def test_peer_rejected(self):
         ''' 
         '''
         name = str(uuid4())
-        branch1 = bizarro.repo.start_branch(self.clone1, 'master', name)
+        branch1 = repo_functions.start_branch(self.clone1, 'master', name)
         
         #
         # Make a commit.
@@ -653,19 +653,19 @@ class TestRepo (TestCase):
         environ['GIT_COMMITTER_EMAIL'] = 'creator@example.com'
         
         branch1.checkout()
-        self.assertFalse(bizarro.repo.needs_peer_review(self.clone1, 'master', name))
-        self.assertFalse(bizarro.repo.is_peer_approved(self.clone1, 'master', name))
+        self.assertFalse(repo_functions.needs_peer_review(self.clone1, 'master', name))
+        self.assertFalse(repo_functions.is_peer_approved(self.clone1, 'master', name))
         
         bizarro.edit.update_page(self.clone1, 'index.md',
                                  dict(title=name), 'Hello you-all.')
         
-        bizarro.repo.save_working_file(self.clone1, 'index.md', 'I made a change',
-                                       self.clone1.commit().hexsha, 'master')
+        repo_functions.save_working_file(self.clone1, 'index.md', 'I made a change',
+                                         self.clone1.commit().hexsha, 'master')
         
-        self.assertTrue(bizarro.repo.needs_peer_review(self.clone1, 'master', name))
-        self.assertFalse(bizarro.repo.is_peer_approved(self.clone1, 'master', name))
-        self.assertFalse(bizarro.repo.is_peer_rejected(self.clone1, 'master', name))
-        self.assertEqual(bizarro.repo.ineligible_peer(self.clone1, 'master', name), 'creator@example.com')
+        self.assertTrue(repo_functions.needs_peer_review(self.clone1, 'master', name))
+        self.assertFalse(repo_functions.is_peer_approved(self.clone1, 'master', name))
+        self.assertFalse(repo_functions.is_peer_rejected(self.clone1, 'master', name))
+        self.assertEqual(repo_functions.ineligible_peer(self.clone1, 'master', name), 'creator@example.com')
         
         #
         # Approve the work as someone else.
@@ -675,12 +675,12 @@ class TestRepo (TestCase):
         environ['GIT_AUTHOR_EMAIL'] = 'reviewer@example.com'
         environ['GIT_COMMITTER_EMAIL'] = 'reviewer@example.com'
         
-        bizarro.repo.provide_feedback(self.clone1, 'This sucks.')
+        repo_functions.provide_feedback(self.clone1, 'This sucks.')
 
-        self.assertFalse(bizarro.repo.needs_peer_review(self.clone1, 'master', name))
-        self.assertFalse(bizarro.repo.is_peer_approved(self.clone1, 'master', name))
-        self.assertTrue(bizarro.repo.is_peer_rejected(self.clone1, 'master', name))
-        self.assertEqual(bizarro.repo.ineligible_peer(self.clone1, 'master', name), None)
+        self.assertFalse(repo_functions.needs_peer_review(self.clone1, 'master', name))
+        self.assertFalse(repo_functions.is_peer_approved(self.clone1, 'master', name))
+        self.assertTrue(repo_functions.is_peer_rejected(self.clone1, 'master', name))
+        self.assertEqual(repo_functions.ineligible_peer(self.clone1, 'master', name), None)
         
         #
         # Make another commit.
@@ -688,13 +688,13 @@ class TestRepo (TestCase):
         bizarro.edit.update_page(self.clone1, 'index.md',
                                  dict(title=name), 'Hello you there.')
         
-        bizarro.repo.save_working_file(self.clone1, 'index.md', 'I made a change',
-                                       self.clone1.commit().hexsha, 'master')
+        repo_functions.save_working_file(self.clone1, 'index.md', 'I made a change',
+                                         self.clone1.commit().hexsha, 'master')
         
-        self.assertTrue(bizarro.repo.needs_peer_review(self.clone1, 'master', name))
-        self.assertFalse(bizarro.repo.is_peer_approved(self.clone1, 'master', name))
-        self.assertFalse(bizarro.repo.is_peer_rejected(self.clone1, 'master', name))
-        self.assertEqual(bizarro.repo.ineligible_peer(self.clone1, 'master', name), 'reviewer@example.com')
+        self.assertTrue(repo_functions.needs_peer_review(self.clone1, 'master', name))
+        self.assertFalse(repo_functions.is_peer_approved(self.clone1, 'master', name))
+        self.assertFalse(repo_functions.is_peer_rejected(self.clone1, 'master', name))
+        self.assertEqual(repo_functions.ineligible_peer(self.clone1, 'master', name), 'reviewer@example.com')
         
         #
         # Approve the work as someone else.
@@ -704,16 +704,16 @@ class TestRepo (TestCase):
         environ['GIT_AUTHOR_EMAIL'] = 'reviewer@example.org'
         environ['GIT_COMMITTER_EMAIL'] = 'reviewer@example.org'
         
-        bizarro.repo.provide_feedback(self.clone1, 'This still sucks.')
+        repo_functions.provide_feedback(self.clone1, 'This still sucks.')
 
-        self.assertFalse(bizarro.repo.needs_peer_review(self.clone1, 'master', name))
-        self.assertFalse(bizarro.repo.is_peer_approved(self.clone1, 'master', name))
-        self.assertTrue(bizarro.repo.is_peer_rejected(self.clone1, 'master', name))
-        self.assertEqual(bizarro.repo.ineligible_peer(self.clone1, 'master', name), None)
+        self.assertFalse(repo_functions.needs_peer_review(self.clone1, 'master', name))
+        self.assertFalse(repo_functions.is_peer_approved(self.clone1, 'master', name))
+        self.assertTrue(repo_functions.is_peer_rejected(self.clone1, 'master', name))
+        self.assertEqual(repo_functions.ineligible_peer(self.clone1, 'master', name), None)
         
         #
         
-        (email2, message2), (email1, message1) = bizarro.repo.get_rejection_messages(self.clone1, 'master', name)
+        (email2, message2), (email1, message1) = repo_functions.get_rejection_messages(self.clone1, 'master', name)
 
         self.assertEqual(email1, 'reviewer@example.com')
         self.assertTrue('This sucks.' in message1)

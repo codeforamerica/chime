@@ -1,6 +1,6 @@
 from os import environ
 from flask import Flask
-from . import repo, edit
+from . import repo_functions, edit
 
 app = Flask(__name__)
 app.secret_key = 'boop'

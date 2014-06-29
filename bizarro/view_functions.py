@@ -7,7 +7,7 @@ from functools import wraps
 from git import Repo
 from flask import request, session, current_app
 
-from . import repo as bizarro_repo
+from .repo_functions import start_branch
 
 def dos2unix(string):
     ''' Returns a copy of the strings with line-endings corrected.
@@ -157,7 +157,7 @@ def synched_checkout_required(route_function):
         checkout = get_repo(current_app)
         branch_name = branch_var2name(kwargs['branch'])
         master_name = current_app.config['default_branch']
-        branch = bizarro_repo.start_branch(checkout, master_name, branch_name)
+        branch = start_branch(checkout, master_name, branch_name)
         branch.checkout()
 
         print '  checked out to', branch
