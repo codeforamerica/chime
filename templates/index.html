@@ -40,11 +40,11 @@
                         {% if item.needs_peer_review %}
                             <a href="mailto:?to=&amp;subject={{item.review_subject|urlencode}}&amp;body={{item.review_body|urlencode}}" class="button-review">Submit for review</a>
                         {% endif %}
-                        <button name="action" value="abandon" type="submit" class="button button-delete">Delete</button>
+                        <button name="action" value="abandon" type="submit" class="button-default button-delete">Delete</button>
                         <input type="hidden" name="branch" value="{{item.name}}">
 
                         {% if item.is_peer_approved %}
-                            <button name="action" value="merge" type="submit" class="button button-publish">Publish</button>
+                            <button name="action" value="merge" type="submit" class="button-default button-publish">Publish</button>
                         {% endif %}
                     </form>
                   </td>

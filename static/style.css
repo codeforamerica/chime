@@ -120,20 +120,6 @@ ul.slug .form-field input{
 
 /* New buttons */
 
-.button-edit{
-	background-color:gray;
-	padding-top:2em;
-}
-
-.button-preview{
-	background-color:gray;
-	padding-top:2em;
-}
-
-.button-delete{
-	background-color:gray;
-	padding-top:2em;
-}
 
 .file{
 	background:url(images/icons/png/16px/file2.png) no-repeat;
@@ -147,7 +133,8 @@ ul.slug .form-field input{
 	background:url(images/icons/png/16px/image.png) no-repeat;
 	padding-left:1.45em;
 }
-button, input[type=submit]{
-	border:none;
-	cursor:pointer;
+
+
+.button{
+	background-color:red;
 }

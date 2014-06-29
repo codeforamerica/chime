@@ -27,9 +27,9 @@
                         <tr>
                             <td><a class="{{ item_type }}" href="{{edit_path}}">{{edit_path}}</a></td>
                             <td>
-                                <a href="{{edit_path}}" class="button-edit">Edit</a>
-                                <a href="{{view_path}}" class="button-preview" target="_blank">Preview</a>
-                                <input name="action" type="submit" value="Delete" class="button-delete">
+                                {%if item_type == "file" %}<a href="{{edit_path}}" class="button button-edit">Edit</a>{% endif %}
+                                {%if item_type == "file" %}<a href="{{view_path}}" class="button button-preview" target="_blank">Preview</a>{% endif %}
+                                <input name="action" type="submit" value="Delete" class="button button-delete">
                             </td>
                         </tr>
                         <input name="path" value="{{edit_path}}" type="hidden">
