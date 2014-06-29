@@ -2,7 +2,7 @@ from os.path import exists, isdir, join
 from os import rmdir, remove
 
 from .repo_functions import make_working_file
-from .jekyll import dump_jekyll_doc
+from .jekyll_functions import dump_jekyll_doc
 
 def update_page(clone, file_path, front, body):
     ''' Update existing Jekyll page in the working directory.

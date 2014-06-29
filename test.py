@@ -13,8 +13,7 @@ from git import Repo
 from box.util.rotunicode import RotUnicode
 from httmock import response, HTTMock
 
-import bizarro
-from bizarro import app, jekyll, repo_functions, edit_functions
+from bizarro import app, jekyll_functions, repo_functions, edit_functions
 
 import codecs
 codecs.register(RotUnicode.search_function)
@@ -31,8 +30,8 @@ class TestJekyll (TestCase):
         front = dict(title='Greeting'.encode('rotunicode'))
         body, file = u'World: Hello.'.encode('rotunicode'), StringIO()
 
-        jekyll.dump_jekyll_doc(front, body, file)
-        _front, _body = jekyll.load_jekyll_doc(file)
+        jekyll_functions.dump_jekyll_doc(front, body, file)
+        _front, _body = jekyll_functions.load_jekyll_doc(file)
 
         self.assertEqual(_front['title'], front['title'])
         self.assertEqual(_body, body)
@@ -44,7 +43,7 @@ class TestJekyll (TestCase):
         file = StringIO('Missing front matter')
         
         with self.assertRaises(Exception):
-            jekyll.load_jekyll_doc(file)
+            jekyll_functions.load_jekyll_doc(file)
 
 class TestRepo (TestCase):
 
@@ -147,7 +146,7 @@ class TestRepo (TestCase):
         branch2.checkout()
         
         with open(join(self.clone2.working_dir, 'hello.md')) as file:
-            front, body = jekyll.load_jekyll_doc(file)
+            front, body = jekyll_functions.load_jekyll_doc(file)
             
             self.assertEquals(front['title'], 'Hello')
             self.assertEquals(body, 'Hello hello.')
@@ -190,10 +189,10 @@ class TestRepo (TestCase):
         branch2.checkout()
         
         with open(self.clone1.working_dir + '/index.md') as file:
-            front1, _ = jekyll.load_jekyll_doc(file)
+            front1, _ = jekyll_functions.load_jekyll_doc(file)
         
         with open(self.clone2.working_dir + '/index.md') as file:
-            _, body2 = jekyll.load_jekyll_doc(file)
+            _, body2 = jekyll_functions.load_jekyll_doc(file)
         
         #
         # Show that only the title branch title is now present on master.
@@ -201,7 +200,7 @@ class TestRepo (TestCase):
         repo_functions.complete_branch(self.clone1, 'master', 'title')
         
         with open(self.clone1.working_dir + '/index.md') as file:
-            front1b, body1b = jekyll.load_jekyll_doc(file)
+            front1b, body1b = jekyll_functions.load_jekyll_doc(file)
         
         self.assertEqual(front1b['title'], front1['title'])
         self.assertNotEqual(body1b, body2)
@@ -212,7 +211,7 @@ class TestRepo (TestCase):
         repo_functions.complete_branch(self.clone2, 'master', 'body')
         
         with open(self.clone2.working_dir + '/index.md') as file:
-            front2b, body2b = jekyll.load_jekyll_doc(file)
+            front2b, body2b = jekyll_functions.load_jekyll_doc(file)
         
         self.assertEqual(front2b['title'], front1['title'])
         self.assertEqual(body2b, body2)
@@ -228,10 +227,10 @@ class TestRepo (TestCase):
         branch2.checkout()
         
         with open(self.clone1.working_dir + '/index.md') as file:
-            front1, _ = jekyll.load_jekyll_doc(file)
+            front1, _ = jekyll_functions.load_jekyll_doc(file)
         
         with open(self.clone2.working_dir + '/index.md') as file:
-            front2, body2 = jekyll.load_jekyll_doc(file)
+            front2, body2 = jekyll_functions.load_jekyll_doc(file)
         
         #
         # Show that only the title branch title is now present on master.
@@ -239,7 +238,7 @@ class TestRepo (TestCase):
         repo_functions.complete_branch(self.clone1, 'master', 'title')
         
         with open(self.clone1.working_dir + '/index.md') as file:
-            front1b, body1b = jekyll.load_jekyll_doc(file)
+            front1b, body1b = jekyll_functions.load_jekyll_doc(file)
         
         self.assertEqual(front1b['title'], front1['title'])
         self.assertNotEqual(body1b, body2)
@@ -257,7 +256,7 @@ class TestRepo (TestCase):
         # Show that upstream changes from master have been merged here.
         #
         with open(self.clone2.working_dir + '/index.md') as file:
-            front2b, body2b = jekyll.load_jekyll_doc(file)
+            front2b, body2b = jekyll_functions.load_jekyll_doc(file)
         
         self.assertEqual(front2b['title'], front1['title'])
         self.assertEqual(body2b.strip(), 'Another change to the body')
@@ -502,7 +501,7 @@ class TestRepo (TestCase):
         repo_functions.clobber_default_branch(self.clone2, 'master', name)
         
         with open(join(self.clone2.working_dir, 'index.md')) as file:
-            front, body = jekyll.load_jekyll_doc(file)
+            front, body = jekyll_functions.load_jekyll_doc(file)
         
         self.assertEqual(front['title'], name)
         self.assertFalse(name in self.origin.branches)
@@ -560,7 +559,7 @@ class TestRepo (TestCase):
         repo_functions.abandon_branch(self.clone2, 'master', name)
         
         with open(join(self.clone2.working_dir, 'index.md')) as file:
-            front, body = jekyll.load_jekyll_doc(file)
+            front, body = jekyll_functions.load_jekyll_doc(file)
         
         self.assertNotEqual(front['title'], name)
         self.assertFalse(name in self.origin.branches)
