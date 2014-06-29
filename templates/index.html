@@ -27,13 +27,11 @@
             <tbody>
                 <tr>
                     <th>Task</th>
-                    <th>Reviewer</th>
                     <th>Action</th> 
                 </tr>
                 {% for item in items %}
                 <tr>
                   <td><a href="/tree/{{item.path}}/edit/">{{item.name}}</a> <!--({{item.ahead|count}} ahead, {{item.behind|count}} behind)--></td>
-                  <td><em>Reviewers name</em></td>
                   <td>
                     <form action="/merge" method="POST">
                         <a class="button-edit button" href="/tree/{{item.path}}/edit/">Edit</a>
