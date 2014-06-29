@@ -13,12 +13,11 @@
         <table>
             <thead>
                 <tr>
-                    <th colspan="3">Changes</th>
+                    <th colspan="3">Site explorer</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <th>Status</th>
                     <th>Topic</th> 
                     <th>Options</th>
                 </tr>
@@ -26,7 +25,6 @@
                 {% for (edit_path, view_path, item_type) in list_paths %}
                     <form action="." method="POST">
                         <tr>
-                            <td><!-- probably something like one of these statuses --><em>Changed / New / Deleted</em></td>
                             <td><a class="{{ item_type }}" href="{{edit_path}}">{{edit_path}}</a></td>
                             <td>
                                 <a href="{{edit_path}}" class="button-edit">Edit</a>
