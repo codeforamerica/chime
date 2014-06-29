@@ -17,21 +17,20 @@ from .view_functions import (
   login_required, synch_required, synched_checkout_required
   )
 
-_default_branch = 'master'
-
 @app.route('/')
 @synch_required
 def index():
     r = Repo(current_app.config['REPO_PATH']) # bare repo
-    branch_names = [b.name for b in r.branches if b.name != _default_branch]
+    master_name = current_app.config['default_branch']
+    branch_names = [b.name for b in r.branches if b.name != master_name]
     
     list_items = []
     
     for name in branch_names:
         path = branch_name2path(name)
 
-        base = r.git.merge_base(_default_branch, name)
-        behind_raw = r.git.log(base+'..'+_default_branch, format='%H %at %ae')
+        base = r.git.merge_base(master_name, name)
+        behind_raw = r.git.log(base+'..'+master_name, format='%H %at %ae')
         ahead_raw = r.git.log(base+'..'+name, format='%H %at %ae')
         
         pattern = compile(r'^(\w+) (\d+) (.+)$', MULTILINE)
@@ -40,9 +39,9 @@ def index():
         behind = pattern.findall(behind_raw)
         ahead = pattern.findall(ahead_raw)
         
-        needs_peer_review = bizarro_repo.needs_peer_review(r, _default_branch, name)
-        is_peer_approved = bizarro_repo.is_peer_approved(r, _default_branch, name)
-        is_peer_rejected = bizarro_repo.is_peer_rejected(r, _default_branch, name)
+        needs_peer_review = bizarro_repo.needs_peer_review(r, master_name, name)
+        is_peer_approved = bizarro_repo.is_peer_approved(r, master_name, name)
+        is_peer_rejected = bizarro_repo.is_peer_rejected(r, master_name, name)
         
         review_subject = 'Plz review this thing'
         review_body = '%s/tree/%s/edit' % (request.url, path)
@@ -85,7 +84,8 @@ def start_branch():
     r = get_repo(current_app)
     branch_desc = request.form.get('branch')
     branch_name = name_branch(branch_desc)
-    branch = bizarro_repo.start_branch(r, _default_branch, branch_name)
+    master_name = current_app.config['default_branch']
+    branch = bizarro_repo.start_branch(r, master_name, branch_name)
     
     safe_branch = branch_name2path(branch.name)
     
@@ -97,11 +97,12 @@ def start_branch():
 def merge_branch():
     r = get_repo(current_app)
     branch_name = request.form.get('branch')
+    master_name = current_app.config['default_branch']
     branch = r.branches[branch_name]
     
     try:
         action = request.form.get('action', '').lower()
-        args = r, _default_branch, branch_name
+        args = r, master_name, branch_name
         
         if action == 'merge':
             bizarro_repo.complete_branch(*args)
@@ -209,11 +210,12 @@ def branch_edit(branch, path=None):
         kwargs = dict(branch=branch, safe_branch=safe_branch,
                       email=session['email'], list_paths=list_paths)
 
-        kwargs['needs_peer_review'] = bizarro_repo.needs_peer_review(r, _default_branch, branch)
-        kwargs['is_peer_approved'] = bizarro_repo.is_peer_approved(r, _default_branch, branch)
-        kwargs['is_peer_rejected'] = bizarro_repo.is_peer_rejected(r, _default_branch, branch)
-        kwargs['eligible_peer'] = session['email'] != bizarro_repo.ineligible_peer(r, _default_branch, branch)
-        kwargs['rejection_messages'] = list(bizarro_repo.get_rejection_messages(r, _default_branch, branch))
+        master_name = current_app.config['default_branch']
+        kwargs['needs_peer_review'] = bizarro_repo.needs_peer_review(r, master_name, branch)
+        kwargs['is_peer_approved'] = bizarro_repo.is_peer_approved(r, master_name, branch)
+        kwargs['is_peer_rejected'] = bizarro_repo.is_peer_rejected(r, master_name, branch)
+        kwargs['eligible_peer'] = session['email'] != bizarro_repo.ineligible_peer(r, master_name, branch)
+        kwargs['rejection_messages'] = list(bizarro_repo.get_rejection_messages(r, master_name, branch))
         
         if kwargs['is_peer_rejected']:
             kwargs['rejecting_peer'], kwargs['rejection_message'] = kwargs['rejection_messages'].pop(0)
@@ -266,7 +268,8 @@ def branch_edit_file(branch, path=None):
         raise Exception()
     
     if do_save:
-        bizarro_repo.save_working_file(r, file_path, message, c.hexsha, _default_branch)
+        master_name = current_app.config['default_branch']
+        bizarro_repo.save_working_file(r, file_path, message, c.hexsha, master_name)
 
     safe_branch = branch_name2path(branch_var2name(branch))
 
@@ -291,9 +294,10 @@ def branch_review(branch):
 @synch_required
 def branch_save(branch, path):
     branch = branch_var2name(branch)
+    master_name = current_app.config['default_branch']
 
     r = get_repo(current_app)
-    b = bizarro_repo.start_branch(r, _default_branch, branch)
+    b = bizarro_repo.start_branch(r, master_name, branch)
     c = b.commit
     
     if c.hexsha != request.form.get('hexsha'):
@@ -319,11 +323,11 @@ def branch_save(branch, path):
     #
     try:
         message = 'Saved file "%s"' % path
-        c2 = bizarro_repo.save_working_file(r, path, message, c.hexsha, _default_branch)
+        c2 = bizarro_repo.save_working_file(r, path, message, c.hexsha, master_name)
         new_path = request.form.get('url-slug') + splitext(path)[1]
         
         if new_path != path:
-            bizarro_repo.move_existing_file(r, path, new_path, c2.hexsha, _default_branch)
+            bizarro_repo.move_existing_file(r, path, new_path, c2.hexsha, master_name)
             path = new_path
         
     except bizarro_repo.MergeConflict as conflict:

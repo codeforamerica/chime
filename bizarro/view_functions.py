@@ -9,8 +9,6 @@ from flask import request, session, current_app
 
 from . import repo as bizarro_repo
 
-_default_branch = 'master'
-
 def dos2unix(string):
     ''' Returns a copy of the strings with line-endings corrected.
     '''
@@ -158,7 +156,8 @@ def synched_checkout_required(route_function):
 
         checkout = get_repo(current_app)
         branch_name = branch_var2name(kwargs['branch'])
-        branch = bizarro_repo.start_branch(checkout, _default_branch, branch_name)
+        master_name = current_app.config['default_branch']
+        branch = bizarro_repo.start_branch(checkout, master_name, branch_name)
         branch.checkout()
 
         print '  checked out to', branch
