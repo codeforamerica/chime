@@ -29,7 +29,7 @@
                             <td>
                                 {%if item_type == "folder" %}<a href="{{edit_path}}" class="button button-edit">Open</a>{% endif %}
                                 {%if item_type == "file" %}<a href="{{edit_path}}" class="button button-edit">Edit</a>{% endif %}
-                                {%if item_type == "file" %}<a href="{{view_path}}" class="button button-preview" target="_blank">Preview</a>{% endif %}
+                                {%if item_type == "file" or item_type == "image" %}<a href="{{view_path}}" class="button button-preview" target="_blank">Preview</a>{% endif %}
                                 <input name="action" type="submit" value="Delete" class="button button-delete">
                             </td>
                         </tr>
