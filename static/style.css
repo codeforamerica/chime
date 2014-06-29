@@ -121,17 +121,17 @@ ul.slug .form-field input{
 /* New buttons */
 
 .button-edit{
-	background:url(images/icons/png/16px/pencil.png) no-repeat center;
+	background-color:gray;
 	padding-top:2em;
 }
 
 .button-preview{
-	background:url(images/icons/png/16px/eye.png) no-repeat center;
+	background-color:gray;
 	padding-top:2em;
 }
 
 .button-delete{
-	background:url(images/icons/png/16px/blocked.png) no-repeat center;
+	background-color:gray;
 	padding-top:2em;
 }
 
@@ -147,7 +147,7 @@ ul.slug .form-field input{
 	background:url(images/icons/png/16px/image.png) no-repeat;
 	padding-left:1.45em;
 }
-button{
+button, input[type=submit]{
 	border:none;
 	cursor:pointer;
 }
