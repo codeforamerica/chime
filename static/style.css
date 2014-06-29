@@ -147,3 +147,7 @@ ul.slug .form-field input{
 	background:url(images/icons/png/16px/image.png) no-repeat;
 	padding-left:1.45em;
 }
+button{
+	border:none;
+	cursor:pointer;
+}
