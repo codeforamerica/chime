@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Tasks{% endblock %}
 {% block content %}
-    <h1>Bizarro editor <span><a href="/">tasks</a> &rarr; <a href="./">{{branch}}</a></span></h1>
+    <h1><a href="/">Bizarro editor</a> <span> &rarr; <a href="./">{{branch}}</a></span></h1>
     
         <form action="/tree/{{safe_branch}}/save/{{edit_path}}" method="POST">
         
