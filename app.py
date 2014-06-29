@@ -8,7 +8,7 @@ from glob import glob
 
 from git import Repo
 from requests import post
-from flask import Flask, redirect, request, Response, render_template, session
+from flask import Flask, redirect, request, Response, render_template, session, current_app
 from jekyll import load_jekyll_doc, build_jekyll_site
 
 import bizarro
@@ -126,7 +126,7 @@ def synch_required(route_function):
     def decorated_function(*args, **kwargs):
         print '<' * 40 + '-' * 40
 
-        repo = Repo(app.config['REPO_PATH'])
+        repo = Repo(current_app.config['REPO_PATH'])
     
         if _remote_exists(repo, 'origin'):
             print '  fetching origin', repo
@@ -159,13 +159,13 @@ def synched_checkout_required(route_function):
     def decorated_function(*args, **kwargs):
         print '<' * 40 + '-' * 40
 
-        repo = Repo(app.config['REPO_PATH'])
+        repo = Repo(current_app.config['REPO_PATH'])
         
         if _remote_exists(repo, 'origin'):
             print '  fetching origin', repo
             repo.git.fetch('origin', with_exceptions=True)
 
-        checkout = get_repo(app)
+        checkout = get_repo(current_app)
         branch_name = branch_var2name(kwargs['branch'])
         branch = bizarro.repo.start_branch(checkout, _default_branch, branch_name)
         branch.checkout()
@@ -192,7 +192,7 @@ def synched_checkout_required(route_function):
 @app.route('/')
 @synch_required
 def index():
-    r = Repo(app.config['REPO_PATH']) # bare repo
+    r = Repo(current_app.config['REPO_PATH']) # bare repo
     branch_names = [b.name for b in r.branches if b.name != _default_branch]
     
     list_items = []
@@ -252,7 +252,7 @@ def sign_out():
 @login_required
 @synch_required
 def start_branch():
-    r = get_repo(app)
+    r = get_repo(current_app)
     branch_desc = request.form.get('branch')
     branch_name = name_branch(branch_desc)
     branch = bizarro.repo.start_branch(r, _default_branch, branch_name)
@@ -265,7 +265,7 @@ def start_branch():
 @login_required
 @synch_required
 def merge_branch():
-    r = get_repo(app)
+    r = get_repo(current_app)
     branch_name = request.form.get('branch')
     branch = r.branches[branch_name]
     
@@ -296,7 +296,7 @@ def merge_branch():
 @app.route('/review', methods=['POST'])
 @login_required
 def review_branch():
-    r = get_repo(app)
+    r = get_repo(current_app)
     branch_name = request.form.get('branch')
     branch = r.branches[branch_name]
     branch.checkout()
@@ -330,7 +330,7 @@ def review_branch():
 @login_required
 @synched_checkout_required
 def branch_view(branch, path=None):
-    r = get_repo(app)
+    r = get_repo(current_app)
     
     build_jekyll_site(r.working_dir)
     
@@ -356,7 +356,7 @@ def branch_view(branch, path=None):
 def branch_edit(branch, path=None):
     branch = branch_var2name(branch)
 
-    r = get_repo(app)
+    r = get_repo(current_app)
     c = r.commit()
     
     full_path = join(r.working_dir, path or '.').rstrip('/')
@@ -408,7 +408,7 @@ def branch_edit(branch, path=None):
 @login_required
 @synched_checkout_required
 def branch_edit_file(branch, path=None):
-    r = get_repo(app)
+    r = get_repo(current_app)
     c = r.commit()
     
     action = request.form.get('action', '').lower()
@@ -448,7 +448,7 @@ def branch_edit_file(branch, path=None):
 def branch_review(branch):
     branch = branch_var2name(branch)
 
-    r = get_repo(app)
+    r = get_repo(current_app)
     c = r.commit()
 
     kwargs = dict(branch=branch, safe_branch=branch_name2path(branch),
@@ -462,7 +462,7 @@ def branch_review(branch):
 def branch_save(branch, path):
     branch = branch_var2name(branch)
 
-    r = get_repo(app)
+    r = get_repo(current_app)
     b = bizarro.repo.start_branch(r, _default_branch, branch)
     c = b.commit
     
