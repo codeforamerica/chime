@@ -7,11 +7,11 @@ from glob import glob
 from git import Repo
 from requests import post
 from flask import redirect, request, Response, render_template, session, current_app
-from jekyll import load_jekyll_doc, build_jekyll_site
 
 from . import app
 from . import repo as bizarro_repo
 from . import edit as bizarro_edit
+from .jekyll import load_jekyll_doc, build_jekyll_site
 from .view_functions import (
   branch_name2path, branch_var2name, get_repo, path_type, name_branch, dos2unix,
   login_required, synch_required, synched_checkout_required

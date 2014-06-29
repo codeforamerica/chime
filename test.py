@@ -13,8 +13,8 @@ from git import Repo
 from box.util.rotunicode import RotUnicode
 from httmock import response, HTTMock
 
-import bizarro, jekyll
-from bizarro import app
+import bizarro
+from bizarro import app, jekyll
 
 import codecs
 codecs.register(RotUnicode.search_function)
