@@ -14,7 +14,7 @@ from box.util.rotunicode import RotUnicode
 from httmock import response, HTTMock
 
 import bizarro
-from bizarro import app, jekyll, repo_functions
+from bizarro import app, jekyll, repo_functions, edit_functions
 
 import codecs
 codecs.register(RotUnicode.search_function)
@@ -117,8 +117,8 @@ class TestRepo (TestCase):
         #
         branch1.checkout()
         
-        bizarro.edit.create_new_page(self.clone1, '', 'hello.md',
-                                     dict(title='Hello'), 'Hello hello.')
+        edit_functions.create_new_page(self.clone1, '', 'hello.md',
+                                       dict(title='Hello'), 'Hello hello.')
         
         args = self.clone1, 'hello.md', str(uuid4()), branch1.commit.hexsha, 'master'
         repo_functions.save_working_file(*args)
@@ -128,7 +128,7 @@ class TestRepo (TestCase):
         #
         message = str(uuid4())
         
-        bizarro.edit.delete_file(self.clone1, '', 'index.md')
+        edit_functions.delete_file(self.clone1, '', 'index.md')
         
         args = self.clone1, 'index.md', message, branch1.commit.hexsha, 'master'
         repo_functions.save_working_file(*args)
@@ -247,8 +247,8 @@ class TestRepo (TestCase):
         #
         # Show that the body branch body is also now present on master.
         #
-        bizarro.edit.update_page(self.clone2, 'index.md',
-                                 front2, 'Another change to the body')
+        edit_functions.update_page(self.clone2, 'index.md',
+                                   front2, 'Another change to the body')
         
         repo_functions.save_working_file(self.clone2, 'index.md', 'A new change',
                                          self.clone2.commit().hexsha, 'master')
@@ -276,11 +276,11 @@ class TestRepo (TestCase):
         branch1.checkout()
         branch2.checkout()
         
-        bizarro.edit.create_new_page(self.clone1, '', 'file1.md',
-                                     dict(title='Hello'), 'Hello hello.')
+        edit_functions.create_new_page(self.clone1, '', 'file1.md',
+                                       dict(title='Hello'), 'Hello hello.')
 
-        bizarro.edit.create_new_page(self.clone2, '', 'file2.md',
-                                     dict(title='Goodbye'), 'Goodbye goodbye.')
+        edit_functions.create_new_page(self.clone2, '', 'file2.md',
+                                       dict(title='Goodbye'), 'Goodbye goodbye.')
 
         #
         # Show that the changes from the first branch made it to origin.
@@ -326,11 +326,11 @@ class TestRepo (TestCase):
         branch1.checkout()
         branch2.checkout()
         
-        bizarro.edit.create_new_page(self.clone1, '', 'conflict.md',
-                                     dict(title='Hello'), 'Hello hello.')
+        edit_functions.create_new_page(self.clone1, '', 'conflict.md',
+                                       dict(title='Hello'), 'Hello hello.')
 
-        bizarro.edit.create_new_page(self.clone2, '', 'conflict.md',
-                                     dict(title='Goodbye'), 'Goodbye goodbye.')
+        edit_functions.create_new_page(self.clone2, '', 'conflict.md',
+                                       dict(title='Goodbye'), 'Goodbye goodbye.')
 
         #
         # Show that the changes from the first branch made it to origin.
@@ -369,11 +369,11 @@ class TestRepo (TestCase):
         branch1.checkout()
         branch2.checkout()
         
-        bizarro.edit.create_new_page(self.clone1, '', 'conflict.md',
-                                     dict(title='Hello'), 'Hello hello.')
+        edit_functions.create_new_page(self.clone1, '', 'conflict.md',
+                                       dict(title='Hello'), 'Hello hello.')
 
-        bizarro.edit.create_new_page(self.clone2, '', 'conflict.md',
-                                     dict(title='Goodbye'), 'Goodbye goodbye.')
+        edit_functions.create_new_page(self.clone2, '', 'conflict.md',
+                                       dict(title='Goodbye'), 'Goodbye goodbye.')
 
         #
         # Show that the changes from the first branch made it to origin.
@@ -418,11 +418,11 @@ class TestRepo (TestCase):
         branch1.checkout()
         branch2.checkout()
         
-        bizarro.edit.create_new_page(self.clone1, '', 'conflict.md',
-                                     dict(title='Hello'), 'Hello hello.')
+        edit_functions.create_new_page(self.clone1, '', 'conflict.md',
+                                       dict(title='Hello'), 'Hello hello.')
 
-        bizarro.edit.create_new_page(self.clone2, '', 'conflict.md',
-                                     dict(title='Goodbye'), 'Goodbye goodbye.')
+        edit_functions.create_new_page(self.clone2, '', 'conflict.md',
+                                       dict(title='Goodbye'), 'Goodbye goodbye.')
 
         #
         # Push changes from the two branches to origin.
@@ -463,8 +463,8 @@ class TestRepo (TestCase):
         #
         branch1.checkout()
         
-        bizarro.edit.create_new_page(self.clone1, '', 'goner.md',
-                                     dict(title=name), 'Woooo woooo.')
+        edit_functions.create_new_page(self.clone1, '', 'goner.md',
+                                       dict(title=name), 'Woooo woooo.')
 
         args = self.clone1, 'goner.md', '...', branch1.commit.hexsha, 'master'
         commit = repo_functions.save_working_file(*args)
@@ -474,8 +474,8 @@ class TestRepo (TestCase):
         #
         branch2.checkout()
         
-        bizarro.edit.update_page(self.clone2, 'index.md',
-                                 dict(title=name), 'Hello hello.')
+        edit_functions.update_page(self.clone2, 'index.md',
+                                   dict(title=name), 'Hello hello.')
         
         args = self.clone2, 'index.md', '...', branch2.commit.hexsha, 'master'
         commit = repo_functions.save_working_file(*args)
@@ -526,11 +526,11 @@ class TestRepo (TestCase):
         #
         branch2.checkout()
         
-        bizarro.edit.update_page(self.clone2, 'index.md',
-                                 dict(title=name), 'Hello hello.')
+        edit_functions.update_page(self.clone2, 'index.md',
+                                   dict(title=name), 'Hello hello.')
         
-        bizarro.edit.create_new_page(self.clone2, '', 'goner.md',
-                                     dict(title=name), 'Woooo woooo.')
+        edit_functions.create_new_page(self.clone2, '', 'goner.md',
+                                       dict(title=name), 'Woooo woooo.')
 
         args = self.clone2, 'index.md', '...', branch2.commit.hexsha, 'master'
         commit = repo_functions.save_working_file(*args)
@@ -587,8 +587,8 @@ class TestRepo (TestCase):
         self.assertFalse(repo_functions.needs_peer_review(self.clone1, 'master', name))
         self.assertFalse(repo_functions.is_peer_approved(self.clone1, 'master', name))
         
-        bizarro.edit.update_page(self.clone1, 'index.md',
-                                 dict(title=name), 'Hello you-all.')
+        edit_functions.update_page(self.clone1, 'index.md',
+                                   dict(title=name), 'Hello you-all.')
         
         repo_functions.save_working_file(self.clone1, 'index.md', 'I made a change',
                                          self.clone1.commit().hexsha, 'master')
@@ -614,8 +614,8 @@ class TestRepo (TestCase):
         #
         # Make another commit.
         #
-        bizarro.edit.update_page(self.clone1, 'index.md',
-                                 dict(title=name), 'Hello you there.')
+        edit_functions.update_page(self.clone1, 'index.md',
+                                   dict(title=name), 'Hello you there.')
         
         repo_functions.save_working_file(self.clone1, 'index.md', 'I made a change',
                                          self.clone1.commit().hexsha, 'master')
@@ -656,8 +656,8 @@ class TestRepo (TestCase):
         self.assertFalse(repo_functions.needs_peer_review(self.clone1, 'master', name))
         self.assertFalse(repo_functions.is_peer_approved(self.clone1, 'master', name))
         
-        bizarro.edit.update_page(self.clone1, 'index.md',
-                                 dict(title=name), 'Hello you-all.')
+        edit_functions.update_page(self.clone1, 'index.md',
+                                   dict(title=name), 'Hello you-all.')
         
         repo_functions.save_working_file(self.clone1, 'index.md', 'I made a change',
                                          self.clone1.commit().hexsha, 'master')
@@ -685,8 +685,8 @@ class TestRepo (TestCase):
         #
         # Make another commit.
         #
-        bizarro.edit.update_page(self.clone1, 'index.md',
-                                 dict(title=name), 'Hello you there.')
+        edit_functions.update_page(self.clone1, 'index.md',
+                                   dict(title=name), 'Hello you there.')
         
         repo_functions.save_working_file(self.clone1, 'index.md', 'I made a change',
                                          self.clone1.commit().hexsha, 'master')

@@ -8,9 +8,7 @@ from git import Repo
 from requests import post
 from flask import redirect, request, Response, render_template, session, current_app
 
-from . import app
-from . import repo_functions
-from . import edit as bizarro_edit
+from . import app, repo_functions, edit_functions
 from .jekyll import load_jekyll_doc, build_jekyll_site
 from .view_functions import (
   branch_name2path, branch_var2name, get_repo, path_type, name_branch, dos2unix,
@@ -247,7 +245,7 @@ def branch_edit_file(branch, path=None):
     do_save = True
     
     if action == 'upload' and 'file' in request.files:
-        file_path = bizarro_edit.upload_new_file(r, path, request.files['file'])
+        file_path = edit_functions.upload_new_file(r, path, request.files['file'])
         message = 'Uploaded new file "%s"' % file_path
         path_303 = path or ''
     
@@ -255,12 +253,12 @@ def branch_edit_file(branch, path=None):
         front, body = dict(title='', layout='multi'), ''
         name = splitext(request.form['path'])[0] + '.md'
 
-        file_path = bizarro_edit.create_new_page(r, path, name, front, body)
+        file_path = edit_functions.create_new_page(r, path, name, front, body)
         message = 'Created new file "%s"' % file_path
         path_303 = file_path
     
     elif action == 'delete' and 'path' in request.form:
-        file_path = bizarro_edit.delete_file(r, path, request.form['path'])
+        file_path = edit_functions.delete_file(r, path, request.form['path'])
         message = 'Deleted file "%s"' % file_path
         path_303 = path or ''
     
@@ -316,7 +314,7 @@ def branch_save(branch, path):
              'body-zh-cn':  dos2unix(request.form.get('body-zh-cn'))}
 
     body = dos2unix(request.form.get('body'))
-    bizarro_edit.update_page(r, path, front, body)
+    edit_functions.update_page(r, path, front, body)
     
     #
     # Try to merge from the master to the current branch.
