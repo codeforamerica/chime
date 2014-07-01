@@ -169,3 +169,10 @@ button[type=submit].button-delete{
 	color:red;
 }
 
+.sketchy
+{
+    background-image: url('images/dots.png');
+    background-repeat: repeat;
+}
+
+.sketchy, .sketchy * { font-family: 'Comic Sans', 'Comic Sans MS' !important }
