@@ -68,6 +68,21 @@ def path_type(file_path):
     
     return 'file'
 
+def is_editable(file_path):
+    '''
+    '''
+    try:
+        if isdir(file_path):
+            return False
+    
+        if open(file_path).read(4).startswith('---'):
+            return True
+    
+    except:
+        pass
+    
+    return False
+
 def login_required(route_function):
     ''' Login decorator for route functions.
     
