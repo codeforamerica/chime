@@ -1,5 +1,4 @@
 include_recipe "python"
-package "build-essential"
 package "git"
 
 git "/home/migurski/bizarro-cms" do
