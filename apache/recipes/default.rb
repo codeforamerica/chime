@@ -1,5 +1,8 @@
 package 'apache2'
 
+#
+# Activate minimum required modules.
+#
 link "/etc/apache2/mods-enabled/mime.conf" do
   to "../mods-available/mime.conf"
 end
@@ -40,6 +43,9 @@ link "/etc/apache2/mods-enabled/vhost_alias.load" do
   to "../mods-available/vhost_alias.load"
 end
 
+#
+# Create server configuration.
+#
 file "/etc/apache2/apache2.conf" do
     owner "root"
     group "root"
@@ -59,6 +65,9 @@ directory "/etc/apache2/sites-enabled" do
   recursive true
 end
 
+#
+# Make it go.
+#
 execute "apache2ctl graceful" do
   path ['/usr/bin', '/usr/sbin', '/usr/local/bin', '/usr/local/sbin']
 end
