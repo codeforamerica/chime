@@ -1,20 +1,25 @@
 include_recipe "python"
 package "git"
 
-git "/home/migurski/bizarro-cms" do
+git "/opt/bizarro-cms" do
   repository node['repo']
   reference node['ref']
-  user "migurski"
-  group "migurski"
 end
 
 execute "pip install -r requirements.txt" do
-  cwd "/home/migurski/bizarro-cms"
+  cwd "/opt/bizarro-cms"
 end
 
-execute "honcho export ... /etc/init" do
-  command "honcho export -u migurski -a bizarro-cms upstart /etc/init"
-  cwd "/home/migurski/bizarro-cms"
+bash "tar -xzf sample-site.tar.gz" do
+  code "tar -C /var/opt -xzf /opt/bizarro-cms/sample-site.tar.gz"
+  creates "/var/opt/sample-site"
+end
+
+env_file = File.realpath(File.join(File.dirname(__FILE__), 'honcho-env'))
+
+execute "honcho export upstart /etc/init" do
+  command "honcho -e #{env_file} export -u migurski -a bizarro-cms upstart /etc/init"
+  cwd "/opt/bizarro-cms"
 end
 
 execute "stop bizarro-cms" do
