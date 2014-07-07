@@ -10,9 +10,22 @@ execute "pip install -r requirements.txt" do
   cwd "/opt/bizarro-cms"
 end
 
+directory "/var/opt/bizarro-work" do
+  owner "migurski"
+  group "migurski"
+  mode "0775"
+end
+
+directory "/var/opt/sample-site" do
+  owner "migurski"
+  group "migurski"
+  mode "0775"
+end
+
 bash "tar -xzf sample-site.tar.gz" do
   code "tar -C /var/opt -xzf /opt/bizarro-cms/sample-site.tar.gz"
-  creates "/var/opt/sample-site"
+  user "migurski"
+  creates "/var/opt/sample-site/config"
 end
 
 env_file = File.realpath(File.join(File.dirname(__FILE__), 'honcho-env'))
