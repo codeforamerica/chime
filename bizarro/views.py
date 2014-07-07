@@ -58,7 +58,7 @@ def index():
 def sign_in():
     posted = post('https://verifier.login.persona.org/verify',
                   data=dict(assertion=request.form.get('assertion'),
-                            audience='http://127.0.0.1:5000'))
+                            audience=current_app.config['BROWSERID_URL']))
 
     response = posted.json()
     
