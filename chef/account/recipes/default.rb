@@ -18,6 +18,13 @@ directory "/home/#{name}/.ssh" do
   mode "0700"
 end
 
+file "/home/#{name}/.ssh/config" do
+  owner name
+  group name
+  mode "0700"
+  content "StrictHostKeyChecking no"
+end
+
 bash "ssh-keygen" do
   user name
   code "ssh-keygen -P '' -f /home/#{name}/.ssh/id_rsa"
