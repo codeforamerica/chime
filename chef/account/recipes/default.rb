@@ -21,7 +21,7 @@ end
 file "/home/#{name}/.ssh/config" do
   owner name
   group name
-  mode "0700"
+  mode "0600"
   content "StrictHostKeyChecking no"
 end
 
