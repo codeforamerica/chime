@@ -1,0 +1,10 @@
+{
+    "user": "bizarro",
+    "repo": "https://github.com/codeforamerica/bizarro-cms.git",
+    "ref": "master",
+    "run_list":
+    [
+        "apache",
+        "bizarro"
+    ]
+}
