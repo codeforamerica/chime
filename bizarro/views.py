@@ -5,6 +5,7 @@ from mimetypes import guess_type
 from glob import glob
 
 from git import Repo
+from git.cmd import GitCommandError
 from requests import post
 from flask import redirect, request, Response, render_template, session, current_app
 
@@ -27,7 +28,12 @@ def index():
     for name in branch_names:
         path = branch_name2path(name)
 
-        base = r.git.merge_base(master_name, name)
+        try:
+            base = r.git.merge_base(master_name, name)
+        except GitCommandError:
+            # Skip this branch if it looks to be an orphan. Just don't show it.
+            continue
+
         behind_raw = r.git.log(base+'..'+master_name, format='%H %at %ae')
         ahead_raw = r.git.log(base+'..'+name, format='%H %at %ae')
         
@@ -214,6 +220,8 @@ def branch_edit(branch, path=None):
         kwargs['is_peer_rejected'] = repo_functions.is_peer_rejected(r, master_name, branch)
         kwargs['eligible_peer'] = session['email'] != repo_functions.ineligible_peer(r, master_name, branch)
         kwargs['rejection_messages'] = list(repo_functions.get_rejection_messages(r, master_name, branch))
+        
+        # TODO: the above might throw a GitCommandError if branch is an orphan.
         
         if kwargs['is_peer_rejected']:
             kwargs['rejecting_peer'], kwargs['rejection_message'] = kwargs['rejection_messages'].pop(0)
