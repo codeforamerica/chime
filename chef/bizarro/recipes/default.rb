@@ -25,16 +25,18 @@ directory "/var/opt/bizarro-work" do
   mode "0775"
 end
 
-directory "/var/opt/sample-site" do
+directory "/var/opt/bizarro-site" do
   owner name
   group name
   mode "0775"
 end
 
+tar_file = File.realpath(File.join(File.dirname(__FILE__), 'sample-site.tar.gz'))
+
 bash "tar -xzf sample-site.tar.gz" do
   user name
-  code "tar -C /var/opt -xzf /opt/bizarro-cms/sample-site.tar.gz"
-  creates "/var/opt/sample-site/config"
+  code "tar -C /var/opt/bizarro-site -xzf #{tar_file}"
+  creates "/var/opt/bizarro-site/config"
 end
 
 #
