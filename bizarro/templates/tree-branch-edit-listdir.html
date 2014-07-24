@@ -83,7 +83,7 @@
                   </tr>
 
                 {% elif is_peer_rejected and eligible_peer %}
-                  <tr><!-- Author options, after getting a good review with no more changes made -->
+                  <tr><!-- Author options, if a review is rejected (someone has suggested changes). Once edited again, this should reveal the review and publish options -->
                     <td colspan="2">
                         <h5>Current feedback</h5>
                         <p>{{rejection_message}}<br>— {{rejecting_peer}}</p>
@@ -96,15 +96,6 @@
                     </td>
                   </tr>
 
-                  <!--tr>[ Author options, after getting a bad review ]
-                    <td colspan="2">
-                        <form action="/merge" method="POST">
-                            <input name="branch" value="{{branch}}" type="hidden" />
-                            <a class="button-alternative" href="">View suggested changes</a>
-                            <a class="button-alternative" href="">Submit for review</a>
-                        </form>    
-                    </td>
-                  </tr-->
                 {% elif needs_peer_review and eligible_peer %}
                   <tr><!-- Reviewer options -->
                     <td colspan="2">
