@@ -3,3 +3,4 @@
 venv-*
 sample-site
 repo-*%40*
+.env

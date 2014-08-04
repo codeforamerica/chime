@@ -1,8 +1,11 @@
 PyYAML==3.10
 GitPython==0.3.2.RC1
 Flask==0.10.1
+Flask-Testing==0.4.2
+oauth2>=1.5.211
 requests==2.2.1
 Jinja2==2.7.2
 rotunicode==1.0.2
 httmock==1.2.2
+mock==1.0.1
 gunicorn >= 19.0

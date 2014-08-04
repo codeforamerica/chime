@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Tasks{% endblock %}
+{% block content %}
+
+  <h2>Google</h2>
+  <form action="/authorize" method="post">
+      <p>
+        <button name="provider" value="google" type="submit">JFDI</button>
+      </p>
+  </form>
+{% endblock %}
