@@ -14,13 +14,14 @@ Install
    (this will become configurable in the future). Unpack the supplied
    [sample-site.tar.gz](sample-site.tar.gz) to get an empty repository.
 
-3. Test-run the app:
-   
-        $ python app.py
-   
-   You can alternatively use [Foreman](http://ddollar.github.com/foreman)
-   or its Python port [Honcho](https://pypi.python.org/pypi/honcho):
-   
+3. copy .env.sample to .env
+
+4. Run the app with [Foreman](http://ddollar.github.com/foreman):
+
+        $ foreman run python app.py
+
+   You can alternatively use Foreman's Python port [Honcho](https://pypi.python.org/pypi/honcho):
+
         $ honcho start
 
 Who maintains this?
