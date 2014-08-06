@@ -1,11 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Tasks{% endblock %}
+{% block title %}Setup{% endblock %}
 {% block content %}
 
-  <h2>Google</h2>
-  <form action="/authorize" method="post">
-      <p>
-        <button name="provider" value="google" type="submit">JFDI</button>
-      </p>
-  </form>
+  <h1>Setup</h1>
+  <div class="layout-breve">
+	  <p>Use his tool to set up your google analytics account, to get live stats about your content.</p>
+
+	  <form action="/authorize" method="post">
+	      <p>
+	        <button name="provider" value="google" type="submit">JFDI</button>
+	      </p>
+	  </form>
+	</div>
 {% endblock %}
