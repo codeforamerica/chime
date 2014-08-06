@@ -97,7 +97,12 @@ def callback():
     state = request.args.get('state')
     code = request.args.get('code')
     callback_uri = '{0}://{1}/callback'.format(request.scheme, request.host)
-    return callback_google(state, code, callback_uri)
+    callback_google(state, code, callback_uri)
+    return redirect('/authorization-complete')
+
+@app.route('/authorization-complete')
+def authorization_complete():
+    return render_template('authorization-complete.html', email=session['email'])
 
 @app.route('/start', methods=['POST'])
 @login_required

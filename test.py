@@ -764,28 +764,22 @@ class TestGoogleAuthorization(TestCase):
             response = google_api_functions.authorize_google()
             # self.assertRedirects(response, redirect_uri)
 
-    def google_mock(self, url, request):
+    def mock_google_authorization(self, url, request):
         content = {'access_token': 'meowser_token', 'token_type': 'meowser_type', 'refresh_token': 'refresh_meows'}
         return response(200, content)
 
-
-    def test_callback_return_value(self):
+    def test_callback_sets_session_variables(self):
         app = self.create_app()
-        with HTTMock(self.google_mock):
+        with HTTMock(self.mock_google_authorization):
             response = self.client.post('https://accounts.google.com/o/oauth2/token', data={'email': 'user@example.com'})
 
             with app.test_request_context():
                 session['state'] = 'state'
+                session['email'] = 'erica@example.com'
                 callback_uri = 'http://localhost:5000/callback'
                 response = google_api_functions.callback_google('state', 'code', callback_uri)
-                expected_data = {"access_token": "meowser_token",
-                                "client_id": "client_id",
-                                "client_secret": "meow_secret",
-                                "refresh_token": "refresh_meows",
-                                "token_type": "meowser_type"}
-                self.assertEqual(loads(response.data), expected_data)
-
-
+                self.assertEqual(session['access_token'], 'meowser_token')
+                self.assertEqual(session['refresh_token'], 'refresh_meows')
 
 class TestApp (TestCase):
 
@@ -811,6 +805,16 @@ class TestApp (TestCase):
     def persona_verify(self, url, request):
         if url.geturl() == 'https://verifier.login.persona.org/verify':
             return response(200, '''{"status": "okay", "email": "user@example.com"}''', headers=dict(Link='<https://api.github.com/user/337792/repos?page=1>; rel="prev", <https://api.github.com/user/337792/repos?page=1>; rel="first"'))
+
+        else:
+            raise Exception('Asked for unknown URL ' + url.geturl())
+
+    def mock_google_authorization(self, url, request):
+        if 'access_type=\'offline\'' in url:
+            return response(200, '''{'access_token': 'meowser_token', 'token_type': 'meowser_type'}''')
+
+        if 'grant_type=\'authorization_code\'' in url:
+            return response(200, '''content = {'access_token': 'meowser_token', 'token_type': 'meowser_type', 'refresh_token': 'refresh_meows'}''')
 
         else:
             raise Exception('Asked for unknown URL ' + url.geturl())

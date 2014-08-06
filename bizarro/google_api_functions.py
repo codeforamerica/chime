@@ -1,4 +1,4 @@
-from flask import request, redirect, session, jsonify
+from flask import request, redirect, session, url_for
 from requests import post
 from urllib import urlencode
 import random
@@ -26,7 +26,7 @@ def authorize_google():
     return redirect('https://accounts.google.com/o/oauth2/auth' + '?' + query_string)
 
 def callback_google(state, code, callback_uri):
-    '''
+    ''' Get the refresh token so we can use it to get a new access token every once in a while
     '''
     if state != session['state']:
         raise Exception()
@@ -37,9 +37,5 @@ def callback_google(state, code, callback_uri):
 
     resp = post('https://accounts.google.com/o/oauth2/token', data=data)
     access = json.loads(resp.content)
-    access_token, token_type = access['access_token'], access['token_type']
-    refresh_token = access['refresh_token']
-
-    return jsonify(dict(client_id=os.environ.get('CLIENT_ID'), client_secret=os.environ.get('CLIENT_SECRET'),
-                        access_token=access_token, token_type=token_type,
-                        refresh_token=refresh_token))
+    session['access_token'] = access['access_token']
+    session['refresh_token'] = access['refresh_token']
