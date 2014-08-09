@@ -13,6 +13,7 @@ from uuid import uuid4
 from re import search
 import random
 from json import loads
+from datetime import date, timedelta
 
 from git import Repo
 from box.util.rotunicode import RotUnicode
@@ -740,11 +741,12 @@ class TestRepo (TestCase):
         rmtree(self.clone1.working_dir)
         rmtree(self.clone2.working_dir)
 
-class TestGoogleAuthorization(TestCase):
+class TestGoogleAuthAndAnalytics(TestCase):
     def setUp(self):
         environ['CLIENT_ID'] = 'client_id'
         environ['REDIRECT_URI'] = 'http://www.example.com'
         environ['CLIENT_SECRET'] = 'meow_secret'
+        environ['PROFILE_ID'] = '12345678'
         random.choice = MagicMock(return_value="P")
 
     def create_app(self):
@@ -781,6 +783,26 @@ class TestGoogleAuthorization(TestCase):
                 self.assertEqual(session['access_token'], 'meowser_token')
                 self.assertEqual(session['refresh_token'], 'refresh_meows')
 
+    def mock_google_analytics(self, url, request):
+        start_date = (date.today() - timedelta(days=7)).isoformat()
+        end_date = date.today().isoformat()
+        url_string = url.geturl()
+        if 'ids=ga%3A12345678' in url_string and 'end-date='+end_date in url_string and 'start-date='+start_date in url_string and 'filters=ga%3ApagePath%2Flib%2Fhello.md' in url_string:
+            return response(200, '''{"ga:previousPagePath": "/about/", "ga:pagePath": "/lib/", "ga:pageViews": "12", "ga:avgTimeOnPage": "56.17", "ga:exiteRate": "43.75"}''')
+
+        else:
+            raise Exception('Asked for unknown URL ' + url.geturl())
+
+    def test_fetch_google_analytics_for_page(self):
+        app = self.create_app()
+        with HTTMock(self.mock_google_analytics):
+          analytics = google_api_functions.fetch_google_analytics_for_page('/lib/hello.md')
+          self.assertEqual(analytics['ga:avgTimeOnPage'], '56.17')
+          self.assertEqual(analytics['ga:previousPagePath'], '/about/')
+          self.assertEqual(analytics['ga:pagePath'], '/lib/')
+          self.assertEqual(analytics['ga:pageViews'], '12')
+          self.assertEqual(analytics['ga:exiteRate'], '43.75')
+
 class TestApp (TestCase):
 
     def setUp(self):
@@ -794,6 +816,7 @@ class TestApp (TestCase):
 
         app.config['WORK_PATH'] = work_path
         app.config['REPO_PATH'] = repo_path
+        environ['PROFILE_ID'] = '12345678'
 
         self.app = app.test_client()
 
@@ -815,6 +838,13 @@ class TestApp (TestCase):
 
         if 'grant_type=\'authorization_code\'' in url:
             return response(200, '''content = {'access_token': 'meowser_token', 'token_type': 'meowser_type', 'refresh_token': 'refresh_meows'}''')
+
+        else:
+            raise Exception('Asked for unknown URL ' + url.geturl())
+
+    def mock_google_analytics(self, url, request):
+        if 'ids=ga%3A12345678' in url.geturl():
+            return response(200, '''{"ga:previousPagePath": "/about/", "ga:pagePath": "/lib/", "ga:pageViews": "12", "ga:avgTimeOnPage": "56.17", "ga:exiteRate": "43.75"}''')
 
         else:
             raise Exception('Asked for unknown URL ' + url.geturl())
@@ -849,29 +879,30 @@ class TestApp (TestCase):
 
         self.assertTrue('user@example.com/do-things' in response.data)
 
-        response = self.app.post('/tree/user@example.com%252Fdo-things/edit/',
-                                 data={'action': 'add', 'path': 'hello.md'},
-                                 follow_redirects=True)
+        with HTTMock(self.mock_google_analytics):
+            response = self.app.post('/tree/user@example.com%252Fdo-things/edit/',
+                                     data={'action': 'add', 'path': 'hello.md'},
+                                     follow_redirects=True)
 
-        self.assertEquals(response.status_code, 200)
+            self.assertEquals(response.status_code, 200)
 
-        response = self.app.get('/tree/user@example.com%252Fdo-things/edit/')
+            response = self.app.get('/tree/user@example.com%252Fdo-things/edit/')
 
-        self.assertTrue('hello.md' in response.data)
+            self.assertTrue('hello.md' in response.data)
 
-        response = self.app.get('/tree/user@example.com%252Fdo-things/edit/hello.md')
-        hexsha = search(r'<input name="hexsha" value="(\w+)"', response.data).group(1)
+            response = self.app.get('/tree/user@example.com%252Fdo-things/edit/hello.md')
+            hexsha = search(r'<input name="hexsha" value="(\w+)"', response.data).group(1)
 
-        response = self.app.post('/tree/user@example.com%252Fdo-things/save/hello.md',
-                                 data={'layout': 'multi', 'hexsha': hexsha,
-                                       'title': 'Greetings', 'body': 'Hello world.\n',
-                                       'title-es': '', 'title-zh-cn': '',
-                                       'body-es': '', 'body-zh-cn': '',
-                                       'url-slug': 'hello'},
-                                 follow_redirects=True)
+            response = self.app.post('/tree/user@example.com%252Fdo-things/save/hello.md',
+                                     data={'layout': 'multi', 'hexsha': hexsha,
+                                           'title': 'Greetings', 'body': 'Hello world.\n',
+                                           'title-es': '', 'title-zh-cn': '',
+                                           'body-es': '', 'body-zh-cn': '',
+                                           'url-slug': 'hello'},
+                                     follow_redirects=True)
 
-        self.assertEquals(response.status_code, 200)
-    
+            self.assertEquals(response.status_code, 200)
+
     def tearDown(self):
         rmtree(app.config['WORK_PATH'])
         rmtree(app.config['REPO_PATH'])
