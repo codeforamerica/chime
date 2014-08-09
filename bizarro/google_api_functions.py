@@ -1,11 +1,12 @@
 from flask import request, redirect, session, url_for
-from requests import post
+from requests import post, get
 from urllib import urlencode
 import random
 from string import ascii_uppercase, digits
 import oauth2
 import os
 import json
+from datetime import date, timedelta
 
 google_access_token_url = 'https://accounts.google.com/o/oauth2/token'
 
@@ -39,3 +40,16 @@ def callback_google(state, code, callback_uri):
     access = json.loads(resp.content)
     session['access_token'] = access['access_token']
     session['refresh_token'] = access['refresh_token']
+
+def fetch_google_analytics_for_page(page_path):
+    ''' Get stats for a particular page
+    '''
+    start_date = (date.today() - timedelta(days=7)).isoformat()
+    end_date = date.today().isoformat()
+    profile_id = os.environ.get('PROFILE_ID')
+    query_string = urlencode({'ids' : 'ga:' + profile_id, 'dimensions' : 'ga:previousPagePath,ga:pagePath',
+                               'metrics' : 'ga:pageViews,ga:avgTimeOnPage,ga:exitRate',
+                               'filters' : 'ga:pagePath' + page_path, 'start-date' : start_date,
+                               'end-date' : end_date, 'max-results' : '1'})
+    resp = get('https://www.googleapis.com/analytics/v3/data/ga' + '?' + query_string)
+    return json.loads(resp.content)

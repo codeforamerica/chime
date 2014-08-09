@@ -15,7 +15,7 @@ from .view_functions import (
   branch_name2path, branch_var2name, get_repo, path_type, name_branch, dos2unix,
   login_required, synch_required, synched_checkout_required, is_editable
   )
-from .google_api_functions import authorize_google, callback_google
+from .google_api_functions import authorize_google, callback_google, fetch_google_analytics_for_page
 
 @app.route('/')
 @synch_required
@@ -256,11 +256,11 @@ def branch_edit(branch, path=None):
 
         url_slug, _ = splitext(path)
         view_path = join('/tree/%s/view' % branch_name2path(branch), path)
-
-        kwargs = dict(branch=branch, safe_branch=safe_branch,
+        analytics_dict = fetch_google_analytics_for_page(path)
+        kwargs = dict(dict(branch=branch, safe_branch=safe_branch,
                       body=body, hexsha=c.hexsha, url_slug=url_slug,
                       front=front, email=session['email'],
-                      view_path=view_path, edit_path=path)
+                      view_path=view_path, edit_path=path).items() + analytics_dict.items())
 
         return render_template('tree-branch-edit-file.html', **kwargs)
 
