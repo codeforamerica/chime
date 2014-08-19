@@ -102,12 +102,20 @@ def callback():
     state = request.args.get('state')
     code = request.args.get('code')
     callback_uri = '{0}://{1}/callback'.format(request.scheme, request.host)
-    callback_google(state, code, callback_uri)
-    return redirect('/authorization-complete')
+    try:
+      callback_google(state, code, callback_uri)
+    except Exception:
+        return redirect('/authorization-failed')
+    else:
+        return redirect('/authorization-complete')
 
 @app.route('/authorization-complete')
 def authorization_complete():
     return render_template('authorization-complete.html', email=session['email'])
+
+@app.route('/authorization-failed')
+def authorization_failed():
+    return render_template('authorization-failed.html', email=session['email'])
 
 @app.route('/start', methods=['POST'])
 @login_required
