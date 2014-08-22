@@ -1,7 +1,6 @@
 PyYAML==3.10
 GitPython==0.3.2.RC1
 Flask==0.10.1
-Flask-Testing==0.4.2
 oauth2>=1.5.211
 requests==2.2.1
 Jinja2==2.7.2

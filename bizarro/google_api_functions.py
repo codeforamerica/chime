@@ -8,8 +8,6 @@ import os
 import json
 from datetime import date, timedelta
 
-google_access_token_url = 'https://accounts.google.com/o/oauth2/token'
-
 def authorize_google():
     ''' Authorize google via oauth2
     '''
@@ -37,6 +35,9 @@ def callback_google(state, code, callback_uri):
                 grant_type='authorization_code')
 
     resp = post('https://accounts.google.com/o/oauth2/token', data=data)
+
+    if resp.status_code != 200:
+        raise Exception()
     access = json.loads(resp.content)
     session['access_token'] = access['access_token']
     session['refresh_token'] = access['refresh_token']

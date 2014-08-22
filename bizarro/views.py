@@ -43,11 +43,16 @@ def index():
         # ahead = [r.commit(sha) for (sha, t, e) in pattern.findall(ahead_raw)]
         behind = pattern.findall(behind_raw)
         ahead = pattern.findall(ahead_raw)
-
-        needs_peer_review = repo_functions.needs_peer_review(r, master_name, name)
-        is_peer_approved = repo_functions.is_peer_approved(r, master_name, name)
-        is_peer_rejected = repo_functions.is_peer_rejected(r, master_name, name)
-
+        
+        if current_app.config['SINGLE_USER']:
+            needs_peer_review = False
+            is_peer_approved = True
+            is_peer_rejected = False
+        else:
+            needs_peer_review = repo_functions.needs_peer_review(r, master_name, name)
+            is_peer_approved = repo_functions.is_peer_approved(r, master_name, name)
+            is_peer_rejected = repo_functions.is_peer_rejected(r, master_name, name)
+        
         review_subject = 'Plz review this thing'
         review_body = '%s/tree/%s/edit' % (request.url, path)
 
@@ -97,12 +102,20 @@ def callback():
     state = request.args.get('state')
     code = request.args.get('code')
     callback_uri = '{0}://{1}/callback'.format(request.scheme, request.host)
-    callback_google(state, code, callback_uri)
-    return redirect('/authorization-complete')
+    try:
+      callback_google(state, code, callback_uri)
+    except Exception:
+        return redirect('/authorization-failed')
+    else:
+        return redirect('/authorization-complete')
 
 @app.route('/authorization-complete')
 def authorization_complete():
     return render_template('authorization-complete.html', email=session['email'])
+
+@app.route('/authorization-failed')
+def authorization_failed():
+    return render_template('authorization-failed.html', email=session['email'])
 
 @app.route('/start', methods=['POST'])
 @login_required
@@ -238,14 +251,21 @@ def branch_edit(branch, path=None):
                       email=session['email'], list_paths=list_paths)
 
         master_name = current_app.config['default_branch']
-        kwargs['needs_peer_review'] = repo_functions.needs_peer_review(r, master_name, branch)
-        kwargs['is_peer_approved'] = repo_functions.is_peer_approved(r, master_name, branch)
-        kwargs['is_peer_rejected'] = repo_functions.is_peer_rejected(r, master_name, branch)
-        kwargs['eligible_peer'] = session['email'] != repo_functions.ineligible_peer(r, master_name, branch)
         kwargs['rejection_messages'] = list(repo_functions.get_rejection_messages(r, master_name, branch))
 
         # TODO: the above might throw a GitCommandError if branch is an orphan.
 
+        if current_app.config['SINGLE_USER']:
+            kwargs['eligible_peer'] = True
+            kwargs['needs_peer_review'] = False
+            kwargs['is_peer_approved'] = True
+            kwargs['is_peer_rejected'] = False
+        else:
+            kwargs['eligible_peer'] = session['email'] != repo_functions.ineligible_peer(r, master_name, branch)
+            kwargs['needs_peer_review'] = repo_functions.needs_peer_review(r, master_name, branch)
+            kwargs['is_peer_approved'] = repo_functions.is_peer_approved(r, master_name, branch)
+            kwargs['is_peer_rejected'] = repo_functions.is_peer_rejected(r, master_name, branch)
+        
         if kwargs['is_peer_rejected']:
             kwargs['rejecting_peer'], kwargs['rejection_message'] = kwargs['rejection_messages'].pop(0)
 
