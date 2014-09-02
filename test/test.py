@@ -7,12 +7,16 @@ from StringIO import StringIO
 from subprocess import Popen, PIPE
 from os.path import join, exists
 from os import environ, unlink
-from shutil import rmtree
+from shutil import rmtree, copytree
 from uuid import uuid4
 from re import search
 import random
 from json import loads
 from datetime import date, timedelta
+
+import sys, os
+here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(here)
 
 from git import Repo
 from box.util.rotunicode import RotUnicode
@@ -54,14 +58,12 @@ class TestJekyll (TestCase):
 class TestRepo (TestCase):
 
     def setUp(self):
-        dirname = mkdtemp(prefix='bizarro-')
+        repo_path = os.path.dirname(os.path.abspath(__file__)) + '/test-app.git'
+        temp_repo_dir = mkdtemp(prefix='bizarro-root')
+        temp_repo_path = temp_repo_dir + '/test-app.git'
+        copytree(repo_path, temp_repo_path)
+        self.origin = Repo(temp_repo_path)
 
-        tar = Popen(('tar', '-C', dirname, '-xzf', '-'), stdin=PIPE)
-        tar.stdin.write(_tarball)
-        tar.stdin.close()
-        tar.wait()
-
-        self.origin = Repo(dirname)
         self.clone1 = self.origin.clone(mkdtemp(prefix='bizarro-'))
         self.clone2 = self.origin.clone(mkdtemp(prefix='bizarro-'))
 
