@@ -5,6 +5,6 @@ before_install:
   - sudo apt-get update -y
   - sudo apt-get install git
 install: pip install -r requirements.txt
-script:  python test.py
+script:  python test/test.py
 notifications:
   webhooks: http://project-monitor.codeforamerica.org/projects/1bf2f3b3-bed8-42bc-91e8-d47f873443de/status
