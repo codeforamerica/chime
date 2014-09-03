@@ -1,5 +1,5 @@
-from os.path import join, isdir, realpath
-from os import environ
+from os.path import join, isdir, realpath, basename
+from os import listdir, environ
 from urllib import quote, unquote
 from mimetypes import guess_type
 from functools import wraps
@@ -193,3 +193,20 @@ def synched_checkout_required(route_function):
         return response
     
     return decorated_function
+
+def sorted_paths(repo, branch, path=None):
+    full_path = join(repo.working_dir, path or '.').rstrip('/')
+    all_sorted_files_dirs = sorted(listdir(full_path))
+
+    filtered_sorted_files_dirs = [i for i in all_sorted_files_dirs if not i.startswith('.') ]
+    file_names = [n for n in filtered_sorted_files_dirs if not n.startswith('_')]
+    view_paths = [join('/tree/%s/view' % branch_name2path(branch), join(path or '', fn))
+                  for fn in file_names]
+
+    full_paths = [join(full_path, name) for name in file_names]
+    path_pairs = zip(full_paths, view_paths)
+
+    list_paths = [(basename(fp), vp, path_type(fp), is_editable(fp))
+                  for (fp, vp) in path_pairs if realpath(fp) != repo.git_dir]
+    return list_paths
+

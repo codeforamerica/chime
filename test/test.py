@@ -23,7 +23,7 @@ from box.util.rotunicode import RotUnicode
 from httmock import response, HTTMock
 from mock import MagicMock
 
-from bizarro import app, jekyll_functions, repo_functions, edit_functions, google_api_functions
+from bizarro import app, jekyll_functions, repo_functions, edit_functions, google_api_functions, view_functions
 
 import codecs
 codecs.register(RotUnicode.search_function)
@@ -54,6 +54,38 @@ class TestJekyll (TestCase):
 
         with self.assertRaises(Exception):
             jekyll_functions.load_jekyll_doc(file)
+
+class TestViewFunctions (TestCase):
+
+    def setUp(self):
+        repo_path = os.path.dirname(os.path.abspath(__file__)) + '/test-app.git'
+        temp_repo_dir = mkdtemp(prefix='bizarro-root')
+        temp_repo_path = temp_repo_dir + '/test-app.git'
+        copytree(repo_path, temp_repo_path)
+        self.origin = Repo(temp_repo_path)
+        self.clone = self.origin.clone(mkdtemp(prefix='bizarro-'))
+
+        self.session = dict(email=str(uuid4()))
+
+        environ['GIT_AUTHOR_NAME'] = ' '
+        environ['GIT_COMMITTER_NAME'] = ' '
+        environ['GIT_AUTHOR_EMAIL'] = self.session['email']
+        environ['GIT_COMMITTER_EMAIL'] = self.session['email']
+
+    def test_sorted_paths(self):
+        ''' Ensure files/directories are sorted in alphabetical order
+        '''
+        sorted_list = view_functions.sorted_paths(self.clone, 'master')
+        expected_list = [('index.md', '/tree/master/view/index.md', 'file', True),
+        ('other', '/tree/master/view/other', 'folder', False),
+        ('other.md', '/tree/master/view/other.md', 'file', True),
+        ('sub', '/tree/master/view/sub', 'folder', False)]
+        self.assertEqual(sorted_list, expected_list)
+
+    def tearDown(self):
+        rmtree(self.origin.git_dir)
+        rmtree(self.clone.working_dir)
+
 
 class TestRepo (TestCase):
 
