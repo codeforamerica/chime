@@ -1,5 +1,5 @@
-from os.path import join, isdir, realpath, basename, splitext
-from os import listdir, environ
+from os.path import join, isdir, realpath, splitext
+from os import environ
 from re import compile, MULTILINE
 from mimetypes import guess_type
 from glob import glob
@@ -13,7 +13,7 @@ from . import app, repo_functions, edit_functions
 from .jekyll_functions import load_jekyll_doc, build_jekyll_site
 from .view_functions import (
   branch_name2path, branch_var2name, get_repo, path_type, name_branch, dos2unix,
-  login_required, synch_required, synched_checkout_required, is_editable
+  login_required, synch_required, synched_checkout_required, is_editable, sorted_paths
   )
 from .google_api_functions import authorize_google, callback_google, fetch_google_analytics_for_page
 
@@ -237,18 +237,9 @@ def branch_edit(branch, path=None):
         if path and not path.endswith('/'):
             return redirect('/tree/%s/edit/%s' % (safe_branch, path + '/'), code=302)
 
-        file_names = [n for n in listdir(full_path) if not n.startswith('_')]
-        view_paths = [join('/tree/%s/view' % branch_name2path(branch), join(path or '', fn))
-                      for fn in file_names]
-
-        full_paths = [join(full_path, name) for name in file_names]
-        path_pairs = zip(full_paths, view_paths)
-
-        list_paths = [(basename(fp), vp, path_type(fp), is_editable(fp))
-                      for (fp, vp) in path_pairs if realpath(fp) != r.git_dir]
-
         kwargs = dict(branch=branch, safe_branch=safe_branch,
-                      email=session['email'], list_paths=list_paths)
+                      email=session['email'], list_paths=sorted_paths(r, branch, path))
+
 
         master_name = current_app.config['default_branch']
         kwargs['rejection_messages'] = list(repo_functions.get_rejection_messages(r, master_name, branch))
