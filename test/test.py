@@ -832,7 +832,7 @@ class TestApp (TestCase):
         end_date = date.today().isoformat()
         url_string = url.geturl()
 
-        if 'ids=ga%3A12345678' in url_string and 'end-date='+end_date in url_string and 'start-date='+start_date in url_string and 'filters=ga%3ApagePathhello.md' in url_string:
+        if 'ids=ga%3A12345678' in url_string and 'end-date='+end_date in url_string and 'start-date='+start_date in url_string and 'filters=ga%3ApagePathhello.html' in url_string:
             return response(200, '''{"ga:previousPagePath": "/about/", "ga:pagePath": "/lib/", "ga:pageViews": "12", "ga:avgTimeOnPage": "56.17", "ga:exiteRate": "43.75"}''')
 
         else:
@@ -869,19 +869,19 @@ class TestApp (TestCase):
 
         with HTTMock(self.mock_google_analytics):
             response = self.app.post('/tree/user@example.com%252Fdo-things/edit/',
-                                     data={'action': 'add', 'path': 'hello.md'},
+                                     data={'action': 'add', 'path': 'hello.html'},
                                      follow_redirects=True)
 
             self.assertEquals(response.status_code, 200)
 
             response = self.app.get('/tree/user@example.com%252Fdo-things/edit/')
 
-            self.assertTrue('hello.md' in response.data)
+            self.assertTrue('hello.html' in response.data)
 
-            response = self.app.get('/tree/user@example.com%252Fdo-things/edit/hello.md')
+            response = self.app.get('/tree/user@example.com%252Fdo-things/edit/hello.html')
             hexsha = search(r'<input name="hexsha" value="(\w+)"', response.data).group(1)
 
-            response = self.app.post('/tree/user@example.com%252Fdo-things/save/hello.md',
+            response = self.app.post('/tree/user@example.com%252Fdo-things/save/hello.html',
                                      data={'layout': 'multi', 'hexsha': hexsha,
                                            'title': 'Greetings', 'body': 'Hello world.\n',
                                            'title-es': '', 'title-zh-cn': '',
