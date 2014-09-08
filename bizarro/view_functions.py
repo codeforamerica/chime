@@ -210,3 +210,18 @@ def sorted_paths(repo, branch, path=None):
                   for (fp, vp) in path_pairs if realpath(fp) != repo.git_dir]
     return list_paths
 
+def directory_paths(branch, path=None):
+    root_dir_with_path = [('root', '/tree/%s/edit' % branch_name2path(branch))]
+    if path is None:
+        return root_dir_with_path
+    directory_list = [dir_name for dir_name in path.split('/')
+                      if dir_name and not dir_name.startswith('.')]
+
+    dirs_with_paths = [(dir_name, get_directory_path(branch, path, dir_name))
+                       for dir_name in directory_list]
+    return root_dir_with_path + dirs_with_paths
+
+def get_directory_path(branch, path, dir_name):
+    dir_index = path.find(dir_name+'/')
+    current_path = path[:dir_index] + dir_name + '/'
+    return join('/tree/%s/edit' % branch_name2path(branch), current_path)
