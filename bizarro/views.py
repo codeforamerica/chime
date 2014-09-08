@@ -13,7 +13,8 @@ from . import app, repo_functions, edit_functions
 from .jekyll_functions import load_jekyll_doc, build_jekyll_site
 from .view_functions import (
   branch_name2path, branch_var2name, get_repo, path_type, name_branch, dos2unix,
-  login_required, synch_required, synched_checkout_required, is_editable, sorted_paths
+  login_required, synch_required, synched_checkout_required, is_editable, sorted_paths,
+  directory_paths
   )
 from .google_api_functions import authorize_google, callback_google, fetch_google_analytics_for_page
 
@@ -128,7 +129,6 @@ def start_branch():
     branch = repo_functions.start_branch(r, master_name, branch_name)
 
     safe_branch = branch_name2path(branch.name)
-
     return redirect('/tree/%s/edit/' % safe_branch, code=303)
 
 @app.route('/merge', methods=['POST'])
@@ -236,8 +236,7 @@ def branch_edit(branch, path=None):
     if isdir(full_path):
         if path and not path.endswith('/'):
             return redirect('/tree/%s/edit/%s' % (safe_branch, path + '/'), code=302)
-
-        kwargs = dict(branch=branch, safe_branch=safe_branch,
+        kwargs = dict(branch=branch, safe_branch=safe_branch, dirs_and_paths=directory_paths(branch, path),
                       email=session['email'], list_paths=sorted_paths(r, branch, path))
 
 

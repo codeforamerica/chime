@@ -82,6 +82,20 @@ class TestViewFunctions (TestCase):
         ('sub', '/tree/master/view/sub', 'folder', False)]
         self.assertEqual(sorted_list, expected_list)
 
+    def test_directory_paths_with_no_relative_path(self):
+        ''' Ensure that a list with pairs of a sub-directory and the absolute path
+            to that directory is returned for all sub-directories in a path
+        '''
+        dirs_and_paths = view_functions.directory_paths('my-branch')
+        self.assertEqual(dirs_and_paths, [('root', '/tree/my-branch/edit')])
+
+    def test_directory_paths_with_relative_path(self):
+        ''' Ensure that a list with pairs of a sub-directory and the absolute path
+            to that directory is returned for all sub-directories in a path
+        '''
+        dirs_and_paths = view_functions.directory_paths('my-branch', 'blah/foo/')
+        self.assertEqual(dirs_and_paths, [('root', '/tree/my-branch/edit'), ('blah', '/tree/my-branch/edit/blah/'), ('foo', '/tree/my-branch/edit/blah/foo/')])
+
     def tearDown(self):
         rmtree(self.origin.git_dir)
         rmtree(self.clone.working_dir)
@@ -853,7 +867,6 @@ class TestApp (TestCase):
 
         response = self.app.post('/start', data={'branch': 'do things'},
                                  follow_redirects=True)
-
         self.assertTrue('user@example.com/do-things' in response.data)
 
         with HTTMock(self.mock_google_analytics):
