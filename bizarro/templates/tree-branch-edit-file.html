@@ -15,11 +15,6 @@
             </ul>
             <!--/div-->
         
-            <ul class="layout-semibreve layout-tight">
-                <li id="en-nav" class="nav-tab state-active"><a class="nav-tab-link" href="" onclick="return showEnglish()">English</a></li>
-                <li id="es-nav" class="nav-tab"><a class="nav-tab-link" href="" onclick="return showSpanish()">Spanish</a></li>
-                <li id="cn-nav" class="nav-tab"><a class="nav-tab-link" href="" onclick="return showChinese()">Chinese</a></li>
-            </ul>
         </nav>
         <ul class="detailed-info sketchy">
             <li><a href="">Stats</a></li>
@@ -37,28 +32,6 @@
                             <textarea id="en-body" class="textarea" name="body" type="text">{{body}}</textarea>
                         </li>                      
                     </ul>
-                </div>
-                <div id="spanish" style="display: none" class="glayout-minim glayout-major language-edit">
-                    <div class="badge-heading badge-gov badge-teal">
-                        <h2><input name="title-es" value="{{front['title-es']}}" type="text"></h2>
-                    </div> 
-                    <ul class="list-form">
-                        <li class="form-field">
-                            <label for="en-body">Content</label>
-                            <textarea id="en-body" class="textarea" name="body-es" type="text">{{front['body-es']}}</textarea>
-                        </li>
-                    </ul> 
-                </div>
-                <div id="chinese" style="display: none" class="glayout-minim glayout-major language-edit">
-                    <div class="badge-heading badge-gov badge-teal">
-                        <h2><input name="title-zh-cn" value="{{front['title-zh-cn']}}" type="text"></h2>
-                    </div>
-                        <ul class="list-form">
-                            <li class="form-field">
-                                <label for="cn-body">Content</label>
-                                <textarea id="cn-body" class="textarea" name="body-zh-cn" type="text">{{front['body-zh-cn']}}</textarea>
-                            </li>             
-                        </ul> 
                 </div>
                 <div id="statistics" class="sketchy">
                         <button id="authorize-button" style="visibility: hidden">Authorize</button>
@@ -87,45 +60,5 @@
         
 
     </form>
-    <script type="text/javascript">
-    
-        function showEnglish()
-        {
-            document.getElementById('english').style.display = 'block';
-            document.getElementById('spanish').style.display = 'none';
-            document.getElementById('chinese').style.display = 'none';
-            var d = document.getElementById("en-nav");
-            d.className = d.className + " state-active";
-            document.getElementById("es-nav").className = "nav-tab";
-            document.getElementById("cn-nav").className = "nav-tab";
-            return false;
-        }
-
-        function showSpanish()
-        {
-            document.getElementById('english').style.display = 'none';
-            document.getElementById('spanish').style.display = 'block';
-            document.getElementById('chinese').style.display = 'none';
-            var d = document.getElementById("es-nav");
-            d.className = d.className + " state-active";
-            document.getElementById("en-nav").className = "nav-tab";
-            document.getElementById("cn-nav").className = "nav-tab";
-            return false;
-        }
-
-        function showChinese()
-        {
-            document.getElementById('english').style.display = 'none';
-            document.getElementById('spanish').style.display = 'none';
-            document.getElementById('chinese').style.display = 'block';
-            var d = document.getElementById("cn-nav");
-            d.className = d.className + " state-active";
-            document.getElementById("en-nav").className = "nav-tab";
-            document.getElementById("es-nav").className = "nav-tab";
-            return false;
-        }
-
-    </script>
-
 
 {% endblock %}

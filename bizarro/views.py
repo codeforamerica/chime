@@ -348,11 +348,7 @@ def branch_save(branch, path):
     b.checkout()
 
     front = {'layout': dos2unix(request.form.get('layout')),
-             'title':  dos2unix(request.form.get('title')),
-             'title-es': dos2unix(request.form.get('title-es')),
-             'body-es':  dos2unix(request.form.get('body-es')),
-             'title-zh-cn': dos2unix(request.form.get('title-zh-cn')),
-             'body-zh-cn':  dos2unix(request.form.get('body-zh-cn'))}
+             'title':  dos2unix(request.form.get('title'))}
 
     body = dos2unix(request.form.get('body'))
     edit_functions.update_page(r, path, front, body)
