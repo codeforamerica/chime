@@ -7,7 +7,7 @@ from glob import glob
 from git import Repo
 from git.cmd import GitCommandError
 from requests import post
-from flask import redirect, request, Response, render_template, session, current_app
+from flask import redirect, request, Response, render_template, session, current_app, flash
 
 from . import app, repo_functions, edit_functions
 from .jekyll_functions import load_jekyll_doc, build_jekyll_site
@@ -273,6 +273,7 @@ def branch_edit(branch, path=None):
                       body=body, hexsha=c.hexsha, url_slug=url_slug,
                       front=front, email=session['email'],
                       view_path=view_path, edit_path=path).items() + analytics_dict.items())
+        print analytics_dict.items()
 
         return render_template('tree-branch-edit-file.html', **kwargs)
 

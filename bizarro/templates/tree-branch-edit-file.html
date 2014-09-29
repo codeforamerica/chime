@@ -25,6 +25,16 @@
                 <div id="english" style="display: block" class="glayout-minim glayout-major language-edit">
                     <div class="badge-heading badge-gov badge-teal">
                         <h2><input name="title" value="{{front['title']}}" type="text"></h2>
+                    
+                        {% with messages = get_flashed_messages() %}
+                          {% if messages %}
+                            <ul class="save-status-success">
+                            {% for message in messages %}
+                              <li>{{ message }}</li>
+                            {% endfor %}
+                            </ul>
+                          {% endif %}
+                        {% endwith %}
                     </div>
                     <ul class="list-form">
                         <li class="form-field">
@@ -36,6 +46,7 @@
                 <div id="statistics" class="sketchy">
                         <button id="authorize-button" style="visibility: hidden">Authorize</button>
                 <div class="slab-blue info sketchy">
+
                         <h2><span class="big-number">247</span> <span>people viewed this information this week</span></h2>
                         <ul>
                             <li><span>65%</span> came from <a href="">Vehicle licences</a></li>
