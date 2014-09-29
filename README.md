@@ -18,7 +18,7 @@ Install
 
 4. Run the app with [Foreman](http://ddollar.github.com/foreman):
 
-        $ foreman run python app.py
+        $ foreman run python run.py
 
    You can alternatively use Foreman's Python port [Honcho](https://pypi.python.org/pypi/honcho):
 
