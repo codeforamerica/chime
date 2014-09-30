@@ -19,9 +19,8 @@ def authorize_google():
     session['state'] = state
 
     query_string = urlencode(dict(client_id=os.environ.get('CLIENT_ID'), redirect_uri=os.environ.get('REDIRECT_URI'),
-                                  scope='openid profile', state=state, response_type='code',
+                                  scope='openid profile https://www.googleapis.com/auth/analytics', state=state, response_type='code',
                                   access_type='offline', approval_prompt='force'))
-
     return redirect('https://accounts.google.com/o/oauth2/auth' + '?' + query_string)
 
 def callback_google(state, code, callback_uri):
@@ -51,6 +50,6 @@ def fetch_google_analytics_for_page(page_path):
     query_string = urlencode({'ids' : 'ga:' + profile_id, 'dimensions' : 'ga:previousPagePath,ga:pagePath',
                                'metrics' : 'ga:pageViews,ga:avgTimeOnPage,ga:exitRate',
                                'filters' : 'ga:pagePath' + page_path, 'start-date' : start_date,
-                               'end-date' : end_date, 'max-results' : '1'})
+                               'end-date' : end_date, 'max-results' : '1', 'access_token' : session['access_token']})
     resp = get('https://www.googleapis.com/analytics/v3/data/ga' + '?' + query_string)
     return json.loads(resp.content)
