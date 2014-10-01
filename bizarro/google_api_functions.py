@@ -47,7 +47,7 @@ def fetch_google_analytics_for_page(page_path, access_token):
     start_date = (date.today() - timedelta(days=7)).isoformat()
     end_date = date.today().isoformat()
     profile_id = os.environ.get('PROFILE_ID')
-    escaped_page_path = page_path.replace('+', '\\+')
+    escaped_page_path = page_path.replace('+', '\+')
     query_string = urlencode({'ids' : 'ga:' + profile_id, 'dimensions' : 'ga:previousPagePath,ga:pagePath',
                                'metrics' : 'ga:pageViews,ga:avgTimeOnPage,ga:exitRate',
                                'filters' : 'ga:pagePath=~/' + escaped_page_path, 'start-date' : start_date,
