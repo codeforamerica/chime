@@ -266,7 +266,9 @@ def branch_edit(branch, path=None):
 
         url_slug, _ = splitext(path)
         view_path = join('/tree/%s/view' % branch_name2path(branch), path)
-        analytics_dict = fetch_google_analytics_for_page(path)
+        analytics_dict = {}
+        if 'access_token' in session:
+            analytics_dict = fetch_google_analytics_for_page(path, session['access_token'])
         kwargs = dict(dict(branch=branch, safe_branch=safe_branch,
                       body=body, hexsha=c.hexsha, url_slug=url_slug,
                       front=front, email=session['email'],
