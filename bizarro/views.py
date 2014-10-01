@@ -311,6 +311,7 @@ def branch_edit_file(branch, path=None):
 
     if do_save:
         master_name = current_app.config['default_branch']
+        print("save")
         repo_functions.save_working_file(r, file_path, message, c.hexsha, master_name)
 
     safe_branch = branch_name2path(branch_var2name(branch))
