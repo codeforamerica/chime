@@ -273,7 +273,7 @@ def branch_edit(branch, path=None):
                       body=body, hexsha=c.hexsha, url_slug=url_slug,
                       front=front, email=session['email'],
                       view_path=view_path, edit_path=path).items() + analytics_dict.items())
-        print analytics_dict.items()
+      
 
         return render_template('tree-branch-edit-file.html', **kwargs)
 
