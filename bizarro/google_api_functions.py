@@ -49,12 +49,14 @@ def fetch_google_analytics_for_page(page_path, access_token):
     profile_id = os.environ.get('PROFILE_ID')
     query_string = urlencode({'ids' : 'ga:' + profile_id, 'dimensions' : 'ga:previousPagePath,ga:pagePath',
                                'metrics' : 'ga:pageViews,ga:avgTimeOnPage,ga:exitRate',
-                               'filters' : 'ga:pagePath=~/' + page_path, 'start-date' : start_date,
+                               'filters' : 'ga:pagePath==/' + page_path, 'start-date' : start_date,
                                'end-date' : end_date, 'max-results' : '1', 'access_token' : access_token})
     resp = get('https://www.googleapis.com/analytics/v3/data/ga' + '?' + query_string)
     response_list = json.loads(resp.content)
     if 'error' in response_list:
         return {}
     else:
-        analytics_dict = {'page_views' : response_list['totalsForAllResults']['ga:pageViews']}
+        analytics_dict = {'page_views' : response_list['totalsForAllResults']['ga:pageViews'],
+                          'average_time_page' : response_list['totalsForAllResults']['ga:avgTimeOnPage'],
+                          'start_date' : start_date, 'end_date' : end_date}
         return analytics_dict
