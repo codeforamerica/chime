@@ -24,7 +24,8 @@ def authorize_google():
     return redirect('https://accounts.google.com/o/oauth2/auth' + '?' + query_string)
 
 def callback_google(state, code, callback_uri):
-    ''' Get the refresh token so we can use it to get a new access token every once in a while
+    ''' Get the access token plus the refresh token so we can use it to get a new access token
+        every once in a while
     '''
     if state != session['state']:
         raise Exception()
@@ -38,8 +39,24 @@ def callback_google(state, code, callback_uri):
     if resp.status_code != 200:
         raise Exception()
     access = json.loads(resp.content)
+
     session['access_token'] = access['access_token']
     session['refresh_token'] = access['refresh_token']
+
+def get_new_access_token(refresh_token):
+    ''' Get a new access token with the refresh token so a user doesn't need to
+        authorize the app again
+    '''
+    data = dict(client_id=os.environ.get('CLIENT_ID'), client_secret=os.environ.get('CLIENT_SECRET'),
+                refresh_token=refresh_token, grant_type='refresh_token')
+
+    resp = post('https://accounts.google.com/o/oauth2/token', data=data)
+
+    if resp.status_code != 200:
+        raise Exception()
+    access = json.loads(resp.content)
+
+    session['access_token'] = access['access_token']
 
 def fetch_google_analytics_for_page(page_path, access_token):
     ''' Get stats for a particular page

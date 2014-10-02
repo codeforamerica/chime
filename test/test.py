@@ -772,6 +772,41 @@ class TestRepo (TestCase):
         rmtree(self.clone1.working_dir)
         rmtree(self.clone2.working_dir)
 
+''' Test functions that are called outside of the google authing/analytics data fetching via the UI
+'''
+class TestGoogleApiFunctions (TestCase):
+
+    def setUp(self):
+        environ['CLIENT_ID'] = 'client_id'
+        environ['CLIENT_SECRET'] = 'meow_secret'
+
+    def mock_successful_get_new_access_token(self, url, request):
+        if 'https://accounts.google.com/o/oauth2/token' in url.geturl():
+            content = {'access_token': 'meowser_token', 'token_type': 'meowser_type', 'expires_in': 3920,}
+            return response(200, content)
+
+        else:
+            raise Exception('Asked for unknown URL ' + url.geturl())
+
+    def mock_failed_get_new_access_token(self, url, request):
+        if 'https://accounts.google.com/o/oauth2/token' in url.geturl():
+            return response(500)
+
+        else:
+            raise Exception('Asked for unknown URL ' + url.geturl())
+
+    def test_successful_get_new_access_token(self):
+        with app.test_request_context():
+            with HTTMock(self.mock_successful_get_new_access_token):
+                google_api_functions.get_new_access_token('meowsers')
+                self.assertEqual(session['access_token'], 'meowser_token')
+
+    def test_failure_to_get_new_access_token(self):
+        with app.test_request_context():
+            with HTTMock(self.mock_failed_get_new_access_token):
+                with self.assertRaises(Exception):
+                    google_api_functions.get_new_access_token('meowsers')
+
 class TestApp (TestCase):
 
     def setUp(self):
