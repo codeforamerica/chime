@@ -64,7 +64,7 @@ def fetch_google_analytics_for_page(page_path, access_token):
     start_date = (date.today() - timedelta(days=7)).isoformat()
     end_date = date.today().isoformat()
     profile_id = os.environ.get('PROFILE_ID')
-    repo_root_dir = environ.get('REPO_ROOT_DIR', '')
+    repo_root_dir = os.environ.get('REPO_ROOT_DIR', '')
     if not repo_root_dir:
         repo_root_dir = repo_root_dir + '/'
     query_string = urlencode({'ids' : 'ga:' + profile_id, 'dimensions' : 'ga:previousPagePath,ga:pagePath',
