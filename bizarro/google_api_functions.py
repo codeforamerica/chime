@@ -74,11 +74,14 @@ def fetch_google_analytics_for_page(page_path, access_token):
                                'end-date' : end_date, 'max-results' : '1', 'access_token' : access_token})
     resp = get('https://www.googleapis.com/analytics/v3/data/ga' + '?' + query_string)
     response_list = json.loads(resp.content)
+    print "I ARE IN THE GOOGLE ANALYTICS"
     if 'error' in response_list:
+        print response_list
         return {}
     else:
         average_time = str(int(float(response_list['totalsForAllResults']['ga:avgTimeOnPage'])))
         analytics_dict = {'page_views' : response_list['totalsForAllResults']['ga:pageViews'],
                           'average_time_page' : average_time,
                           'start_date' : start_date, 'end_date' : end_date}
+        print response_list
         return analytics_dict
