@@ -67,10 +67,10 @@ def fetch_google_analytics_for_page(page_path, access_token):
     profile_id = os.environ.get('PROFILE_ID')
     repo_root_dir = os.environ.get('REPO_ROOT_DIR', '')
     repo_root_dir =  repo_root_dir.rstrip('/') + '/'
-    repo_root_dir = sub(r'\.html$', '', repo_root_dir)
+    filter_page_path = sub(r'\.html$|\.md$', '', page_path)
     query_string = urlencode({'ids' : 'ga:' + profile_id, 'dimensions' : 'ga:previousPagePath,ga:pagePath',
                                'metrics' : 'ga:pageViews,ga:avgTimeOnPage,ga:exitRate',
-                               'filters' : 'ga:pagePath==' + repo_root_dir + page_path, 'start-date' : start_date,
+                               'filters' : 'ga:pagePath==' + repo_root_dir + filter_page_path, 'start-date' : start_date,
                                'end-date' : end_date, 'max-results' : '1', 'access_token' : access_token})
     resp = get('https://www.googleapis.com/analytics/v3/data/ga' + '?' + query_string)
     response_list = json.loads(resp.content)
