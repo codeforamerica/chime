@@ -294,7 +294,7 @@ def branch_edit_file(branch, path=None):
         path_303 = path or ''
 
     elif action == 'add' and 'path' in request.form:
-        front, body = dict(title='', layout='multi'), ''
+        front, body = dict(title='', layout='default'), ''
         name = splitext(request.form['path'])[0] + '.html'
 
         file_path = edit_functions.create_new_page(r, path, name, front, body)
