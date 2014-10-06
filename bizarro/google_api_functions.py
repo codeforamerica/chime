@@ -7,6 +7,7 @@ import oauth2
 import os
 import json
 from datetime import date, timedelta
+from re import sub
 
 def authorize_google():
     ''' Authorize google via oauth2
@@ -66,6 +67,7 @@ def fetch_google_analytics_for_page(page_path, access_token):
     profile_id = os.environ.get('PROFILE_ID')
     repo_root_dir = os.environ.get('REPO_ROOT_DIR', '')
     repo_root_dir =  repo_root_dir.rstrip('/') + '/'
+    repo_root_dir = sub(r'\.html$', '', repo_root_dir)
     query_string = urlencode({'ids' : 'ga:' + profile_id, 'dimensions' : 'ga:previousPagePath,ga:pagePath',
                                'metrics' : 'ga:pageViews,ga:avgTimeOnPage,ga:exitRate',
                                'filters' : 'ga:pagePath==' + repo_root_dir + page_path, 'start-date' : start_date,
