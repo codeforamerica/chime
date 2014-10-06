@@ -5,7 +5,7 @@ from mimetypes import guess_type
 from functools import wraps
 
 from git import Repo
-from flask import request, session, current_app
+from flask import request, session, current_app, redirect
 
 from .repo_functions import start_branch
 
