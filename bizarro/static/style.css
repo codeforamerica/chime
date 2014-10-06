@@ -19,7 +19,7 @@ body .nav-tabs>p {
 }
 #statistics{
 	float:right;
-	width:25%;
+	width:20%;
 	padding:1em;
 	text-align: center;
 }
@@ -35,6 +35,7 @@ body .nav-tabs>p {
 #statistics span{
 	display:block;
 	text-align:center;
+	line-height:1.1em;
 }
 #statistics .big-number{
 	font-weight:bold;
