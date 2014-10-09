@@ -30,21 +30,35 @@ _marker = "---\n"
 
 def load_languages(directory):
     ''' Load languages from site configuration.
+    
+        Configuration language block will look like this:
+        
+            languages:
+            - iso: name
+            - iso: name
+        
+        The dashes tell YAML that it's ordered.
     '''
     config_path = join(directory, '_config.yml')
     
     if exists(config_path):
         with open(config_path) as file:
-            config = yaml.load(file).get('languages', { })
+            config = yaml.load(file).get('languages', [])
+        
+        if type(config) is not list:
+            raise ValueError()
     else:
-        config = { }
+        config = []
     
-    # We want English always present, and always at the front.
     languages = OrderedDict()
-    languages['en'] = config.pop('en', 'English')
     
-    for iso in config:
-        languages[iso] = config[iso]
+    for iso_name in config:
+        for (iso, name) in iso_name.items():
+            languages[iso] = name
+    
+    # We want English always present.
+    if 'en' not in languages:
+        languages['en'] = 'English'
     
     return languages
 
