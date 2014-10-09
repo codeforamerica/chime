@@ -955,12 +955,22 @@ class TestApp (TestCase):
             response = self.app.post('/tree/user@example.com%252Fdo-things/save/hello.html',
                                      data={'layout': 'multi', 'hexsha': hexsha,
                                            'en-title': 'Greetings', 'en-body': 'Hello world.\n',
-                                           'es-title': '', 'zh-cn-title': '',
-                                           'es-body': '', 'zh-cn-body': '',
+                                           'fr-title': '', 'fr-body': '',
                                            'url-slug': 'hello'},
                                      follow_redirects=True)
 
             self.assertEquals(response.status_code, 200)
+        
+        html = response.data
+            
+        # Check that English and French forms are both present.
+        self.assertTrue('id="fr-nav" class="nav-tab"' in html)
+        self.assertTrue('id="en-nav" class="nav-tab state-active"' in html)
+        self.assertTrue('id="French-form" style="display: none"' in html)
+        self.assertTrue('id="English-form" style="display: block"' in html)
+        
+        # Verify that navigation tabs are in the correct order.
+        self.assertTrue(html.index('id="fr-nav"') < html.index('id="en-nav"'))
 
     def test_google_callback_is_successful(self):
         ''' Ensure we are redirected to the authorize-complete page
