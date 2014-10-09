@@ -263,7 +263,6 @@ def branch_edit(branch, path=None):
 
     with open(full_path, 'r') as file:
         front, body = load_jekyll_doc(file)
-        config = load_config(r.working_dir)
 
         url_slug, _ = splitext(path)
         view_path = join('/tree/%s/view' % branch_name2path(branch), path)
@@ -273,8 +272,8 @@ def branch_edit(branch, path=None):
         kwargs = dict(dict(branch=branch, safe_branch=safe_branch,
                       body=body, hexsha=c.hexsha, url_slug=url_slug,
                       front=front, email=session['email'],
-                      view_path=view_path, edit_path=path).items() + analytics_dict.items())
-      
+                      view_path=view_path, edit_path=path).items() + analytics_dict.items(),
+                      languages=load_config(r.working_dir).get('languages', []))
 
         return render_template('tree-branch-edit-file.html', **kwargs)
 
