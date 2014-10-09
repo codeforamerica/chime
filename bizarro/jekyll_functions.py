@@ -23,12 +23,13 @@ Jekyll likes to have the "---" document separator at the top:
     True
 '''
 from os.path import join, exists
+from collections import OrderedDict
 import yaml
 
 _marker = "---\n"
 
-def load_config(directory):
-    ''' Load site configuration.
+def load_languages(directory):
+    ''' Load languages from site configuration.
     '''
     config_path = join(directory, '_config.yml')
     
@@ -36,7 +37,16 @@ def load_config(directory):
         return dict()
     
     with open(config_path) as file:
-        return yaml.load(file)
+        config = yaml.load(file).get('languages', { })
+    
+    # We want English always present, and always at the front.
+    languages = OrderedDict()
+    languages['en'] = config.pop('en', 'English')
+    
+    for iso in config:
+        languages[iso] = config[iso]
+    
+    return languages
 
 def load_jekyll_doc(file):
     ''' Load jekyll front matter and remaining content from a file.

@@ -14,6 +14,7 @@
                 </li>                      
             </ul>
             <!--/div-->
+            {% if languages|length > 1 %}
             <ul class="layout-semibreve layout-tight">
                 {% for iso in languages %}
                     {% set lang = languages[iso] %}
@@ -26,6 +27,7 @@
                     <li id="{{iso}}-nav" class="{{class}}"><a class="nav-tab-link" href="" onclick="return show{{lang}}Form()">{{lang}}</a></li>
                 {% endfor %}
             </ul>
+            {% endif %}
         </nav>
         <ul class="detailed-info sketchy">
             <li><a href="">Stats</a></li>
