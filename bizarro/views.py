@@ -10,7 +10,7 @@ from requests import post
 from flask import redirect, request, Response, render_template, session, current_app, flash
 
 from . import app, repo_functions, edit_functions
-from .jekyll_functions import load_jekyll_doc, build_jekyll_site
+from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_config
 from .view_functions import (
   branch_name2path, branch_var2name, get_repo, path_type, name_branch, dos2unix,
   login_required, synch_required, synched_checkout_required, is_editable, sorted_paths,
@@ -263,18 +263,7 @@ def branch_edit(branch, path=None):
 
     with open(full_path, 'r') as file:
         front, body = load_jekyll_doc(file)
-        
-        if 'layout' in front:
-            layout_path = join(r.working_dir, '_layouts/{layout}.html'.format(**front))
-            
-            with open(layout_path, 'r') as layout_file:
-                try:
-                    layout_front, _ = load_jekyll_doc(layout_file)
-                except:
-                    pass
-                else:
-                    print 'layout:', layout_path
-                    print 'front:', layout_front
+        config = load_config(r.working_dir)
 
         url_slug, _ = splitext(path)
         view_path = join('/tree/%s/view' % branch_name2path(branch), path)

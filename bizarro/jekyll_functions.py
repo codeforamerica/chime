@@ -22,9 +22,21 @@ Jekyll likes to have the "---" document separator at the top:
     >>> file.read(4) == _marker
     True
 '''
+from os.path import join, exists
 import yaml
 
 _marker = "---\n"
+
+def load_config(directory):
+    ''' Load site configuration.
+    '''
+    config_path = join(directory, '_config.yml')
+    
+    if not exists(config_path):
+        return dict()
+    
+    with open(config_path) as file:
+        return yaml.load(file)
 
 def load_jekyll_doc(file):
     ''' Load jekyll front matter and remaining content from a file.
