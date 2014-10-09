@@ -263,6 +263,18 @@ def branch_edit(branch, path=None):
 
     with open(full_path, 'r') as file:
         front, body = load_jekyll_doc(file)
+        
+        if 'layout' in front:
+            layout_path = join(r.working_dir, '_layouts/{layout}.html'.format(**front))
+            
+            with open(layout_path, 'r') as layout_file:
+                try:
+                    layout_front, _ = load_jekyll_doc(layout_file)
+                except:
+                    pass
+                else:
+                    print 'layout:', layout_path
+                    print 'front:', layout_front
 
         url_slug, _ = splitext(path)
         view_path = join('/tree/%s/view' % branch_name2path(branch), path)
