@@ -33,11 +33,11 @@ def load_languages(directory):
     '''
     config_path = join(directory, '_config.yml')
     
-    if not exists(config_path):
-        return dict()
-    
-    with open(config_path) as file:
-        config = yaml.load(file).get('languages', { })
+    if exists(config_path):
+        with open(config_path) as file:
+            config = yaml.load(file).get('languages', { })
+    else:
+        config = { }
     
     # We want English always present, and always at the front.
     languages = OrderedDict()
