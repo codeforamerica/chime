@@ -33,6 +33,8 @@ def start_branch(clone, default_branch_name, new_branch_name):
     
     if _origin(new_branch_name) in clone.refs:
         start_point = clone.refs[_origin(new_branch_name)].commit
+    elif _origin(default_branch_name) in clone.refs:
+        start_point = clone.refs[_origin(default_branch_name)].commit
     else:
         start_point = clone.branches[default_branch_name].commit
     

@@ -10,7 +10,7 @@ from requests import post
 from flask import redirect, request, Response, render_template, session, current_app, flash
 
 from . import app, repo_functions, edit_functions
-from .jekyll_functions import load_jekyll_doc, build_jekyll_site
+from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
 from .view_functions import (
   branch_name2path, branch_var2name, get_repo, path_type, name_branch, dos2unix,
   login_required, synch_required, synched_checkout_required, is_editable, sorted_paths,
@@ -263,6 +263,7 @@ def branch_edit(branch, path=None):
 
     with open(full_path, 'r') as file:
         front, body = load_jekyll_doc(file)
+        languages = load_languages(r.working_dir)
 
         url_slug, _ = splitext(path)
         view_path = join('/tree/%s/view' % branch_name2path(branch), path)
@@ -272,8 +273,8 @@ def branch_edit(branch, path=None):
         kwargs = dict(dict(branch=branch, safe_branch=safe_branch,
                       body=body, hexsha=c.hexsha, url_slug=url_slug,
                       front=front, email=session['email'],
-                      view_path=view_path, edit_path=path).items() + analytics_dict.items())
-      
+                      view_path=view_path, edit_path=path).items() + analytics_dict.items(),
+                      languages=languages)
 
         return render_template('tree-branch-edit-file.html', **kwargs)
 
@@ -352,9 +353,14 @@ def branch_save(branch, path):
     b.checkout()
 
     front = {'layout': dos2unix(request.form.get('layout')),
-             'title':  dos2unix(request.form.get('title'))}
+             'title':  dos2unix(request.form.get('en-title'))}
+    
+    for iso in load_languages(r.working_dir):
+        if iso != 'en':
+            front['title-'+iso] = dos2unix(request.form.get(iso+'-title', ''))
+            front['body-'+iso] = dos2unix(request.form.get(iso+'-body', ''))
 
-    body = dos2unix(request.form.get('body'))
+    body = dos2unix(request.form.get('en-body'))
     edit_functions.update_page(r, path, front, body)
 
     #

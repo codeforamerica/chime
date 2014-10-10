@@ -150,6 +150,42 @@ class TestRepo (TestCase):
         self.assertEquals(branch2.commit.hexsha, branch1.commit.hexsha)
         self.assertEquals(branch2.commit.message, message)
 
+    def test_start_branch_2(self):
+        ''' Make a simple edit in a clone, verify that it appears in the other.
+        '''
+        name = str(uuid4())
+        
+        #
+        # Check out both clones.
+        #
+        self.clone1.branches.master.checkout()
+        self.clone2.branches.master.checkout()
+        
+        #
+        # Make a change to the first clone and push it.
+        #
+        with open(join(self.clone1.working_dir, 'index.md'), 'a') as file:
+            file.write('\n\n...')
+        
+        message = str(uuid4())
+        args = self.clone1, 'index.md', message, self.clone1.commit().hexsha, 'master'
+        repo_functions.save_working_file(*args)
+        
+        #
+        # Origin now has the updated master, but the second clone does not.
+        #
+        self.assertEquals(self.clone1.refs['master'].commit.hexsha, self.origin.refs['master'].commit.hexsha)
+        self.assertNotEquals(self.clone1.refs['master'].commit.hexsha, self.clone2.refs['master'].commit.hexsha)
+        
+        
+        #
+        # Now start a branch from the second clone, and look for the new master commit.
+        #
+        branch2 = repo_functions.start_branch(self.clone2, 'master', name)
+        
+        self.assertTrue(name in self.clone2.branches)
+        self.assertEquals(branch2.commit.hexsha, self.origin.refs['master'].commit.hexsha)
+
     def test_new_file(self):
         ''' Make a new file and delete an old file in a clone, verify that it appears in the other.
         '''
@@ -918,13 +954,23 @@ class TestApp (TestCase):
 
             response = self.app.post('/tree/user@example.com%252Fdo-things/save/hello.html',
                                      data={'layout': 'multi', 'hexsha': hexsha,
-                                           'title': 'Greetings', 'body': 'Hello world.\n',
-                                           'title-es': '', 'title-zh-cn': '',
-                                           'body-es': '', 'body-zh-cn': '',
+                                           'en-title': 'Greetings', 'en-body': 'Hello world.\n',
+                                           'fr-title': '', 'fr-body': '',
                                            'url-slug': 'hello'},
                                      follow_redirects=True)
 
             self.assertEquals(response.status_code, 200)
+        
+        html = response.data
+            
+        # Check that English and French forms are both present.
+        self.assertTrue('id="fr-nav" class="nav-tab"' in html)
+        self.assertTrue('id="en-nav" class="nav-tab state-active"' in html)
+        self.assertTrue('id="French-form" style="display: none"' in html)
+        self.assertTrue('id="English-form" style="display: block"' in html)
+        
+        # Verify that navigation tabs are in the correct order.
+        self.assertTrue(html.index('id="fr-nav"') < html.index('id="en-nav"'))
 
     def test_google_callback_is_successful(self):
         ''' Ensure we are redirected to the authorize-complete page

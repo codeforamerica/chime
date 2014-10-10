@@ -14,7 +14,20 @@
                 </li>                      
             </ul>
             <!--/div-->
-        
+            {% if languages|length > 1 %}
+            <ul class="layout-semibreve layout-tight">
+                {% for iso in languages %}
+                    {% set lang = languages[iso] %}
+                    {% if iso == 'en' %}
+                        {% set class = 'nav-tab state-active' %}
+                    {% else %}
+                        {% set class = 'nav-tab' %}
+                    {% endif %}
+                    
+                    <li id="{{iso}}-nav" class="{{class}}"><a class="nav-tab-link" href="" onclick="return show{{lang}}Form()">{{lang}}</a></li>
+                {% endfor %}
+            </ul>
+            {% endif %}
         </nav>
         <ul class="detailed-info sketchy">
             <li><a href="">Stats</a></li>
@@ -22,9 +35,19 @@
         </ul>
 
         <div class="layout-breve">
-                <div id="english" style="display: block" class="glayout-minim glayout-major language-edit">
+            {% for iso in languages %}
+                {% if iso == 'en' %}
+                    {% set title = front['title'] %}
+                    {% set display = 'block' %}
+                {% else %}
+                    {% set title = front['title-'+iso] %}
+                    {% set body = front['body-'+iso] %}
+                    {% set display = 'none' %}
+                {% endif %}
+            
+                <div id="{{languages[iso]}}-form" style="display: {{display}}" class="glayout-minim glayout-major language-edit">
                     <div class="badge-heading badge-gov badge-teal">
-                        <h2><input name="title" value="{{front['title']}}" type="text"></h2>
+                        <h2><input name="{{iso}}-title" value="{{title}}" type="text"></h2>
                     
                         {% with messages = get_flashed_messages() %}
                           {% if messages %}
@@ -39,10 +62,11 @@
                     <ul class="list-form">
                         <li class="form-field">
                             <label for="body">Content</label>
-                            <textarea id="en-body" class="textarea" name="body" type="text">{{body}}</textarea>
+                            <textarea id="{{iso}}-body" class="textarea" name="{{iso}}-body" type="text">{{body}}</textarea>
                         </li>                      
                     </ul>
                 </div>
+            {% endfor %}
                 <div id="statistics">
                         <button id="authorize-button" style="visibility: hidden">Authorize</button>
                 <div class="slab-blue info">
@@ -66,5 +90,26 @@
         
 
     </form>
+    <script type="text/javascript">
+    
+        {% for iso in languages %}
+            {% set lang = languages[iso] %}
+        
+            function show{{lang}}Form()
+            {
+                {% for other_iso in languages %}
+                    {% set other_lang = languages[other_iso] %}
+                    document.getElementById('{{other_lang}}-form').style.display = 'none';
+                    document.getElementById("{{other_iso}}-nav").className = "nav-tab";
+                {% endfor %}
+
+                document.getElementById('{{lang}}-form').style.display = 'block';
+                var d = document.getElementById("{{iso}}-nav");
+                d.className = d.className + " state-active";
+                return false;
+            }
+        {% endfor %}
+
+    </script>
 
 {% endblock %}
