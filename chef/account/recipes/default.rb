@@ -33,6 +33,7 @@ end
 
 python "alert ssh-keys" do
     code <<-CODE
+# -*- coding: utf-8 -*-
 import sys
 print >> sys.stderr, '''
      _________________________
