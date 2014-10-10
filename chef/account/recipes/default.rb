@@ -30,3 +30,16 @@ bash "ssh-keygen" do
   code "ssh-keygen -P '' -f /home/#{name}/.ssh/id_rsa"
   creates "/home/#{name}/.ssh/id_rsa"
 end
+
+log "ssh-keys" do
+    message <<-FOO
+     _________________________
+    |                         |
+    | You have a new SSH key. |
+    |_________________________|
+    (\__/) |
+    ( •_•) |
+    /  >  >*
+
+FOO
+end
