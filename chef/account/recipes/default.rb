@@ -34,14 +34,15 @@ end
 ruby_block 'alert ssh-keys' do
   block do
     print <<-CODE
+
      _________________________
     |                         |
-    | You have a new SSH key. |
+    | You have a new SSH key: |
+    |   /home/*/.ssh/id_rsa   |
     |_________________________|
-    (\__/) |
+    (|__/) |
     ( •_•) |
     /  >  >*
-    '''
 CODE
   end
 end
