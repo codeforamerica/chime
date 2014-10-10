@@ -33,8 +33,8 @@ end
 
 python "alert ssh-keys" do
     code <<-CODE
-    import sys
-    print >> sys.stderr, '''
+import sys
+print >> sys.stderr, '''
      _________________________
     |                         |
     | You have a new SSH key. |
