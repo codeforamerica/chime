@@ -31,8 +31,10 @@ bash "ssh-keygen" do
   creates "/home/#{name}/.ssh/id_rsa"
 end
 
-log "ssh-keys" do
-    message <<-FOO
+python "alert ssh-keys" do
+    code <<-CODE
+    import sys
+    print >> sys.stderr, '''
      _________________________
     |                         |
     | You have a new SSH key. |
@@ -40,6 +42,6 @@ log "ssh-keys" do
     (\__/) |
     ( •_•) |
     /  >  >*
-
-FOO
+    '''
+CODE
 end
