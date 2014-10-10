@@ -5,6 +5,7 @@
     "run_list":
     [
         "apache",
+        "github-pages",
         "bizarro"
     ]
 }
