@@ -136,21 +136,13 @@ def abandon_branch(clone, default_branch_name, working_branch_name):
     msg = 'Abandoned work from "%s"' % working_branch_name
     
     #
-    # Look for refs `name` or `origin/name`, merge it.
-    #
-    if working_branch_name in clone.branches:
-        commit = clone.branches[working_branch_name].commit.hexsha
-    else:
-        commit = clone.refs['origin/' + working_branch_name].commit.hexsha
-    
-    #
     # Add an empty commit with abandonment note.
     #
     clone.branches[default_branch_name].checkout()
     clone.index.commit(msg)
     
     #
-    # Delete the working branch.
+    # Delete the old branch.
     #
     clone.remotes.origin.push(':' + working_branch_name)
     
