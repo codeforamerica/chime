@@ -185,6 +185,23 @@ class TestRepo (TestCase):
         
         self.assertTrue(name in self.clone2.branches)
         self.assertEquals(branch2.commit.hexsha, self.origin.refs['master'].commit.hexsha)
+    
+    def test_delete_missing_branch(self):
+        ''' Delete a branch in a clone that's still in origin, see if it can be deleted anyway.
+        '''
+        name = str(uuid4())
+        
+        branch1 = repo_functions.start_branch(self.clone1, 'master', name)
+        
+        self.assertTrue(name in self.origin.branches)
+        
+        self.clone2.git.fetch()
+        
+        repo_functions.abandon_branch(self.clone2, 'master', name)
+        
+        self.assertFalse(name in self.origin.branches)
+        self.assertFalse(name in self.clone2.branches)
+        self.assertFalse('origin/'+name in self.clone2.refs)
 
     def test_new_file(self):
         ''' Make a new file and delete an old file in a clone, verify that it appears in the other.

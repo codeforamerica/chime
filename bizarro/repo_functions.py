@@ -135,16 +135,26 @@ def abandon_branch(clone, default_branch_name, working_branch_name):
     '''
     msg = 'Abandoned work from "%s"' % working_branch_name
     
+    #
+    # Look for refs `name` or `origin/name`, merge it.
+    #
+    if working_branch_name in clone.branches:
+        commit = clone.branches[working_branch_name].commit.hexsha
+    else:
+        commit = clone.refs['origin/' + working_branch_name].commit.hexsha
+    
     clone.branches[default_branch_name].checkout()
     clone.git.pull('origin', default_branch_name)
-    clone.git.merge(working_branch_name, '--no-ff', s='ours', m=msg) # "ours" = default
+    clone.git.merge(commit, '--no-ff', s='ours', m=msg) # "ours" = default
     clone.git.push('origin', default_branch_name)
     
     #
     # Delete the working branch.
     #
     clone.remotes.origin.push(':' + working_branch_name)
-    clone.delete_head([working_branch_name])
+    
+    if working_branch_name in clone.branches:
+        clone.delete_head([working_branch_name])
 
 def clobber_default_branch(clone, default_branch_name, working_branch_name):
     ''' Complete work on a branch by clobbering master and deleting it.
