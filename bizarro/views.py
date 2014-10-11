@@ -138,7 +138,6 @@ def merge_branch():
     r = get_repo(current_app)
     branch_name = request.form.get('branch')
     master_name = current_app.config['default_branch']
-    branch = r.branches[branch_name]
 
     try:
         action = request.form.get('action', '').lower()
