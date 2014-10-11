@@ -143,10 +143,11 @@ def abandon_branch(clone, default_branch_name, working_branch_name):
     else:
         commit = clone.refs['origin/' + working_branch_name].commit.hexsha
     
+    #
+    # Add an empty commit with abandonment note.
+    #
     clone.branches[default_branch_name].checkout()
-    clone.git.pull('origin', default_branch_name)
-    clone.git.merge(commit, '--no-ff', s='ours', m=msg) # "ours" = default
-    clone.git.push('origin', default_branch_name)
+    clone.index.commit(msg)
     
     #
     # Delete the working branch.
@@ -154,7 +155,7 @@ def abandon_branch(clone, default_branch_name, working_branch_name):
     clone.remotes.origin.push(':' + working_branch_name)
     
     if working_branch_name in clone.branches:
-        clone.delete_head([working_branch_name])
+        clone.git.branch('-D', working_branch_name)
 
 def clobber_default_branch(clone, default_branch_name, working_branch_name):
     ''' Complete work on a branch by clobbering master and deleting it.
