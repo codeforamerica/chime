@@ -390,3 +390,10 @@ def branch_save(branch, path):
     safe_branch = branch_name2path(branch)
 
     return redirect('/tree/%s/edit/%s' % (safe_branch, path), code=303)
+
+@app.route('/<path:path>')
+def all_other_paths(path):
+    '''
+    '''
+    if should_redirect():
+        return make_redirect()
