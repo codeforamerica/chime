@@ -37,17 +37,18 @@
         <div class="layout-breve">
             {% for iso in languages %}
                 {% if iso == 'en' %}
-                    {% set title = front['title'] %}
+                    {% set form_title = front['title'] %}
+                    {% set form_body = body %}
                     {% set display = 'block' %}
                 {% else %}
-                    {% set title = front['title-'+iso] %}
-                    {% set body = front['body-'+iso] %}
+                    {% set form_title = front['title-'+iso] %}
+                    {% set form_body = front['body-'+iso] %}
                     {% set display = 'none' %}
                 {% endif %}
             
                 <div id="{{languages[iso]}}-form" style="display: {{display}}" class="glayout-minim glayout-major language-edit">
                     <div class="badge-heading badge-gov badge-teal">
-                        <h2><input name="{{iso}}-title" value="{{title}}" type="text"></h2>
+                        <h2><input name="{{iso}}-title" value="{{form_title}}" type="text"></h2>
                     
                         {% with messages = get_flashed_messages() %}
                           {% if messages %}
@@ -62,7 +63,7 @@
                     <ul class="list-form">
                         <li class="form-field">
                             <label for="body">Content</label>
-                            <textarea id="{{iso}}-body" class="textarea" name="{{iso}}-body" type="text">{{body}}</textarea>
+                            <textarea id="{{iso}}-body" class="textarea" name="{{iso}}-body" type="text">{{form_body}}</textarea>
                         </li>                      
                     </ul>
                 </div>
