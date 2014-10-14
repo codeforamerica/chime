@@ -91,5 +91,4 @@ def fetch_google_analytics_for_page(page_path, access_token):
         analytics_dict = {'page_views' : response_list['totalsForAllResults']['ga:pageViews'],
                           'average_time_page' : average_time,
                           'start_date' : start_date, 'end_date' : end_date}
-        print response_list
         return analytics_dict
