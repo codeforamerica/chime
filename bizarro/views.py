@@ -1,5 +1,5 @@
-from os.path import join, isdir, realpath, splitext, isfile, stat
-from os import environ
+from os.path import join, isdir, realpath, splitext, isfile
+from os import environ, stat
 from re import compile, MULTILINE
 from mimetypes import guess_type
 from glob import glob
@@ -269,7 +269,7 @@ def branch_edit(branch, path=None):
         view_path = join('/tree/%s/view' % branch_name2path(branch), path)
         analytics_dict = {}
         token_file_path =  environ.get('TOKEN_ROOT_DIR').rstrip('/') + '/access_token'
-        if isfile(token_file_path):
+        if isfile(token_file_path) and stat(token_file_path).st_size > 0:
             access_token = open(token_file_path, 'r')
             analytics_dict = fetch_google_analytics_for_page(path, access_token.read())
             access_token.close()
