@@ -266,9 +266,11 @@ def branch_edit(branch, path=None):
 
         url_slug, _ = splitext(path)
         view_path = join('/tree/%s/view' % branch_name2path(branch), path)
-        analytics_dict = {}
         token_file_path =  environ.get('TOKEN_ROOT_DIR').rstrip('/') + '/access_token'
+        app_authorized = False
+        analytics_dict = {}
         if isfile(token_file_path) and stat(token_file_path).st_size > 0:
+            app_authorized = True
             access_token = open(token_file_path, 'r')
             analytics_dict = fetch_google_analytics_for_page(path, access_token.read())
             access_token.close()
@@ -276,7 +278,7 @@ def branch_edit(branch, path=None):
                       body=body, hexsha=c.hexsha, url_slug=url_slug,
                       front=front, email=session['email'],
                       view_path=view_path, edit_path=path).items() + analytics_dict.items(),
-                      languages=languages)
+                      languages=languages, app_authorized=app_authorized)
 
         return render_template('tree-branch-edit-file.html', **kwargs)
 
