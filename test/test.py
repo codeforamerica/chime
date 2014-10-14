@@ -815,10 +815,11 @@ class TestGoogleApiFunctions (TestCase):
     def setUp(self):
         environ['CLIENT_ID'] = 'client_id'
         environ['CLIENT_SECRET'] = 'meow_secret'
+        environ['TOKEN_ROOT_DIR'] = mkdtemp(prefix='bizarro-token-')
 
     def mock_successful_get_new_access_token(self, url, request):
         if 'https://accounts.google.com/o/oauth2/token' in url.geturl():
-            content = {'access_token': 'meowser_token', 'token_type': 'meowser_type', 'expires_in': 3920,}
+            content = {'access_token': 'meowser_access_token', 'token_type': 'meowser_type', 'expires_in': 3920,}
             return response(200, content)
 
         else:
@@ -834,14 +835,16 @@ class TestGoogleApiFunctions (TestCase):
     def test_successful_get_new_access_token(self):
         with app.test_request_context():
             with HTTMock(self.mock_successful_get_new_access_token):
-                google_api_functions.get_new_access_token('meowsers')
-                self.assertEqual(session['access_token'], 'meowser_token')
+                google_api_functions.get_new_access_token('meowser_refresh_token')
+                access_token_file = open(environ['TOKEN_ROOT_DIR'] + '/access_token', 'r')
+                self.assertEqual(access_token_file.read(), 'meowser_access_token')
+                access_token_file.close()
 
     def test_failure_to_get_new_access_token(self):
         with app.test_request_context():
             with HTTMock(self.mock_failed_get_new_access_token):
                 with self.assertRaises(Exception):
-                    google_api_functions.get_new_access_token('meowsers')
+                    google_api_functions.get_new_access_token('meowser_refresh_token')
 
 class TestApp (TestCase):
 
@@ -858,6 +861,8 @@ class TestApp (TestCase):
         environ['PROFILE_ID'] = '12345678'
         environ['CLIENT_ID'] = 'client_id'
         environ['CLIENT_SECRET'] = 'meow_secret'
+        environ['TOKEN_ROOT_DIR'] = mkdtemp(prefix='bizarro-token-')
+
 
         random.choice = MagicMock(return_value="P")
 
@@ -984,6 +989,14 @@ class TestApp (TestCase):
 
         with HTTMock(self.mock_successful_google_callback):
             response = self.app.get('/callback?state=PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP&code=code')
+
+        access_token_file = open(environ['TOKEN_ROOT_DIR'] + '/access_token', 'r')
+        self.assertEqual(access_token_file.read(), 'meowser_token')
+        access_token_file.close()
+
+        refresh_token_file = open(environ['TOKEN_ROOT_DIR'] + '/refresh_token', 'r')
+        self.assertEqual(refresh_token_file.read(), 'refresh_meows')
+        refresh_token_file.close()
 
         self.assertTrue('authorization-complete' in response.location)
 
