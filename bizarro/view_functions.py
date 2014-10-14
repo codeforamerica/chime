@@ -8,6 +8,7 @@ from git import Repo
 from flask import request, session, current_app, redirect
 
 from .repo_functions import start_branch
+from .href import needs_redirect, get_redirect
 
 def dos2unix(string):
     ''' Returns a copy of the strings with line-endings corrected.
@@ -225,3 +226,27 @@ def get_directory_path(branch, path, dir_name):
     dir_index = path.find(dir_name+'/')
     current_path = path[:dir_index] + dir_name + '/'
     return join('/tree/%s/edit' % branch_name2path(branch), current_path)
+
+def should_redirect():
+    ''' Return True if the current flask.request should redirect.
+    '''
+    if request.args.get('go') == u'\U0001f44c':
+        return False
+    
+    referer_url = request.headers.get('Referer')
+    
+    if not referer_url:
+        return False
+    
+    return needs_redirect(request.host, request.path, referer_url)
+
+def make_redirect():
+    ''' Return a flask.redirect for the current flask.request.
+    '''
+    referer_url = request.headers.get('Referer')
+
+    other = redirect(get_redirect(request.path, referer_url), 302)
+    other.headers['Cache-Control'] = 'no-store private'
+    other.headers['Vary'] = 'Referer'
+
+    return other

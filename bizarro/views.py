@@ -14,7 +14,7 @@ from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
 from .view_functions import (
   branch_name2path, branch_var2name, get_repo, path_type, name_branch, dos2unix,
   login_required, synch_required, synched_checkout_required, is_editable, sorted_paths,
-  directory_paths
+  directory_paths, should_redirect, make_redirect
   )
 from .google_api_functions import authorize_google, callback_google, fetch_google_analytics_for_page
 
