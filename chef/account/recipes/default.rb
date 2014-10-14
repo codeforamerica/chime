@@ -18,6 +18,12 @@ directory "/home/#{name}/.ssh" do
   mode "0700"
 end
 
+directory "/var/run/#{name}" do
+  owner name
+  group name
+  mode "0700"
+end
+
 file "/home/#{name}/.ssh/config" do
   owner name
   group name
