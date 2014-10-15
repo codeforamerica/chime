@@ -977,7 +977,7 @@ class TestApp (TestCase):
             response = self.app.post('/tree/user@example.com%252Fdo-things/save/hello.html',
                                      data={'layout': 'multi', 'hexsha': hexsha,
                                            'en-title': 'Greetings', 'en-body': 'Hello world.\n',
-                                           'fr-title': '', 'fr-body': '',
+                                           'en-contributors': '', 'fr-title': '', 'fr-body': '',
                                            'url-slug': 'hello'},
                                      follow_redirects=True)
 

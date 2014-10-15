@@ -38,10 +38,12 @@
             {% for iso in languages %}
                 {% if iso == 'en' %}
                     {% set form_title = front['title'] %}
+                    {% set form_contributors = front['contributors'] %}
                     {% set form_body = body %}
                     {% set display = 'block' %}
                 {% else %}
                     {% set form_title = front['title-'+iso] %}
+                    {% set form_contributors = front['contributors'+iso] %}
                     {% set form_body = front['body-'+iso] %}
                     {% set display = 'none' %}
                 {% endif %}
@@ -65,6 +67,10 @@
                             <label for="body">Content</label>
                             <textarea id="{{iso}}-body" class="textarea" name="{{iso}}-body" type="text">{{form_body}}</textarea>
                         </li>                      
+                        <li class="form-field">
+                            <label for="contributors">Contributors</label>
+                            <input name="{{iso}}-contributors" value="{{form_contributors}}" type="text">
+                        </li>
                     </ul>
                 </div>
             {% endfor %}

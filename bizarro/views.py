@@ -357,11 +357,13 @@ def branch_save(branch, path):
     b.checkout()
 
     front = {'layout': dos2unix(request.form.get('layout')),
-             'title':  dos2unix(request.form.get('en-title'))}
+             'title':  dos2unix(request.form.get('en-title')),
+             'contributors': dos2unix(request.form.get('en-contributors'))}
     
     for iso in load_languages(r.working_dir):
         if iso != 'en':
             front['title-'+iso] = dos2unix(request.form.get(iso+'-title', ''))
+            front['contributors-'+iso] = dos2unix(request.form.get(iso+'-contributors', ''))
             front['body-'+iso] = dos2unix(request.form.get(iso+'-body', ''))
 
     body = dos2unix(request.form.get('en-body'))
