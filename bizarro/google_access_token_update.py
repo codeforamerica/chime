@@ -17,9 +17,8 @@ if __name__ == '__main__':
     while True:
         try:
             token_file_path =  environ.get('TOKEN_ROOT_DIR').rstrip('/')
-            refresh_token_file = open(token_file_path + '/refresh_token', 'r')
-            refresh_token = refresh_token_file.read()
-            refresh_token_file.close()
+            with open(token_file_path + '/refresh_token', 'r') as f:
+                refresh_token = f.read()
             get_new_access_token(refresh_token)
         except:
             traceback.print_exc(file=sys.stderr)

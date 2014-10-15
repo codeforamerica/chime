@@ -42,14 +42,11 @@ def callback_google(state, code, callback_uri):
     access = json.loads(resp.content)
 
     token_file_path =  os.environ.get('TOKEN_ROOT_DIR').rstrip('/')
-    access_token_file = open(token_file_path + '/access_token', "w")
-    access_token_file.write(access['access_token'])
-    access_token_file.close()
+    with open(token_file_path + '/access_token', "w") as f:
+        f.write(access['access_token'])
 
-    refresh_token_file = open(token_file_path + '/refresh_token', "w")
-    refresh_token_file.write(access['refresh_token'])
-    refresh_token_file.close()
-
+    with open(token_file_path + '/refresh_token', "w") as f:
+        f.write(access['refresh_token'])
 
 def get_new_access_token(refresh_token):
     ''' Get a new access token with the refresh token so a user doesn't need to
@@ -65,9 +62,8 @@ def get_new_access_token(refresh_token):
     access = json.loads(resp.content)
 
     token_file_path =  os.environ.get('TOKEN_ROOT_DIR').rstrip('/') + '/access_token'
-    access_token_file = open(token_file_path, "w")
-    access_token_file.write(access['access_token'])
-    access_token_file.close()
+    with open(token_file_path, "w") as f:
+        f.write(access['access_token'])
 
 def fetch_google_analytics_for_page(page_path, access_token):
     ''' Get stats for a particular page

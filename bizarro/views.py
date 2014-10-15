@@ -271,9 +271,8 @@ def branch_edit(branch, path=None):
         analytics_dict = {}
         if isfile(token_file_path) and stat(token_file_path).st_size > 0:
             app_authorized = True
-            access_token = open(token_file_path, 'r')
-            analytics_dict = fetch_google_analytics_for_page(path, access_token.read())
-            access_token.close()
+            with open(token_file_path, 'r') as f:
+                analytics_dict = fetch_google_analytics_for_page(path, f.read())
         kwargs = dict(dict(branch=branch, safe_branch=safe_branch,
                       body=body, hexsha=c.hexsha, url_slug=url_slug,
                       front=front, email=session['email'],
