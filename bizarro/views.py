@@ -14,7 +14,7 @@ from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
 from .view_functions import (
   branch_name2path, branch_var2name, get_repo, path_type, name_branch, dos2unix,
   login_required, synch_required, synched_checkout_required, is_editable, sorted_paths,
-  directory_paths, should_redirect, make_redirect
+  directory_paths, should_redirect, make_redirect, get_google_token
   )
 from .google_api_functions import authorize_google, callback_google, fetch_google_analytics_for_page
 
@@ -266,7 +266,7 @@ def branch_edit(branch, path=None):
 
         url_slug, _ = splitext(path)
         view_path = join('/tree/%s/view' % branch_name2path(branch), path)
-        token_file_path =  environ.get('TOKEN_ROOT_DIR').rstrip('/') + '/access_token'
+        token_file_path =  get_google_token()
         app_authorized = False
         analytics_dict = {}
         if isfile(token_file_path) and stat(token_file_path).st_size > 0:

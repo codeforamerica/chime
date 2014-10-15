@@ -32,6 +32,11 @@ def get_repo(flask_app):
     
     return user_repo
 
+def get_google_token():
+    '''
+    '''
+    return environ.get('TOKEN_ROOT_DIR', '.').rstrip('/') + '/access_token'
+
 def name_branch(description):
     ''' Generate a name for a branch from a description.
     
