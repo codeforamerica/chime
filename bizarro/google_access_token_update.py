@@ -1,6 +1,7 @@
 from .google_api_functions import get_new_access_token
 from os import environ
 import argparse, traceback, sys
+from time import sleep
 
 parser = argparse.ArgumentParser(description='Update google access token')
 
