@@ -139,7 +139,10 @@ File explorer icons
 	background:url(images/icons/png/16px/image.png) no-repeat;
 	padding-left:1.45em;
 }
-
+input[type="file"]{
+	border:none;
+	padding:1em 0 0 0;
+}
 .directory-crumb,
 .directory-crumb a{
 	font-weight:normal;
