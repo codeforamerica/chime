@@ -165,6 +165,7 @@ input[type="file"]{
 .button.button-edit{
 	background-color:#8EB85B;
 	color:fff;
+	padding:0;
 }
 
 input[type=submit].button-delete,
@@ -173,6 +174,14 @@ button[type=submit].button-delete{
 	color:red;
 }
 
+.button, 
+.button[class*="button"]:link,
+input[type="submit"],
+.button-alternative[class*="button-alternative"]{
+	height: 30px;
+	padding: 0 24px;
+	line-height: 28px;
+}
 .sketchy
 {
     background-image: url('images/dots.png');
