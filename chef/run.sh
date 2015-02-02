@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/bash -e
 #
 # Install the chef ruby gem if chef-solo is not in the path.
 # This script is safe to run multiple times.
