@@ -1,4 +1,4 @@
-Bizarro
+Ceviche
 =======
 
 An experimental CMS that edits Jekyll sites and uses Git persistence and history.  Very much a WIP that is entirely untested and unproven, consider this "Reckon 0.1".
@@ -6,7 +6,7 @@ An experimental CMS that edits Jekyll sites and uses Git persistence and history
 Install
 -------
 
-1. Bizarro CMS is a Python Flask web application. Follow the instructions on
+1. Ceviche CMS is a Python Flask web application. Follow the instructions on
    [Python Virtual Environments](https://github.com/codeforamerica/howto/blob/master/Python-Virtualenv.md)
    to prepare your Python development space.
 
