@@ -25,17 +25,18 @@ directory "/var/opt/bizarro-work" do
   mode "0775"
 end
 
-directory "/var/opt/bizarro-site" do
-  owner name
-  group name
-  mode "0775"
-end
-
-tar_file = File.realpath(File.join(File.dirname(__FILE__), 'sample-site.tar.gz'))
-
-bash "tar -xzf sample-site.tar.gz" do
-  user name
-  code "tar -C /var/opt/bizarro-site -xzf #{tar_file}"
+bash "git clone https://github.com/codeforamerica/ceviche-starter.git" do
+  user 'root'
+  flags '-e'
+  code <<-GIT
+DIR=`mktemp -d /tmp/bizarro-site-XXXXXX`
+git clone --bare https://github.com/codeforamerica/ceviche-starter.git $DIR
+git --git-dir $DIR remote rm origin
+chown #{name}:#{name} $DIR
+chmod 0775 $DIR
+rm -rf /var/opt/bizarro-site
+mv $DIR /var/opt/bizarro-site
+GIT
   creates "/var/opt/bizarro-site/config"
 end
 

@@ -11,8 +11,7 @@ Install
    to prepare your Python development space.
 
 2. You will need a bare Github repository in the directory `sample-site`
-   (this will become configurable in the future). Unpack the supplied
-   [sample-site.tar.gz](sample-site.tar.gz) to get an empty repository.
+   (this will become configurable in the future).
 
 3. copy .env.sample to .env
 
