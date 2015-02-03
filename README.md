@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/codeforamerica/ceviche-cms.png?label=ready&title=Ready)](https://waffle.io/codeforamerica/ceviche-cms)
 Ceviche
 =======
 
