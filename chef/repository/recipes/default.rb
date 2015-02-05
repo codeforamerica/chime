@@ -6,12 +6,6 @@ starter_repo = node[:starter]
 github_repo = ENV['GITHUB_REPO']
 github_token = ENV['GITHUB_TOKEN']
 
-directory "/var/opt/bizarro-work" do
-  owner name
-  group name
-  mode "0775"
-end
-
 python "create Github repository" do
   user name
   code <<-GITHUB
