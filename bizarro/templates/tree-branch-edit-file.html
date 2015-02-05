@@ -47,8 +47,7 @@
                 {% endif %}
             
                 <div id="{{languages[iso]}}-form" style="display: {{display}}" class="glayout-minim glayout-major language-edit">
-                    <div class="badge-heading badge-gov badge-teal">
-                        <h2><input name="{{iso}}-title" value="{{form_title}}" type="text"></h2>
+                
                     
                         {% with messages = get_flashed_messages() %}
                           {% if messages %}
@@ -59,10 +58,12 @@
                             </ul>
                           {% endif %}
                         {% endwith %}
-                    </div>
+                   
                     <ul class="list-form">
+                        <li class="form field">
+                            <input name="{{iso}}-title" value="{{form_title}}" type="text">
+                        </li>
                         <li class="form-field">
-                            <label for="body">Content</label>
                             <textarea id="{{iso}}-body" class="textarea" name="{{iso}}-body" type="text">{{form_body}}</textarea>
                         </li>                      
                     </ul>
