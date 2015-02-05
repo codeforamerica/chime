@@ -1,5 +1,6 @@
 {
     "user": "bizarro",
+    "starter": "https://github.com/codeforamerica/ceviche-starter.git",
     "repo": "https://github.com/codeforamerica/bizarro-cms.git",
     "ref": "master",
     "run_list":
