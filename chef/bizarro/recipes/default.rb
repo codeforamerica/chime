@@ -1,22 +1,27 @@
 include_recipe "python"
 include_recipe "repository"
 
+repo_dir = File.realpath(File.join(File.dirname(__FILE__), '..', '..', '..'))
+name = node[:user]
+
 #
 # Put code where it needs to be.
 #
-git "/opt/bizarro-cms" do
-  repository node['repo']
-  reference node['ref']
+execute "pip install -r requirements.txt" do
+  cwd repo_dir
 end
 
-execute "pip install -r requirements.txt" do
-  cwd "/opt/bizarro-cms"
+execute "pip install -U ." do
+  cwd repo_dir
 end
 
 #
 # Populate working directories.
 #
-name = node[:user]
+directory "/var/opt/bizarro-work" do
+  action :delete
+  recursive true
+end
 
 directory "/var/opt/bizarro-work" do
   owner name
@@ -31,7 +36,7 @@ env_file = File.realpath(File.join(File.dirname(__FILE__), 'honcho-env'))
 
 execute "honcho export upstart /etc/init" do
   command "honcho -e #{env_file} export -u #{name} -a bizarro-cms upstart /etc/init"
-  cwd "/opt/bizarro-cms"
+  cwd repo_dir
 end
 
 #
