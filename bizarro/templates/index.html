@@ -36,7 +36,7 @@
                     <form action="/merge" method="POST">
                         <a class="button-edit button" href="/tree/{{item.path}}/edit/">Open</a>
                         {% if item.needs_peer_review %}
-                            <a href="mailto:?to=&amp;subject={{item.review_subject|urlencode}}&amp;body={{item.review_body|urlencode}}" class="button-review">Submit for review</a>
+                            <a href="mailto:?to=&amp;subject={{item.review_subject|urlencode}}&amp;body={{item.review_body|urlencode}}" class="button-review button">Submit for review</a>
                         {% endif %}
                         <button name="action" value="abandon" type="submit" class="button button-delete">Delete task</button>
                         <input type="hidden" name="branch" value="{{item.name}}">
