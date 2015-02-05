@@ -2,7 +2,8 @@ include_recipe "account"
 package "git"
 
 name = node[:user]
-starter_repo = node[:starter]
+starter_repo = node[:starter_repo]
+github_org = node[:github_org]
 github_repo = ENV['GITHUB_REPO']
 github_token = ENV['GITHUB_TOKEN']
 
@@ -16,7 +17,7 @@ info = dict(
     private=False, has_issues=False, has_wiki=False, has_downloads=False
     )
 
-url = 'https://api.github.com/orgs/ceviche/repos'
+url = 'https://api.github.com/orgs/#{github_org}/repos'
 head = {'Content-Type': 'application/json'}
 auth = ('#{github_token}', 'x-oauth-basic')
 resp = requests.post(url, json.dumps(info), headers=head, auth=auth)
@@ -27,10 +28,20 @@ if code == 422:
 elif code not in range(200, 299):
     raise RuntimeError('Github repository creation failed, status {}'.format(code))
 
+GITHUB
+end
+
+python "create Github deploy key" do
+  user name
+  code <<-GITHUB
+import json, requests
+
 with open('/home/#{name}/.ssh/id_rsa.pub') as file:
     input = dict(title='test-key', key=file.read())
 
-url = 'https://api.github.com/repos/ceviche/#{github_repo}/keys'
+url = 'https://api.github.com/repos/#{github_org}/#{github_repo}/keys'
+head = {'Content-Type': 'application/json'}
+auth = ('#{github_token}', 'x-oauth-basic')
 resp = requests.post(url, json.dumps(input), headers=head, auth=auth)
 code = resp.status_code
 
@@ -66,7 +77,7 @@ bash "clone from starter repo to Github origin remote" do
 git fetch #{starter_repo}
 git branch master FETCH_HEAD
 
-git remote add origin git@github.com:ceviche/#{github_repo}.git
+git remote add origin git@github.com:#{github_org}/#{github_repo}.git
 git push -u origin master
 GIT
 end
