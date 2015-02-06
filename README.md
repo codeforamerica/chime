@@ -31,4 +31,4 @@ Who maintains this?
 You can read a bit more about what we're up to over here http://digifrodo.tumblr.com
 
 [![Stories in Ready](https://badge.waffle.io/codeforamerica/ceviche-cms.svg?label=ready&title=Ready)](http://waffle.io/codeforamerica/ceviche-cms)
-
+[![Build Status](https://travis-ci.org/codeforamerica/ceviche-cms.svg?branch=master)](https://travis-ci.org/codeforamerica/ceviche-cms)
