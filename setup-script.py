@@ -1,17 +1,40 @@
+''' Setup script for new Ceviche instance in EC2.
+
+Asks for Github login credentials and desired repository
+name to create under https://github.com/ceviche organization.
+
+Requires four environment variables:
+- GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET for Github authorization.
+- AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY for Amazon EC2 setup.
+
+Follows the process described here:
+  https://github.com/codeforamerica/ceviche-cms/issues/39#issuecomment-72957188
+
+'''
 from getpass import getpass
 from urlparse import urljoin
 from os import environ
 from time import sleep
-import json, requests
+import re, json, requests
 
 from boto.ec2 import EC2Connection
 from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
 
 def check_status(resp, task):
-    '''
+    ''' Raise a RuntimeError if response is not HTTP 2XX.
     '''
     if resp.status_code not in range(200, 299):
         raise RuntimeError('Got {} trying to {}'.format(resp.status_code, task))
+
+def check_repo_state(reponame, token):
+    ''' Return True if repository name exists.
+    '''
+    auth = token, 'x-oauth-basic'
+    path = '/repos/ceviche/{}'.format(reponame)
+    resp = requests.get(urljoin(github_api_base, path), auth=auth)
+    
+    return bool(resp.status_code == 200)
+
 
 #
 # Establish some baseline details.
@@ -22,6 +45,10 @@ github_client_secret = environ['GITHUB_CLIENT_SECRET']
 
 username = raw_input('Enter Github username: ')
 password = getpass('Enter Github password: ')
+reponame = raw_input('Enter new Github repository name: ')
+
+if not re.match(r'\w+(-\w+)*$', reponame):
+    raise RuntimeError('Repository "{}" does not match "\w+(-\w+)*$"'.format(reponame))
 
 ec2 = EC2Connection()
 
@@ -56,14 +83,17 @@ check_status(resp, 'check authorization {}'.format(github_auth_id))
 #
 # EC2
 #
+if check_repo_state(reponame, github_token):
+    raise RuntimeError('{} already exists, not going to run EC2'.format(reponame))
+
 user_data = '''#!/bin/sh -ex
 apt-get update -y
 apt-get install -y git htop
 
 DIR=/var/opt/ceviche-cms
 git clone -b {branch} https://github.com/codeforamerica/ceviche-cms.git $DIR
-env GITHUB_REPO=test-repo GITHUB_TOKEN={token} $DIR/chef/run.sh
-'''.format(branch='setup-new-instance-issue-39', token=github_token)
+env GITHUB_REPO={repo} GITHUB_TOKEN={token} $DIR/chef/run.sh
+'''.format(branch='setup-new-instance-issue-39', token=github_token, repo=reponame)
 
 device_sda1 = BlockDeviceType(size=16, delete_on_termination=True)
 device_map = BlockDeviceMapping(); device_map['/dev/sda1'] = device_sda1
@@ -78,17 +108,14 @@ instance.add_tag('Name', 'Ceviche Test')
 print 'Prepared EC2 instance', instance
 
 while True:
+    print 'Waiting for', reponame
     sleep(30)
-    
-    path = '/repos/ceviche/test-repo'
-    auth = github_token, 'x-oauth-basic'
-    resp = requests.get(urljoin(github_api_base, path), auth=auth)
-    
-    print 'Waiting for', path
-    
-    if resp.status_code == 200:
-        print resp.json().get('url')
+
+    if check_repo_state(reponame, github_token):
+        print reponame, 'exists'
         break
+
+sleep(30) # give it time to prepare a deploy key
 
 #
 # Delete Github authorization.
