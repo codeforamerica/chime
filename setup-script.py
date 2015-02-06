@@ -1,7 +1,11 @@
 from getpass import getpass
 from urlparse import urljoin
 from os import environ
+from time import sleep
 import json, requests
+
+from boto.ec2 import EC2Connection
+from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
 
 def check_status(resp, task):
     '''
@@ -18,6 +22,8 @@ github_client_secret = environ['GITHUB_CLIENT_SECRET']
 
 username = raw_input('Enter Github username: ')
 password = getpass('Enter Github password: ')
+
+ec2 = EC2Connection()
 
 #
 # Create a new authorization with Github.
@@ -46,6 +52,43 @@ kwargs = dict(client_id=github_client_id, token=github_token)
 url = urljoin(github_api_base, path.format(**kwargs))
 resp = requests.get(url, auth=(github_client_id, github_client_secret))
 check_status(resp, 'check authorization {}'.format(github_auth_id))
+
+#
+# EC2
+#
+user_data = '''#!/bin/sh -ex
+apt-get update -y
+apt-get install -y git htop
+
+DIR=/var/opt/ceviche-cms
+git clone -b {branch} https://github.com/codeforamerica/ceviche-cms.git $DIR
+env GITHUB_REPO=test-repo GITHUB_TOKEN={token} $DIR/chef/run.sh
+'''.format(branch='setup-new-instance-issue-39', token=github_token)
+
+device_sda1 = BlockDeviceType(size=16, delete_on_termination=True)
+device_map = BlockDeviceMapping(); device_map['/dev/sda1'] = device_sda1
+
+ec2_args = dict(instance_type='c3.large', user_data=user_data,
+                key_name='cfa-keypair-2015', block_device_map=device_map,
+                security_groups=['default'])
+
+instance = ec2.run_instances('ami-e0296b88', **ec2_args).instances[0]
+instance.add_tag('Name', 'Ceviche Test')
+
+print 'Prepared EC2 instance', instance
+
+while True:
+    sleep(30)
+    
+    path = '/repos/ceviche/test-repo'
+    auth = github_token, 'x-oauth-basic'
+    resp = requests.get(urljoin(github_api_base, path), auth=auth)
+    
+    print 'Waiting for', path
+    
+    if resp.status_code == 200:
+        print resp.json().get('url')
+        break
 
 #
 # Delete Github authorization.
