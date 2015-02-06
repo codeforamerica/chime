@@ -102,7 +102,7 @@ ec2_args = dict(instance_type='c3.large', user_data=user_data,
                 key_name='cfa-keypair-2015', block_device_map=device_map,
                 security_groups=['default'])
 
-instance = ec2.run_instances('ami-e0296b88', **ec2_args).instances[0]
+instance = ec2.run_instances('ami-f8763a90', **ec2_args).instances[0]
 instance.add_tag('Name', 'Ceviche Test')
 
 print 'Prepared EC2 instance', instance
