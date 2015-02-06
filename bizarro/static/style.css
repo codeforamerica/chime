@@ -8,6 +8,12 @@ body h1{
 	letter-spacing: -2px;
 	padding:0.5em;
 }
+body h2{
+	color: #000;
+	font-family: "Interstate", "Gotham A", "Gotham B", "Open Sans Regular", "Verdana", "Helvetica", "Arial";
+	font-size: 1.2em;
+	line-height: 28px;
+}
 body .nav-tabs{
 	margin-top:0;
 	padding-top:0;
@@ -49,7 +55,27 @@ body .nav-tabs>p {
 .layout-breve{
 	padding-top:0;
 }
-
+.current-tasks{
+	margin-top:2em;
+	padding:1em;
+}
+.current-tasks h2{
+	padding-bottom:0;
+	margin-bottom:0;
+	font-weight:bold;
+}
+.current-tasks p{
+	padding-top:0;
+	margin-top:0;
+}
+.new-task{
+	background-color:#eee;
+	padding:1em;
+	width:33%;
+}
+.new-task label{
+	text-transform: none;
+}
 .language-edit{
 	overflow:auto;
 	width:70%;
