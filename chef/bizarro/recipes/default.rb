@@ -1,4 +1,5 @@
-include_recipe "python"
+package 'python-pip'
+package 'build-essential'
 include_recipe "repository"
 
 repo_dir = File.realpath(File.join(File.dirname(__FILE__), '..', '..', '..'))
@@ -10,6 +11,8 @@ name = node[:user]
 execute "pip install -r requirements.txt" do
   cwd repo_dir
 end
+
+execute 'pip install honcho[export]'
 
 execute "pip install -U ." do
   cwd repo_dir

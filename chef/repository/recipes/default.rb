@@ -1,5 +1,8 @@
+package 'git'
+package 'python-pip'
+execute 'pip install requests==2.2.1'
+
 include_recipe "account"
-package "git"
 
 name = node[:user]
 starter_repo = node[:starter_repo]
