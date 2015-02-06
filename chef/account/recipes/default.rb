@@ -47,7 +47,7 @@ ruby_block 'alert ssh-keys' do
     |   /home/*/.ssh/id_rsa   |
     |_________________________|
     (|__/) |
-    ( •_•) |
+    ( ^_^) |
     /  >  >*
 CODE
   end
