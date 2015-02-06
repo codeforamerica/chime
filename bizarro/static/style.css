@@ -72,6 +72,7 @@ body .nav-tabs>p {
 	background-color:#eee;
 	padding:1em;
 	width:33%;
+	margin-left:1em;
 }
 .new-task label{
 	text-transform: none;
