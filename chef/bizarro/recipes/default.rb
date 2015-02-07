@@ -3,7 +3,7 @@ package 'build-essential'
 include_recipe "repository"
 require 'socket'
 
-hostname = Socket.gethostname()
+hostname = Socket.gethostbyname(Socket.gethostname).first
 repo_dir = File.realpath(File.join(File.dirname(__FILE__), '..', '..', '..'))
 name = node[:user]
 
