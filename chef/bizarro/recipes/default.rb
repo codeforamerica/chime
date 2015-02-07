@@ -1,7 +1,9 @@
 package 'python-pip'
 package 'build-essential'
 include_recipe "repository"
+require 'socket'
 
+hostname = Socket.gethostname()
 repo_dir = File.realpath(File.join(File.dirname(__FILE__), '..', '..', '..'))
 name = node[:user]
 
@@ -35,7 +37,15 @@ end
 #
 # Ensure upstart job exists.
 #
-env_file = File.realpath(File.join(File.dirname(__FILE__), 'honcho-env'))
+env_file = '/etc/ceviche.conf'
+
+file env_file do
+  content <<-CONF
+REPO_PATH=/var/opt/bizarro-site
+WORK_PATH=/var/opt/bizarro-work
+BROWSERID_URL=#{hostname}
+CONF
+end
 
 execute "honcho export upstart /etc/init" do
   command "honcho -e #{env_file} export -u #{name} -a bizarro-cms upstart /etc/init"
