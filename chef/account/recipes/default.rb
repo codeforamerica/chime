@@ -1,4 +1,7 @@
+package 'python-pip'
+
 name = node[:user]
+github_token = ENV['GITHUB_TOKEN']
 
 group name
 user name do
@@ -33,22 +36,30 @@ end
 
 bash "ssh-keygen" do
   user name
-  code "ssh-keygen -P '' -f /home/#{name}/.ssh/id_rsa"
-  creates "/home/#{name}/.ssh/id_rsa"
+  creates "/home/#{name}/.ssh/id_rsa.pub"
+  code <<-KEYGEN
+ssh-keygen -P '' -f /home/#{name}/.ssh/id_rsa
+rm -f /var/run/#{name}/deploy-key.txt
+KEYGEN
 end
 
-ruby_block 'alert ssh-keys' do
-  block do
-    print <<-CODE
+if github_token then
 
-     _________________________
-    |                         |
-    | You have a new SSH key: |
-    |   /home/*/.ssh/id_rsa   |
-    |_________________________|
-    (|__/) |
-    ( ^_^) |
-    /  >  >*
-CODE
-  end
+execute 'pip install itsdangerous'
+
+python "sign ssh public key" do
+  user name
+  creates "/var/run/#{name}/deploy-key.txt"
+  code <<-PUBKEY
+from itsdangerous import Signer
+signer = Signer('#{github_token}', salt='deploy-key')
+
+with open('/home/#{name}/.ssh/id_rsa.pub') as file:
+    pubkey = file.readline().strip()
+
+with open('/var/run/#{name}/deploy-key.txt', 'w') as file:
+    file.write(signer.sign(pubkey))
+PUBKEY
+end
+
 end
