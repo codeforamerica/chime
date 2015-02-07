@@ -4,9 +4,16 @@ body{
 body h1{
 	background-color:#e5e5e5;
 	margin:0;
-	font-size:2em;
-	letter-spacing: -2px;
-	padding:0.5em;
+	font-size:1.5em;
+	letter-spacing: 0.25px;
+	padding:0.5em 0.5em 0.5em 1.75em;
+	color:red;
+	text-transform:none;
+	font-weight:normal;
+}
+body h1 a:link, 
+body h1 a:visited{
+	color:#999;
 }
 body h2{
 	color: #000;
