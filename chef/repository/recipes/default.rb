@@ -10,6 +10,34 @@ github_org = node[:github_org]
 github_repo = ENV['GITHUB_REPO']
 github_token = ENV['GITHUB_TOKEN']
 
+bash "init bare /var/opt/bizarro-site" do
+  user 'root'
+  flags '-e'
+  code <<-GIT
+DIR=`mktemp -d /tmp/bizarro-site-XXXXXX`
+git init --shared=group --bare $DIR
+
+chown -R #{name}:#{name} $DIR
+chmod -R ug+rwX $DIR
+chmod -R o+rX $DIR
+
+rm -rf /var/opt/bizarro-site
+mv $DIR /var/opt/bizarro-site
+GIT
+end
+
+bash "clone from starter repo" do
+  user name
+  flags '-e'
+  cwd '/var/opt/bizarro-site'
+  code <<-GIT
+git fetch #{starter_repo}
+git branch master FETCH_HEAD
+GIT
+end
+
+if github_repo and github_token then
+
 python "create Github repository" do
   user name
   code <<-GITHUB
@@ -56,31 +84,14 @@ elif code not in range(200, 299):
 GITHUB
 end
 
-bash "init bare /var/opt/bizarro-site" do
-  user 'root'
-  flags '-e'
-  code <<-GIT
-DIR=`mktemp -d /tmp/bizarro-site-XXXXXX`
-git init --shared=group --bare $DIR
-
-chown -R #{name}:#{name} $DIR
-chmod -R ug+rwX $DIR
-chmod -R o+rX $DIR
-
-rm -rf /var/opt/bizarro-site
-mv $DIR /var/opt/bizarro-site
-GIT
-end
-
-bash "clone from starter repo to Github origin remote" do
+bash "push to Github origin remote" do
   user name
   flags '-e'
   cwd '/var/opt/bizarro-site'
   code <<-GIT
-git fetch #{starter_repo}
-git branch master FETCH_HEAD
-
 git remote add origin git@github.com:#{github_org}/#{github_repo}.git
 git push -u origin master
 GIT
+end
+
 end
