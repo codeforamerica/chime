@@ -82,18 +82,32 @@ check_status(resp, 'check authorization {}'.format(github_auth_id))
 
 #
 # EC2
+# Set public hostname in EC2 for Browser ID based on this:
+# http://www.onepwr.org/2012/04/26/chef-recipe-to-setup-up-a-new-nodes-fqdn-hostname-etc-properly/
 #
 if check_repo_state(reponame, github_token):
     raise RuntimeError('{} already exists, not going to run EC2'.format(reponame))
 
 user_data = '''#!/bin/sh -ex
 apt-get update -y
-apt-get install -y git htop
+apt-get install -y git htop curl
 
+# What is our public DNS name?
+ipaddr=$(ifconfig eth0 | grep 'inet addr:'| grep -v '127.0.0.1' | cut -d: -f2 | awk '{{ print $1}}')
+fullname=`curl -s http://169.254.169.254/latest/meta-data/public-hostname`
+shortname=`echo $fullname | cut -d. -f1`
+
+# Configure host name for Ubuntu.
+sed -i '/ '$fullname'/ d' /etc/hosts
+echo "$ipaddr $fullname $shortname" >> /etc/hosts
+echo $shortname > /etc/hostname
+hostname -F /etc/hostname
+
+# Install Ceviche.
 DIR=/var/opt/ceviche-cms
 git clone -b {branch} https://github.com/codeforamerica/ceviche-cms.git $DIR
 env GITHUB_REPO={repo} GITHUB_TOKEN={token} $DIR/chef/run.sh
-'''.format(branch='setup-new-instance-issue-39', token=github_token, repo=reponame)
+'''.format(branch='fix-domain-name-issue-74', token=github_token, repo=reponame)
 
 device_sda1 = BlockDeviceType(size=16, delete_on_termination=True)
 device_map = BlockDeviceMapping(); device_map['/dev/sda1'] = device_sda1
@@ -105,7 +119,13 @@ ec2_args = dict(instance_type='c3.large', user_data=user_data,
 instance = ec2.run_instances('ami-f8763a90', **ec2_args).instances[0]
 instance.add_tag('Name', 'Ceviche Test')
 
-print 'Prepared EC2 instance', instance
+print 'Prepared EC2 instance', instance.id
+
+while not instance.dns_name:
+    instance.update()
+    sleep(1)
+
+print 'Available at', instance.dns_name
 
 while True:
     print 'Waiting for', reponame
