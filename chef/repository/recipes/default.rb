@@ -68,7 +68,7 @@ python "create Github deploy key" do
 import json, requests
 
 with open('/home/#{name}/.ssh/id_rsa.pub') as file:
-    input = dict(title='test-key', key=file.read())
+    input = dict(title='token-key', key=file.read())
 
 url = 'https://api.github.com/repos/#{github_org}/#{github_repo}/keys'
 head = {'Content-Type': 'application/json'}

@@ -17,6 +17,7 @@ from os import environ
 from time import sleep
 import re, json, requests
 
+from itsdangerous import Signer
 from boto.ec2 import EC2Connection
 from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
 
@@ -117,7 +118,7 @@ ec2_args = dict(instance_type='c3.large', user_data=user_data,
                 security_groups=['default'])
 
 instance = ec2.run_instances('ami-f8763a90', **ec2_args).instances[0]
-instance.add_tag('Name', 'Ceviche Test')
+instance.add_tag('Name', 'Ceviche Test {}'.format(reponame))
 
 print 'Prepared EC2 instance', instance.id
 
@@ -135,7 +136,49 @@ while True:
         print reponame, 'exists'
         break
 
-sleep(30) # give it time to prepare a deploy key
+#
+# Add a new repository deploy key.
+# https://developer.github.com/v3/repos/keys/#create
+#
+while True:
+    path = '/.well-known/deploy-key.txt'
+    print 'Waiting for', path
+    sleep(5)
+    
+    resp = requests.get('http://{}{}'.format(instance.dns_name, path))
+    
+    if resp.status_code == 200:
+        break
+
+deploy_key = Signer(github_token, salt='deploy-key').unsign(resp.content)
+keys_url = 'https://api.github.com/repos/ceviche/{}/keys'.format(reponame)
+head = {'Content-Type': 'application/json'}
+body = json.dumps(dict(title='ceviche-key', key=deploy_key))
+resp = requests.post(keys_url, body, headers=head, auth=(username, password))
+code = resp.status_code
+
+if code == 422:
+    # Github deploy key already exists, but likely to be tied to OAuth token.
+    # Delete it, and recreate with basic auth so it survives auth deletion.
+    resp = requests.get(keys_url, auth=(username, password))
+    key_url = [k['url'] for k in resp.json() if k['title'] == 'token-key'][0]
+    resp = requests.delete(key_url, auth=(username, password))
+    code = resp.status_code
+    
+    if code not in range(200, 299):
+        raise RuntimeError('Github deploy key deletion failed, status {}'.format(code))
+    
+    print 'Deleted temporary token key'
+    resp = requests.post(keys_url, body, headers=head, auth=(username, password))
+    code = resp.status_code
+    
+    if code not in range(200, 299):
+        raise RuntimeError('Github deploy key recreation failed, status {}'.format(code))
+    
+elif code not in range(200, 299):
+    raise RuntimeError('Github deploy key creation failed, status {}'.format(code))
+
+print 'Created permanent deploy key', 'ceviche-key'
 
 #
 # Delete Github authorization.

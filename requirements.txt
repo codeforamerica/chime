@@ -9,3 +9,4 @@ httmock==1.2.2
 mock==1.0.1
 gunicorn >= 19.0
 boto==2.36.0
+itsdangerous==0.24
