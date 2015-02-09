@@ -70,15 +70,20 @@ def fetch_google_analytics_for_page(page_path, access_token):
     '''
     start_date = (date.today() - timedelta(days=7)).isoformat()
     end_date = date.today().isoformat()
-    profile_id = os.environ.get('PROFILE_ID')
-    repo_root_dir = os.environ.get('REPO_ROOT_DIR', '')
-    repo_root_dir =  repo_root_dir.rstrip('/') + '/'
-    filter_page_path = sub(r'\.html$|\.md$', '', page_path)
-    query_string = urlencode({'ids' : 'ga:' + profile_id, 'dimensions' : 'ga:previousPagePath,ga:pagePath',
+    ga_profile_id = os.environ.get('PROFILE_ID')
+    ga_domain = os.environ.get('PROJECT_DOMAIN')
+    page_path_dir, page_path_file = os.path.split(page_path)
+    filename_base, filename_ext = os.path.splitext(page_path_file)
+    or_else = '|' if (filename_base == 'index') else ''
+    filename_pattern = '({page_path_file}|{filename_base}{or_else})'.format(**locals())
+    filter_page_path_pattern = os.path.join(ga_domain, page_path_dir, filename_pattern)
+    query_string = urlencode({'ids' : 'ga:' + ga_profile_id, 'dimensions' : 'ga:previousPagePath,ga:pagePath',
                                'metrics' : 'ga:pageViews,ga:avgTimeOnPage,ga:exitRate',
-                               'filters' : 'ga:pagePath==' + repo_root_dir + filter_page_path, 'start-date' : start_date,
+                               'filters' : 'ga:pagePath=~' + filter_page_path_pattern, 'start-date' : start_date,
                                'end-date' : end_date, 'max-results' : '1', 'access_token' : access_token})
+
     resp = get('https://www.googleapis.com/analytics/v3/data/ga' + '?' + query_string)
+    # :TODO: resp.json?
     response_list = json.loads(resp.content)
     if 'error' in response_list:
         return {}
