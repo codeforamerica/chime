@@ -62,11 +62,13 @@ body .nav-tabs>p {
 .layout-breve{
 	padding-top:0;
 }
-.current-tasks{
+.current-tasks,
+.file-explorer{
 	margin-top:2em;
 	padding:1em;
 }
-.current-tasks h2{
+.current-tasks h2,
+.file-explorer h2{
 	padding-bottom:0;
 	margin-bottom:0;
 	font-weight:bold;
