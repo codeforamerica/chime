@@ -69,13 +69,6 @@
                     </ul>
                 </div>
             {% endfor %}
-                <div id="statistics">
-                        <button id="authorize-button" style="visibility: hidden">Authorize</button>
-                <div class="slab-blue info">
-                        <h2><span class="big-number">{{page_views}}</span> <span>Views this week</span></h2>
-                        <h2><span class="big-number">{{average_time_page}}s</span> <span>Average visit time</span></h2>
-                    </div>
-                </div>
                 <div style="clear:both" class="sketchy">
                     <p><span>Wordcount: <span>120</span></span> <span>Grade level: <span>8</span></span> <span>Buzzwords: <span>12</span></span></p>
                 </div>
@@ -90,12 +83,23 @@
             </div>
                 
             </form>
+            <div id="statistics">
+                {% if app_authorized %}
+                <div class="slab-blue info">
+                        <h2><span class="big-number">{{page_views}}</span> <span>Views this week</span></h2>
+                        <h2><span class="big-number">{{average_time_page}}</span> <span>Average visit time</span></h2>
+                </div>
+                {% else %}
+                    <form method="POST" action="/authorize">
+                        <button id="authorize-button">Authorize</button>
+                    </form>
+                {% endif %}
+            </div>
+
             <!-- dummy right hand section -->
             
         </div>            
         
-
-    </form>
     <script type="text/javascript">
     
         {% for iso in languages %}

@@ -41,7 +41,7 @@ def callback_google(state, code, callback_uri):
         raise Exception()
     access = json.loads(resp.content)
 
-    token_file_path =  os.environ.get('TOKEN_ROOT_DIR').rstrip('/')
+    token_file_path =  os.environ.get('TOKEN_ROOT_DIR', '.').rstrip('/')
     with open(token_file_path + '/access_token', "w") as f:
         f.write(access['access_token'])
 
