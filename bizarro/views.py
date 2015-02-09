@@ -391,6 +391,16 @@ def branch_save(branch, path):
 
     return redirect('/tree/%s/edit/%s' % (safe_branch, path), code=303)
 
+@app.route('/.well-known/deploy-key.txt')
+def deploy_key():
+    ''' Return contents of public deploy key file.
+    '''
+    try:
+        with open('/var/run/bizarro/deploy-key.txt') as file:
+            return Response(file.read(), 200, content_type='text/plain')
+    except IOError:
+        return Response('Not found.', 404, content_type='text/plain')
+
 @app.route('/<path:path>')
 def all_other_paths(path):
     '''
