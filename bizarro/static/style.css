@@ -77,6 +77,7 @@ body .nav-tabs>p {
 	padding-top:0;
 	margin-top:0;
 }
+
 .new-task{
 	background-color:#eee;
 	padding:1em;
@@ -85,6 +86,12 @@ body .nav-tabs>p {
 }
 .new-task label{
 	text-transform: none;
+}
+.current-tasks{
+
+}
+.list-form textarea.textarea{
+	width:69%;
 }
 .language-edit{
 	overflow:auto;
@@ -190,8 +197,6 @@ input[type="file"]{
 	padding-left:1.2em;
 }
 /* New buttons */
-
-
 
 .button.button-preview{
 	background-color:#A5D6D3;
