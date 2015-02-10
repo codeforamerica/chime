@@ -17,7 +17,7 @@
         <title>{% block title %}{% endblock %} | Bizarro</title>
     </head>
     <body>
-        <h1><a href="/">City website editor</a> <span> &rarr; <a href="./">{{branch}}</a></span></h1>
+        <h1><a href="/">City website editor</a> <span> {% if branch %}&rarr; <a href="./">{{branch}}</a></span>{% endif %}</h1>
         <form>
             <div class="signon">
                   {% if email %}
