@@ -178,9 +178,8 @@ ul.slug{
 	margin:0 1.25em;
 	padding:0;
 }
-ul.slug label, 
+ul label, 
 ul.slug input{
-	display:inline-block;
 	text-transform:none;
 }
 
