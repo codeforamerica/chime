@@ -3,6 +3,15 @@
 {% block content %}
 
 <h1><a href="/">City website editor</a> <span> &rarr; <a href="./">{{branch}}</a></span></h1>
+<form>
+    <div class="signon">
+          {% if email %}
+            <input type="button" id="signout" value="Sign out">
+          {% else %}
+            <input type="button" id="signin" value="Sign in">
+          {% endif %}
+    </div>
+</form>
     
 <form action="/tree/{{safe_branch}}/save/{{edit_path}}" method="POST">
 

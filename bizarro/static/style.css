@@ -43,7 +43,8 @@ body h2{
 	margin-bottom:0;
 	font-weight:bold;
 }
-.current-tasks p{
+.current-tasks p,
+.file-explorer p{
 	padding-top:0;
 	margin-top:0;
 }
