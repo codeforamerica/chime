@@ -83,9 +83,9 @@ def fetch_google_analytics_for_page(page_path, access_token):
                                'end-date' : end_date, 'max-results' : '1', 'access_token' : access_token})
 
     resp = get('https://www.googleapis.com/analytics/v3/data/ga' + '?' + query_string)
-    # :TODO: resp.json?
-    response_list = json.loads(resp.content)
-    if 'error' in response_list:
+    response_list = resp.json()
+
+    if u'error' in response_list:
         return {}
     else:
         average_time = str(int(float(response_list['totalsForAllResults']['ga:avgTimeOnPage'])))
