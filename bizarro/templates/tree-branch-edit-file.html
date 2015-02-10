@@ -7,12 +7,7 @@
 <form action="/tree/{{safe_branch}}/save/{{edit_path}}" method="POST">
 
     <nav class="nav-tabs" role="navigation" style="text-align:left;">
-        <ul class="list-form slug">
-            <li class="form-field">
-                <label for="url-slug">Slug</label>
-                <input name="url-slug" type="text" value="{{url_slug}}" />  
-            </li>                      
-        </ul>
+        
 
         {% if languages|length > 1 %}
             <ul class="layout-semibreve layout-tight">
@@ -36,59 +31,76 @@
     </ul>
 
     <div class="layout-breve">
-        {% for iso in languages %}
-            {% if iso == 'en' %}
-                {% set form_title = front['title'] %}
-                {% set form_body = body %}
-                {% set display = 'block' %}
-            {% else %}
-                {% set form_title = front['title-'+iso] %}
-                {% set form_body = front['body-'+iso] %}
-                {% set display = 'none' %}
-            {% endif %}
-            
-        <div id="{{languages[iso]}}-form" style="display: {{display}}" class="glayout-minim glayout-major language-edit">
-            {% with messages = get_flashed_messages() %}
-                {% if messages %}
-                    <ul class="save-status-success">
-                    {% for message in messages %}
-                        <li>{{ message }}</li>
-                    {% endfor %}
-                    </ul>
+        <div class="content-edit">
+            {% for iso in languages %}
+                {% if iso == 'en' %}
+                    {% set form_title = front['title'] %}
+                    {% set form_body = body %}
+                    {% set display = 'block' %}
+                {% else %}
+                    {% set form_title = front['title-'+iso] %}
+                    {% set form_body = front['body-'+iso] %}
+                    {% set display = 'none' %}
                 {% endif %}
-            {% endwith %}
-                   
-            <ul class="list-form">
-                <li class="form field">
-                    <input name="{{iso}}-title" value="{{form_title}}" type="text">
-                </li>
-                <li class="form-field">
-                    <textarea id="{{iso}}-body" class="textarea" name="{{iso}}-body" type="text">{{form_body}}</textarea>
-                </li>                      
+                
+            <div id="{{languages[iso]}}-form" style="display: {{display}}" class="glayout-minim glayout-major language-edit">
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <ul class="save-status-success">
+                        {% for message in messages %}
+                            <li>{{ message }}</li>
+                        {% endfor %}
+                        </ul>
+                    {% endif %}
+                {% endwith %}
+                       
+                <ul class="list-form">
+                    <li class="form field">
+                        <input name="{{iso}}-title" value="{{form_title}}" type="text">
+                    </li>
+                    <li class="form-field">
+                        <textarea id="{{iso}}-body" class="textarea" name="{{iso}}-body" type="text">{{form_body}}</textarea>
+                    </li>                      
+                </ul>
+            </div>
+            {% endfor %}
+
+            <div class="button-group" style="clear:both">
+                <input name="layout" value="{{front['layout']}}" type="hidden" />
+                <input name="hexsha" value="{{hexsha}}" type="hidden" />
+                <input type="submit" class="primary-button" value="Save"/>
+                <a href="{{view_path}}" class="button primary-button" target="_blank">Preview</a>
+                <a class="button button-unstyled sketchy" href="#">Archive</a>
+            </div>
+        </div>
+        <div class="content-settings">
+            <ul class="list-form slug">
+            <li class="form-field">
+                <label for="url-slug">Slug</label>
+                <input name="url-slug" type="text" value="{{url_slug}}" />  
+            </li>   
+            <li class="form-field">
+                <label for="">Category</label>
+                <input name="" type="text" value="" />  
+            </li>   
+            <li class="form-field">
+                <label for="">Template</label>
+                <input name="" type="text" value="" />  
+            </li>                    
             </ul>
         </div>
-        {% endfor %}
-
-
-        <div id="statistics">
-            <div style="clear:both" class="sketchy">
-                <p><span>Wordcount: <span>120</span></span> <span>Grade level: <span>8</span></span> <span>Buzzwords: <span>12</span></span></p>    
-            </div>
-            <button id="authorize-button" style="visibility: hidden">Authorize</button>
-            <div class="slab-blue info">
-                <h2><span class="big-number">{{page_views}}</span> <span>Views this week</span></h2>
-                <h2><span class="big-number">{{average_time_page}}s</span> <span>Average visit time</span></h2>
-            </div>
+    </div>
+    <div id="statistics">
+        <h2>About [this page title]</h2>
+        <div class="sketchy copy-quality">
+            <p><span>Wordcount: <span>120</span></span> <span>Grade level: <span>8</span></span> <span>Buzzwords: <span>12</span></span></p>    
         </div>
-                
-        <div class="button-group" style="clear:both">
-            <input name="layout" value="{{front['layout']}}" type="hidden" />
-            <input name="hexsha" value="{{hexsha}}" type="hidden" />
-            <input type="submit" class="primary-button" value="Save"/>
-            <a href="{{view_path}}" class="button primary-button" target="_blank">Preview</a>
-            <a class="button button-unstyled sketchy" href="#">Archive</a>
+            
+        <div class="analytics-overview sketchy">
+            <h2><span class="big-number">{{page_views}}</span> <span>Views this week</span></h2>
+            <h2><span class="big-number">{{average_time_page}}s</span> <span>Average visit time</span></h2>
         </div>
-
+        <button id="authorize-button" style="visibility: hidden">Authorize</button>
     </div>
                 
 </form>
