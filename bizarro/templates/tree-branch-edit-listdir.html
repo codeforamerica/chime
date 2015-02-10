@@ -2,18 +2,6 @@
 {% block title %}Tasks{% endblock %}
 {% block content %}
 
-      
-<h1><a href="/">City website editor</a></h1>
-<form>
-    <div class="signon">
-          {% if email %}
-            <input type="button" id="signout" value="Sign out">
-          {% else %}
-            <input type="button" id="signin" value="Sign in">
-          {% endif %}
-    </div>
-</form>
-
 <div class="layout-breve">
     <div class="file-explorer">
         <h2>Working on: {{branch}}</h2>
