@@ -62,7 +62,7 @@ def get_new_access_token(refresh_token):
         raise Exception()
     access = json.loads(resp.content)
 
-    token_file_path =  os.environ.get('TOKEN_ROOT_DIR').rstrip('/') + '/access_token'
+    token_file_path =  os.environ.get('TOKEN_ROOT_DIR', '.').rstrip('/') + '/access_token'
     with open(token_file_path, "w") as f:
         f.write(access['access_token'])
 
