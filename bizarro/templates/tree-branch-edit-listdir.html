@@ -7,21 +7,28 @@
         <h2>Task</h2>
         <p>This is your work area. Here you can navigate to the content you want to edit, upload images or create new pages.</p>
         <div class="task-status">
-                <h3>Current task: <span>{{branch}}</span></h3>
+                {% set itemvalues = branch.split('/') %}
+                {% set name = itemvalues[0] %}
+                {% set task = itemvalues[1] %}
+                <h3>Current task: <strong>{{task}}</strong></h3>
                 <ul>
-                    <li>Created on: </li>
-                    <li>Last updated: </li>
+                    <li>{{name}}</li>
+                    <li>Created on: <span class="sketchy">02-02-2015</span></li>
+                    <li>Last updated: <span class="sketchy">02-02-2015</span></li>
                 </ul>
-                 {% if needs_peer_review and not eligible_peer %}
+                <!-- testing to get some buttons... this next line should be  if needs_peer_review and not eligible_peer -->
+                 {% if needs_peer_review or eligible_peer %}
                 <form action="/merge" method="POST">
                     <input name="branch" value="{{branch}}" type="hidden" />
+                    <label>Task complete?</label>
                     <a href="mailto:?to=&amp;subject={{review_subject|urlencode}}&amp;body={{review_body|urlencode}}" class="button button-alternative">Submit for review</a>
-                    <button name="action" value="merge" type="submit" class="button-alternative" disabled>Publish (awaiting review)</button>
+                    <!--button name="action" value="merge" type="submit" class="button-alternative" disabled>Publish (awaiting review)</button-->
                 </form>    
 
                 {% elif is_peer_approved and eligible_peer %}
                 <form action="/merge" method="POST">
                     <input name="branch" value="{{branch}}" type="hidden" />
+                    <label>Ready to go live?</label>
                     <button name="action" value="merge" type="submit" class="button-alternative">Publish</button>
                 </form>    
             
@@ -40,6 +47,7 @@
                  <!-- Reviewer options -->
                 <form action="/review" method="POST">
                     <input name="branch" value="{{branch}}" type="hidden" />
+                    <label>Review options</label>
                     <a class="button-alternative" href="/tree/{{safe_branch}}/review">Suggest changes</a>
                     <button name="action" value="approve" type="submit" class="button-alternative">Approved</button>
                 </form>    

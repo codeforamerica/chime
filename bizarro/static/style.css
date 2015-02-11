@@ -25,6 +25,9 @@ body h3{
 body h3{
 	font-size:1em;
 }
+label{
+	text-transform:none;
+}
 .state-active .nav-tab-link, .nav-tab-link:hover, .nav-tab-link:focus, .nav-tab-link:active{
 	background-color:#547B97;
 }
@@ -77,8 +80,11 @@ body h3{
 	background-color:#eee;
 	padding:1em;
 	width:20%;
+	margin-top:2.5em;
 }
-
+.task-status form{
+	text-align: center;
+}
 /* End tasks and file explorer */
 
 /* Edit content form */
