@@ -68,8 +68,10 @@ label{
 }
 .file-explorer th{
 	text-transform:none;
-	font-size:0.7em;
 	font-weight:normal;
+}
+.file-explorer thead{
+	font-size:1em;
 }
 .files{
 	width:75%;
