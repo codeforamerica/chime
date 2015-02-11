@@ -1,3 +1,6 @@
+from logging import getLogger
+Logger = getLogger('bizarro.views')
+
 from os.path import join, isdir, realpath, splitext, isfile
 from os import environ, stat
 from re import compile, MULTILINE
@@ -315,7 +318,7 @@ def branch_edit_file(branch, path=None):
 
     if do_save:
         master_name = current_app.config['default_branch']
-        print("save")
+        Logger.debug('save')
         repo_functions.save_working_file(r, file_path, message, c.hexsha, master_name)
 
     safe_branch = branch_name2path(branch_var2name(branch))
@@ -381,10 +384,10 @@ def branch_save(branch, path):
     except repo_functions.MergeConflict as conflict:
         r.git.reset(c.hexsha, hard=True)
 
-        print 1, conflict.remote_commit
-        print ' ', repr(conflict.remote_commit.tree[path].data_stream.read())
-        print 2, conflict.local_commit
-        print ' ', repr(conflict.local_commit.tree[path].data_stream.read())
+        Logger.debug('1 {}'.format(conflict.remote_commit))
+        Logger.debug('  {}'.format(repr(conflict.remote_commit.tree[path].data_stream.read())))
+        Logger.debug('2 {}'.format(conflict.local_commit))
+        Logger.debug('  {}'.format(repr(conflict.local_commit.tree[path].data_stream.read())))
         raise
 
     safe_branch = branch_name2path(branch)

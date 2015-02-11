@@ -1,3 +1,6 @@
+from logging import getLogger
+Logger = getLogger('bizarro.view_functions')
+
 from os.path import join, isdir, realpath, basename
 from os import listdir, environ
 from urllib import quote, unquote
@@ -138,27 +141,27 @@ def synch_required(route_function):
     '''
     @wraps(route_function)
     def decorated_function(*args, **kwargs):
-        print '<' * 40 + '-' * 40
+        Logger.debug('<' * 40 + '-' * 40)
 
         repo = Repo(current_app.config['REPO_PATH'])
     
         if _remote_exists(repo, 'origin'):
-            print '  fetching origin', repo
+            Logger.debug('  fetching origin {}'.format(repo))
             repo.git.fetch('origin', with_exceptions=True)
 
-        print '- ' * 40
+        Logger.debug('- ' * 40)
 
         response = route_function(*args, **kwargs)
         
         # Push to origin only if the request method indicates a change.
         if request.method in ('PUT', 'POST', 'DELETE'):
-            print '- ' * 40
+            Logger.debug('- ' * 40)
 
             if _remote_exists(repo, 'origin'):
-                print '  pushing origin', repo
+                Logger.debug('  pushing origin {}'.format(repo))
                 repo.git.push('origin', all=True, with_exceptions=True)
 
-        print '-' * 40 + '>' * 40
+        Logger.debug('-' * 40 + '>' * 40)
 
         return response
     
@@ -171,12 +174,12 @@ def synched_checkout_required(route_function):
     '''
     @wraps(route_function)
     def decorated_function(*args, **kwargs):
-        print '<' * 40 + '-' * 40
+        Logger.debug('<' * 40 + '-' * 40)
 
         repo = Repo(current_app.config['REPO_PATH'])
         
         if _remote_exists(repo, 'origin'):
-            print '  fetching origin', repo
+            Logger.debug('  fetching origin {}'.format(repo))
             repo.git.fetch('origin', with_exceptions=True)
 
         checkout = get_repo(current_app)
@@ -185,20 +188,20 @@ def synched_checkout_required(route_function):
         branch = start_branch(checkout, master_name, branch_name)
         branch.checkout()
 
-        print '  checked out to', branch
-        print '- ' * 40
+        Logger.debug('  checked out to {}'.format(branch))
+        Logger.debug('- ' * 40)
 
         response = route_function(*args, **kwargs)
         
         # Push to origin only if the request method indicates a change.
         if request.method in ('PUT', 'POST', 'DELETE'):
-            print '- ' * 40
+            Logger.debug('- ' * 40)
 
             if _remote_exists(repo, 'origin'):
-                print '  pushing origin', repo
+                Logger.debug('  pushing origin {}'.format(repo))
                 repo.git.push('origin', all=True, with_exceptions=True)
 
-        print '-' * 40 + '>' * 40
+        Logger.debug('-' * 40 + '>' * 40)
 
         return response
     
