@@ -15,65 +15,44 @@ body h1 a:link,
 body h1 a:visited{
 	color:#999;
 }
-body h2{
+body h2,
+body h3{
 	color: #000;
 	font-family: "Interstate", "Gotham A", "Gotham B", "Open Sans Regular", "Verdana", "Helvetica", "Arial";
 	font-size: 1.2em;
 	line-height: 28px;
 }
-body .nav-tabs{
-	margin-top:0;
-	padding-top:0;
-	margin-bottom:0;
-	padding-bottom:0;
-}
-body .nav-tabs>p {
-	text-align: left;
-}
-#statistics{
-	float:right;
-	width:20%;
-	padding:1em;
-	text-align: center;
-}
-
-#statistics h2{
-	font-family: "Gotham A", "Gotham B", "Open Sans Regular", "Verdana", "Helvetica", "Arial";
+body h3{
 	font-size:1em;
-	background-color:white;
-	padding:0.5em;
-	border-radius: 10px;
-	border:1px solid white;
 }
-#statistics span{
-	display:block;
-	text-align:center;
-	line-height:1.1em;
+.state-active .nav-tab-link, .nav-tab-link:hover, .nav-tab-link:focus, .nav-tab-link:active{
+	background-color:#547B97;
 }
-#statistics .big-number{
-	font-weight:bold;
-	color:black;
-	text-align:center;
-	font-size:3em;
-	display:block;
-	
-}
-
 .layout-breve{
 	padding-top:0;
 }
-.current-tasks{
+.layout-breve.content{
+	border-bottom:1px solid #040608;
+}
+/* Tasks and file explorer*/
+.current-tasks,
+.file-explorer{
 	margin-top:2em;
 	padding:1em;
 }
-.current-tasks h2{
+.current-tasks h2,
+.file-explorer h2{
 	padding-bottom:0;
 	margin-bottom:0;
 	font-weight:bold;
 }
-.current-tasks p{
+.current-tasks p,
+.file-explorer p{
 	padding-top:0;
 	margin-top:0;
+}
+.file-explorer h2 span{
+	font-weight:normal;
 }
 .new-task{
 	background-color:#eee;
@@ -84,9 +63,34 @@ body .nav-tabs>p {
 .new-task label{
 	text-transform: none;
 }
+.file-explorer th{
+	text-transform:none;
+	font-size:0.7em;
+	font-weight:normal;
+}
+.files{
+	width:75%;
+	float:right;
+}
+.task-status{
+	float:left;
+	background-color:#eee;
+	padding:1em;
+	width:20%;
+}
+
+/* End tasks and file explorer */
+
+/* Edit content form */
+.list-form{
+	width:96%;
+}
+.list-form textarea.textarea{
+	width:100%;
+}
 .language-edit{
 	overflow:auto;
-	width:70%;
+	width:100%;
 	float:left;
 }
 .language-edit input{
@@ -95,6 +99,49 @@ body .nav-tabs>p {
 .language-edit textarea{
 	height:300px;
 }
+ul.slug{
+	margin:0 1.25em;
+	padding:0;
+}
+ul label, 
+ul.slug input{
+	text-transform:none;
+}
+/* End edit content form */
+
+/* Edit page layout elements*/
+.layout-breve{
+	clear:both;
+	display:block;
+	height:100%;
+	overflow:auto;
+}
+.content-edit{ 
+	float:left;
+	width:60%;
+	}
+.content-settings{
+	float:left;
+	width:30%;
+}
+body .nav-tabs{
+	margin-top:0;
+	padding-top:0;
+	margin-bottom:0;
+	padding-bottom:0;
+}
+body .nav-tabs>p {
+	text-align: left;
+}
+
+.nav-tabs{
+	border-bottom:3px solid #547B97;
+}
+.nav-tab-link{
+	padding:10px 20px 10px 20px
+}
+/* End edit page layout elements */
+
 
 .info{
 	padding:0.5em;
@@ -113,50 +160,58 @@ body .nav-tabs>p {
 	background-image:none;
 }
 
-.badge-heading a{
-	font-size:14px;
+
+/* Statistic information */
+
+#statistics{
+	border-top:6px solid #405D73;
+	background-color:#547B97;
+	color:#fff;
+	overflow:auto;
 }
-.badge-heading h2{
-	margin:0;
+
+.copy-quality,
+.analytics-overview{
+	float:left;
+	width:33%;
+	padding-left:3em;
+	overflow:auto;
 }
-.badge-heading h3{
-	color:#bbb;
+
+#statistics h2{
+	color:#fff;
+	padding:1em 2em 0 2em;
 }
-#statistics ul li{
-	background-image:none;
-	padding-bottom:0.5em;
-}
-#statistics ul li span{
-	font-size:2em;
-}
+
+
+
+
+/* End statistics */
+
+/* Global signon/off */
 .signon{
 	display:inline;
 	position:absolute;
 	top:1em;
 	right:1em;
 }
+/* end signon/off */
+
+
 h1 span{
 	text-transform: lowercase;
 	font-size:0.5em;
 	font-weight:normal;
 	letter-spacing:0;
 }
-ul.slug{
-	margin:0 1.25em;
-	padding:0;
-}
-ul.slug label, 
-ul.slug input{
-	display:inline-block;
-}
-ul.slug .form-field input{
-	width:40%;
-}
+
+
 
 h1 a:link,
 h1 a:visited{
 	color:#000;
 }
+
 /* 
 File explorer icons
 */
@@ -189,8 +244,6 @@ input[type="file"]{
 }
 /* New buttons */
 
-
-
 .button.button-preview{
 	background-color:#A5D6D3;
 	color:#000;
@@ -203,9 +256,11 @@ input[type="file"]{
 }
 
 input[type=submit].button-delete,
-button[type=submit].button-delete{
+button[type=submit].button-delete,
+button[type=submit].button-delete:hover{
 	background-color:transparent;
 	color:red;
+	padding:0;
 }
 
 .button, 

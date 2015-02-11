@@ -1,18 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Tasks{% endblock %}
 {% block content %}
-      <h1><a href="/">City website editor</a></h1>
-      <form>
-        <div class="signon">
-          {% if email %}
-            <input type="button" id="signout" value="Sign out">
-          {% else %}
-            <input type="button" id="signin" value="Sign in">
-          {% endif %}
-        </div>
-      </form>
 
-    {% if email %}
     <div class="layout-breve">
       <div class="current-tasks">
         <h2>Current tasks</h2>
@@ -49,7 +38,7 @@
           </form>  
         </div>
     </div>
-    {% endif %}
+   
 
 
     <script type="text/javascript">
