@@ -5,6 +5,7 @@ import random
 from string import ascii_uppercase, digits
 import oauth2
 import os
+import posixpath
 import json
 from datetime import date, timedelta
 from re import sub
@@ -70,12 +71,12 @@ def get_ga_page_path_pattern(page_path):
         Builds a pattern that looks like: codeforamerica.org/about/(index.html|index|)
     '''
     ga_domain = os.environ.get('PROJECT_DOMAIN')
-    page_path_dir, page_path_filename = os.path.split(page_path)
-    filename_base, filename_ext = os.path.splitext(page_path_filename)
+    page_path_dir, page_path_filename = posixpath.split(page_path)
+    filename_base, filename_ext = posixpath.splitext(page_path_filename)
     # if the filename is 'index', allow no filename as an option
     or_else = '|' if (filename_base == 'index') else ''
     filename_pattern = '({page_path_filename}|{filename_base}{or_else})'.format(**locals())
-    return os.path.join(ga_domain, page_path_dir, filename_pattern)
+    return posixpath.join(ga_domain, page_path_dir, filename_pattern)
 
 def fetch_google_analytics_for_page(page_path, access_token):
     ''' Get stats for a particular page
