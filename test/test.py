@@ -851,12 +851,12 @@ class TestGoogleApiFunctions (TestCase):
         else:
             raise Exception('Asked for unknown URL ' + url.geturl())
 
-    def mock_google_analytics_good_response(self, url, request):
+    def mock_google_analytics_authorized_response(self, url, request):
         if 'https://www.googleapis.com/analytics/' in url.geturl():
             content = {u'totalsForAllResults': {u'ga:pageViews': u'24', u'ga:avgTimeOnPage': u'67.36363636363636'}}
             return response(200, content)
 
-    def mock_google_analytics_bad_response(self, url, request):
+    def mock_google_analytics_unauthorized_response(self, url, request):
         if 'https://www.googleapis.com/analytics/' in url.geturl():
             content = {u'error': {u'code': 401, u'message': u'Invalid Credentials', u'errors': [{u'locationType': u'header', u'domain': u'global', u'message': u'Invalid Credentials', u'reason': u'authError', u'location': u'Authorization'}]}}
             return response(401, content)
@@ -893,17 +893,17 @@ class TestGoogleApiFunctions (TestCase):
         self.assertEqual(pattern_out, u'{ga_domain}/people/michal-migurski/(index.html|index|)'.format(**locals()))
 
     def test_handle_good_analytics_response(self):
-        ''' Verify that a good analytics response is handled correctly
+        ''' Verify that an authorized analytics response is handled correctly
         '''
-        with HTTMock(self.mock_google_analytics_good_response):
+        with HTTMock(self.mock_google_analytics_authorized_response):
             analytics_dict = google_api_functions.fetch_google_analytics_for_page(u'index.html', 'meowser_token')
             self.assertEqual(analytics_dict['page_views'], u'24')
             self.assertEqual(analytics_dict['average_time_page'], u'67')
 
     def test_handle_bad_analytics_response(self):
-        ''' Verify that a bad analytics response is handled correctly
+        ''' Verify that an unauthorized analytics response is handled correctly
         '''
-        with HTTMock(self.mock_google_analytics_bad_response):
+        with HTTMock(self.mock_google_analytics_unauthorized_response):
             analytics_dict = google_api_functions.fetch_google_analytics_for_page(u'index.html', 'meowser_token')
             self.assertEqual(analytics_dict, {})
 
