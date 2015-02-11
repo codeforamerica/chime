@@ -4,61 +4,10 @@
 
 <div class="layout-breve">
     <div class="file-explorer">
-        <h2>Current task: <span>{{branch}}</span></h2>
+        <h2>Task</h2>
         <p>This is your work area. Here you can navigate to the content you want to edit, upload images or create new pages.</p>
-
-        <table class="files">
-            <thead>
-                <tr>
-                    <th colspan="3">
-                        
-                        {% for (dir_name, dir_path) in dirs_and_paths %}
-                            / <a href="{{dir_path}}">{{dir_name}}</a>
-                        {% endfor %}
-                    </th>
-                </tr>
-            </thead>
-            <tbody>
-               
-                    
-                {% for (edit_path, view_path, item_type, is_editable) in list_paths %}
-                <form action="." method="POST">
-                <tr>
-                    <td><a class="{{ item_type }}" href="{{edit_path}}">{{edit_path}}</a></td>
-                    <td>
-                        {%if item_type == "folder" %}<a href="{{edit_path}}" class="button button-edit">Open</a>{% endif %}
-                        {%if item_type == "file" and is_editable %}<a href="{{edit_path}}" class="button button-edit">Edit</a>{% endif %}
-                        {%if item_type == "file" or item_type == "image" %}<a href="{{view_path}}" class="button button-preview" target="_blank">Preview</a>{% endif %}
-                        <input name="action" type="submit" value="Delete" class="button button-delete">
-                    </td>
-                </tr>
-                <input name="path" value="{{edit_path}}" type="hidden">
-                </form>
-                {% endfor %}  
-                    
-                    <tr>
-                        <th>Create new page</th>
-                        <td colspan="2">
-                            <form action="." method="POST">
-                                <input name="path" placeholder="filename.html" type="text" />
-                                <input name="action" type="submit" value="Add" />
-                            </form>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>Add a new file</th>
-                        <td colspan="2">
-                            <form action="." method="POST" enctype="multipart/form-data" />
-                                <input name="file" type="file" />
-                                <input name="action" type="submit" value="Upload" />
-                            </form>
-                        </td>
-                    </tr>  
-                </tbody>
-            </table>
-
-            <div class="task-status">
-                <h3>Task status</h3>
+        <div class="task-status">
+                <h3>Current task: <span>{{branch}}</span></h3>
                 <ul>
                     <li>Created on: </li>
                     <li>Last updated: </li>
@@ -115,6 +64,74 @@
 
                 {% endif %}
             </div>
+        <table class="files">
+            <thead>
+                <tr>
+                    <th colspan="4">
+                        
+                        {% for (dir_name, dir_path) in dirs_and_paths %}
+                            / <a href="{{dir_path}}">{{dir_name}}</a>
+                        {% endfor %}
+                    </th>
+                </tr>
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Modified</th>
+                    <th>&nbsp;</th>
+                </tr>
+            </thead>
+            <tbody>
+               
+                    
+                {% for (edit_path, view_path, item_type, is_editable) in list_paths %}
+                <form action="." method="POST">
+                <tr>
+                    <td><a class="{{ item_type }}" href="{{edit_path}}">{{edit_path}}</a>
+                        
+                    </td>
+                    <td>
+                        {%if item_type == "folder" %}folder{% endif %}
+                        {%if item_type == "file" and is_editable %}file{% endif %}
+                        {%if item_type == "image" %}image{% endif %}
+                    </td>
+                    <td>
+                        {%if item_type == "file" or item_type == "image" %}<span class="sketchy">02-02-2014</span>{% endif %}
+                    </td>
+                    <td>
+                        {%if item_type == "folder" %}<a href="{{edit_path}}" ><img src="/static/images/icons/actions/edit.png" height="20px" /></a>{% endif %}
+                        {%if item_type == "file" and is_editable %}<a href="{{edit_path}}" ><img src="/static/images/icons/actions/edit.png" height="20px" /></a>{% endif %}
+                        {%if item_type == "file" or item_type == "image" %}<a href="{{view_path}}" target="_blank"><img src="/static/images/icons/actions/view.png" height="20px" /></a>{% endif %}
+                        
+                        <button name="action" type="submit" value="Delete" class="button button-delete"><img src="/static/images/icons/actions/delete.png" height="20px" /></button>
+                    </td>
+                </tr>
+                <input name="path" value="{{edit_path}}" type="hidden">
+                </form>
+                {% endfor %}  
+                    
+                    <tr>
+                        <th>Create new page</th>
+                        <td colspan="2">
+                            <form action="." method="POST">
+                                <input name="path" placeholder="filename.html" type="text" />
+                                <input name="action" type="submit" value="Add" />
+                            </form>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Add a new file</th>
+                        <td colspan="2">
+                            <form action="." method="POST" enctype="multipart/form-data" />
+                                <input name="file" type="file" />
+                                <input name="action" type="submit" value="Upload" />
+                            </form>
+                        </td>
+                    </tr>  
+                </tbody>
+            </table>
+
+            
         </div>
     </div>
 {% endblock %}

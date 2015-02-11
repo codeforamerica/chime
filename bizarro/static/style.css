@@ -64,14 +64,14 @@ body h2{
 	text-transform:none;
 }
 .files{
-	width:60%;
-	float:left;
+	width:75%;
+	float:right;
 }
 .task-status{
-	float:right;
+	float:left;
 	background-color:#eee;
 	padding:1em;
-	width:33%;
+	width:20%;
 }
 
 /* End tasks and file explorer */
@@ -262,9 +262,11 @@ input[type="file"]{
 }
 
 input[type=submit].button-delete,
-button[type=submit].button-delete{
+button[type=submit].button-delete,
+button[type=submit].button-delete:hover{
 	background-color:transparent;
 	color:red;
+	padding:0;
 }
 
 .button, 
