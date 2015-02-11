@@ -1,3 +1,6 @@
+from logging import getLogger
+Logger = getLogger('bizarro.google_access_token_update')
+
 from .google_api_functions import get_new_access_token
 from os import environ
 import argparse, traceback, sys
@@ -28,5 +31,5 @@ if __name__ == '__main__':
             if not args.hourly:
                 break
 
-            print 'Sleeping.'
+            Logger.debug('Sleeping.')
             sleep(3600)
