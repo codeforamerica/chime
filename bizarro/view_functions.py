@@ -17,6 +17,10 @@ def dos2unix(string):
 
 def get_repo(flask_app):
     ''' Gets repository for the current user, cloned from the origin.
+    
+        Uses the first-ever commit in the origin repository to name
+        the cloned directory, to reduce history conflicts when tweaking
+        the repository during development.
     '''
     source_repo = Repo(flask_app.config['REPO_PATH'])
     first_commit = list(source_repo.iter_commits())[-1].hexsha
