@@ -99,7 +99,7 @@
                         {%if item_type == "file" or item_type == "image" %}<span class="sketchy">02-02-2014</span>{% endif %}
                     </td>
                     <td>
-                        {%if item_type == "folder" %}<a href="{{edit_path}}" ><img src="/static/images/icons/actions/edit.png" height="20px" /></a>{% endif %}
+                        
                         {%if item_type == "file" and is_editable %}<a href="{{edit_path}}" ><img src="/static/images/icons/actions/edit.png" height="20px" /></a>{% endif %}
                         {%if item_type == "file" or item_type == "image" %}<a href="{{view_path}}" target="_blank"><img src="/static/images/icons/actions/view.png" height="20px" /></a>{% endif %}
                         
