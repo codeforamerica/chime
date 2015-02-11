@@ -97,7 +97,7 @@ def fetch_google_analytics_for_page(page_path, access_token):
     if u'error' in response_list:
         return {}
     else:
-        average_time = str(int(float(response_list['totalsForAllResults']['ga:avgTimeOnPage'])))
+        average_time = unicode(int(float(response_list['totalsForAllResults']['ga:avgTimeOnPage'])))
         analytics_dict = {'page_views' : response_list['totalsForAllResults']['ga:pageViews'],
                           'average_time_page' : average_time,
                           'start_date' : start_date, 'end_date' : end_date}
