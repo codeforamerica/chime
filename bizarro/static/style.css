@@ -15,13 +15,16 @@ body h1 a:link,
 body h1 a:visited{
 	color:#999;
 }
-body h2{
+body h2,
+body h3{
 	color: #000;
 	font-family: "Interstate", "Gotham A", "Gotham B", "Open Sans Regular", "Verdana", "Helvetica", "Arial";
 	font-size: 1.2em;
 	line-height: 28px;
 }
-
+body h3{
+	font-size:1em;
+}
 .state-active .nav-tab-link, .nav-tab-link:hover, .nav-tab-link:focus, .nav-tab-link:active{
 	background-color:#547B97;
 }
@@ -62,6 +65,8 @@ body h2{
 }
 .file-explorer th{
 	text-transform:none;
+	font-size:0.7em;
+	font-weight:normal;
 }
 .files{
 	width:75%;
@@ -177,19 +182,8 @@ body .nav-tabs>p {
 	color:#fff;
 	padding:1em 2em 0 2em;
 }
-#statistics span{
 
-}
-#statistics .big-number{
 
-	
-}
-#statistics ul li{
-
-}
-#statistics ul li span{
-
-}
 
 
 /* End statistics */
