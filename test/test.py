@@ -833,6 +833,8 @@ class TestGoogleApiFunctions (TestCase):
         environ['CLIENT_ID'] = 'client_id'
         environ['CLIENT_SECRET'] = 'meow_secret'
         environ['TOKEN_ROOT_DIR'] = mkdtemp(prefix='bizarro-token-')
+        environ['PROJECT_DOMAIN'] = 'www.codeforamerica.org'
+        environ['PROFILE_ID'] = "41226190"
 
     def mock_successful_get_new_access_token(self, url, request):
         if 'https://accounts.google.com/o/oauth2/token' in url.geturl():
@@ -849,6 +851,16 @@ class TestGoogleApiFunctions (TestCase):
         else:
             raise Exception('Asked for unknown URL ' + url.geturl())
 
+    def mock_google_analytics_authorized_response(self, url, request):
+        if 'https://www.googleapis.com/analytics/' in url.geturl():
+            content = {u'totalsForAllResults': {u'ga:pageViews': u'24', u'ga:avgTimeOnPage': u'67.36363636363636'}}
+            return response(200, content)
+
+    def mock_google_analytics_unauthorized_response(self, url, request):
+        if 'https://www.googleapis.com/analytics/' in url.geturl():
+            content = {u'error': {u'code': 401, u'message': u'Invalid Credentials', u'errors': [{u'locationType': u'header', u'domain': u'global', u'message': u'Invalid Credentials', u'reason': u'authError', u'location': u'Authorization'}]}}
+            return response(401, content)
+
     def test_successful_get_new_access_token(self):
         with app.test_request_context():
             with HTTMock(self.mock_successful_get_new_access_token):
@@ -862,6 +874,38 @@ class TestGoogleApiFunctions (TestCase):
             with HTTMock(self.mock_failed_get_new_access_token):
                 with self.assertRaises(Exception):
                     google_api_functions.get_new_access_token('meowser_refresh_token')
+
+    def test_get_analytics_page_path_pattern(self):
+        ''' Verify that we're getting good page path patterns for querying google analytics
+        '''
+        ga_domain = environ['PROJECT_DOMAIN']
+
+        path_in = u'index.html'
+        pattern_out = google_api_functions.get_ga_page_path_pattern(path_in)
+        self.assertEqual(pattern_out, u'{ga_domain}/(index.html|index|)'.format(**locals()))
+
+        path_in = u'help.md'
+        pattern_out = google_api_functions.get_ga_page_path_pattern(path_in)
+        self.assertEqual(pattern_out, u'{ga_domain}/(help.md|help)'.format(**locals()))
+
+        path_in = u'people/michal-migurski/index.html'
+        pattern_out = google_api_functions.get_ga_page_path_pattern(path_in)
+        self.assertEqual(pattern_out, u'{ga_domain}/people/michal-migurski/(index.html|index|)'.format(**locals()))
+
+    def test_handle_good_analytics_response(self):
+        ''' Verify that an authorized analytics response is handled correctly
+        '''
+        with HTTMock(self.mock_google_analytics_authorized_response):
+            analytics_dict = google_api_functions.fetch_google_analytics_for_page(u'index.html', 'meowser_token')
+            self.assertEqual(analytics_dict['page_views'], u'24')
+            self.assertEqual(analytics_dict['average_time_page'], u'67')
+
+    def test_handle_bad_analytics_response(self):
+        ''' Verify that an unauthorized analytics response is handled correctly
+        '''
+        with HTTMock(self.mock_google_analytics_unauthorized_response):
+            analytics_dict = google_api_functions.fetch_google_analytics_for_page(u'index.html', 'meowser_token')
+            self.assertEqual(analytics_dict, {})
 
 class TestApp (TestCase):
 

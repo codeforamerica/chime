@@ -5,6 +5,7 @@ import random
 from string import ascii_uppercase, digits
 import oauth2
 import os
+import posixpath
 import json
 from datetime import date, timedelta
 from re import sub
@@ -41,7 +42,7 @@ def callback_google(state, code, callback_uri):
         raise Exception()
     access = json.loads(resp.content)
 
-    token_file_path =  os.environ.get('TOKEN_ROOT_DIR').rstrip('/')
+    token_file_path =  os.environ.get('TOKEN_ROOT_DIR', '.').rstrip('/')
     with open(token_file_path + '/access_token', "w") as f:
         f.write(access['access_token'])
 
@@ -61,29 +62,43 @@ def get_new_access_token(refresh_token):
         raise Exception()
     access = json.loads(resp.content)
 
-    token_file_path =  os.environ.get('TOKEN_ROOT_DIR').rstrip('/') + '/access_token'
+    token_file_path =  os.environ.get('TOKEN_ROOT_DIR', '.').rstrip('/') + '/access_token'
     with open(token_file_path, "w") as f:
         f.write(access['access_token'])
+
+def get_ga_page_path_pattern(page_path):
+    ''' Get a regex pattern that'll get us the google analytics data we want.
+        Builds a pattern that looks like: codeforamerica.org/about/(index.html|index|)
+    '''
+    ga_domain = os.environ.get('PROJECT_DOMAIN')
+    page_path_dir, page_path_filename = posixpath.split(page_path)
+    filename_base, filename_ext = posixpath.splitext(page_path_filename)
+    # if the filename is 'index', allow no filename as an option
+    or_else = '|' if (filename_base == 'index') else ''
+    filename_pattern = '({page_path_filename}|{filename_base}{or_else})'.format(**locals())
+    return posixpath.join(ga_domain, page_path_dir, filename_pattern)
 
 def fetch_google_analytics_for_page(page_path, access_token):
     ''' Get stats for a particular page
     '''
     start_date = (date.today() - timedelta(days=7)).isoformat()
     end_date = date.today().isoformat()
-    profile_id = os.environ.get('PROFILE_ID')
-    repo_root_dir = os.environ.get('REPO_ROOT_DIR', '')
-    repo_root_dir =  repo_root_dir.rstrip('/') + '/'
-    filter_page_path = sub(r'\.html$|\.md$', '', page_path)
-    query_string = urlencode({'ids' : 'ga:' + profile_id, 'dimensions' : 'ga:previousPagePath,ga:pagePath',
+    ga_profile_id = os.environ.get('PROFILE_ID')
+
+    page_path_pattern = get_ga_page_path_pattern(page_path)
+
+    query_string = urlencode({'ids' : 'ga:' + ga_profile_id, 'dimensions' : 'ga:previousPagePath,ga:pagePath',
                                'metrics' : 'ga:pageViews,ga:avgTimeOnPage,ga:exitRate',
-                               'filters' : 'ga:pagePath==' + repo_root_dir + filter_page_path, 'start-date' : start_date,
+                               'filters' : 'ga:pagePath=~' + page_path_pattern, 'start-date' : start_date,
                                'end-date' : end_date, 'max-results' : '1', 'access_token' : access_token})
+
     resp = get('https://www.googleapis.com/analytics/v3/data/ga' + '?' + query_string)
-    response_list = json.loads(resp.content)
-    if 'error' in response_list:
+    response_list = resp.json()
+
+    if u'error' in response_list:
         return {}
     else:
-        average_time = str(int(float(response_list['totalsForAllResults']['ga:avgTimeOnPage'])))
+        average_time = unicode(int(float(response_list['totalsForAllResults']['ga:avgTimeOnPage'])))
         analytics_dict = {'page_views' : response_list['totalsForAllResults']['ga:pageViews'],
                           'average_time_page' : average_time,
                           'start_date' : start_date, 'end_date' : end_date}
