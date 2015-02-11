@@ -259,7 +259,6 @@ input[type=submit].button-delete,
 button[type=submit].button-delete,
 button[type=submit].button-delete:hover{
 	background-color:transparent;
-	color:red;
 	padding:0;
 }
 
