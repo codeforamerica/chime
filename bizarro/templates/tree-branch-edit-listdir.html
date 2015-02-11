@@ -4,127 +4,117 @@
 
 <div class="layout-breve">
     <div class="file-explorer">
-        <h2>Working on: {{branch}}</h2>
+        <h2>Current task: <span>{{branch}}</span></h2>
         <p>This is your work area. Here you can navigate to the content you want to edit, upload images or create new pages.</p>
-    
-    <table>
-        <thead>
-            <tr>
-                <th colspan="3">
-                {% for (dir_name, dir_path) in dirs_and_paths %}
-                    / <a href="{{dir_path}}">{{dir_name}}</a>
-                {% endfor %}
-                </th>
-            </tr>
-        </thead>
-        <tbody>
-           
-                
-            {% for (edit_path, view_path, item_type, is_editable) in list_paths %}
-            <form action="." method="POST">
-            <tr>
-                <td><a class="{{ item_type }}" href="{{edit_path}}">{{edit_path}}</a></td>
-                <td>
-                    {%if item_type == "folder" %}<a href="{{edit_path}}" class="button button-edit">Open</a>{% endif %}
-                    {%if item_type == "file" and is_editable %}<a href="{{edit_path}}" class="button button-edit">Edit</a>{% endif %}
-                    {%if item_type == "file" or item_type == "image" %}<a href="{{view_path}}" class="button button-preview" target="_blank">Preview</a>{% endif %}
-                    <input name="action" type="submit" value="Delete" class="button button-delete">
-                </td>
-            </tr>
-            <input name="path" value="{{edit_path}}" type="hidden">
-            </form>
-            {% endfor %}  
-                
+
+        <table class="files">
+            <thead>
                 <tr>
-                    <th>Create new page</th>
-                    <td colspan="2">
-                        <form action="." method="POST">
-                            <input name="path" placeholder="filename.html" type="text" />
-                            <input name="action" type="submit" value="Add" />
-                        </form>
+                    <th colspan="3">
+                        
+                        {% for (dir_name, dir_path) in dirs_and_paths %}
+                            / <a href="{{dir_path}}">{{dir_name}}</a>
+                        {% endfor %}
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+               
+                    
+                {% for (edit_path, view_path, item_type, is_editable) in list_paths %}
+                <form action="." method="POST">
+                <tr>
+                    <td><a class="{{ item_type }}" href="{{edit_path}}">{{edit_path}}</a></td>
+                    <td>
+                        {%if item_type == "folder" %}<a href="{{edit_path}}" class="button button-edit">Open</a>{% endif %}
+                        {%if item_type == "file" and is_editable %}<a href="{{edit_path}}" class="button button-edit">Edit</a>{% endif %}
+                        {%if item_type == "file" or item_type == "image" %}<a href="{{view_path}}" class="button button-preview" target="_blank">Preview</a>{% endif %}
+                        <input name="action" type="submit" value="Delete" class="button button-delete">
                     </td>
                 </tr>
-                <tr>
-                    <th>Add a new file</th>
-                    <td colspan="2">
-                        <form action="." method="POST" enctype="multipart/form-data" />
-                            <input name="file" type="file" />
-                            <input name="action" type="submit" value="Upload" />
-                        </form>
-                    </td>
-                </tr>
-                <tr>
-                    <th colspan="3">Actions</th>
-                </tr>
-                {% if needs_peer_review and not eligible_peer %}
-                  <tr><!-- Author options, before sending for review<-->
-                    <td colspan="2">
-                        <form action="/merge" method="POST">
-                            <input name="branch" value="{{branch}}" type="hidden" />
-                            <a href="mailto:?to=&amp;subject={{review_subject|urlencode}}&amp;body={{review_body|urlencode}}" class="button button-alternative">Submit for review</a>
-                            <button name="action" value="merge" type="submit" class="button-alternative" disabled>Publish (awaiting review)</button>
-                        </form>    
-                    </td>
-                  </tr>
+                <input name="path" value="{{edit_path}}" type="hidden">
+                </form>
+                {% endfor %}  
+                    
+                    <tr>
+                        <th>Create new page</th>
+                        <td colspan="2">
+                            <form action="." method="POST">
+                                <input name="path" placeholder="filename.html" type="text" />
+                                <input name="action" type="submit" value="Add" />
+                            </form>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Add a new file</th>
+                        <td colspan="2">
+                            <form action="." method="POST" enctype="multipart/form-data" />
+                                <input name="file" type="file" />
+                                <input name="action" type="submit" value="Upload" />
+                            </form>
+                        </td>
+                    </tr>  
+                </tbody>
+            </table>
+
+            <div class="task-status">
+                <h3>Task status</h3>
+                <ul>
+                    <li>Created on: </li>
+                    <li>Last updated: </li>
+                </ul>
+                 {% if needs_peer_review and not eligible_peer %}
+                <form action="/merge" method="POST">
+                    <input name="branch" value="{{branch}}" type="hidden" />
+                    <a href="mailto:?to=&amp;subject={{review_subject|urlencode}}&amp;body={{review_body|urlencode}}" class="button button-alternative">Submit for review</a>
+                    <button name="action" value="merge" type="submit" class="button-alternative" disabled>Publish (awaiting review)</button>
+                </form>    
 
                 {% elif is_peer_approved and eligible_peer %}
-                  <tr><!-- Author options, after getting a good review with no more changes made -->
-                    <td colspan="2">
-                        <form action="/merge" method="POST">
-                            <input name="branch" value="{{branch}}" type="hidden" />
-                            <button name="action" value="merge" type="submit" class="button-alternative">Publish</button>
-                        </form>    
-                    </td>
-                  </tr>
-
+                <form action="/merge" method="POST">
+                    <input name="branch" value="{{branch}}" type="hidden" />
+                    <button name="action" value="merge" type="submit" class="button-alternative">Publish</button>
+                </form>    
+            
                 {% elif is_peer_rejected and eligible_peer %}
-                  <tr class="sketchy"><!-- Author options, if a review is rejected (someone has suggested changes). Once edited again, this should reveal the review and publish options -->
-                    <td colspan="2">
-                        <h5>Current feedback</h5>
-                        <p>{{rejection_message}}<br>— {{rejecting_peer}}</p>
-                        <!--
-                        <form action="/merge" method="POST">
-                            <input name="branch" value="{{branch}}" type="hidden" />
-                            <button name="action" value="merge" type="submit" class="button-alternative">Publish</button>
-                        </form>    
-                        -->
-                    </td>
-                  </tr>
-
+                 
+                <h5>Current feedback</h5>
+                <p>{{rejection_message}}<br>— {{rejecting_peer}}</p>
+                            <!--
+                            <form action="/merge" method="POST">
+                                <input name="branch" value="{{branch}}" type="hidden" />
+                                <button name="action" value="merge" type="submit" class="button-alternative">Publish</button>
+                            </form>    
+                            -->
+                
                 {% elif needs_peer_review and eligible_peer %}
-                  <tr><!-- Reviewer options -->
-                    <td colspan="2">
-                        <form action="/review" method="POST">
-                            <input name="branch" value="{{branch}}" type="hidden" />
-                            <a class="button-alternative" href="/tree/{{safe_branch}}/review">Suggest changes</a>
-                            <button name="action" value="approve" type="submit" class="button-alternative">Approved</button>
-                        </form>    
-                    </td>
-                  </tr>
+                 <!-- Reviewer options -->
+                <form action="/review" method="POST">
+                    <input name="branch" value="{{branch}}" type="hidden" />
+                    <a class="button-alternative" href="/tree/{{safe_branch}}/review">Suggest changes</a>
+                    <button name="action" value="approve" type="submit" class="button-alternative">Approved</button>
+                </form>    
+                
                 {% else %}
-                  <tr><!-- Reviewer options -->
-                    <td colspan="2">
-                        Needs review? {{ needs_peer_review }}.
-                        Is approved? {{ is_peer_approved }}.
-                        Is rejected? {{ is_peer_rejected }}.
-                        Eligible peer? {{ eligible_peer }}.
-                    </td>
-                  </tr>
+                
+                            Needs review? {{ needs_peer_review }}.
+                            Is approved? {{ is_peer_approved }}.
+                            Is rejected? {{ is_peer_rejected }}.
+                            Eligible peer? {{ eligible_peer }}.
+                
                 {% endif %}
+                
                 {% if rejection_messages %}
-                <tr><!-- Reviewer options -->
-                  <td colspan="2">
-                    <h5>All feedback</h5>
-                    <ul>
-                      {% for (email, message) in rejection_messages %}
-                        <li>{{message}}<br>— {{email}}</li>
-                      {% endfor %}
-                    </ul>
-                  </td>
-                </tr>
+                   
+                <h5>All feedback</h5>
+                <ul>
+                    {% for (email, message) in rejection_messages %}
+                    <li>{{message}}<br>— {{email}}</li>
+                    {% endfor %}
+                </ul>
+
                 {% endif %}
-            </tbody>
-        </table>
+            </div>
         </div>
     </div>
 {% endblock %}

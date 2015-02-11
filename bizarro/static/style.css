@@ -48,7 +48,9 @@ body h2{
 	padding-top:0;
 	margin-top:0;
 }
-
+.file-explorer h2 span{
+	font-weight:normal;
+}
 .new-task{
 	background-color:#eee;
 	padding:1em;
@@ -58,7 +60,19 @@ body h2{
 .new-task label{
 	text-transform: none;
 }
-
+.file-explorer th{
+	text-transform:none;
+}
+.files{
+	width:60%;
+	float:left;
+}
+.task-status{
+	float:right;
+	background-color:#eee;
+	padding:1em;
+	width:33%;
+}
 
 /* End tasks and file explorer */
 
