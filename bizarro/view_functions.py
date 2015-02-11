@@ -156,7 +156,7 @@ def synch_required(route_function):
 
             if _remote_exists(repo, 'origin'):
                 print '  pushing origin', repo
-                repo.git.push('origin', with_exceptions=True)
+                repo.git.push('origin', all=True, with_exceptions=True)
 
         print '-' * 40 + '>' * 40
 
@@ -196,7 +196,7 @@ def synched_checkout_required(route_function):
 
             if _remote_exists(repo, 'origin'):
                 print '  pushing origin', repo
-                repo.git.push('origin', with_exceptions=True)
+                repo.git.push('origin', all=True, with_exceptions=True)
 
         print '-' * 40 + '>' * 40
 
