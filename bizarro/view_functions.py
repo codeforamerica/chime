@@ -17,18 +17,22 @@ def dos2unix(string):
 
 def get_repo(flask_app):
     ''' Gets repository for the current user, cloned from the origin.
+    
+        Uses the first-ever commit in the origin repository to name
+        the cloned directory, to reduce history conflicts when tweaking
+        the repository during development.
     '''
-    dir_name = 'repo-' + session.get('email', 'nobody')
+    source_repo = Repo(flask_app.config['REPO_PATH'])
+    first_commit = list(source_repo.iter_commits())[-1].hexsha
+    dir_name = 'repo-{}-{}'.format(first_commit[:8], session.get('email', 'nobody'))
     user_dir = realpath(join(flask_app.config['WORK_PATH'], quote(dir_name)))
     
     if isdir(user_dir):
         user_repo = Repo(user_dir)
         user_repo.git.reset(hard=True)
         user_repo.remotes.origin.fetch()
-        return user_repo
-    
-    source_repo = Repo(flask_app.config['REPO_PATH'])
-    user_repo = source_repo.clone(user_dir, bare=False)
+    else:
+        user_repo = source_repo.clone(user_dir, bare=False)
     
     return user_repo
 
