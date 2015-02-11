@@ -99,12 +99,16 @@
             <p><span>Grade level: <span class="sketchy">8</span></span></p>
             <p><span>Buzzwords: <span class="sketchy">12</span></span></p>    
         </div>
-            
+        {% if app_authorized %}
         <div class="analytics-overview">
             <p><span class="big-number sketchy">{{page_views}}</span> <span>Views this week</span></p>
             <p><span class="big-number sketchy">{{average_time_page}}s</span> <span>Average visit time</span></p>
         </div>
-        <button id="authorize-button" style="visibility: hidden">Authorize</button>
+        {% else %}
+        <form method="POST" action="/authorize">
+            <button id="authorize-button">Authorize</button>
+        </form>
+        {% endif %}
     </div>
     <script type="text/javascript">
     
