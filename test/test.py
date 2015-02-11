@@ -833,6 +833,7 @@ class TestGoogleApiFunctions (TestCase):
         environ['CLIENT_ID'] = 'client_id'
         environ['CLIENT_SECRET'] = 'meow_secret'
         environ['TOKEN_ROOT_DIR'] = mkdtemp(prefix='bizarro-token-')
+        environ['PROJECT_DOMAIN'] = 'www.codeforamerica.org'
 
     def mock_successful_get_new_access_token(self, url, request):
         if 'https://accounts.google.com/o/oauth2/token' in url.geturl():
@@ -862,6 +863,25 @@ class TestGoogleApiFunctions (TestCase):
             with HTTMock(self.mock_failed_get_new_access_token):
                 with self.assertRaises(Exception):
                     google_api_functions.get_new_access_token('meowser_refresh_token')
+
+    def test_get_analytics_page_path_pattern(self):
+        ''' Verify that we're getting good page path patterns for querying google analytics
+        '''
+        ga_domain = environ['PROJECT_DOMAIN']
+
+        path_in = u'index.html'
+        pattern_out = google_api_functions.get_ga_page_path_pattern(path_in)
+        self.assertEqual(pattern_out, u'{ga_domain}/(index.html|index|)'.format(**locals()))
+
+        path_in = u'help.md'
+        pattern_out = google_api_functions.get_ga_page_path_pattern(path_in)
+        self.assertEqual(pattern_out, u'{ga_domain}/(help.md|help)'.format(**locals()))
+
+        path_in = u'people/michal-migurski/index.html'
+        pattern_out = google_api_functions.get_ga_page_path_pattern(path_in)
+        self.assertEqual(pattern_out, u'{ga_domain}/people/michal-migurski/(index.html|index|)'.format(**locals()))
+
+
 
 class TestApp (TestCase):
 
