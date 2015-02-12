@@ -108,10 +108,10 @@
                     </td>
                     <td>
                         
-                        {%if item_type == "file" and is_editable %}<a href="{{edit_path}}" ><img src="/static/images/icons/ionicons/src/edit.svg" height="20px" alt="Edit" title="Edit" /></a>{% endif %}
-                        {%if item_type == "file" or item_type == "image" %}<a href="{{view_path}}" target="_blank"><img src="/static/images/icons/ionicons/src/eye.svg" height="26px" alt="Preview" title="Preview" /></a>{% endif %}
+                        {%if item_type == "file" and is_editable %}<a href="{{edit_path}}" ><img src="/static/images/icons/ionicons/png/512/edit.png" height="20px" alt="Edit" title="Edit" /></a>{% endif %}
+                        {%if item_type == "file" or item_type == "image" %}<a href="{{view_path}}" target="_blank"><img src="/static/images/icons/ionicons/png/512/eye.png" height="26px" alt="Preview" title="Preview" /></a>{% endif %}
                         
-                        <button name="action" type="submit" value="Delete" class="button button-delete"><img src="/static/images/icons/ionicons/src/android-delete.svg" alt="Archive" title="Archive" height="20px" style="color:red;" /></button>
+                        <button name="action" type="submit" value="Delete" class="button button-delete"><img src="/static/images/icons/ionicons/png/512/trash-a.png" alt="Archive" title="Archive" height="20px" style="color:red;" /></button>
                     </td>
                 </tr>
                 <input name="path" value="{{edit_path}}" type="hidden">
