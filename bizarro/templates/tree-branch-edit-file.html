@@ -59,7 +59,7 @@
                     </li>
                     <li class="form-field">
                         <label>Content</label>
-                        <textarea id="{{iso}}-body" class="textarea" name="{{iso}}-body" type="text">{{form_body}}</textarea>
+                        <textarea id="{{iso}}-body markItUp" class="textarea" name="{{iso}}-body" type="text" data-provide="markdown" data-iconlibrary="fa" data-hidden-buttons="cmdPreview">{{form_body}}</textarea>
                     </li>                      
                 </ul>
             </div>
@@ -88,8 +88,14 @@
                 <input name="" type="text" value="" />  
             </li>                    
             </ul>
-            
+        <div class="markdown-helper">
+            <h2>Content tips</h2>
+            <p>You can easily blah blah help content</p>
+            <ul>
+            </ul>
+        </div>    
         </div>
+
     </div>
 </form>
     <div id="statistics">
