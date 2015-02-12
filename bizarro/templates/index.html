@@ -8,7 +8,7 @@
         <p>Work that's already underway by you and your colleagues</p>
         <table>
         {% for item in items %}
-        <tr>
+         <tr>
           <td><a href="/tree/{{item.path}}/edit/">{{item.name}}</a> <!--({{item.ahead|count}} ahead, {{item.behind|count}} behind)--></td>
           <td>
           <form action="/merge" method="POST">
