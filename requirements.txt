@@ -10,3 +10,5 @@ mock==1.0.1
 gunicorn >= 19.0
 boto==2.36.0
 itsdangerous==0.24
+gspread==0.2.2
+oauth2client==1.4.6
