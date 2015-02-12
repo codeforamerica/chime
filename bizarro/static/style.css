@@ -95,6 +95,8 @@ label{
 }
 .list-form textarea.textarea{
 	width:100%;
+	padding:10px;
+	background-color:transparent;
 }
 .language-edit{
 	overflow:auto;
@@ -106,6 +108,7 @@ label{
 }
 .language-edit textarea{
 	height:300px;
+
 }
 ul.slug{
 	margin:0 1.25em;
