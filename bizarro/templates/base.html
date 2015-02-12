@@ -34,5 +34,18 @@
         {% endif %}
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script src="/static/javascript/toopaymarkdown/js//bootstrap-markdown.js"></script>
+
     </body>
+
+        <script type="text/javascript">
+      var signinLink = document.getElementById('signin');
+      if (signinLink) {
+        signinLink.onclick = function() { navigator.id.request(); };
+      }
+
+      var signoutLink = document.getElementById('signout');
+      if (signoutLink) {
+        signoutLink.onclick = function() { navigator.id.logout(); };
+      }
+    </script>
 </html>
