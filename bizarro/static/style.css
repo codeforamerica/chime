@@ -132,6 +132,9 @@ ul.slug input{
 	float:left;
 	width:30%;
 }
+.markdown-helper{
+	padding:2em;
+}
 body .nav-tabs{
 	margin-top:0;
 	padding-top:0;
