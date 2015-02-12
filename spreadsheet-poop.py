@@ -38,10 +38,13 @@ else:
     credentials = FakeCred()
 
 import gspread, json
+from urllib import urlencode
 
 try:
     gc = gspread.authorize(credentials)
-    resp = gc.session.post('https://www.googleapis.com/drive/v2/files/12jUfaRBd-CU1_6BGeLFG1_qoi7Fw_vRC_SXv36eDzM0/copy', '{}', headers={'Content-Type': 'application/json'})
+    url = 'https://www.googleapis.com/drive/v2/files/12jUfaRBd-CU1_6BGeLFG1_qoi7Fw_vRC_SXv36eDzM0/copy'
+    print 'POST to', url
+    resp = gc.session.post(url, '{}', headers={'Content-Type': 'application/json'})
 except Exception as e:
     print e
     print e.response.getheaders()
@@ -54,7 +57,26 @@ print '{id} - {title}'.format(**info)
 try:
     gc = gspread.authorize(credentials)
     url = 'https://www.googleapis.com/drive/v2/files/{id}'.format(**info)
+    print 'PATCH to', url
     gc.session.request('PATCH', url, '{"title": "Good TIMES"}', headers={'Content-Type': 'application/json'})
+except Exception as e:
+    print e
+    print e.response.getheaders()
+    print e.response.read()
+    raise
+
+try:
+    perm = dict(
+        role='writer',
+        type='user',
+        emailAddress='frances@codeforamerica.org',
+        value='frances@codeforamerica.org'
+        )
+    query = urlencode(dict(sendNotificationEmails='true', emailMessage='Yo.'))
+    gc = gspread.authorize(credentials)
+    url = 'https://www.googleapis.com/drive/v2/files/{id}/permissions?{}'.format(query, **info)
+    print 'POST to', url
+    gc.session.post(url, json.dumps(perm), headers={'Content-Type': 'application/json'})
 except Exception as e:
     print e
     print e.response.getheaders()
