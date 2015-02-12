@@ -18,8 +18,9 @@ from time import sleep
 import re, json, requests
 
 from itsdangerous import Signer
-from boto.ec2 import EC2Connection
 from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
+
+from bizarro.setup import functions
 
 def check_status(resp, task):
     ''' Raise a RuntimeError if response is not HTTP 2XX.
@@ -36,22 +37,23 @@ def check_repo_state(reponame, token):
     
     return bool(resp.status_code == 200)
 
-
 #
 # Establish some baseline details.
 #
 github_api_base = 'https://api.github.com/'
-github_client_id = environ['GITHUB_CLIENT_ID']
-github_client_secret = environ['GITHUB_CLIENT_SECRET']
 
-username = raw_input('Enter Github username: ')
-password = getpass('Enter Github password: ')
-reponame = raw_input('Enter new Github repository name: ')
+github_client_id, github_client_secret, gdocs_client_id, gdocs_client_secret, \
+    username, password, reponame, ec2 = functions.get_input()
 
-if not re.match(r'\w+(-\w+)*$', reponame):
-    raise RuntimeError('Repository "{}" does not match "\w+(-\w+)*$"'.format(reponame))
+#
+# Ask for Google Docs credentials and create an authentication spreadsheet.
+#
+gdocs_credentials = functions.authenticate_google(gdocs_client_id, gdocs_client_secret)
+spreadsheet_id = functions.create_google_spreadsheet(gdocs_credentials)
 
-ec2 = EC2Connection()
+print spreadsheet_id
+
+raise RuntimeError('done for now')
 
 #
 # Create a new authorization with Github.
