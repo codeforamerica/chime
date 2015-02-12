@@ -1,6 +1,6 @@
 {
-	"access-token": "ya29.FwFtA1qEbG6oAvfhRH55Annq4vDAJiHIWFAxNjm8-2nzC1tiFDtYlEhmymgLFPGuBWhx0q7Gvc3f9Q",
-	"refresh-token": "1/fM-2eXkEg9mfpC5ZEEbil-oguYH9sj3qX6jV1lk2Ytk",
-	"profile-id": "41226190",
-	"project-domain": "www.codeforamerica.org"
+	"access_token": "ya29.FwFtA1qEbG6oAvfhRH55Annq4vDAJiHIWFAxNjm8-2nzC1tiFDtYlEhmymgLFPGuBWhx0q7Gvc3f9Q",
+	"refresh_token": "1/fM-2eXkEg9mfpC5ZEEbil-oguYH9sj3qX6jV1lk2Ytk",
+	"profile_id": "41226190",
+	"project_domain": "www.codeforamerica.org"
 }
