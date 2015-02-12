@@ -108,10 +108,10 @@
                     </td>
                     <td>
                         
-                        {%if item_type == "file" and is_editable %}<a href="{{edit_path}}" ><img src="/static/images/icons/actions/edit.png" height="20px" alt="Edit" /></a>{% endif %}
-                        {%if item_type == "file" or item_type == "image" %}<a href="{{view_path}}" target="_blank"><img src="/static/images/icons/actions/view.png" height="20px" alt="Preview" /></a>{% endif %}
+                        {%if item_type == "file" and is_editable %}<a href="{{edit_path}}" ><img src="/static/images/icons/actions/edit.png" height="20px" alt="Edit" title="Edit" /></a>{% endif %}
+                        {%if item_type == "file" or item_type == "image" %}<a href="{{view_path}}" target="_blank"><img src="/static/images/icons/actions/view.png" height="20px" alt="Preview" title="Preview" /></a>{% endif %}
                         
-                        <button name="action" type="submit" value="Delete" class="button button-delete"><img src="/static/images/icons/actions/delete.png" alt="Archive" height="20px" /></button>
+                        <button name="action" type="submit" value="Delete" class="button button-delete"><img src="/static/images/icons/actions/delete.png" alt="Archive" title="Archive" height="20px" /></button>
                     </td>
                 </tr>
                 <input name="path" value="{{edit_path}}" type="hidden">
