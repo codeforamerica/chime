@@ -2,7 +2,8 @@ from logging import getLogger
 Logger = getLogger('bizarro.google_access_token_update')
 
 from .google_api_functions import get_new_access_token
-from os import environ
+import json
+import os
 import argparse, traceback, sys
 from time import sleep
 
@@ -20,10 +21,10 @@ if __name__ == '__main__':
     '''
     while True:
         try:
-            token_file_path =  environ.get('TOKEN_ROOT_DIR', '.').rstrip('/')
-            with open(token_file_path + '/refresh_token', 'r') as f:
-                refresh_token = f.read()
-            get_new_access_token(refresh_token)
+            ga_config_path = os.path.join(os.environ.get('CONFIG_ROOT_DIR'), os.environ.get('GA_CONFIG_FILENAME'))
+            with open(ga_config_path) as infile:
+                ga_config = json.load(infile)
+            get_new_access_token(ga_config['refresh_token'])
         except:
             traceback.print_exc(file=sys.stderr)
         

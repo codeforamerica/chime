@@ -11,7 +11,7 @@ from shutil import rmtree, copytree
 from uuid import uuid4
 from re import search
 import random
-from json import loads
+import json
 from datetime import date, timedelta
 
 import sys, os
@@ -66,6 +66,10 @@ class TestViewFunctions (TestCase):
         environ['GIT_AUTHOR_EMAIL'] = self.session['email']
         environ['GIT_COMMITTER_EMAIL'] = self.session['email']
 
+    def tearDown(self):
+        rmtree(self.origin.git_dir)
+        rmtree(self.clone.working_dir)
+
     def test_sorted_paths(self):
         ''' Ensure files/directories are sorted in alphabetical order
         '''
@@ -90,10 +94,6 @@ class TestViewFunctions (TestCase):
         dirs_and_paths = view_functions.directory_paths('my-branch', 'blah/foo/')
         self.assertEqual(dirs_and_paths, [('root', '/tree/my-branch/edit'), ('blah', '/tree/my-branch/edit/blah/'), ('foo', '/tree/my-branch/edit/blah/foo/')])
 
-    def tearDown(self):
-        rmtree(self.origin.git_dir)
-        rmtree(self.clone.working_dir)
-
 
 class TestRepo (TestCase):
 
@@ -113,6 +113,11 @@ class TestRepo (TestCase):
         environ['GIT_COMMITTER_NAME'] = ' '
         environ['GIT_AUTHOR_EMAIL'] = self.session['email']
         environ['GIT_COMMITTER_EMAIL'] = self.session['email']
+
+    def tearDown(self):
+        rmtree(self.origin.git_dir)
+        rmtree(self.clone1.working_dir)
+        rmtree(self.clone2.working_dir)
 
     def test_repo_features(self):
         self.assertTrue(self.origin.bare)
@@ -820,11 +825,6 @@ class TestRepo (TestCase):
         self.assertEqual(email2, 'reviewer@example.org')
         self.assertTrue('This still sucks.' in message2)
 
-    def tearDown(self):
-        rmtree(self.origin.git_dir)
-        rmtree(self.clone1.working_dir)
-        rmtree(self.clone2.working_dir)
-
 ''' Test functions that are called outside of the google authing/analytics data fetching via the UI
 '''
 class TestGoogleApiFunctions (TestCase):
@@ -832,9 +832,25 @@ class TestGoogleApiFunctions (TestCase):
     def setUp(self):
         environ['CLIENT_ID'] = 'client_id'
         environ['CLIENT_SECRET'] = 'meow_secret'
-        environ['TOKEN_ROOT_DIR'] = mkdtemp(prefix='bizarro-token-')
-        environ['PROJECT_DOMAIN'] = 'www.codeforamerica.org'
-        environ['PROFILE_ID'] = "41226190"
+
+        ga_config_path = mkdtemp(prefix='bizarro-config-')
+        app.config['CONFIG_PATH'] = ga_config_path
+        environ['CONFIG_ROOT_DIR'] = ga_config_path
+        environ['GA_CONFIG_FILENAME'] = "ga_config.json"
+
+        # write a tmp config file
+        ga_config = {
+            "access_token": "meowser_token",
+            "refresh_token": "refresh_meows",
+            "profile_id": "12345678",
+            "project_domain": ""
+        }
+        ga_config_path = os.path.join(environ['CONFIG_ROOT_DIR'], environ['GA_CONFIG_FILENAME'])
+        with open(ga_config_path, 'w') as outfile:
+            json.dump(ga_config, outfile, indent=2, ensure_ascii=False)
+
+    def tearDown(self):
+        rmtree(app.config['CONFIG_PATH'])
 
     def mock_successful_get_new_access_token(self, url, request):
         if 'https://accounts.google.com/o/oauth2/token' in url.geturl():
@@ -842,14 +858,14 @@ class TestGoogleApiFunctions (TestCase):
             return response(200, content)
 
         else:
-            raise Exception('Asked for unknown URL ' + url.geturl())
+            raise Exception('01 Asked for unknown URL ' + url.geturl())
 
     def mock_failed_get_new_access_token(self, url, request):
         if 'https://accounts.google.com/o/oauth2/token' in url.geturl():
             return response(500)
 
         else:
-            raise Exception('Asked for unknown URL ' + url.geturl())
+            raise Exception('02 Asked for unknown URL ' + url.geturl())
 
     def mock_google_analytics_authorized_response(self, url, request):
         if 'https://www.googleapis.com/analytics/' in url.geturl():
@@ -865,9 +881,12 @@ class TestGoogleApiFunctions (TestCase):
         with app.test_request_context():
             with HTTMock(self.mock_successful_get_new_access_token):
                 google_api_functions.get_new_access_token('meowser_refresh_token')
-                access_token_file = open(environ['TOKEN_ROOT_DIR'] + '/access_token', 'r')
-                self.assertEqual(access_token_file.read(), 'meowser_access_token')
-                access_token_file.close()
+
+                ga_config_path = os.path.join(environ['CONFIG_ROOT_DIR'], environ['GA_CONFIG_FILENAME'])
+                with open(ga_config_path) as infile:
+                    ga_config = json.load(infile)
+
+                self.assertEqual(ga_config['access_token'], 'meowser_access_token')
 
     def test_failure_to_get_new_access_token(self):
         with app.test_request_context():
@@ -878,18 +897,18 @@ class TestGoogleApiFunctions (TestCase):
     def test_get_analytics_page_path_pattern(self):
         ''' Verify that we're getting good page path patterns for querying google analytics
         '''
-        ga_domain = environ['PROJECT_DOMAIN']
+        ga_domain = 'www.codeforamerica.org'
 
         path_in = u'index.html'
-        pattern_out = google_api_functions.get_ga_page_path_pattern(path_in)
+        pattern_out = google_api_functions.get_ga_page_path_pattern(path_in, ga_domain)
         self.assertEqual(pattern_out, u'{ga_domain}/(index.html|index|)'.format(**locals()))
 
         path_in = u'help.md'
-        pattern_out = google_api_functions.get_ga_page_path_pattern(path_in)
+        pattern_out = google_api_functions.get_ga_page_path_pattern(path_in, ga_domain)
         self.assertEqual(pattern_out, u'{ga_domain}/(help.md|help)'.format(**locals()))
 
         path_in = u'people/michal-migurski/index.html'
-        pattern_out = google_api_functions.get_ga_page_path_pattern(path_in)
+        pattern_out = google_api_functions.get_ga_page_path_pattern(path_in, ga_domain)
         self.assertEqual(pattern_out, u'{ga_domain}/people/michal-migurski/(index.html|index|)'.format(**locals()))
 
     def test_handle_good_analytics_response(self):
@@ -919,11 +938,24 @@ class TestApp (TestCase):
 
         app.config['WORK_PATH'] = work_path
         app.config['REPO_PATH'] = temp_repo_path
-        environ['PROFILE_ID'] = '12345678'
         environ['CLIENT_ID'] = 'client_id'
         environ['CLIENT_SECRET'] = 'meow_secret'
-        environ['TOKEN_ROOT_DIR'] = mkdtemp(prefix='bizarro-token-')
 
+        ga_config_path = mkdtemp(prefix='bizarro-config-')
+        app.config['CONFIG_PATH'] = ga_config_path
+        environ['CONFIG_ROOT_DIR'] = ga_config_path
+        environ['GA_CONFIG_FILENAME'] = "ga_config.json"
+
+        # write a tmp config file
+        ga_config = {
+            "access_token": "meowser_token",
+            "refresh_token": "refresh_meows",
+            "profile_id": "12345678",
+            "project_domain": ""
+        }
+        ga_config_path = os.path.join(environ['CONFIG_ROOT_DIR'], environ['GA_CONFIG_FILENAME'])
+        with open(ga_config_path, 'w') as outfile:
+            json.dump(ga_config, outfile, indent=2, ensure_ascii=False)
 
         random.choice = MagicMock(return_value="P")
 
@@ -932,6 +964,7 @@ class TestApp (TestCase):
     def tearDown(self):
         rmtree(app.config['WORK_PATH'])
         rmtree(app.config['REPO_PATH'])
+        rmtree(app.config['CONFIG_PATH'])
 
 
     def persona_verify(self, url, request):
@@ -939,7 +972,7 @@ class TestApp (TestCase):
             return response(200, '''{"status": "okay", "email": "user@example.com"}''', headers=dict(Link='<https://api.github.com/user/337792/repos?page=1>; rel="prev", <https://api.github.com/user/337792/repos?page=1>; rel="first"'))
 
         else:
-            raise Exception('Asked for unknown URL ' + url.geturl())
+            raise Exception('03 Asked for unknown URL ' + url.geturl())
 
     def mock_google_authorization(self, url, request):
         if 'https://accounts.google.com/o/oauth2/auth' in url.geturl():
@@ -947,7 +980,7 @@ class TestApp (TestCase):
             return response(200, content)
 
         else:
-            raise Exception('Asked for unknown URL ' + url.geturl())
+            raise Exception('04 Asked for unknown URL ' + url.geturl())
 
     def mock_successful_google_callback(self, url, request):
         if 'https://accounts.google.com/o/oauth2/token' in url.geturl():
@@ -955,25 +988,25 @@ class TestApp (TestCase):
             return response(200, content)
 
         else:
-            raise Exception('Asked for unknown URL ' + url.geturl())
+            raise Exception('05 Asked for unknown URL ' + url.geturl())
 
     def mock_failed_google_callback(self, url, request):
         if 'https://accounts.google.com/o/oauth2/token' in url.geturl():
             return response(500)
 
         else:
-            raise Exception('Asked for unknown URL ' + url.geturl())
+            raise Exception('06 Asked for unknown URL ' + url.geturl())
 
     def mock_google_analytics(self, url, request):
         start_date = (date.today() - timedelta(days=7)).isoformat()
         end_date = date.today().isoformat()
         url_string = url.geturl()
 
-        if 'ids=ga%3A12345678' in url_string and 'end-date='+end_date in url_string and 'start-date='+start_date in url_string and 'filters=ga%3ApagePathhello.html' in url_string:
-            return response(200, '''{"ga:previousPagePath": "/about/", "ga:pagePath": "/lib/", "ga:pageViews": "12", "ga:avgTimeOnPage": "56.17", "ga:exiteRate": "43.75"}''')
+        if 'ids=ga%3A12345678' in url_string and 'end-date='+end_date in url_string and 'start-date='+start_date in url_string and 'filters=ga%3ApagePath%3D~%28hello.html%7Chello%29' in url_string:
+            return response(200, '''{"ga:previousPagePath": "/about/", "ga:pagePath": "/lib/", "ga:pageViews": "12", "ga:avgTimeOnPage": "56.17", "ga:exiteRate": "43.75", "totalsForAllResults": {"ga:pageViews": "24", "ga:avgTimeOnPage": "67.36363636363636"}}''')
 
         else:
-            raise Exception('Asked for unknown URL ' + url.geturl())
+            raise Exception('07 Asked for unknown URL ' + url.geturl())
 
     def test_login(self):
         ''' Check basic log in / log out flow without talking to Persona.
@@ -1051,13 +1084,12 @@ class TestApp (TestCase):
         with HTTMock(self.mock_successful_google_callback):
             response = self.app.get('/callback?state=PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP&code=code')
 
-        access_token_file = open(environ['TOKEN_ROOT_DIR'] + '/access_token', 'r')
-        self.assertEqual(access_token_file.read(), 'meowser_token')
-        access_token_file.close()
+        ga_config_path = os.path.join(environ['CONFIG_ROOT_DIR'], environ['GA_CONFIG_FILENAME'])
+        with open(ga_config_path) as infile:
+            ga_config = json.load(infile)
 
-        refresh_token_file = open(environ['TOKEN_ROOT_DIR'] + '/refresh_token', 'r')
-        self.assertEqual(refresh_token_file.read(), 'refresh_meows')
-        refresh_token_file.close()
+        self.assertEqual(ga_config['access_token'], 'meowser_token')
+        self.assertEqual(ga_config['refresh_token'], 'refresh_meows')
 
         self.assertTrue('authorization-complete' in response.location)
 

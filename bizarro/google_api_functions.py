@@ -26,8 +26,8 @@ def authorize_google():
     return redirect('https://accounts.google.com/o/oauth2/auth' + '?' + query_string)
 
 def callback_google(state, code, callback_uri):
-    ''' Get the access token plus the refresh token so we can use it to get a new access token
-        every once in a while
+    ''' Get the access token plus the refresh token so we can use them
+        to get a new access token every once in a while
     '''
     if state != session['state']:
         raise Exception()
@@ -42,17 +42,25 @@ def callback_google(state, code, callback_uri):
         raise Exception()
     access = json.loads(resp.content)
 
-    token_file_path =  os.environ.get('TOKEN_ROOT_DIR', '.').rstrip('/')
-    with open(token_file_path + '/access_token', "w") as f:
-        f.write(access['access_token'])
+    ga_config_path = os.path.join(os.environ.get('CONFIG_ROOT_DIR'), os.environ.get('GA_CONFIG_FILENAME'))
+    with open(ga_config_path) as infile:
+        ga_config = json.load(infile)
 
-    with open(token_file_path + '/refresh_token', "w") as f:
-        f.write(access['refresh_token'])
+    # change the values of the access and refresh tokens
+    ga_config['access_token'] = access['access_token']
+    ga_config['refresh_token'] = access['refresh_token']
+
+    # write the new config json
+    with open(ga_config_path, 'w') as outfile:
+        json.dump(ga_config, outfile, indent=2, ensure_ascii=False)
 
 def get_new_access_token(refresh_token):
     ''' Get a new access token with the refresh token so a user doesn't need to
         authorize the app again
     '''
+    if not refresh_token:
+        return False
+
     data = dict(client_id=os.environ.get('CLIENT_ID'), client_secret=os.environ.get('CLIENT_SECRET'),
                 refresh_token=refresh_token, grant_type='refresh_token')
 
@@ -60,32 +68,44 @@ def get_new_access_token(refresh_token):
 
     if resp.status_code != 200:
         raise Exception()
+
     access = json.loads(resp.content)
 
-    token_file_path =  os.environ.get('TOKEN_ROOT_DIR', '.').rstrip('/') + '/access_token'
-    with open(token_file_path, "w") as f:
-        f.write(access['access_token'])
+    # load the config json
+    ga_config_path = os.path.join(os.environ.get('CONFIG_ROOT_DIR'), os.environ.get('GA_CONFIG_FILENAME'))
+    with open(ga_config_path) as infile:
+        ga_config = json.load(infile)
+    # change the value of the access token
+    ga_config['access_token'] = access['access_token']
+    # write the new config json
+    with open(ga_config_path, 'w') as outfile:
+        json.dump(ga_config, outfile, indent=2, ensure_ascii=False)
+    return True
 
-def get_ga_page_path_pattern(page_path):
+def get_ga_page_path_pattern(page_path, project_domain):
     ''' Get a regex pattern that'll get us the google analytics data we want.
         Builds a pattern that looks like: codeforamerica.org/about/(index.html|index|)
     '''
-    ga_domain = os.environ.get('PROJECT_DOMAIN')
     page_path_dir, page_path_filename = posixpath.split(page_path)
     filename_base, filename_ext = posixpath.splitext(page_path_filename)
     # if the filename is 'index', allow no filename as an option
     or_else = '|' if (filename_base == 'index') else ''
     filename_pattern = '({page_path_filename}|{filename_base}{or_else})'.format(**locals())
-    return posixpath.join(ga_domain, page_path_dir, filename_pattern)
+    return posixpath.join(project_domain, page_path_dir, filename_pattern)
 
 def fetch_google_analytics_for_page(page_path, access_token):
     ''' Get stats for a particular page
     '''
+    ga_config_path = os.path.join(os.environ.get('CONFIG_ROOT_DIR'), os.environ.get('GA_CONFIG_FILENAME'))
+    with open(ga_config_path) as infile:
+        ga_config = json.load(infile)
+    ga_project_domain = ga_config['project_domain']
+    ga_profile_id = ga_config['profile_id']
+
     start_date = (date.today() - timedelta(days=7)).isoformat()
     end_date = date.today().isoformat()
-    ga_profile_id = os.environ.get('PROFILE_ID')
 
-    page_path_pattern = get_ga_page_path_pattern(page_path)
+    page_path_pattern = get_ga_page_path_pattern(page_path, ga_project_domain)
 
     query_string = urlencode({'ids' : 'ga:' + ga_profile_id, 'dimensions' : 'ga:previousPagePath,ga:pagePath',
                                'metrics' : 'ga:pageViews,ga:avgTimeOnPage,ga:exitRate',

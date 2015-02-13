@@ -17,9 +17,12 @@ from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
 from .view_functions import (
   branch_name2path, branch_var2name, get_repo, path_type, name_branch, dos2unix,
   login_required, synch_required, synched_checkout_required, is_editable, sorted_paths,
-  directory_paths, should_redirect, make_redirect, get_google_token
+  directory_paths, should_redirect, make_redirect
   )
 from .google_api_functions import authorize_google, callback_google, fetch_google_analytics_for_page
+
+import posixpath
+import json
 
 @app.route('/')
 @synch_required
@@ -269,13 +272,18 @@ def branch_edit(branch, path=None):
 
         url_slug, _ = splitext(path)
         view_path = join('/tree/%s/view' % branch_name2path(branch), path)
-        token_file_path =  get_google_token()
         app_authorized = False
+
+        ga_config_path = posixpath.join(environ.get('CONFIG_ROOT_DIR'), environ.get('GA_CONFIG_FILENAME'))
         analytics_dict = {}
-        if isfile(token_file_path) and stat(token_file_path).st_size > 0:
-            app_authorized = True
-            with open(token_file_path, 'r') as f:
-                analytics_dict = fetch_google_analytics_for_page(path, f.read())
+        if isfile(ga_config_path):
+            with open(ga_config_path) as infile:
+                ga_config = json.load(infile)
+
+            if ga_config['access_token'] not in [u'', None]:
+                app_authorized = True
+                analytics_dict = fetch_google_analytics_for_page(path, ga_config['access_token'])
+
         kwargs = dict(dict(branch=branch, safe_branch=safe_branch,
                       body=body, hexsha=c.hexsha, url_slug=url_slug,
                       front=front, email=session['email'],
@@ -410,3 +418,5 @@ def all_other_paths(path):
     '''
     if should_redirect():
         return make_redirect()
+    else:
+        return 'OK'
