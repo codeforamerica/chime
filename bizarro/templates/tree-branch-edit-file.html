@@ -102,7 +102,7 @@
         {% if app_authorized %}
         <div class="analytics-overview">
             <p><span class="big-number sketchy">{{page_views}}</span> <span>Views this week</span></p>
-            <p><span class="big-number sketchy">{{average_time_page}}s</span> <span>Average visit time</span></p>
+            <p><span class="big-number sketchy">{{average_time_page}}</span> <span>Average visit time</span></p>
         </div>
         {% else %}
         <form method="POST" action="/authorize">
