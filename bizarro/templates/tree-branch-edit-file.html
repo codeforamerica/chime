@@ -74,19 +74,16 @@
             </div>
         </div>
         <div class="content-settings">
+            {% set form_layout = front['layout'] %}
+            {% set form_section = front['section'] %}
+            
             <ul class="list-form slug">
-            <li class="form-field">
-                <label for="url-slug">Slug</label>
-                <input name="url-slug" type="text" value="{{url_slug}}" />  
-            </li>   
-            <li class="form-field">
-                <label for="" class="sketchy">Category</label>
-                <input name="" type="text" value="" />  
-            </li>   
-            <li class="form-field">
-                <label for="" class="sketchy">Template</label>
-                <input name="" type="text" value="" />  
-            </li>                    
+                <li class="form-field">
+                    <label for="url-slug">Slug</label>
+                    <input name="url-slug" type="text" value="{{url_slug}}" />  
+                </li>  
+                <li class="form-field">Layout: {{form_layout}}</li>
+                <li class="form-field">Section: {{form_section}}<li>                  
             </ul>
             <div class="markdown-helper">
                 <h2>Content tips</h2>
