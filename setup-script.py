@@ -18,8 +18,11 @@ from time import sleep
 import re, json, requests
 
 from itsdangerous import Signer
-from boto.ec2 import EC2Connection
 from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
+
+from bizarro.setup import functions
+
+github_api_base = 'https://api.github.com/'
 
 def check_status(resp, task):
     ''' Raise a RuntimeError if response is not HTTP 2XX.
@@ -36,22 +39,27 @@ def check_repo_state(reponame, token):
     
     return bool(resp.status_code == 200)
 
-
 #
 # Establish some baseline details.
 #
-github_api_base = 'https://api.github.com/'
-github_client_id = environ['GITHUB_CLIENT_ID']
-github_client_secret = environ['GITHUB_CLIENT_SECRET']
+github_client_id, github_client_secret, gdocs_client_id, gdocs_client_secret, \
+    username, password, reponame, ec2 = functions.get_input()
 
-username = raw_input('Enter Github username: ')
-password = getpass('Enter Github password: ')
-reponame = raw_input('Enter new Github repository name: ')
+resp = requests.get(urljoin(github_api_base, '/user'), auth=(username, password))
 
-if not re.match(r'\w+(-\w+)*$', reponame):
-    raise RuntimeError('Repository "{}" does not match "\w+(-\w+)*$"'.format(reponame))
+if resp.status_code != 200:
+    raise RuntimeError('Failed Github login for user "{}"'.format(username))
 
-ec2 = EC2Connection()
+print '--> Github login OK'
+
+#
+# Ask for Google Docs credentials and create an authentication spreadsheet.
+#
+gdocs_credentials = functions.authenticate_google(gdocs_client_id, gdocs_client_secret)
+sheet_id = functions.create_google_spreadsheet(gdocs_credentials, reponame)
+sheet_url = 'https://docs.google.com/a/codeforamerica.org/spreadsheets/d/{}'.format(sheet_id)
+
+print '--> Created spreadsheet {}'.format(sheet_url)
 
 #
 # Create a new authorization with Github.
@@ -120,20 +128,20 @@ ec2_args = dict(instance_type='c3.large', user_data=user_data,
 instance = ec2.run_instances('ami-f8763a90', **ec2_args).instances[0]
 instance.add_tag('Name', 'Ceviche Test {}'.format(reponame))
 
-print 'Prepared EC2 instance', instance.id
+print '    Prepared EC2 instance', instance.id
 
 while not instance.dns_name:
     instance.update()
     sleep(1)
 
-print 'Available at', instance.dns_name
+print '--> Available at', instance.dns_name
 
 while True:
-    print 'Waiting for', reponame
+    print '    Waiting for', reponame
     sleep(30)
 
     if check_repo_state(reponame, github_token):
-        print reponame, 'exists'
+        print '   ', reponame, 'exists'
         break
 
 #
@@ -142,7 +150,7 @@ while True:
 #
 while True:
     path = '/.well-known/deploy-key.txt'
-    print 'Waiting for', path
+    print '    Waiting for', path
     sleep(5)
     
     resp = requests.get('http://{}{}'.format(instance.dns_name, path))
@@ -168,7 +176,7 @@ if code == 422:
     if code not in range(200, 299):
         raise RuntimeError('Github deploy key deletion failed, status {}'.format(code))
     
-    print 'Deleted temporary token key'
+    print '    Deleted temporary token key'
     resp = requests.post(keys_url, body, headers=head, auth=(username, password))
     code = resp.status_code
     
@@ -178,7 +186,7 @@ if code == 422:
 elif code not in range(200, 299):
     raise RuntimeError('Github deploy key creation failed, status {}'.format(code))
 
-print 'Created permanent deploy key', 'ceviche-key'
+print '--> Created permanent deploy key', 'ceviche-key'
 
 #
 # Delete Github authorization.
