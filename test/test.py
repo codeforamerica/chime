@@ -66,6 +66,10 @@ class TestViewFunctions (TestCase):
         environ['GIT_AUTHOR_EMAIL'] = self.session['email']
         environ['GIT_COMMITTER_EMAIL'] = self.session['email']
 
+    def tearDown(self):
+        rmtree(self.origin.git_dir)
+        rmtree(self.clone.working_dir)
+
     def test_sorted_paths(self):
         ''' Ensure files/directories are sorted in alphabetical order
         '''
@@ -90,10 +94,6 @@ class TestViewFunctions (TestCase):
         dirs_and_paths = view_functions.directory_paths('my-branch', 'blah/foo/')
         self.assertEqual(dirs_and_paths, [('root', '/tree/my-branch/edit'), ('blah', '/tree/my-branch/edit/blah/'), ('foo', '/tree/my-branch/edit/blah/foo/')])
 
-    def tearDown(self):
-        rmtree(self.origin.git_dir)
-        rmtree(self.clone.working_dir)
-
 
 class TestRepo (TestCase):
 
@@ -113,6 +113,11 @@ class TestRepo (TestCase):
         environ['GIT_COMMITTER_NAME'] = ' '
         environ['GIT_AUTHOR_EMAIL'] = self.session['email']
         environ['GIT_COMMITTER_EMAIL'] = self.session['email']
+
+    def tearDown(self):
+        rmtree(self.origin.git_dir)
+        rmtree(self.clone1.working_dir)
+        rmtree(self.clone2.working_dir)
 
     def test_repo_features(self):
         self.assertTrue(self.origin.bare)
@@ -819,11 +824,6 @@ class TestRepo (TestCase):
         self.assertTrue('This sucks.' in message1)
         self.assertEqual(email2, 'reviewer@example.org')
         self.assertTrue('This still sucks.' in message2)
-
-    def tearDown(self):
-        rmtree(self.origin.git_dir)
-        rmtree(self.clone1.working_dir)
-        rmtree(self.clone2.working_dir)
 
 ''' Test functions that are called outside of the google authing/analytics data fetching via the UI
 '''
