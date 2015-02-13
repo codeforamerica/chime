@@ -832,7 +832,10 @@ class TestGoogleApiFunctions (TestCase):
     def setUp(self):
         environ['CLIENT_ID'] = 'client_id'
         environ['CLIENT_SECRET'] = 'meow_secret'
-        environ['CONFIG_ROOT_DIR'] = mkdtemp(prefix='bizarro-config-')
+
+        ga_config_path = mkdtemp(prefix='bizarro-config-')
+        app.config['CONFIG_PATH'] = ga_config_path
+        environ['CONFIG_ROOT_DIR'] = ga_config_path
         environ['GA_CONFIG_FILENAME'] = "ga_config.json"
 
         # write a tmp config file
@@ -845,6 +848,9 @@ class TestGoogleApiFunctions (TestCase):
         ga_config_path = os.path.join(environ['CONFIG_ROOT_DIR'], environ['GA_CONFIG_FILENAME'])
         with open(ga_config_path, 'w') as outfile:
             json.dump(ga_config, outfile, indent=2, ensure_ascii=False)
+
+    def tearDown(self):
+        rmtree(app.config['CONFIG_PATH'])
 
     def mock_successful_get_new_access_token(self, url, request):
         if 'https://accounts.google.com/o/oauth2/token' in url.geturl():
@@ -934,7 +940,10 @@ class TestApp (TestCase):
         app.config['REPO_PATH'] = temp_repo_path
         environ['CLIENT_ID'] = 'client_id'
         environ['CLIENT_SECRET'] = 'meow_secret'
-        environ['CONFIG_ROOT_DIR'] = mkdtemp(prefix='bizarro-config-')
+
+        ga_config_path = mkdtemp(prefix='bizarro-config-')
+        app.config['CONFIG_PATH'] = ga_config_path
+        environ['CONFIG_ROOT_DIR'] = ga_config_path
         environ['GA_CONFIG_FILENAME'] = "ga_config.json"
 
         # write a tmp config file
@@ -955,6 +964,7 @@ class TestApp (TestCase):
     def tearDown(self):
         rmtree(app.config['WORK_PATH'])
         rmtree(app.config['REPO_PATH'])
+        rmtree(app.config['CONFIG_PATH'])
 
 
     def persona_verify(self, url, request):
