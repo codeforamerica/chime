@@ -128,20 +128,20 @@ ec2_args = dict(instance_type='c3.large', user_data=user_data,
 instance = ec2.run_instances('ami-f8763a90', **ec2_args).instances[0]
 instance.add_tag('Name', 'Ceviche Test {}'.format(reponame))
 
-print 'Prepared EC2 instance', instance.id
+print '    Prepared EC2 instance', instance.id
 
 while not instance.dns_name:
     instance.update()
     sleep(1)
 
-print 'Available at', instance.dns_name
+print '--> Available at', instance.dns_name
 
 while True:
-    print 'Waiting for', reponame
+    print '    Waiting for', reponame
     sleep(30)
 
     if check_repo_state(reponame, github_token):
-        print reponame, 'exists'
+        print '   ', reponame, 'exists'
         break
 
 #
@@ -150,7 +150,7 @@ while True:
 #
 while True:
     path = '/.well-known/deploy-key.txt'
-    print 'Waiting for', path
+    print '    Waiting for', path
     sleep(5)
     
     resp = requests.get('http://{}{}'.format(instance.dns_name, path))
@@ -176,7 +176,7 @@ if code == 422:
     if code not in range(200, 299):
         raise RuntimeError('Github deploy key deletion failed, status {}'.format(code))
     
-    print 'Deleted temporary token key'
+    print '    Deleted temporary token key'
     resp = requests.post(keys_url, body, headers=head, auth=(username, password))
     code = resp.status_code
     
@@ -186,7 +186,7 @@ if code == 422:
 elif code not in range(200, 299):
     raise RuntimeError('Github deploy key creation failed, status {}'.format(code))
 
-print 'Created permanent deploy key', 'ceviche-key'
+print '--> Created permanent deploy key', 'ceviche-key'
 
 #
 # Delete Github authorization.
