@@ -58,29 +58,29 @@ def get_new_access_token(refresh_token):
     ''' Get a new access token with the refresh token so a user doesn't need to
         authorize the app again
     '''
-    if refresh_token not in [u'', None]:
-        data = dict(client_id=os.environ.get('CLIENT_ID'), client_secret=os.environ.get('CLIENT_SECRET'),
-                    refresh_token=refresh_token, grant_type='refresh_token')
+    if not refresh_token:
+        return False
 
-        resp = post('https://accounts.google.com/o/oauth2/token', data=data)
+    data = dict(client_id=os.environ.get('CLIENT_ID'), client_secret=os.environ.get('CLIENT_SECRET'),
+                refresh_token=refresh_token, grant_type='refresh_token')
 
-        if resp.status_code != 200:
-            raise Exception()
-            return False
+    resp = post('https://accounts.google.com/o/oauth2/token', data=data)
 
-        access = json.loads(resp.content)
+    if resp.status_code != 200:
+        raise Exception()
 
-        # load the config json
-        ga_config_path = os.path.join(os.environ.get('CONFIG_ROOT_DIR'), os.environ.get('GA_CONFIG_FILENAME'))
-        with open(ga_config_path) as infile:
-            ga_config = json.load(infile)
-        # change the value of the access token
-        ga_config['access_token'] = access['access_token']
-        # write the new config json
-        with open(ga_config_path, 'w') as outfile:
-            json.dump(ga_config, outfile, indent=2, ensure_ascii=False)
-        return True
-    return False
+    access = json.loads(resp.content)
+
+    # load the config json
+    ga_config_path = os.path.join(os.environ.get('CONFIG_ROOT_DIR'), os.environ.get('GA_CONFIG_FILENAME'))
+    with open(ga_config_path) as infile:
+        ga_config = json.load(infile)
+    # change the value of the access token
+    ga_config['access_token'] = access['access_token']
+    # write the new config json
+    with open(ga_config_path, 'w') as outfile:
+        json.dump(ga_config, outfile, indent=2, ensure_ascii=False)
+    return True
 
 def get_ga_page_path_pattern(page_path, project_domain):
     ''' Get a regex pattern that'll get us the google analytics data we want.
