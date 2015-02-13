@@ -415,3 +415,5 @@ def all_other_paths(path):
     '''
     if should_redirect():
         return make_redirect()
+    else:
+        return 'OK'
