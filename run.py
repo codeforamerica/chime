@@ -1,4 +1,4 @@
-from bizarro import app
-
+from bizarro import create_app
 if __name__ == '__main__':
+    app = create_app()
     app.run(debug=True)
