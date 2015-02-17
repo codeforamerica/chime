@@ -1,4 +1,4 @@
-from flask import request, redirect, session, url_for
+from flask import current_app, request, redirect, session, url_for
 from requests import post, get
 from urllib import urlencode
 import random
@@ -20,7 +20,8 @@ def authorize_google():
                   for x in xrange(32))
     session['state'] = state
 
-    query_string = urlencode(dict(client_id=os.environ.get('CLIENT_ID'), redirect_uri=os.environ.get('REDIRECT_URI'),
+
+    query_string = urlencode(dict(client_id=current_app.config['GA_CLIENT_ID'], redirect_uri=current_app.config['REDIRECT_URI'],
                                   scope='openid profile https://www.googleapis.com/auth/analytics', state=state, response_type='code',
                                   access_type='offline', approval_prompt='force'))
     return redirect('https://accounts.google.com/o/oauth2/auth' + '?' + query_string)
@@ -32,7 +33,7 @@ def callback_google(state, code, callback_uri):
     if state != session['state']:
         raise Exception()
 
-    data = dict(client_id=os.environ.get('CLIENT_ID'), client_secret=os.environ.get('CLIENT_SECRET'),
+    data = dict(client_id=current_app.config['GA_CLIENT_ID'], client_secret=current_app.config['GA_CLIENT_SECRET'],
                 code=code, redirect_uri=callback_uri,
                 grant_type='authorization_code')
 
@@ -42,7 +43,7 @@ def callback_google(state, code, callback_uri):
         raise Exception()
     access = json.loads(resp.content)
 
-    ga_config_path = os.path.join(os.environ.get('CONFIG_ROOT_DIR'), os.environ.get('GA_CONFIG_FILENAME'))
+    ga_config_path = os.path.join(current_app.config['CONFIG_ROOT_DIR'], current_app.config['GA_CONFIG_FILENAME'])
     with open(ga_config_path) as infile:
         ga_config = json.load(infile)
 
@@ -61,7 +62,7 @@ def get_new_access_token(refresh_token):
     if not refresh_token:
         return False
 
-    data = dict(client_id=os.environ.get('CLIENT_ID'), client_secret=os.environ.get('CLIENT_SECRET'),
+    data = dict(client_id=current_app.config['GA_CLIENT_ID'], client_secret=current_app.config['GA_CLIENT_SECRET'],
                 refresh_token=refresh_token, grant_type='refresh_token')
 
     resp = post('https://accounts.google.com/o/oauth2/token', data=data)
@@ -72,7 +73,7 @@ def get_new_access_token(refresh_token):
     access = json.loads(resp.content)
 
     # load the config json
-    ga_config_path = os.path.join(os.environ.get('CONFIG_ROOT_DIR'), os.environ.get('GA_CONFIG_FILENAME'))
+    ga_config_path = os.path.join(current_app.config['CONFIG_ROOT_DIR'], current_app.config['GA_CONFIG_FILENAME'])
     with open(ga_config_path) as infile:
         ga_config = json.load(infile)
     # change the value of the access token
@@ -93,10 +94,10 @@ def get_ga_page_path_pattern(page_path, project_domain):
     filename_pattern = '({page_path_filename}|{filename_base}{or_else})'.format(**locals())
     return posixpath.join(project_domain, page_path_dir, filename_pattern)
 
-def fetch_google_analytics_for_page(page_path, access_token):
+def fetch_google_analytics_for_page(config, page_path, access_token):
     ''' Get stats for a particular page
     '''
-    ga_config_path = os.path.join(os.environ.get('CONFIG_ROOT_DIR'), os.environ.get('GA_CONFIG_FILENAME'))
+    ga_config_path = os.path.join(config['CONFIG_ROOT_DIR'], config['GA_CONFIG_FILENAME'])
     with open(ga_config_path) as infile:
         ga_config = json.load(infile)
     ga_project_domain = ga_config['project_domain']

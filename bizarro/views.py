@@ -275,7 +275,7 @@ def branch_edit(branch, path=None):
         view_path = join('/tree/%s/view' % branch_name2path(branch), path)
         app_authorized = False
 
-        ga_config_path = posixpath.join(environ.get('CONFIG_ROOT_DIR'), environ.get('GA_CONFIG_FILENAME'))
+        ga_config_path = posixpath.join(current_app.config['CONFIG_ROOT_DIR'], current_app.config['GA_CONFIG_FILENAME'])
         analytics_dict = {}
         if isfile(ga_config_path):
             with open(ga_config_path) as infile:
@@ -283,7 +283,7 @@ def branch_edit(branch, path=None):
 
             if ga_config['access_token'] not in [u'', None]:
                 app_authorized = True
-                analytics_dict = fetch_google_analytics_for_page(path, ga_config['access_token'])
+                analytics_dict = fetch_google_analytics_for_page(current_app.config, path, ga_config['access_token'])
 
         kwargs = dict(dict(branch=branch, safe_branch=safe_branch,
                       body=body, hexsha=c.hexsha, url_slug=url_slug,
