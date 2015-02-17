@@ -1,11 +1,11 @@
 from os import environ
-from flask import Flask, current_app
+from flask import Blueprint, current_app, Flask
 from logging import getLogger, DEBUG
 
-from . import repo_functions, edit_functions, jekyll_functions
+bizarro = Blueprint('bizarro', __name__, template_folder='templates')
 
 def create_app():
-    app = Flask(__name__)
+    app = Flask(__name__, static_folder='static')
     app.secret_key = 'boop'
     app.config['WORK_PATH'] = environ.get('WORK_PATH', '.')
     app.config['REPO_PATH'] = environ.get('REPO_PATH', 'sample-site')
@@ -14,6 +14,7 @@ def create_app():
     app.config['default_branch'] = 'master'
 
     # attach routes and custom error pages here
+    app.register_blueprint(bizarro)
 
     return app
 

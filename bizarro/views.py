@@ -12,7 +12,8 @@ from git.cmd import GitCommandError
 from requests import post
 from flask import redirect, request, Response, render_template, session, current_app, flash, Blueprint
 
-from . import create_app, repo_functions, edit_functions
+from . import bizarro as app
+from . import repo_functions, edit_functions
 from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
 from .view_functions import (
   branch_name2path, branch_var2name, get_repo, path_type, name_branch, dos2unix,
