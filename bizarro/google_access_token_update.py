@@ -21,7 +21,7 @@ if __name__ == '__main__':
     '''
     while True:
         try:
-            ga_config_path = os.path.join(os.environ.get('RUNNING_STATE_DIR'), GA_CONFIG_FILENAME)
+            ga_config_path = os.path.join(os.environ['RUNNING_STATE_DIR'], GA_CONFIG_FILENAME)
             with open(ga_config_path) as infile:
                 ga_config = json.load(infile)
             get_new_access_token(ga_config['refresh_token'])
