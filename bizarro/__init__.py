@@ -6,11 +6,10 @@ bizarro = Blueprint('bizarro', __name__, template_folder='templates')
 def create_app(environ):
     app = Flask(__name__, static_folder='static')
     app.secret_key = 'boop'
-    app.config['CONFIG_ROOT_DIR'] = environ['CONFIG_ROOT_DIR']
-    app.config['GA_CONFIG_FILENAME'] = environ['GA_CONFIG_FILENAME']
+    app.config['RUNNING_STATE_DIR'] = environ['RUNNING_STATE_DIR']
     app.config['GA_CLIENT_ID'] = environ['GA_CLIENT_ID']
     app.config['GA_CLIENT_SECRET'] = environ['GA_CLIENT_SECRET']
-    app.config['REDIRECT_URI'] = environ.get('REDIRECT_URI', 'http://127.0.0.1:5000/callback')
+    app.config['GA_REDIRECT_URI'] = environ.get('GA_REDIRECT_URI', 'http://127.0.0.1:5000/callback')
     app.config['WORK_PATH'] = environ.get('WORK_PATH', '.')
     app.config['REPO_PATH'] = environ.get('REPO_PATH', 'sample-site')
     app.config['BROWSERID_URL'] = environ.get('BROWSERID_URL', 'http://127.0.0.1:5000')

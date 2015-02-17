@@ -20,7 +20,8 @@ from .view_functions import (
   login_required, synch_required, synched_checkout_required, is_editable, sorted_paths,
   directory_paths, should_redirect, make_redirect
   )
-from .google_api_functions import authorize_google, callback_google, fetch_google_analytics_for_page
+from .google_api_functions import authorize_google, callback_google, fetch_google_analytics_for_page, GA_CONFIG_FILENAME
+
 
 import posixpath
 import json
@@ -275,7 +276,7 @@ def branch_edit(branch, path=None):
         view_path = join('/tree/%s/view' % branch_name2path(branch), path)
         app_authorized = False
 
-        ga_config_path = posixpath.join(current_app.config['CONFIG_ROOT_DIR'], current_app.config['GA_CONFIG_FILENAME'])
+        ga_config_path = posixpath.join(current_app.config['RUNNING_STATE_DIR'], GA_CONFIG_FILENAME)
         analytics_dict = {}
         if isfile(ga_config_path):
             with open(ga_config_path) as infile:

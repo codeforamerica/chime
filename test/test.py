@@ -835,13 +835,12 @@ class TestGoogleApiFunctions (TestCase):
         app_args['GA_CLIENT_SECRET'] = 'meow_secret'
 
         self.ga_config_dir = mkdtemp(prefix='bizarro-config-')
-        app_args['CONFIG_ROOT_DIR'] = self.ga_config_dir
-        app_args['GA_CONFIG_FILENAME'] = "ga_config.json"
+        app_args['RUNNING_STATE_DIR'] = self.ga_config_dir
         app_args['CONFIG_PATH'] = self.ga_config_dir
 
         self.app = create_app(app_args)
 
-        ga_config_path = join(self.ga_config_dir, app_args['GA_CONFIG_FILENAME'])
+        ga_config_path = join(self.ga_config_dir, google_api_functions.GA_CONFIG_FILENAME)
 
         # write a tmp config file
         ga_config = {
@@ -886,7 +885,7 @@ class TestGoogleApiFunctions (TestCase):
             with HTTMock(self.mock_successful_get_new_access_token):
                 google_api_functions.get_new_access_token('meowser_refresh_token')
 
-                ga_config_path = os.path.join(self.app.config['CONFIG_ROOT_DIR'], self.app.config['GA_CONFIG_FILENAME'])
+                ga_config_path = os.path.join(self.app.config['RUNNING_STATE_DIR'], google_api_functions.GA_CONFIG_FILENAME)
                 with open(ga_config_path) as infile:
                     ga_config = json.load(infile)
 
@@ -937,8 +936,7 @@ class TestAppConfig (TestCase):
 
     def test_present_values(self):
         app_config = {}
-        app_config['CONFIG_ROOT_DIR'] = 'Yo'
-        app_config['GA_CONFIG_FILENAME'] = 'Yo'
+        app_config['RUNNING_STATE_DIR'] = 'Yo'
         app_config['GA_CLIENT_ID'] = 'Yo'
         app_config['GA_CLIENT_SECRET'] = 'Yo'
         create_app(app_config)
@@ -960,12 +958,11 @@ class TestApp (TestCase):
 
         self.ga_config_dir = mkdtemp(prefix='bizarro-config-')
         app_args['CONFIG_PATH'] = self.ga_config_dir
-        app_args['CONFIG_ROOT_DIR'] = self.ga_config_dir
-        app_args['GA_CONFIG_FILENAME'] = "ga_config.json"
+        app_args['RUNNING_STATE_DIR'] = self.ga_config_dir
         app_args['WORK_PATH'] = self.work_path
         app_args['REPO_PATH'] = temp_repo_path
 
-        ga_config_path = join(self.ga_config_dir, app_args['GA_CONFIG_FILENAME'])
+        ga_config_path = join(self.ga_config_dir, google_api_functions.GA_CONFIG_FILENAME)
 
         app = create_app(app_args)
 
@@ -1107,7 +1104,7 @@ class TestApp (TestCase):
         with HTTMock(self.mock_successful_google_callback):
             response = self.server.get('/callback?state=PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP&code=code')
 
-        ga_config_path = os.path.join(self.app.config['CONFIG_ROOT_DIR'], self.app.config['GA_CONFIG_FILENAME'])
+        ga_config_path = os.path.join(self.app.config['RUNNING_STATE_DIR'], google_api_functions.GA_CONFIG_FILENAME)
         with open(ga_config_path) as infile:
             ga_config = json.load(infile)
 

@@ -10,6 +10,8 @@ import json
 from datetime import date, timedelta
 from re import sub
 
+GA_CONFIG_FILENAME = 'ga_config.json'
+
 def authorize_google():
     ''' Authorize google via oauth2
     '''
@@ -21,7 +23,7 @@ def authorize_google():
     session['state'] = state
 
 
-    query_string = urlencode(dict(client_id=current_app.config['GA_CLIENT_ID'], redirect_uri=current_app.config['REDIRECT_URI'],
+    query_string = urlencode(dict(client_id=current_app.config['GA_CLIENT_ID'], redirect_uri=current_app.config['GA_REDIRECT_URI'],
                                   scope='openid profile https://www.googleapis.com/auth/analytics', state=state, response_type='code',
                                   access_type='offline', approval_prompt='force'))
     return redirect('https://accounts.google.com/o/oauth2/auth' + '?' + query_string)
@@ -43,7 +45,7 @@ def callback_google(state, code, callback_uri):
         raise Exception()
     access = json.loads(resp.content)
 
-    ga_config_path = os.path.join(current_app.config['CONFIG_ROOT_DIR'], current_app.config['GA_CONFIG_FILENAME'])
+    ga_config_path = os.path.join(current_app.config['RUNNING_STATE_DIR'], GA_CONFIG_FILENAME)
     with open(ga_config_path) as infile:
         ga_config = json.load(infile)
 
@@ -73,7 +75,7 @@ def get_new_access_token(refresh_token):
     access = json.loads(resp.content)
 
     # load the config json
-    ga_config_path = os.path.join(current_app.config['CONFIG_ROOT_DIR'], current_app.config['GA_CONFIG_FILENAME'])
+    ga_config_path = os.path.join(current_app.config['RUNNING_STATE_DIR'], GA_CONFIG_FILENAME)
     with open(ga_config_path) as infile:
         ga_config = json.load(infile)
     # change the value of the access token
@@ -97,7 +99,7 @@ def get_ga_page_path_pattern(page_path, project_domain):
 def fetch_google_analytics_for_page(config, page_path, access_token):
     ''' Get stats for a particular page
     '''
-    ga_config_path = os.path.join(config['CONFIG_ROOT_DIR'], config['GA_CONFIG_FILENAME'])
+    ga_config_path = os.path.join(config['RUNNING_STATE_DIR'], GA_CONFIG_FILENAME)
     with open(ga_config_path) as infile:
         ga_config = json.load(infile)
     ga_project_domain = ga_config['project_domain']
