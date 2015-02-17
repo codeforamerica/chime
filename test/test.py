@@ -23,7 +23,7 @@ from box.util.rotunicode import RotUnicode
 from httmock import response, HTTMock
 from mock import MagicMock
 
-from bizarro import app, jekyll_functions, repo_functions, edit_functions, google_api_functions, view_functions
+from bizarro import create_app, jekyll_functions, repo_functions, edit_functions, google_api_functions, view_functions
 
 import codecs
 codecs.register(RotUnicode.search_function)
@@ -834,7 +834,8 @@ class TestGoogleApiFunctions (TestCase):
         environ['CLIENT_SECRET'] = 'meow_secret'
 
         ga_config_path = mkdtemp(prefix='bizarro-config-')
-        app.config['CONFIG_PATH'] = ga_config_path
+        self.app = create_app()
+        self.app.config['CONFIG_PATH'] = ga_config_path
         environ['CONFIG_ROOT_DIR'] = ga_config_path
         environ['GA_CONFIG_FILENAME'] = "ga_config.json"
 
@@ -850,7 +851,7 @@ class TestGoogleApiFunctions (TestCase):
             json.dump(ga_config, outfile, indent=2, ensure_ascii=False)
 
     def tearDown(self):
-        rmtree(app.config['CONFIG_PATH'])
+        rmtree(self.app.config['CONFIG_PATH'])
 
     def mock_successful_get_new_access_token(self, url, request):
         if 'https://accounts.google.com/o/oauth2/token' in url.geturl():
@@ -878,7 +879,7 @@ class TestGoogleApiFunctions (TestCase):
             return response(401, content)
 
     def test_successful_get_new_access_token(self):
-        with app.test_request_context():
+        with self.app.test_request_context():
             with HTTMock(self.mock_successful_get_new_access_token):
                 google_api_functions.get_new_access_token('meowser_refresh_token')
 
@@ -889,7 +890,7 @@ class TestGoogleApiFunctions (TestCase):
                 self.assertEqual(ga_config['access_token'], 'meowser_access_token')
 
     def test_failure_to_get_new_access_token(self):
-        with app.test_request_context():
+        with self.app.test_request_context():
             with HTTMock(self.mock_failed_get_new_access_token):
                 with self.assertRaises(Exception):
                     google_api_functions.get_new_access_token('meowser_refresh_token')
@@ -936,6 +937,8 @@ class TestApp (TestCase):
         temp_repo_path = temp_repo_dir + '/test-app.git'
         copytree(repo_path, temp_repo_path)
 
+        app = create_app()
+
         app.config['WORK_PATH'] = work_path
         app.config['REPO_PATH'] = temp_repo_path
         environ['CLIENT_ID'] = 'client_id'
@@ -960,11 +963,12 @@ class TestApp (TestCase):
         random.choice = MagicMock(return_value="P")
 
         self.app = app.test_client()
+        self._app = app
 
     def tearDown(self):
-        rmtree(app.config['WORK_PATH'])
-        rmtree(app.config['REPO_PATH'])
-        rmtree(app.config['CONFIG_PATH'])
+        rmtree(self._app.config['WORK_PATH'])
+        rmtree(self._app.config['REPO_PATH'])
+        rmtree(self._app.config['CONFIG_PATH'])
 
 
     def persona_verify(self, url, request):
