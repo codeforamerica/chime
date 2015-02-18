@@ -20,7 +20,7 @@ def dos2unix(string):
 
 def get_repo(flask_app):
     ''' Gets repository for the current user, cloned from the origin.
-    
+
         Uses the first-ever commit in the origin repository to name
         the cloned directory, to reduce history conflicts when tweaking
         the repository during development.
@@ -29,19 +29,19 @@ def get_repo(flask_app):
     first_commit = list(source_repo.iter_commits())[-1].hexsha
     dir_name = 'repo-{}-{}'.format(first_commit[:8], session.get('email', 'nobody'))
     user_dir = realpath(join(flask_app.config['WORK_PATH'], quote(dir_name)))
-    
+
     if isdir(user_dir):
         user_repo = Repo(user_dir)
         user_repo.git.reset(hard=True)
         user_repo.remotes.origin.fetch()
     else:
         user_repo = source_repo.clone(user_dir, bare=False)
-    
+
     return user_repo
 
 def name_branch(description):
     ''' Generate a name for a branch from a description.
-    
+
         Prepends with session.email, and replaces spaces with dashes.
 
         TODO: follow rules in http://git-scm.com/docs/git-check-ref-format.html
@@ -51,7 +51,7 @@ def name_branch(description):
 
 def branch_name2path(branch_name):
     ''' Quote the branch name for safe use in URLs.
-    
+
         Uses urllib.quote() *twice* because Flask still interprets
         '%2F' in a path as '/', so it must be double-escaped to '%252F'.
     '''
@@ -59,7 +59,7 @@ def branch_name2path(branch_name):
 
 def branch_var2name(branch_path):
     ''' Unquote the branch name for use by Git.
-    
+
         Uses urllib.unquote() *once* because Flask routing already converts
         raw paths to variables before they arrive here.
     '''
@@ -70,10 +70,10 @@ def path_type(file_path):
     '''
     if isdir(file_path):
         return 'folder'
-    
+
     if str(guess_type(file_path)[0]).startswith('image/'):
         return 'image'
-    
+
     return 'file'
 
 def is_editable(file_path):
@@ -82,39 +82,39 @@ def is_editable(file_path):
     try:
         if isdir(file_path):
             return False
-    
+
         if open(file_path).read(4).startswith('---'):
             return True
-    
+
     except:
         pass
-    
+
     return False
 
 def login_required(route_function):
     ''' Login decorator for route functions.
-    
+
         Adapts http://flask.pocoo.org/docs/patterns/viewdecorators/
     '''
     @wraps(route_function)
     def decorated_function(*args, **kwargs):
         email = session.get('email', None)
-    
+
         if not email:
             return redirect('/')
-        
+
         environ['GIT_AUTHOR_NAME'] = ' '
         environ['GIT_AUTHOR_EMAIL'] = email
         environ['GIT_COMMITTER_NAME'] = ' '
         environ['GIT_COMMITTER_EMAIL'] = email
 
         return route_function(*args, **kwargs)
-    
+
     return decorated_function
 
 def _remote_exists(repo, remote):
     ''' Check whether a named remote exists in a repository.
-    
+
         This should be as simple as `remote in repo.remotes`,
         but GitPython has a bug in git.util.IterableList:
 
@@ -131,7 +131,7 @@ def _remote_exists(repo, remote):
 
 def synch_required(route_function):
     ''' Decorator for routes needing a repository synched to upstream.
-    
+
         Syncs with upstream origin before and after. Use below @login_required.
     '''
     @wraps(route_function)
@@ -139,7 +139,7 @@ def synch_required(route_function):
         Logger.debug('<' * 40 + '-' * 40)
 
         repo = Repo(current_app.config['REPO_PATH'])
-    
+
         if _remote_exists(repo, 'origin'):
             Logger.debug('  fetching origin {}'.format(repo))
             repo.git.fetch('origin', with_exceptions=True)
@@ -147,7 +147,7 @@ def synch_required(route_function):
         Logger.debug('- ' * 40)
 
         response = route_function(*args, **kwargs)
-        
+
         # Push to origin only if the request method indicates a change.
         if request.method in ('PUT', 'POST', 'DELETE'):
             Logger.debug('- ' * 40)
@@ -159,12 +159,12 @@ def synch_required(route_function):
         Logger.debug('-' * 40 + '>' * 40)
 
         return response
-    
+
     return decorated_function
 
 def synched_checkout_required(route_function):
     ''' Decorator for routes needing a repository checked out to a branch.
-    
+
         Syncs with upstream origin before and after. Use below @login_required.
     '''
     @wraps(route_function)
@@ -172,7 +172,7 @@ def synched_checkout_required(route_function):
         Logger.debug('<' * 40 + '-' * 40)
 
         repo = Repo(current_app.config['REPO_PATH'])
-        
+
         if _remote_exists(repo, 'origin'):
             Logger.debug('  fetching origin {}'.format(repo))
             repo.git.fetch('origin', with_exceptions=True)
@@ -187,7 +187,7 @@ def synched_checkout_required(route_function):
         Logger.debug('- ' * 40)
 
         response = route_function(*args, **kwargs)
-        
+
         # Push to origin only if the request method indicates a change.
         if request.method in ('PUT', 'POST', 'DELETE'):
             Logger.debug('- ' * 40)
@@ -199,14 +199,14 @@ def synched_checkout_required(route_function):
         Logger.debug('-' * 40 + '>' * 40)
 
         return response
-    
+
     return decorated_function
 
 def sorted_paths(repo, branch, path=None):
     full_path = join(repo.working_dir, path or '.').rstrip('/')
     all_sorted_files_dirs = sorted(listdir(full_path))
 
-    filtered_sorted_files_dirs = [i for i in all_sorted_files_dirs if not i.startswith('.') ]
+    filtered_sorted_files_dirs = [i for i in all_sorted_files_dirs if not i.startswith('.')]
     file_names = [n for n in filtered_sorted_files_dirs if not n.startswith('_')]
     view_paths = [join('/tree/%s/view' % branch_name2path(branch), join(path or '', fn))
                   for fn in file_names]
@@ -230,7 +230,7 @@ def directory_paths(branch, path=None):
     return root_dir_with_path + dirs_with_paths
 
 def get_directory_path(branch, path, dir_name):
-    dir_index = path.find(dir_name+'/')
+    dir_index = path.find(dir_name + '/')
     current_path = path[:dir_index] + dir_name + '/'
     return join('/tree/%s/edit' % branch_name2path(branch), current_path)
 
@@ -239,12 +239,12 @@ def should_redirect():
     '''
     if request.args.get('go') == u'\U0001f44c':
         return False
-    
+
     referer_url = request.headers.get('Referer')
-    
+
     if not referer_url:
         return False
-    
+
     return needs_redirect(request.host, request.path, referer_url)
 
 def make_redirect():

@@ -194,7 +194,7 @@ class TestRepo (TestCase):
         ''' Delete a branch in a clone that's still in origin, see if it can be deleted anyway.
         '''
         name = str(uuid4())
-        
+
         branch1 = repo_functions.start_branch(self.clone1, 'master', name)
 
         self.assertTrue(name in self.origin.branches)
@@ -257,6 +257,42 @@ class TestRepo (TestCase):
             self.assertEquals(body, 'Hello hello.')
 
         self.assertFalse(exists(join(self.clone2.working_dir, 'index.md')))
+
+    def test_delete_directory(self):
+        ''' Make a new file and directory and delete them.
+        '''
+        name = str(uuid4())
+        branch1 = repo_functions.start_branch(self.clone1, 'master', name)
+
+        self.assertTrue(name in self.clone1.branches)
+        self.assertTrue(name in self.origin.branches)
+
+        #
+        # Make a new file in a directory on the branch and push it.
+        #
+        branch1.checkout()
+
+        edit_functions.create_new_page(self.clone1, 'hello/', 'hello.md',
+                                       dict(title='Hello'), 'Hello hello.')
+
+        args = self.clone1, 'hello/hello.md', str(uuid4()), branch1.commit.hexsha, 'master'
+        repo_functions.save_working_file(*args)
+
+        #
+        # Delete the file and folder just created and push the changes.
+        #
+        message = str(uuid4())
+
+        edit_functions.delete_file(self.clone1, 'hello/', 'hello.md')
+
+        args = self.clone1, 'hello/hello.md', message, branch1.commit.hexsha, 'master'
+        repo_functions.save_working_file(*args)
+
+        self.assertFalse(exists(join(self.clone1.working_dir, 'hello/hello.md')))
+
+        edit_functions.delete_file(self.clone1, 'hello/', '')
+
+        self.assertFalse(exists(join(self.clone1.working_dir, 'hello/')))
 
     def test_move_file(self):
         ''' Change the path of a file.

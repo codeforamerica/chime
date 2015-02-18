@@ -8,7 +8,7 @@ def update_page(clone, file_path, front, body):
     ''' Update existing Jekyll page in the working directory.
     '''
     full_path = join(clone.working_dir, file_path)
-    
+
     if not exists(full_path):
         raise Exception()
 
@@ -25,18 +25,18 @@ def create_new_page(clone, path, file_name, front, body):
 
     with open(full_path, 'w') as file:
         dump_jekyll_doc(front, body, file)
-    
+
     return file_path
 
 def upload_new_file(clone, path, upload):
     ''' Upload a new file in the working directory, return its path.
     '''
     file_path, full_path = make_working_file(clone, path, upload.filename)
-    
+
     if not exists(full_path):
         with open(full_path, 'w') as file:
             upload.save(file)
-    
+
     return file_path
 
 def delete_file(clone, path, file_name):
@@ -44,11 +44,12 @@ def delete_file(clone, path, file_name):
     '''
     file_path = join(path or '', file_name)
     full_path = join(clone.working_dir, file_path)
-    
+    do_save = True
+
     if isdir(full_path):
         rmdir(full_path)
         do_save = False
     else:
         remove(full_path)
-    
-    return file_path
+
+    return (file_path, do_save)

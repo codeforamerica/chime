@@ -315,7 +315,7 @@ def branch_edit_file(branch, path=None):
         path_303 = file_path
 
     elif action == 'delete' and 'path' in request.form:
-        file_path = edit_functions.delete_file(r, path, request.form['path'])
+        file_path, do_save = edit_functions.delete_file(r, path, request.form['path'])
         message = 'Deleted file "%s"' % file_path
         path_303 = path or ''
 
