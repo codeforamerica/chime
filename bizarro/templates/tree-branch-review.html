@@ -4,15 +4,16 @@
     <h1>City website editor <span><a href="/">tasks</a></span></h1>
 
     <div class="layout-breve">
-        <div class="badge-heading badge-gov badge-teal">
-            <h2>Task review changes</h2>
-            <h3>{{branch}}</h3>
+      <div class="current-tasks">
+        <h2>Review task</h2>
+        <p>Describe the changes you think may need to be made to this task before it goes live.</p>
+            
         </div>
 
         <form action="/review" method="post">
         <ul class="list-form">
             <li class="form-field">
-                <label for="comments">Describe the changes you think may need to be made to this task before it goes live.</label>
+                <label for="comments">Suggested changes</label>
                 <textarea name="comments" class="textarea"></textarea>
             </li>                      
         </ul>
