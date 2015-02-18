@@ -84,6 +84,14 @@ def create_google_spreadsheet(credentials, reponame):
 
     print('    Updated title to "{new_title}"'.format(**locals()))
 
+    url = urljoin(gdocs_api_base, '{new_id}/permissions'.format(**locals()))
+    permission = dict(type='anyone', role='reader', withLink=True)
+
+    gc = gspread.authorize(credentials)
+    gc.session.post(url, json.dumps(permission), headers=headers)
+
+    print('    Allowed anyone with the link to see "{new_title}"'.format(**locals()))
+
     query = urlencode(dict(sendNotificationEmails='true', emailMessage='Yo.'))
     url = urljoin(gdocs_api_base, '{new_id}/permissions?{query}'.format(**locals()))
     permission = dict(type='user', role='writer', emailAddress=email, value=email)
