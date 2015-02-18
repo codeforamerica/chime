@@ -89,6 +89,10 @@ def get_ga_page_path_pattern(page_path, project_domain):
     # if the filename is 'index', allow no filename as an option
     or_else = '|' if (filename_base == 'index') else ''
     filename_pattern = '({page_path_filename}|{filename_base}{or_else})'.format(**locals())
+    # make sure that no None values are passed to the join method
+    project_domain = u'' if not project_domain else project_domain
+    page_path_dir = u'' if not page_path_dir else page_path_dir
+    filename_pattern = u'' if not filename_pattern else filename_pattern
     return posixpath.join(project_domain, page_path_dir, filename_pattern)
 
 def fetch_google_analytics_for_page(config, page_path, access_token):
