@@ -10,16 +10,18 @@ from glob import glob
 from git import Repo
 from git.cmd import GitCommandError
 from requests import post
-from flask import redirect, request, Response, render_template, session, current_app, flash
+from flask import redirect, request, Response, render_template, session, current_app, flash, Blueprint
 
-from . import app, repo_functions, edit_functions
+from . import bizarro as app
+from . import repo_functions, edit_functions
 from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
 from .view_functions import (
   branch_name2path, branch_var2name, get_repo, path_type, name_branch, dos2unix,
   login_required, synch_required, synched_checkout_required, is_editable, sorted_paths,
   directory_paths, should_redirect, make_redirect
   )
-from .google_api_functions import authorize_google, callback_google, fetch_google_analytics_for_page
+from .google_api_functions import authorize_google, callback_google, fetch_google_analytics_for_page, GA_CONFIG_FILENAME
+
 
 import posixpath
 import json
@@ -274,7 +276,7 @@ def branch_edit(branch, path=None):
         view_path = join('/tree/%s/view' % branch_name2path(branch), path)
         app_authorized = False
 
-        ga_config_path = posixpath.join(environ.get('CONFIG_ROOT_DIR'), environ.get('GA_CONFIG_FILENAME'))
+        ga_config_path = posixpath.join(current_app.config['RUNNING_STATE_DIR'], GA_CONFIG_FILENAME)
         analytics_dict = {}
         if isfile(ga_config_path):
             with open(ga_config_path) as infile:
@@ -282,7 +284,7 @@ def branch_edit(branch, path=None):
 
             if ga_config['access_token'] not in [u'', None]:
                 app_authorized = True
-                analytics_dict = fetch_google_analytics_for_page(path, ga_config['access_token'])
+                analytics_dict = fetch_google_analytics_for_page(current_app.config, path, ga_config['access_token'])
 
         kwargs = dict(dict(branch=branch, safe_branch=safe_branch,
                       body=body, hexsha=c.hexsha, url_slug=url_slug,

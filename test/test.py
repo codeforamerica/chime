@@ -23,7 +23,7 @@ from box.util.rotunicode import RotUnicode
 from httmock import response, HTTMock
 from mock import MagicMock
 
-from bizarro import app, jekyll_functions, repo_functions, edit_functions, google_api_functions, view_functions
+from bizarro import create_app, jekyll_functions, repo_functions, edit_functions, google_api_functions, view_functions
 
 import codecs
 codecs.register(RotUnicode.search_function)
@@ -830,13 +830,17 @@ class TestRepo (TestCase):
 class TestGoogleApiFunctions (TestCase):
 
     def setUp(self):
-        environ['CLIENT_ID'] = 'client_id'
-        environ['CLIENT_SECRET'] = 'meow_secret'
+        app_args = {}
+        app_args['GA_CLIENT_ID'] = 'client_id'
+        app_args['GA_CLIENT_SECRET'] = 'meow_secret'
 
-        ga_config_path = mkdtemp(prefix='bizarro-config-')
-        app.config['CONFIG_PATH'] = ga_config_path
-        environ['CONFIG_ROOT_DIR'] = ga_config_path
-        environ['GA_CONFIG_FILENAME'] = "ga_config.json"
+        self.ga_config_dir = mkdtemp(prefix='bizarro-config-')
+        app_args['RUNNING_STATE_DIR'] = self.ga_config_dir
+        app_args['CONFIG_PATH'] = self.ga_config_dir
+
+        self.app = create_app(app_args)
+
+        ga_config_path = join(self.ga_config_dir, google_api_functions.GA_CONFIG_FILENAME)
 
         # write a tmp config file
         ga_config = {
@@ -845,12 +849,11 @@ class TestGoogleApiFunctions (TestCase):
             "profile_id": "12345678",
             "project_domain": ""
         }
-        ga_config_path = os.path.join(environ['CONFIG_ROOT_DIR'], environ['GA_CONFIG_FILENAME'])
         with open(ga_config_path, 'w') as outfile:
             json.dump(ga_config, outfile, indent=2, ensure_ascii=False)
 
     def tearDown(self):
-        rmtree(app.config['CONFIG_PATH'])
+        rmtree(self.ga_config_dir)
 
     def mock_successful_get_new_access_token(self, url, request):
         if 'https://accounts.google.com/o/oauth2/token' in url.geturl():
@@ -878,18 +881,18 @@ class TestGoogleApiFunctions (TestCase):
             return response(401, content)
 
     def test_successful_get_new_access_token(self):
-        with app.test_request_context():
+        with self.app.test_request_context():
             with HTTMock(self.mock_successful_get_new_access_token):
                 google_api_functions.get_new_access_token('meowser_refresh_token')
 
-                ga_config_path = os.path.join(environ['CONFIG_ROOT_DIR'], environ['GA_CONFIG_FILENAME'])
+                ga_config_path = os.path.join(self.app.config['RUNNING_STATE_DIR'], google_api_functions.GA_CONFIG_FILENAME)
                 with open(ga_config_path) as infile:
                     ga_config = json.load(infile)
 
                 self.assertEqual(ga_config['access_token'], 'meowser_access_token')
 
     def test_failure_to_get_new_access_token(self):
-        with app.test_request_context():
+        with self.app.test_request_context():
             with HTTMock(self.mock_failed_get_new_access_token):
                 with self.assertRaises(Exception):
                     google_api_functions.get_new_access_token('meowser_refresh_token')
@@ -915,7 +918,7 @@ class TestGoogleApiFunctions (TestCase):
         ''' Verify that an authorized analytics response is handled correctly
         '''
         with HTTMock(self.mock_google_analytics_authorized_response):
-            analytics_dict = google_api_functions.fetch_google_analytics_for_page(u'index.html', 'meowser_token')
+            analytics_dict = google_api_functions.fetch_google_analytics_for_page(self.app.config, u'index.html', 'meowser_token')
             self.assertEqual(analytics_dict['page_views'], u'24')
             self.assertEqual(analytics_dict['average_time_page'], u'67')
 
@@ -923,28 +926,45 @@ class TestGoogleApiFunctions (TestCase):
         ''' Verify that an unauthorized analytics response is handled correctly
         '''
         with HTTMock(self.mock_google_analytics_unauthorized_response):
-            analytics_dict = google_api_functions.fetch_google_analytics_for_page(u'index.html', 'meowser_token')
+            analytics_dict = google_api_functions.fetch_google_analytics_for_page(self.app.config, u'index.html', 'meowser_token')
             self.assertEqual(analytics_dict, {})
+
+class TestAppConfig (TestCase):
+
+    def test_missing_values(self):
+        self.assertRaises(KeyError, lambda: create_app({}))
+
+    def test_present_values(self):
+        app_config = {}
+        app_config['RUNNING_STATE_DIR'] = 'Yo'
+        app_config['GA_CLIENT_ID'] = 'Yo'
+        app_config['GA_CLIENT_SECRET'] = 'Yo'
+        create_app(app_config)
 
 class TestApp (TestCase):
 
     def setUp(self):
-        work_path = mkdtemp(prefix='bizarro-repo-clones-')
+        self.work_path = mkdtemp(prefix='bizarro-repo-clones-')
 
         repo_path = os.path.dirname(os.path.abspath(__file__)) + '/test-app.git'
-        temp_repo_dir = mkdtemp(prefix='bizarro-root')
-        temp_repo_path = temp_repo_dir + '/test-app.git'
+        self.temp_repo_dir = mkdtemp(prefix='bizarro-root')
+        temp_repo_path = self.temp_repo_dir + '/test-app.git'
         copytree(repo_path, temp_repo_path)
 
-        app.config['WORK_PATH'] = work_path
-        app.config['REPO_PATH'] = temp_repo_path
-        environ['CLIENT_ID'] = 'client_id'
-        environ['CLIENT_SECRET'] = 'meow_secret'
+        app_args = {}
 
-        ga_config_path = mkdtemp(prefix='bizarro-config-')
-        app.config['CONFIG_PATH'] = ga_config_path
-        environ['CONFIG_ROOT_DIR'] = ga_config_path
-        environ['GA_CONFIG_FILENAME'] = "ga_config.json"
+        app_args['GA_CLIENT_ID'] = 'client_id'
+        app_args['GA_CLIENT_SECRET'] = 'meow_secret'
+
+        self.ga_config_dir = mkdtemp(prefix='bizarro-config-')
+        app_args['CONFIG_PATH'] = self.ga_config_dir
+        app_args['RUNNING_STATE_DIR'] = self.ga_config_dir
+        app_args['WORK_PATH'] = self.work_path
+        app_args['REPO_PATH'] = temp_repo_path
+
+        ga_config_path = join(self.ga_config_dir, google_api_functions.GA_CONFIG_FILENAME)
+
+        app = create_app(app_args)
 
         # write a tmp config file
         ga_config = {
@@ -953,18 +973,18 @@ class TestApp (TestCase):
             "profile_id": "12345678",
             "project_domain": ""
         }
-        ga_config_path = os.path.join(environ['CONFIG_ROOT_DIR'], environ['GA_CONFIG_FILENAME'])
         with open(ga_config_path, 'w') as outfile:
             json.dump(ga_config, outfile, indent=2, ensure_ascii=False)
 
         random.choice = MagicMock(return_value="P")
 
-        self.app = app.test_client()
+        self.server = app.test_client()
+        self.app = app
 
     def tearDown(self):
-        rmtree(app.config['WORK_PATH'])
-        rmtree(app.config['REPO_PATH'])
-        rmtree(app.config['CONFIG_PATH'])
+        rmtree(self.work_path)
+        rmtree(self.temp_repo_dir)
+        rmtree(self.ga_config_dir)
 
 
     def persona_verify(self, url, request):
@@ -1011,47 +1031,47 @@ class TestApp (TestCase):
     def test_login(self):
         ''' Check basic log in / log out flow without talking to Persona.
         '''
-        response = self.app.get('/')
+        response = self.server.get('/')
         self.assertFalse('user@example.com' in response.data)
 
         with HTTMock(self.persona_verify):
-            response = self.app.post('/sign-in', data={'email': 'user@example.com'})
+            response = self.server.post('/sign-in', data={'email': 'user@example.com'})
             self.assertEquals(response.status_code, 200)
 
-        response = self.app.get('/')
+        response = self.server.get('/')
         self.assertTrue('user@example.com' in response.data)
 
-        response = self.app.post('/sign-out')
+        response = self.server.post('/sign-out')
         self.assertEquals(response.status_code, 200)
 
-        response = self.app.get('/')
+        response = self.server.get('/')
         self.assertFalse('user@example.com' in response.data)
 
     def test_branches(self):
         ''' Check basic branching functionality.
         '''
         with HTTMock(self.persona_verify):
-            self.app.post('/sign-in', data={'email': 'user@example.com'})
+            self.server.post('/sign-in', data={'email': 'user@example.com'})
 
-        response = self.app.post('/start', data={'branch': 'do things'},
+        response = self.server.post('/start', data={'branch': 'do things'},
                                  follow_redirects=True)
         self.assertTrue('user@example.com/do-things' in response.data)
 
         with HTTMock(self.mock_google_analytics):
-            response = self.app.post('/tree/user@example.com%252Fdo-things/edit/',
+            response = self.server.post('/tree/user@example.com%252Fdo-things/edit/',
                                      data={'action': 'add', 'path': 'hello.html'},
                                      follow_redirects=True)
 
             self.assertEquals(response.status_code, 200)
 
-            response = self.app.get('/tree/user@example.com%252Fdo-things/edit/')
+            response = self.server.get('/tree/user@example.com%252Fdo-things/edit/')
 
             self.assertTrue('hello.html' in response.data)
 
-            response = self.app.get('/tree/user@example.com%252Fdo-things/edit/hello.html')
+            response = self.server.get('/tree/user@example.com%252Fdo-things/edit/hello.html')
             hexsha = search(r'<input name="hexsha" value="(\w+)"', response.data).group(1)
 
-            response = self.app.post('/tree/user@example.com%252Fdo-things/save/hello.html',
+            response = self.server.post('/tree/user@example.com%252Fdo-things/save/hello.html',
                                      data={'layout': 'multi', 'hexsha': hexsha,
                                            'en-title': 'Greetings', 'en-body': 'Hello world.\n',
                                            'fr-title': '', 'fr-body': '',
@@ -1076,15 +1096,15 @@ class TestApp (TestCase):
             when we successfully auth with google
         '''
         with HTTMock(self.persona_verify):
-            self.app.post('/sign-in', data={'email': 'erica@example.com'})
+            self.server.post('/sign-in', data={'email': 'erica@example.com'})
 
         with HTTMock(self.mock_google_authorization):
-            self.app.post('/authorize')
+            self.server.post('/authorize')
 
         with HTTMock(self.mock_successful_google_callback):
-            response = self.app.get('/callback?state=PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP&code=code')
+            response = self.server.get('/callback?state=PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP&code=code')
 
-        ga_config_path = os.path.join(environ['CONFIG_ROOT_DIR'], environ['GA_CONFIG_FILENAME'])
+        ga_config_path = os.path.join(self.app.config['RUNNING_STATE_DIR'], google_api_functions.GA_CONFIG_FILENAME)
         with open(ga_config_path) as infile:
             ga_config = json.load(infile)
 
@@ -1098,13 +1118,13 @@ class TestApp (TestCase):
             when we fail to auth with google
         '''
         with HTTMock(self.persona_verify):
-            self.app.post('/sign-in', data={'email': 'erica@example.com'})
+            self.server.post('/sign-in', data={'email': 'erica@example.com'})
 
         with HTTMock(self.mock_google_authorization):
-            self.app.post('/authorize')
+            self.server.post('/authorize')
 
         with HTTMock(self.mock_failed_google_callback):
-            response = self.app.get('/callback?state=PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP&code=code')
+            response = self.server.get('/callback?state=PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP&code=code')
 
         self.assertTrue('authorization-failed' in response.location)
 
