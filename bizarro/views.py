@@ -278,7 +278,7 @@ def branch_edit(branch, path=None):
             with open(ga_config_path) as infile:
                 ga_config = json.load(infile)
 
-            if ga_config['access_token'] not in [u'', None]:
+            if ga_config['access_token']:
                 app_authorized = True
                 analytics_dict = fetch_google_analytics_for_page(current_app.config, path, ga_config['access_token'])
 
