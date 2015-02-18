@@ -1,8 +1,7 @@
 from logging import getLogger
 Logger = getLogger('bizarro.views')
 
-from os.path import join, isdir, realpath, splitext, isfile
-from os import environ, stat
+from os.path import join, isdir, splitext, isfile
 from re import compile, MULTILINE
 from mimetypes import guess_type
 from glob import glob
@@ -10,16 +9,14 @@ from glob import glob
 from git import Repo
 from git.cmd import GitCommandError
 from requests import post
-from flask import redirect, request, Response, render_template, session, current_app, flash, Blueprint
+from flask import redirect, request, Response, render_template, session, current_app
 
 from . import bizarro as app
 from . import repo_functions, edit_functions
 from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
-from .view_functions import (
-  branch_name2path, branch_var2name, get_repo, path_type, name_branch, dos2unix,
-  login_required, synch_required, synched_checkout_required, is_editable, sorted_paths,
-  directory_paths, should_redirect, make_redirect
-  )
+from .view_functions import (branch_name2path, branch_var2name, get_repo, name_branch, dos2unix,
+                             login_required, synch_required, synched_checkout_required, is_editable,
+                             sorted_paths, directory_paths, should_redirect, make_redirect)
 from .google_api_functions import authorize_google, callback_google, fetch_google_analytics_for_page, GA_CONFIG_FILENAME
 
 
@@ -44,15 +41,15 @@ def index():
             # Skip this branch if it looks to be an orphan. Just don't show it.
             continue
 
-        behind_raw = r.git.log(base+'..'+master_name, format='%H %at %ae')
-        ahead_raw = r.git.log(base+'..'+name, format='%H %at %ae')
+        behind_raw = r.git.log(base + '..' + master_name, format='%H %at %ae')
+        ahead_raw = r.git.log(base + '..' + name, format='%H %at %ae')
 
         pattern = compile(r'^(\w+) (\d+) (.+)$', MULTILINE)
         # behind = [r.commit(sha) for (sha, t, e) in pattern.findall(behind_raw)]
         # ahead = [r.commit(sha) for (sha, t, e) in pattern.findall(ahead_raw)]
         behind = pattern.findall(behind_raw)
         ahead = pattern.findall(ahead_raw)
-        
+
         if current_app.config['SINGLE_USER']:
             needs_peer_review = False
             is_peer_approved = True
@@ -61,7 +58,7 @@ def index():
             needs_peer_review = repo_functions.needs_peer_review(r, master_name, name)
             is_peer_approved = repo_functions.is_peer_approved(r, master_name, name)
             is_peer_rejected = repo_functions.is_peer_rejected(r, master_name, name)
-        
+
         review_subject = 'Plz review this thing'
         review_body = '%s/tree/%s/edit' % (request.url, path)
 
@@ -112,7 +109,7 @@ def callback():
     code = request.args.get('code')
     callback_uri = '{0}://{1}/callback'.format(request.scheme, request.host)
     try:
-      callback_google(state, code, callback_uri)
+        callback_google(state, code, callback_uri)
     except Exception:
         return redirect('/authorization-failed')
     else:
@@ -246,7 +243,6 @@ def branch_edit(branch, path=None):
         kwargs = dict(branch=branch, safe_branch=safe_branch, dirs_and_paths=directory_paths(branch, path),
                       email=session['email'], list_paths=sorted_paths(r, branch, path))
 
-
         master_name = current_app.config['default_branch']
         kwargs['rejection_messages'] = list(repo_functions.get_rejection_messages(r, master_name, branch))
 
@@ -262,7 +258,7 @@ def branch_edit(branch, path=None):
             kwargs['needs_peer_review'] = repo_functions.needs_peer_review(r, master_name, branch)
             kwargs['is_peer_approved'] = repo_functions.is_peer_approved(r, master_name, branch)
             kwargs['is_peer_rejected'] = repo_functions.is_peer_rejected(r, master_name, branch)
-        
+
         if kwargs['is_peer_rejected']:
             kwargs['rejecting_peer'], kwargs['rejection_message'] = kwargs['rejection_messages'].pop(0)
 
@@ -368,13 +364,12 @@ def branch_save(branch, path):
     #
     b.checkout()
 
-    front = {'layout': dos2unix(request.form.get('layout')),
-             'title':  dos2unix(request.form.get('en-title'))}
-    
+    front = {'layout': dos2unix(request.form.get('layout')), 'title': dos2unix(request.form.get('en-title'))}
+
     for iso in load_languages(r.working_dir):
         if iso != 'en':
-            front['title-'+iso] = dos2unix(request.form.get(iso+'-title', ''))
-            front['body-'+iso] = dos2unix(request.form.get(iso+'-body', ''))
+            front['title-' + iso] = dos2unix(request.form.get(iso + '-title', ''))
+            front['body-' + iso] = dos2unix(request.form.get(iso + '-body', ''))
 
     body = dos2unix(request.form.get('en-body'))
     edit_functions.update_page(r, path, front, body)

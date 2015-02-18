@@ -1,12 +1,10 @@
 # -- coding: utf-8 --
-from flask import Flask, session
 from unittest import main, TestCase
 
 from tempfile import mkdtemp
 from StringIO import StringIO
-from subprocess import Popen, PIPE
 from os.path import join, exists
-from os import environ, unlink
+from os import environ
 from shutil import rmtree, copytree
 from uuid import uuid4
 from re import search
@@ -14,7 +12,8 @@ import random
 import json
 from datetime import date, timedelta
 
-import sys, os
+import sys
+import os
 here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(here)
 
@@ -75,9 +74,9 @@ class TestViewFunctions (TestCase):
         '''
         sorted_list = view_functions.sorted_paths(self.clone, 'master')
         expected_list = [('index.md', '/tree/master/view/index.md', 'file', True),
-        ('other', '/tree/master/view/other', 'folder', False),
-        ('other.md', '/tree/master/view/other.md', 'file', True),
-        ('sub', '/tree/master/view/sub', 'folder', False)]
+                         ('other', '/tree/master/view/other', 'folder', False),
+                         ('other.md', '/tree/master/view/other.md', 'file', True),
+                         ('sub', '/tree/master/view/sub', 'folder', False)]
         self.assertEqual(sorted_list, expected_list)
 
     def test_directory_paths_with_no_relative_path(self):
@@ -92,8 +91,9 @@ class TestViewFunctions (TestCase):
             to that directory is returned for all sub-directories in a path
         '''
         dirs_and_paths = view_functions.directory_paths('my-branch', 'blah/foo/')
-        self.assertEqual(dirs_and_paths, [('root', '/tree/my-branch/edit'), ('blah', '/tree/my-branch/edit/blah/'), ('foo', '/tree/my-branch/edit/blah/foo/')])
-
+        self.assertEqual(dirs_and_paths, [('root', '/tree/my-branch/edit'),
+                                          ('blah', '/tree/my-branch/edit/blah/'),
+                                          ('foo', '/tree/my-branch/edit/blah/foo/')])
 
 class TestRepo (TestCase):
 
@@ -159,54 +159,53 @@ class TestRepo (TestCase):
         ''' Make a simple edit in a clone, verify that it appears in the other.
         '''
         name = str(uuid4())
-        
+
         #
         # Check out both clones.
         #
         self.clone1.branches.master.checkout()
         self.clone2.branches.master.checkout()
-        
+
         #
         # Make a change to the first clone and push it.
         #
         with open(join(self.clone1.working_dir, 'index.md'), 'a') as file:
             file.write('\n\n...')
-        
+
         message = str(uuid4())
         args = self.clone1, 'index.md', message, self.clone1.commit().hexsha, 'master'
         repo_functions.save_working_file(*args)
-        
+
         #
         # Origin now has the updated master, but the second clone does not.
         #
         self.assertEquals(self.clone1.refs['master'].commit.hexsha, self.origin.refs['master'].commit.hexsha)
         self.assertNotEquals(self.clone1.refs['master'].commit.hexsha, self.clone2.refs['master'].commit.hexsha)
-        
-        
+
         #
         # Now start a branch from the second clone, and look for the new master commit.
         #
         branch2 = repo_functions.start_branch(self.clone2, 'master', name)
-        
+
         self.assertTrue(name in self.clone2.branches)
         self.assertEquals(branch2.commit.hexsha, self.origin.refs['master'].commit.hexsha)
-    
+
     def test_delete_missing_branch(self):
         ''' Delete a branch in a clone that's still in origin, see if it can be deleted anyway.
         '''
         name = str(uuid4())
         
         branch1 = repo_functions.start_branch(self.clone1, 'master', name)
-        
+
         self.assertTrue(name in self.origin.branches)
-        
+
         self.clone2.git.fetch()
-        
+
         repo_functions.abandon_branch(self.clone2, 'master', name)
-        
+
         self.assertFalse(name in self.origin.branches)
         self.assertFalse(name in self.clone2.branches)
-        self.assertFalse('origin/'+name in self.clone2.refs)
+        self.assertFalse('origin/' + name in self.clone2.refs)
 
     def test_new_file(self):
         ''' Make a new file and delete an old file in a clone, verify that it appears in the other.
@@ -986,7 +985,6 @@ class TestApp (TestCase):
         rmtree(self.temp_repo_dir)
         rmtree(self.ga_config_dir)
 
-
     def persona_verify(self, url, request):
         if url.geturl() == 'https://verifier.login.persona.org/verify':
             return response(200, '''{"status": "okay", "email": "user@example.com"}''', headers=dict(Link='<https://api.github.com/user/337792/repos?page=1>; rel="prev", <https://api.github.com/user/337792/repos?page=1>; rel="first"'))
@@ -1022,7 +1020,7 @@ class TestApp (TestCase):
         end_date = date.today().isoformat()
         url_string = url.geturl()
 
-        if 'ids=ga%3A12345678' in url_string and 'end-date='+end_date in url_string and 'start-date='+start_date in url_string and 'filters=ga%3ApagePath%3D~%28hello.html%7Chello%29' in url_string:
+        if 'ids=ga%3A12345678' in url_string and 'end-date=' + end_date in url_string and 'start-date=' + start_date in url_string and 'filters=ga%3ApagePath%3D~%28hello.html%7Chello%29' in url_string:
             return response(200, '''{"ga:previousPagePath": "/about/", "ga:pagePath": "/lib/", "ga:pageViews": "12", "ga:avgTimeOnPage": "56.17", "ga:exiteRate": "43.75", "totalsForAllResults": {"ga:pageViews": "24", "ga:avgTimeOnPage": "67.36363636363636"}}''')
 
         else:
@@ -1054,13 +1052,13 @@ class TestApp (TestCase):
             self.server.post('/sign-in', data={'email': 'user@example.com'})
 
         response = self.server.post('/start', data={'branch': 'do things'},
-                                 follow_redirects=True)
+                                    follow_redirects=True)
         self.assertTrue('user@example.com/do-things' in response.data)
 
         with HTTMock(self.mock_google_analytics):
             response = self.server.post('/tree/user@example.com%252Fdo-things/edit/',
-                                     data={'action': 'add', 'path': 'hello.html'},
-                                     follow_redirects=True)
+                                        data={'action': 'add', 'path': 'hello.html'},
+                                        follow_redirects=True)
 
             self.assertEquals(response.status_code, 200)
 
@@ -1072,22 +1070,22 @@ class TestApp (TestCase):
             hexsha = search(r'<input name="hexsha" value="(\w+)"', response.data).group(1)
 
             response = self.server.post('/tree/user@example.com%252Fdo-things/save/hello.html',
-                                     data={'layout': 'multi', 'hexsha': hexsha,
-                                           'en-title': 'Greetings', 'en-body': 'Hello world.\n',
-                                           'fr-title': '', 'fr-body': '',
-                                           'url-slug': 'hello'},
-                                     follow_redirects=True)
+                                        data={'layout': 'multi', 'hexsha': hexsha,
+                                              'en-title': 'Greetings', 'en-body': 'Hello world.\n',
+                                              'fr-title': '', 'fr-body': '',
+                                              'url-slug': 'hello'},
+                                        follow_redirects=True)
 
             self.assertEquals(response.status_code, 200)
-        
+
         html = response.data
-            
+
         # Check that English and French forms are both present.
         self.assertTrue('id="fr-nav" class="nav-tab"' in html)
         self.assertTrue('id="en-nav" class="nav-tab state-active"' in html)
         self.assertTrue('id="French-form" style="display: none"' in html)
         self.assertTrue('id="English-form" style="display: block"' in html)
-        
+
         # Verify that navigation tabs are in the correct order.
         self.assertTrue(html.index('id="fr-nav"') < html.index('id="en-nav"'))
 

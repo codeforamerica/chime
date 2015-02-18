@@ -1,4 +1,4 @@
-from flask import Blueprint, current_app, Flask
+from flask import Blueprint, Flask
 from logging import getLogger, DEBUG
 
 bizarro = Blueprint('bizarro', __name__, template_folder='templates')
@@ -29,4 +29,3 @@ def create_app(environ):
 #         getLogger('bizarro').setLevel(DEBUG)
 
 from . import views
-

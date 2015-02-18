@@ -4,7 +4,9 @@ Logger = getLogger('bizarro.google_access_token_update')
 from .google_api_functions import get_new_access_token, GA_CONFIG_FILENAME
 import json
 import os
-import argparse, traceback, sys
+import argparse
+import traceback
+import sys
 from time import sleep
 
 parser = argparse.ArgumentParser(description='Update google access token')
@@ -27,7 +29,7 @@ if __name__ == '__main__':
             get_new_access_token(ga_config['refresh_token'])
         except:
             traceback.print_exc(file=sys.stderr)
-        
+
         finally:
             if not args.hourly:
                 break

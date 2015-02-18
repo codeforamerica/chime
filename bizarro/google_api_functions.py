@@ -1,14 +1,12 @@
-from flask import current_app, request, redirect, session, url_for
+from flask import current_app, redirect, session
 from requests import post, get
 from urllib import urlencode
 import random
 from string import ascii_uppercase, digits
-import oauth2
 import os
 import posixpath
 import json
 from datetime import date, timedelta
-from re import sub
 
 GA_CONFIG_FILENAME = 'ga_config.json'
 
@@ -18,14 +16,11 @@ def authorize_google():
     #
     # This is how google says the state should be generated
     #
-    state = ''.join(random.choice(ascii_uppercase + digits)
-                  for x in xrange(32))
+    state = ''.join(random.choice(ascii_uppercase + digits) for x in xrange(32))
     session['state'] = state
 
 
-    query_string = urlencode(dict(client_id=current_app.config['GA_CLIENT_ID'], redirect_uri=current_app.config['GA_REDIRECT_URI'],
-                                  scope='openid profile https://www.googleapis.com/auth/analytics', state=state, response_type='code',
-                                  access_type='offline', approval_prompt='force'))
+    query_string = urlencode(dict(client_id=current_app.config['GA_CLIENT_ID'], redirect_uri=current_app.config['GA_REDIRECT_URI'], scope='openid profile https://www.googleapis.com/auth/analytics', state=state, response_type='code', access_type='offline', approval_prompt='force'))
     return redirect('https://accounts.google.com/o/oauth2/auth' + '?' + query_string)
 
 def callback_google(state, code, callback_uri):
@@ -110,10 +105,10 @@ def fetch_google_analytics_for_page(config, page_path, access_token):
 
     page_path_pattern = get_ga_page_path_pattern(page_path, ga_project_domain)
 
-    query_string = urlencode({'ids' : 'ga:' + ga_profile_id, 'dimensions' : 'ga:previousPagePath,ga:pagePath',
-                               'metrics' : 'ga:pageViews,ga:avgTimeOnPage,ga:exitRate',
-                               'filters' : 'ga:pagePath=~' + page_path_pattern, 'start-date' : start_date,
-                               'end-date' : end_date, 'max-results' : '1', 'access_token' : access_token})
+    query_string = urlencode({'ids': 'ga:' + ga_profile_id, 'dimensions': 'ga:previousPagePath,ga:pagePath',
+                              'metrics': 'ga:pageViews,ga:avgTimeOnPage,ga:exitRate',
+                              'filters': 'ga:pagePath=~' + page_path_pattern, 'start-date': start_date,
+                              'end-date': end_date, 'max-results': '1', 'access_token': access_token})
 
     resp = get('https://www.googleapis.com/analytics/v3/data/ga' + '?' + query_string)
     response_list = resp.json()
@@ -122,7 +117,7 @@ def fetch_google_analytics_for_page(config, page_path, access_token):
         return {}
     else:
         average_time = unicode(int(float(response_list['totalsForAllResults']['ga:avgTimeOnPage'])))
-        analytics_dict = {'page_views' : response_list['totalsForAllResults']['ga:pageViews'],
-                          'average_time_page' : average_time,
-                          'start_date' : start_date, 'end_date' : end_date}
+        analytics_dict = {'page_views': response_list['totalsForAllResults']['ga:pageViews'],
+                          'average_time_page': average_time,
+                          'start_date': start_date, 'end_date': end_date}
         return analytics_dict
