@@ -13,7 +13,7 @@ Install
 2. You will need a bare Github repository in the directory `sample-site`
    (this will become configurable in the future).
 
-3. copy .env.sample to .env
+3. copy env.sample to .env
 
 4. Run the app with [Foreman](http://ddollar.github.com/foreman):
 
