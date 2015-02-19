@@ -13,6 +13,41 @@ from flask import request, session, current_app, redirect
 from .repo_functions import start_branch
 from .href import needs_redirect, get_redirect
 
+from fcntl import flock, LOCK_EX, LOCK_UN, LOCK_SH
+
+class WriteLocked:
+    ''' Context manager for a locked file open in a+ mode, seek(0).
+    '''
+    def __init__(self, fname):
+        self.fname = fname
+        self.file = None
+
+    def __enter__(self):
+        self.file = open(self.fname, 'a+')
+        flock(self.file, LOCK_EX)
+        self.file.seek(0)
+        return self.file
+
+    def __exit__(self, *args):
+        flock(self.file, LOCK_UN)
+        self.file.close()
+
+class ReadLocked:
+    ''' Context manager for a locked file open in r mode, seek(0).
+    '''
+    def __init__(self, fname):
+        self.fname = fname
+        self.file = None
+
+    def __enter__(self):
+        self.file = open(self.fname, 'r')
+        flock(self.file, LOCK_SH)
+        return self.file
+
+    def __exit__(self, *args):
+        flock(self.file, LOCK_UN)
+        self.file.close()
+
 def dos2unix(string):
     ''' Returns a copy of the strings with line-endings corrected.
     '''
