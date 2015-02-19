@@ -41,6 +41,7 @@ env_file = '/etc/ceviche.conf'
 
 file env_file do
   content <<-CONF
+RUNNING_STATE_DIR=/var/run/#{name}
 REPO_PATH=/var/opt/bizarro-site
 WORK_PATH=/var/opt/bizarro-work
 BROWSERID_URL=#{hostname}
