@@ -884,7 +884,8 @@ class TestGoogleApiFunctions (TestCase):
             "profile_id": "12345678",
             "project_domain": ""
         }
-        with open(ga_config_path, 'w') as outfile:
+        with view_functions.WriteLocked(ga_config_path) as outfile:
+            outfile.truncate(0)
             json.dump(ga_config, outfile, indent=2, ensure_ascii=False)
 
     def tearDown(self):
@@ -921,7 +922,7 @@ class TestGoogleApiFunctions (TestCase):
                 google_api_functions.get_new_access_token('meowser_refresh_token')
 
                 ga_config_path = os.path.join(self.app.config['RUNNING_STATE_DIR'], google_api_functions.GA_CONFIG_FILENAME)
-                with open(ga_config_path) as infile:
+                with view_functions.ReadLocked(ga_config_path) as infile:
                     ga_config = json.load(infile)
 
                 self.assertEqual(ga_config['access_token'], 'meowser_access_token')
@@ -1008,7 +1009,8 @@ class TestApp (TestCase):
             "profile_id": "12345678",
             "project_domain": ""
         }
-        with open(ga_config_path, 'w') as outfile:
+        with view_functions.WriteLocked(ga_config_path) as outfile:
+            outfile.truncate(0)
             json.dump(ga_config, outfile, indent=2, ensure_ascii=False)
 
         random.choice = MagicMock(return_value="P")
@@ -1139,7 +1141,7 @@ class TestApp (TestCase):
             response = self.server.get('/callback?state=PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP&code=code')
 
         ga_config_path = os.path.join(self.app.config['RUNNING_STATE_DIR'], google_api_functions.GA_CONFIG_FILENAME)
-        with open(ga_config_path) as infile:
+        with view_functions.ReadLocked(ga_config_path) as infile:
             ga_config = json.load(infile)
 
         self.assertEqual(ga_config['access_token'], 'meowser_token')

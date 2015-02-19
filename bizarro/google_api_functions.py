@@ -7,6 +7,7 @@ import os
 import posixpath
 import json
 from datetime import date, timedelta
+from .view_functions import WriteLocked, ReadLocked
 
 GA_CONFIG_FILENAME = 'ga_config.json'
 
@@ -40,17 +41,18 @@ def callback_google(state, code, callback_uri):
         raise Exception()
     access = json.loads(resp.content)
 
+    # write the new token to the config file
     ga_config_path = os.path.join(current_app.config['RUNNING_STATE_DIR'], GA_CONFIG_FILENAME)
-    with open(ga_config_path) as infile:
-        ga_config = json.load(infile)
-
-    # change the values of the access and refresh tokens
-    ga_config['access_token'] = access['access_token']
-    ga_config['refresh_token'] = access['refresh_token']
-
-    # write the new config json
-    with open(ga_config_path, 'w') as outfile:
-        json.dump(ga_config, outfile, indent=2, ensure_ascii=False)
+    with WriteLocked(ga_config_path) as iofile:
+        # read the json from the file
+        ga_config = json.load(iofile)
+        # change the values of the access and refresh tokens
+        ga_config['access_token'] = access['access_token']
+        ga_config['refresh_token'] = access['refresh_token']
+        # write the new config json
+        iofile.seek(0)
+        iofile.truncate(0)
+        json.dump(ga_config, iofile, indent=2, ensure_ascii=False)
 
 def get_new_access_token(refresh_token):
     ''' Get a new access token with the refresh token so a user doesn't need to
@@ -69,15 +71,18 @@ def get_new_access_token(refresh_token):
 
     access = json.loads(resp.content)
 
-    # load the config json
+    # write the new token to the config file
     ga_config_path = os.path.join(current_app.config['RUNNING_STATE_DIR'], GA_CONFIG_FILENAME)
-    with open(ga_config_path) as infile:
-        ga_config = json.load(infile)
-    # change the value of the access token
-    ga_config['access_token'] = access['access_token']
-    # write the new config json
-    with open(ga_config_path, 'w') as outfile:
-        json.dump(ga_config, outfile, indent=2, ensure_ascii=False)
+    with WriteLocked(ga_config_path) as iofile:
+        # read the json from the file
+        ga_config = json.load(iofile)
+        # change the value of the access token
+        ga_config['access_token'] = access['access_token']
+        # write the new config json
+        iofile.seek(0)
+        iofile.truncate(0)
+        json.dump(ga_config, iofile, indent=2, ensure_ascii=False)
+
     return True
 
 def get_ga_page_path_pattern(page_path, project_domain):
@@ -99,7 +104,7 @@ def fetch_google_analytics_for_page(config, page_path, access_token):
     ''' Get stats for a particular page
     '''
     ga_config_path = os.path.join(config['RUNNING_STATE_DIR'], GA_CONFIG_FILENAME)
-    with open(ga_config_path) as infile:
+    with ReadLocked(ga_config_path) as infile:
         ga_config = json.load(infile)
     ga_project_domain = ga_config['project_domain']
     ga_profile_id = ga_config['profile_id']
