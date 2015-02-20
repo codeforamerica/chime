@@ -1052,6 +1052,7 @@ class TestApp (TestCase):
         app_args['RUNNING_STATE_DIR'] = self.ga_config_dir
         app_args['WORK_PATH'] = self.work_path
         app_args['REPO_PATH'] = temp_repo_path
+        app_args['AUTH_CSV_URL'] = 'http://example.com/auth.csv'
 
         ga_config_path = join(self.ga_config_dir, google_api_functions.GA_CONFIG_FILENAME)
 
@@ -1078,12 +1079,24 @@ class TestApp (TestCase):
         rmtree(self.temp_repo_dir)
         rmtree(self.ga_config_dir)
 
+    def auth_csv_example_disallowed(self, url, request):
+        if url.geturl() == 'http://example.com/auth.csv':
+            return response(200, '''Email domain,Organization\n''')
+
+        raise Exception('Asked for unknown URL ' + url.geturl())
+
+    def auth_csv_example_allowed(self, url, request):
+        if url.geturl() == 'http://example.com/auth.csv':
+            return response(200, '''Email domain,Organization\nexample.com,Example Org''')
+
+        raise Exception('Asked for unknown URL ' + url.geturl())
+
     def persona_verify(self, url, request):
         if url.geturl() == 'https://verifier.login.persona.org/verify':
             return response(200, '''{"status": "okay", "email": "user@example.com"}''', headers=dict(Link='<https://api.github.com/user/337792/repos?page=1>; rel="prev", <https://api.github.com/user/337792/repos?page=1>; rel="first"'))
 
         else:
-            raise Exception('03 Asked for unknown URL ' + url.geturl())
+            return self.auth_csv_example_allowed(url, request)
 
     def mock_google_authorization(self, url, request):
         if 'https://accounts.google.com/o/oauth2/auth' in url.geturl():
@@ -1091,7 +1104,7 @@ class TestApp (TestCase):
             return response(200, content)
 
         else:
-            raise Exception('04 Asked for unknown URL ' + url.geturl())
+            return self.auth_csv_example_allowed(url, request)
 
     def mock_successful_google_callback(self, url, request):
         if 'https://accounts.google.com/o/oauth2/token' in url.geturl():
@@ -1099,14 +1112,14 @@ class TestApp (TestCase):
             return response(200, content)
 
         else:
-            raise Exception('05 Asked for unknown URL ' + url.geturl())
+            return self.auth_csv_example_allowed(url, request)
 
     def mock_failed_google_callback(self, url, request):
         if 'https://accounts.google.com/o/oauth2/token' in url.geturl():
             return response(500)
 
         else:
-            raise Exception('06 Asked for unknown URL ' + url.geturl())
+            return self.auth_csv_example_allowed(url, request)
 
     def mock_google_analytics(self, url, request):
         start_date = (date.today() - timedelta(days=7)).isoformat()
@@ -1117,8 +1130,22 @@ class TestApp (TestCase):
             return response(200, '''{"ga:previousPagePath": "/about/", "ga:pagePath": "/lib/", "ga:pageViews": "12", "ga:avgTimeOnPage": "56.17", "ga:exiteRate": "43.75", "totalsForAllResults": {"ga:pageViews": "24", "ga:avgTimeOnPage": "67.36363636363636"}}''')
 
         else:
-            raise Exception('07 Asked for unknown URL ' + url.geturl())
+            return self.auth_csv_example_allowed(url, request)
 
+    def test_bad_login(self):
+        ''' Check basic log in / log out flow without talking to Persona.
+        '''
+        response = self.server.get('/')
+        self.assertFalse('user@example.com' in response.data)
+
+        with HTTMock(self.persona_verify):
+            response = self.server.post('/sign-in', data={'email': 'user@example.com'})
+            self.assertEquals(response.status_code, 200)
+
+        with HTTMock(self.auth_csv_example_disallowed):
+            response = self.server.get('/')
+            self.assertFalse('user@example.com' in response.data)
+ 
     def test_login(self):
         ''' Check basic log in / log out flow without talking to Persona.
         '''
@@ -1129,14 +1156,15 @@ class TestApp (TestCase):
             response = self.server.post('/sign-in', data={'email': 'user@example.com'})
             self.assertEquals(response.status_code, 200)
 
-        response = self.server.get('/')
-        self.assertTrue('user@example.com' in response.data)
+        with HTTMock(self.auth_csv_example_allowed):
+            response = self.server.get('/')
+            self.assertTrue('user@example.com' in response.data)
 
-        response = self.server.post('/sign-out')
-        self.assertEquals(response.status_code, 200)
+            response = self.server.post('/sign-out')
+            self.assertEquals(response.status_code, 200)
 
-        response = self.server.get('/')
-        self.assertFalse('user@example.com' in response.data)
+            response = self.server.get('/')
+            self.assertFalse('user@example.com' in response.data)
 
     def test_branches(self):
         ''' Check basic branching functionality.
@@ -1144,9 +1172,10 @@ class TestApp (TestCase):
         with HTTMock(self.persona_verify):
             self.server.post('/sign-in', data={'email': 'user@example.com'})
 
-        response = self.server.post('/start', data={'branch': 'do things'},
-                                    follow_redirects=True)
-        self.assertTrue('user@example.com/do-things' in response.data)
+        with HTTMock(self.auth_csv_example_allowed):
+            response = self.server.post('/start', data={'branch': 'do things'},
+                                        follow_redirects=True)
+            self.assertTrue('user@example.com/do-things' in response.data)
 
         with HTTMock(self.mock_google_analytics):
             response = self.server.post('/tree/user@example.com%252Fdo-things/edit/',
