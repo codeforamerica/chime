@@ -68,6 +68,7 @@
                 <input type="submit" class="primary-button" value="Save"/>
                 <a href="{{view_path}}" class="button primary-button" target="_blank">Preview</a>
                 <a class="sketchy" href="#"><img src="/static/images/icons/ionicons/png/512/trash-a.png" alt="Archive" title="Archive" height="20px" /></a>
+
             </div>
         </div>
         <div class="content-settings">
@@ -80,7 +81,8 @@
                     <input name="url-slug" type="text" value="{{url_slug}}" />  
                 </li>  
                 <li class="form-field">Layout: {{form_layout}}</li>
-                <li class="form-field">Section: {{form_section}}<li>                  
+                <li class="form-field">Section: {{form_section}}<li>   
+                <a href="history.html" class="sketchy">History of changes</a>               
             </ul>
             <div class="markdown-helper">
                 <h2>Content tips</h2>
@@ -92,10 +94,7 @@
                 </ul>
             </div>    
         </div>
-        <ul class="detailed-info sketchy">
-            <li><a href="">Stats</a></li>
-            <li><a href="history.html">History</a></li>
-        </ul>
+        
     </div>
 </form>
     <div id="statistics">
@@ -109,6 +108,7 @@
         <div class="analytics-overview">
             <p><span class="big-number sketchy">{{page_views}}</span> <span>Views this week</span></p>
             <p><span class="big-number sketchy">{{average_time_page}}</span> <span>Average visit time</span></p>
+            <p><a href="" class="sketchy">More usage statistics</a></p>
         </div>
         {% else %}
         <form method="POST" action="/authorize">
@@ -116,6 +116,7 @@
             <button id="authorize-button">Authorize</button>
         </form>
         {% endif %}
+        
     </div>
     <script type="text/javascript">
     
