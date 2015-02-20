@@ -18,7 +18,7 @@ from .view_functions import (
     ReadLocked, branch_name2path, branch_var2name, get_repo, name_branch, dos2unix,
     login_required, synch_required, synched_checkout_required, is_editable,
     sorted_paths, directory_paths, should_redirect, make_redirect,
-    get_auth_csv_file, is_allowed_email
+    get_auth_csv_file, get_auth_url, is_allowed_email
     )
 from .google_api_functions import authorize_google, callback_google, fetch_google_analytics_for_page, GA_CONFIG_FILENAME
 
@@ -73,11 +73,13 @@ def index():
                                review_body=review_body))
 
     email = session.get('email', None)
+    auth_csv_url = current_app.config['AUTH_CSV_URL']
     
-    if email:
-        auth_csv_url = current_app.config['AUTH_CSV_URL']
-        if not is_allowed_email(get_auth_csv_file(auth_csv_url), email):
-            raise Exception('"{}" not authenticated'.format(email))
+    if not email:
+        return render_template('not-allowed.html', email=None)
+    elif not is_allowed_email(get_auth_csv_file(auth_csv_url), email):
+        auth_url = get_auth_url(auth_csv_url)
+        return render_template('not-allowed.html', auth_url=auth_url, email=email)
     
     kwargs = dict(items=list_items, email=email)
     return render_template('index.html', **kwargs)

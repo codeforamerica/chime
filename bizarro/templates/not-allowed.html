@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Tasks{% endblock %}
+{% block content %}
+
+    <div class="layout-breve">
+      <div class="current-tasks">
+        <h2>Not Allowed</h2>
+        {% if email %}
+            <p>You ({{email}}) need to sign in as someone else.</p>
+            <p>More at <a href="{{auth_url}}">{{auth_url}}</a></p>
+        {% else %}
+            <p>Please sign in.</p>
+        {% endif %}
+        </div>
+    </div>
+    
+{% endblock %}
+

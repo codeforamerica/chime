@@ -144,6 +144,20 @@ def get_auth_csv_file(url):
     Logger.debug('Opening {} as auth CSV file'.format(real_url))
     return BytesIO(get(real_url).content)
 
+def get_auth_url(csv_url):
+    '''
+    '''
+    _, host, path, _, _, _ = urlparse(csv_url)
+    
+    csv_pat = re.compile(r'/spreadsheets/d/(?P<id>[\w\-]+)/')
+    path_match = csv_pat.match(path)
+    
+    if host == 'docs.google.com' and path_match:
+        auth_path = '/spreadsheets/d/{}/edit'.format(path_match.group('id'))
+        return 'https://{host}{auth_path}'.format(**locals())
+    
+    return csv_url
+
 def is_allowed_email(file, email):
     ''' Return true if given email address is allowed in given CSV file.
     
@@ -196,7 +210,7 @@ def login_required(route_function):
         
         auth_csv_url = current_app.config['AUTH_CSV_URL']
         if not is_allowed_email(get_auth_csv_file(auth_csv_url), email):
-            raise Exception('"{}" not authenticated'.format(email))
+            return redirect('/')
 
         environ['GIT_AUTHOR_NAME'] = ' '
         environ['GIT_AUTHOR_EMAIL'] = email

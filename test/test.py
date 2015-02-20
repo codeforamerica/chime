@@ -95,6 +95,17 @@ class TestViewFunctions (TestCase):
                                           ('blah', '/tree/my-branch/edit/blah/'),
                                           ('foo', '/tree/my-branch/edit/blah/foo/')])
     
+    def test_auth_url(self):
+        '''
+        '''
+        csv_url = 'data/authentication.csv'
+        auth_url = view_functions.get_auth_url(csv_url)
+        self.assertEqual(auth_url, csv_url)
+
+        csv_url = 'https://docs.google.com/spreadsheets/d/12jUfaRBd-CU1_6BGeLFG1_qoi7Fw_vRC_SXv36eDzM0/export?format=csv'
+        auth_url = view_functions.get_auth_url(csv_url)
+        self.assertEqual(auth_url, 'https://docs.google.com/spreadsheets/d/12jUfaRBd-CU1_6BGeLFG1_qoi7Fw_vRC_SXv36eDzM0/edit')
+
     def test_is_allowed_email(self):
         '''
         '''
@@ -1144,13 +1155,13 @@ class TestApp (TestCase):
 
         with HTTMock(self.auth_csv_example_disallowed):
             response = self.server.get('/')
-            self.assertFalse('user@example.com' in response.data)
+            self.assertFalse('Create task' in response.data)
  
     def test_login(self):
         ''' Check basic log in / log out flow without talking to Persona.
         '''
         response = self.server.get('/')
-        self.assertFalse('user@example.com' in response.data)
+        self.assertFalse('Create task' in response.data)
 
         with HTTMock(self.persona_verify):
             response = self.server.post('/sign-in', data={'email': 'user@example.com'})
@@ -1158,13 +1169,13 @@ class TestApp (TestCase):
 
         with HTTMock(self.auth_csv_example_allowed):
             response = self.server.get('/')
-            self.assertTrue('user@example.com' in response.data)
+            self.assertTrue('Create task' in response.data)
 
             response = self.server.post('/sign-out')
             self.assertEquals(response.status_code, 200)
 
             response = self.server.get('/')
-            self.assertFalse('user@example.com' in response.data)
+            self.assertFalse('Create task' in response.data)
 
     def test_branches(self):
         ''' Check basic branching functionality.
