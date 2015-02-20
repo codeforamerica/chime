@@ -133,12 +133,8 @@ def is_editable(file_path):
 def get_auth_csv_file(url):
     '''
     '''
-    base = 'file://{}'.format(realpath(__file__))
-
-    if url is None:
-        url = join('data', 'authentication.csv')
-    
-    real_url = urljoin(base, url)
+    url_base = 'file://{}'.format(realpath(__file__))
+    real_url = urljoin(url_base, url)
     
     if urlparse(real_url).scheme in ('file', ''):
         file_path = urlparse(real_url).path

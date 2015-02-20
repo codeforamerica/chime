@@ -98,40 +98,57 @@ class TestViewFunctions (TestCase):
     def test_is_allowed_email(self):
         '''
         '''
-        good_file = lambda: StringIO(u'''
+        def mock_remote_authentication_file(url, request):
+            if 'good-file.csv' in url.geturl():
+                return response(200, '''
 Some junk below
 Email domain,Organization,Email address,Organization,Name
 codeforamerica.org,Code for America,mike@teczno.com,Code for America,Mike Migurski
 *@codeforamerica.org,Code for America,,,
 ''')
-        
-        org_file = lambda: StringIO(u'''
+
+            if 'org-file.csv' in url.geturl():
+                return response(200, '''
 Some junk below
 Email domain,Organization
 codeforamerica.org,Code for America
 *@codeforamerica.org,Code for America
 ''')
-        
-        addr_file = lambda: StringIO(u'''
+
+            if 'addr-file.csv' in url.geturl():
+                return response(200, '''
 Some junk below
 Email address,Organization,Name
 mike@teczno.com,Code for America,Mike Migurski
 ''')
+
+            return response(404, '')
+
+        good_file = lambda: view_functions.get_auth_csv_file('http://example.com/good-file.csv')
+        org_file = lambda: view_functions.get_auth_csv_file('http://example.com/org-file.csv')
+        addr_file = lambda: view_functions.get_auth_csv_file('http://example.com/addr-file.csv')
+        no_file = lambda: view_functions.get_auth_csv_file('http://example.com/no-file.csv')
         
-        self.assertTrue(view_functions.is_allowed_email(good_file(), 'mike@codeforamerica.org'))
-        self.assertTrue(view_functions.is_allowed_email(good_file(), 'frances@codeforamerica.org'))
-        self.assertTrue(view_functions.is_allowed_email(good_file(), 'mike@teczno.com'))
-        self.assertFalse(view_functions.is_allowed_email(good_file(), 'whatever@teczno.com'))
+        with HTTMock(mock_remote_authentication_file) as mock:
+            self.assertTrue(view_functions.is_allowed_email(good_file(), 'mike@codeforamerica.org'))
+            self.assertTrue(view_functions.is_allowed_email(good_file(), 'frances@codeforamerica.org'))
+            self.assertTrue(view_functions.is_allowed_email(good_file(), 'mike@teczno.com'))
+            self.assertFalse(view_functions.is_allowed_email(good_file(), 'whatever@teczno.com'))
 
-        self.assertTrue(view_functions.is_allowed_email(org_file(), 'mike@codeforamerica.org'))
-        self.assertTrue(view_functions.is_allowed_email(org_file(), 'frances@codeforamerica.org'))
-        self.assertFalse(view_functions.is_allowed_email(org_file(), 'mike@teczno.com'))
-        self.assertFalse(view_functions.is_allowed_email(org_file(), 'whatever@teczno.com'))
+            self.assertTrue(view_functions.is_allowed_email(org_file(), 'mike@codeforamerica.org'))
+            self.assertTrue(view_functions.is_allowed_email(org_file(), 'frances@codeforamerica.org'))
+            self.assertFalse(view_functions.is_allowed_email(org_file(), 'mike@teczno.com'))
+            self.assertFalse(view_functions.is_allowed_email(org_file(), 'whatever@teczno.com'))
 
-        self.assertFalse(view_functions.is_allowed_email(addr_file(), 'mike@codeforamerica.org'))
-        self.assertFalse(view_functions.is_allowed_email(addr_file(), 'frances@codeforamerica.org'))
-        self.assertTrue(view_functions.is_allowed_email(addr_file(), 'mike@teczno.com'))
-        self.assertFalse(view_functions.is_allowed_email(addr_file(), 'whatever@teczno.com'))
+            self.assertFalse(view_functions.is_allowed_email(addr_file(), 'mike@codeforamerica.org'))
+            self.assertFalse(view_functions.is_allowed_email(addr_file(), 'frances@codeforamerica.org'))
+            self.assertTrue(view_functions.is_allowed_email(addr_file(), 'mike@teczno.com'))
+            self.assertFalse(view_functions.is_allowed_email(addr_file(), 'whatever@teczno.com'))
+
+            self.assertFalse(view_functions.is_allowed_email(no_file(), 'mike@codeforamerica.org'))
+            self.assertFalse(view_functions.is_allowed_email(no_file(), 'frances@codeforamerica.org'))
+            self.assertFalse(view_functions.is_allowed_email(no_file(), 'mike@teczno.com'))
+            self.assertFalse(view_functions.is_allowed_email(no_file(), 'whatever@teczno.com'))
 
 class TestRepo (TestCase):
 
