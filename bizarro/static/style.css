@@ -1,5 +1,5 @@
 body{
-	background-color:#fff;
+	background-color:#444444;
 }
 body h1{
 	background-color:#e5e5e5;
@@ -31,11 +31,35 @@ label{
 .state-active .nav-tab-link, .nav-tab-link:hover, .nav-tab-link:focus, .nav-tab-link:active{
 	background-color:#547B97;
 }
-.layout-breve{
-	padding-top:0;
+.main-content{
+	background-color:#fff;
+	clear:both;
+	display:block;
+	height:100%;
+	overflow:auto;
+
+	padding:0 2em 2em 2em;
+	max-width:100%;
 }
-.layout-breve.content{
+.main-content.content{
 	border-bottom:1px solid #040608;
+	padding-top:2em;
+}
+.product-info{
+	border-top:6px solid #303030;
+}
+.product-info p{
+	float:right;
+}
+.product-info p.cfa{
+	font-style: italic;
+	text-align:center;
+	float:none;
+	margin-right:4em;
+	font-size:0.8em;
+}
+.cfa span{
+	display:block;
 }
 /* Tasks and file explorer*/
 .current-tasks,
@@ -122,12 +146,7 @@ ul.slug input{
 /* End edit content form */
 
 /* Edit page layout elements*/
-.layout-breve{
-	clear:both;
-	display:block;
-	height:100%;
-	overflow:auto;
-}
+
 .content-edit{ 
 	float:left;
 	width:60%;
@@ -171,9 +190,7 @@ body .nav-tabs>p {
 	padding:0.5em;
 }
 .detailed-info{
-	float:right;
-	padding:0;
-	margin:0 1.5em 0 0;
+	clear:both;
 }
 .detailed-info li{
 	padding:0;
@@ -188,7 +205,8 @@ body .nav-tabs>p {
 /* Statistic information */
 
 #statistics{
-	border-top:6px solid #405D73;
+	/*border-top:6px solid #405D73;*/
+	border-bottom:1px solid #040608;
 	background-color:#547B97;
 	color:#fff;
 	overflow:auto;
