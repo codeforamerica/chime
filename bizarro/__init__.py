@@ -20,13 +20,13 @@ def create_app(environ):
     # attach routes and custom error pages here
     app.register_blueprint(bizarro)
 
-    return app
+    @app.before_first_request
+    def before_first_request():
+        '''
+        '''
+        if app.debug:
+            getLogger('bizarro').setLevel(DEBUG)
 
-# @app.before_first_request
-# def before_first_request():
-#     '''
-#     '''
-#     if current_app.debug:
-#         getLogger('bizarro').setLevel(DEBUG)
+    return app
 
 from . import views
