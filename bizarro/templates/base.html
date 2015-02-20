@@ -23,27 +23,8 @@
         <form>
             
         </form>
-        {% if email %}
-            {% block content %}{% endblock %}
-        {% else %}
-        <!-- logged out content -->
-        <div class="main-content loggedout">
-            <div class="signin">
-                <h2>Sign in</h2>
-                <p>To access the website editor, you need to be signed in:</p>
-                {% if email %}
-                {% else %}
-                    <input type="button" id="signin" value="Sign in">
-                {% endif %}
-                <h2>Don't have permission yet?</h2>
-                <p>Contact your website lead to add your email address to the list of editors.</p>
-                    <a href="mailto:poc" class="button sketchy">Email admin</a>
-            </div>
-            
-            
-            <p class="clue">Looking for the Ceviche homepage? <a href="">It's over here</a></p>
-        </div>
-        {% endif %}
+
+        {% block content %}{% endblock %}
 
         <footer class="product-info">
             <p class="cfa">Created by <span><img src="/static/images/logo-black.png" alt="Code for America" height="40px" /></span></p>

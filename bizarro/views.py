@@ -1,7 +1,7 @@
 from logging import getLogger
 Logger = getLogger('bizarro.views')
 
-from os.path import join, isdir, splitext, isfile
+from os.path import join, isdir, splitext, isfile, dirname
 from re import compile, MULTILINE
 from mimetypes import guess_type
 from glob import glob
@@ -14,9 +14,12 @@ from flask import redirect, request, Response, render_template, session, current
 from . import bizarro as app
 from . import repo_functions, edit_functions
 from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
-from .view_functions import (ReadLocked, branch_name2path, branch_var2name, get_repo, name_branch, dos2unix,
-                             login_required, synch_required, synched_checkout_required, is_editable,
-                             sorted_paths, directory_paths, should_redirect, make_redirect)
+from .view_functions import (
+    ReadLocked, branch_name2path, branch_var2name, get_repo, name_branch, dos2unix,
+    login_required, synch_required, synched_checkout_required, is_editable,
+    sorted_paths, directory_paths, should_redirect, make_redirect,
+    get_auth_csv_file, get_auth_url, is_allowed_email
+    )
 from .google_api_functions import authorize_google, callback_google, fetch_google_analytics_for_page, GA_CONFIG_FILENAME
 
 
@@ -24,6 +27,7 @@ import posixpath
 import json
 
 @app.route('/')
+@login_required
 @synch_required
 def index():
     r = Repo(current_app.config['REPO_PATH']) # bare repo
@@ -69,8 +73,24 @@ def index():
                                review_subject=review_subject,
                                review_body=review_body))
 
-    kwargs = dict(items=list_items, email=session.get('email', None))
+    email = session.get('email', None)
+    
+    kwargs = dict(items=list_items, email=email)
     return render_template('index.html', **kwargs)
+
+@app.route('/not-allowed')
+def not_allowed():
+    email = session.get('email', None)
+    auth_csv_url = current_app.config['AUTH_CSV_URL']
+    
+    if not email:
+        return render_template('not-allowed.html', email=None)
+    
+    if not is_allowed_email(get_auth_csv_file(auth_csv_url), email):
+        auth_url = get_auth_url(auth_csv_url)
+        return render_template('not-allowed.html', email=email, auth_url=auth_url)
+
+    return redirect('/')
 
 @app.route('/sign-in', methods=['POST'])
 def sign_in():

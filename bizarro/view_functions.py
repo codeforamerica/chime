@@ -1,14 +1,18 @@
 from logging import getLogger
 Logger = getLogger('bizarro.view_functions')
 
-from os.path import join, isdir, realpath, basename
+from os.path import join, isdir, realpath, basename, dirname
 from os import listdir, environ
 from urllib import quote, unquote
+from urlparse import urljoin, urlparse
 from mimetypes import guess_type
 from functools import wraps
+from io import BytesIO
+import csv, re
 
 from git import Repo
 from flask import request, session, current_app, redirect
+from requests import get
 
 from .repo_functions import start_branch
 from .href import needs_redirect, get_redirect
@@ -126,6 +130,72 @@ def is_editable(file_path):
 
     return False
 
+def get_auth_csv_file(url):
+    '''
+    '''
+    url_base = 'file://{}'.format(realpath(__file__))
+    real_url = urljoin(url_base, url)
+    
+    if urlparse(real_url).scheme in ('file', ''):
+        file_path = urlparse(real_url).path
+        Logger.debug('Opening {} as auth CSV file'.format(file_path))
+        return open(file_path, 'r')
+    
+    Logger.debug('Opening {} as auth CSV file'.format(real_url))
+    return BytesIO(get(real_url).content)
+
+def get_auth_url(csv_url):
+    '''
+    '''
+    _, host, path, _, _, _ = urlparse(csv_url)
+    
+    csv_pat = re.compile(r'/spreadsheets/d/(?P<id>[\w\-]+)/')
+    path_match = csv_pat.match(path)
+    
+    if host == 'docs.google.com' and path_match:
+        auth_path = '/spreadsheets/d/{}/edit'.format(path_match.group('id'))
+        return 'https://{host}{auth_path}'.format(**locals())
+    
+    return csv_url
+
+def is_allowed_email(file, email):
+    ''' Return true if given email address is allowed in given CSV file.
+    
+        First argument is a file-like object.
+    '''
+    domain_index, address_index = None, None
+    domain_pat = re.compile(r'^(.*@)?(?P<domain>.+)$')
+    email_domain = domain_pat.match(email).group('domain')
+    rows = csv.reader(file)
+    
+    #
+    # Look for a header row.
+    #
+    for row in rows:
+        row = [val.lower() for val in row]
+        starts_right = row[:2] == ['email domain', 'organization']
+        ends_right = row[-3:] == ['email address', 'organization', 'name']
+        if starts_right or ends_right:
+            domain_index = 0 if starts_right else None
+            address_index = -3 if ends_right else None
+            break
+    
+    #
+    # Look for possible matching data row.
+    #
+    for row in rows:
+        if domain_index is not None:
+            if domain_pat.match(row[domain_index]):
+                domain = domain_pat.match(row[domain_index]).group('domain')
+                if email_domain == domain:
+                    return True
+
+        if address_index is not None:
+            if email == row[address_index]:
+                return True
+        
+    return False
+
 def login_required(route_function):
     ''' Login decorator for route functions.
 
@@ -136,7 +206,11 @@ def login_required(route_function):
         email = session.get('email', None)
 
         if not email:
-            return redirect('/')
+            return redirect('/not-allowed')
+        
+        auth_csv_url = current_app.config['AUTH_CSV_URL']
+        if not is_allowed_email(get_auth_csv_file(auth_csv_url), email):
+            return redirect('/not-allowed')
 
         environ['GIT_AUTHOR_NAME'] = ' '
         environ['GIT_AUTHOR_EMAIL'] = email
