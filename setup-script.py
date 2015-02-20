@@ -13,6 +13,7 @@ Follows the process described here:
 '''
 from getpass import getpass
 from urlparse import urljoin
+from os.path import join, dirname
 from os import environ
 from time import sleep
 import re, json, requests
@@ -58,8 +59,9 @@ print '--> Github login OK'
 gdocs_credentials = functions.authenticate_google(gdocs_client_id, gdocs_client_secret)
 sheet_id = functions.create_google_spreadsheet(gdocs_credentials, reponame)
 sheet_url = 'https://docs.google.com/a/codeforamerica.org/spreadsheets/d/{}'.format(sheet_id)
+csv_url = 'https://docs.google.com/spreadsheets/d/{}/export?format=csv'.format(sheet_id)
 
-print '--> Created spreadsheet {}'.format(sheet_url)
+print '--> Created spreadsheet {}'.format(csv_url)
 
 #
 # Create a new authorization with Github.
@@ -97,26 +99,15 @@ check_status(resp, 'check authorization {}'.format(github_auth_id))
 if check_repo_state(reponame, github_token):
     raise RuntimeError('{} already exists, not going to run EC2'.format(reponame))
 
-user_data = '''#!/bin/sh -ex
-apt-get update -y
-apt-get install -y git htop curl
-
-# What is our public DNS name?
-ipaddr=$(ifconfig eth0 | grep 'inet addr:'| grep -v '127.0.0.1' | cut -d: -f2 | awk '{{ print $1}}')
-fullname=`curl -s http://169.254.169.254/latest/meta-data/public-hostname`
-shortname=`echo $fullname | cut -d. -f1`
-
-# Configure host name for Ubuntu.
-sed -i '/ '$fullname'/ d' /etc/hosts
-echo "$ipaddr $fullname $shortname" >> /etc/hosts
-echo $shortname > /etc/hostname
-hostname -F /etc/hostname
-
-# Install Ceviche.
-DIR=/var/opt/ceviche-cms
-git clone -b {branch} https://github.com/codeforamerica/ceviche-cms.git $DIR
-env GITHUB_REPO={repo} GITHUB_TOKEN={token} $DIR/chef/run.sh
-'''.format(branch='master', token=github_token, repo=reponame)
+with open(join(dirname(__file__), 'bizarro', 'setup', 'user-data.sh')) as file:
+    user_data = file.read().format(
+        branch_name='master',
+        ga_client_id=gdocs_client_id,
+        ga_client_secret=gdocs_client_secret,
+        github_token=github_token,
+        github_repo=reponame,
+        auth_csv_url=csv_url
+        )
 
 device_sda1 = BlockDeviceType(size=16, delete_on_termination=True)
 device_map = BlockDeviceMapping(); device_map['/dev/sda1'] = device_sda1
