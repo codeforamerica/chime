@@ -231,11 +231,28 @@ body .nav-tabs>p {
 /* End statistics */
 
 /* Global signon/off */
-.signon{
-	display:inline;
-	position:absolute;
-	top:1em;
-	right:1em;
+.loggedout{
+	text-align:center;
+}
+.signin{
+	width:20%;
+	text-align:center;
+	margin:2em auto;
+	border:1px solid #00a175;
+	padding:2em;
+}
+.signin h2{
+	font-weight:bold;
+	color:#00a175;
+}
+.signin #signin{
+	height: 30px;
+	padding: 0 24px;
+	line-height: 28px;
+	margin-bottom:2em;
+}
+.loggedout .clue{
+	font-size:0.75em;
 }
 /* end signon/off */
 
