@@ -82,13 +82,14 @@ def index():
 def not_allowed():
     email = session.get('email', None)
     auth_csv_url = current_app.config['AUTH_CSV_URL']
+    auth_url = get_auth_url(auth_csv_url)
+    kwargs = dict(email=email, auth_url=auth_url)
     
     if not email:
-        return render_template('not-allowed.html', email=None)
+        return render_template('not-allowed.html', **kwargs)
     
     if not is_allowed_email(get_auth_csv_file(auth_csv_url), email):
-        auth_url = get_auth_url(auth_csv_url)
-        return render_template('not-allowed.html', email=email, auth_url=auth_url)
+        return render_template('not-allowed.html', **kwargs)
 
     return redirect('/')
 
