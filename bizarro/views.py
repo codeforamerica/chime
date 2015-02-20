@@ -14,8 +14,8 @@ from flask import redirect, request, Response, render_template, session, current
 from . import bizarro as app
 from . import repo_functions, edit_functions
 from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
-from .view_functions import (ReadLocked, branch_name2path, branch_var2name, get_repo, name_branch, dos2unix,
-                             login_required, synch_required, synched_checkout_required, is_editable,
+from .view_functions import (ReadLocked, branch_name2path, branch_var2name, get_repo, name_branch,
+                             dos2unix, login_required, synch_required, synched_checkout_required,
                              sorted_paths, directory_paths, should_redirect, make_redirect)
 from .google_api_functions import authorize_google, get_google_client_info, request_new_google_access_and_refresh_tokens, get_google_personal_info, get_google_analytics_properties, fetch_google_analytics_for_page, GA_CONFIG_FILENAME
 
