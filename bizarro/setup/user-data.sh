@@ -19,5 +19,5 @@ git clone -b {branch_name} https://github.com/codeforamerica/ceviche-cms.git $DI
 env \
     GA_CLIENT_ID='{ga_client_id}' GA_CLIENT_SECRET='{ga_client_secret}' \
     GITHUB_REPO='{github_repo}' GITHUB_TOKEN='{github_token}' \
-    GDOCS_CSV_URL='{gdocs_csv_url}' \
+    AUTH_CSV_URL='{auth_csv_url}' \
     $DIR/chef/run.sh

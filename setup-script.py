@@ -106,7 +106,7 @@ with open(join(dirname(__file__), 'bizarro', 'setup', 'user-data.sh')) as file:
         ga_client_secret=gdocs_client_secret,
         github_token=github_token,
         github_repo=reponame,
-        gdocs_csv_url=csv_url
+        auth_csv_url=csv_url
         )
 
 device_sda1 = BlockDeviceType(size=16, delete_on_termination=True)
