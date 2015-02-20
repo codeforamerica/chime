@@ -54,6 +54,8 @@ BROWSERID_URL=#{hostname}
 GA_CLIENT_ID="#{ga_client_id}"
 GA_CLIENT_SECRET="#{ga_client_secret}"
 GA_REDIRECT_URI="#{ga_redirect_uri}"
+
+AUTH_CSV_URL=#{authorization_csv_url}
 CONF
 end
 
