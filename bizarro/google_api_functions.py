@@ -68,6 +68,37 @@ def request_new_google_access_and_refresh_tokens(request):
 
     return access['access_token'], access['refresh_token']
 
+def get_new_access_token(refresh_token):
+    ''' Get a new access token with the refresh token so a user doesn't need to
+        authorize the app again
+    '''
+    if not refresh_token:
+        return False
+
+    data = dict(client_id=current_app.config['GA_CLIENT_ID'], client_secret=current_app.config['GA_CLIENT_SECRET'],
+                refresh_token=refresh_token, grant_type='refresh_token')
+
+    resp = post(GOOGLE_ACCESS_TOKEN_URL, data=data)
+
+    if resp.status_code != 200:
+        raise Exception()
+
+    access = json.loads(resp.content)
+
+    # write the new token to the config file
+    ga_config_path = os.path.join(current_app.config['RUNNING_STATE_DIR'], GA_CONFIG_FILENAME)
+    with WriteLocked(ga_config_path) as iofile:
+        # read the json from the file
+        ga_config = json.load(iofile)
+        # change the value of the access token
+        ga_config['access_token'] = access['access_token']
+        # write the new config json
+        iofile.seek(0)
+        iofile.truncate(0)
+        json.dump(ga_config, iofile, indent=2, ensure_ascii=False)
+
+    return True
+
 def get_google_personal_info(access_token):
     ''' Get account name and email from Google Plus.
     '''
@@ -107,37 +138,6 @@ def get_google_analytics_properties(access_token):
     properties.sort(key=lambda p: p[1].lower())
 
     return properties
-
-def get_new_access_token(refresh_token):
-    ''' Get a new access token with the refresh token so a user doesn't need to
-        authorize the app again
-    '''
-    if not refresh_token:
-        return False
-
-    data = dict(client_id=current_app.config['GA_CLIENT_ID'], client_secret=current_app.config['GA_CLIENT_SECRET'],
-                refresh_token=refresh_token, grant_type='refresh_token')
-
-    resp = post(GOOGLE_ACCESS_TOKEN_URL, data=data)
-
-    if resp.status_code != 200:
-        raise Exception()
-
-    access = json.loads(resp.content)
-
-    # write the new token to the config file
-    ga_config_path = os.path.join(current_app.config['RUNNING_STATE_DIR'], GA_CONFIG_FILENAME)
-    with WriteLocked(ga_config_path) as iofile:
-        # read the json from the file
-        ga_config = json.load(iofile)
-        # change the value of the access token
-        ga_config['access_token'] = access['access_token']
-        # write the new config json
-        iofile.seek(0)
-        iofile.truncate(0)
-        json.dump(ga_config, iofile, indent=2, ensure_ascii=False)
-
-    return True
 
 def get_ga_page_path_pattern(page_path, project_domain):
     ''' Get a regex pattern that'll get us the google analytics data we want.

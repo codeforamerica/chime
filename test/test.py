@@ -891,7 +891,7 @@ class TestGoogleApiFunctions (TestCase):
     def tearDown(self):
         rmtree(self.ga_config_dir)
 
-    def mock_successful_get_new_access_token(self, url, request):
+    def mock_successful_request_new_google_access_token(self, url, request):
         if 'https://accounts.google.com/o/oauth2/token' in url.geturl():
             content = {'access_token': 'meowser_access_token', 'token_type': 'meowser_type', 'expires_in': 3920,}
             return response(200, content)
@@ -899,7 +899,7 @@ class TestGoogleApiFunctions (TestCase):
         else:
             raise Exception('01 Asked for unknown URL ' + url.geturl())
 
-    def mock_failed_get_new_access_token(self, url, request):
+    def mock_failed_request_new_google_access_token(self, url, request):
         if 'https://accounts.google.com/o/oauth2/token' in url.geturl():
             return response(500)
 
@@ -916,10 +916,10 @@ class TestGoogleApiFunctions (TestCase):
             content = {u'error': {u'code': 401, u'message': u'Invalid Credentials', u'errors': [{u'locationType': u'header', u'domain': u'global', u'message': u'Invalid Credentials', u'reason': u'authError', u'location': u'Authorization'}]}}
             return response(401, content)
 
-    def test_successful_get_new_access_token(self):
+    def test_successful_request_new_google_access_token(self):
         with self.app.test_request_context():
-            with HTTMock(self.mock_successful_get_new_access_token):
-                google_api_functions.get_new_access_token('meowser_refresh_token')
+            with HTTMock(self.mock_successful_request_new_google_access_token):
+                google_api_functions.request_new_google_access_token('meowser_refresh_token')
 
                 ga_config_path = os.path.join(self.app.config['RUNNING_STATE_DIR'], google_api_functions.GA_CONFIG_FILENAME)
                 with view_functions.ReadLocked(ga_config_path) as infile:
@@ -927,11 +927,11 @@ class TestGoogleApiFunctions (TestCase):
 
                 self.assertEqual(ga_config['access_token'], 'meowser_access_token')
 
-    def test_failure_to_get_new_access_token(self):
+    def test_failure_to_request_new_google_access_token(self):
         with self.app.test_request_context():
-            with HTTMock(self.mock_failed_get_new_access_token):
+            with HTTMock(self.mock_failed_request_new_google_access_token):
                 with self.assertRaises(Exception):
-                    google_api_functions.get_new_access_token('meowser_refresh_token')
+                    google_api_functions.request_new_google_access_token('meowser_refresh_token')
 
     def test_get_analytics_page_path_pattern(self):
         ''' Verify that we're getting good page path patterns for querying google analytics
