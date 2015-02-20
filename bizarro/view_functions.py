@@ -1,11 +1,12 @@
 from logging import getLogger
 Logger = getLogger('bizarro.view_functions')
 
-from os.path import join, isdir, realpath, basename
+from os.path import join, isdir, realpath, basename, dirname
 from os import listdir, environ
 from urllib import quote, unquote
 from mimetypes import guess_type
 from functools import wraps
+import csv, re
 
 from git import Repo
 from flask import request, session, current_app, redirect
@@ -126,6 +127,41 @@ def is_editable(file_path):
 
     return False
 
+def is_allowed_email(file, email):
+    ''' Return true is given email address is allowed in given CSV file.
+    
+        First argument is a file-like object.
+    '''
+    domain_index, address_index = None, None
+    domain_pat = re.compile(r'^(.*@)?(?P<domain>.+)$')
+    email_domain = domain_pat.match(email).group('domain')
+    rows = csv.reader(file)
+    
+    #
+    # Look for a header row.
+    #
+    for row in rows:
+        row = [val.lower() for val in row]
+        starts_right = row[:2] == ['email domain', 'organization']
+        ends_right = row[-3:] == ['email address', 'organization', 'name']
+        if starts_right or ends_right:
+            domain_index = 0 if starts_right else None
+            address_index = -3 if ends_right else None
+            break
+    
+    for row in rows:
+        if domain_index is not None:
+            if domain_pat.match(row[domain_index]):
+                domain = domain_pat.match(row[domain_index]).group('domain')
+                if email_domain == domain:
+                    return True
+
+        if address_index is not None:
+            if email == row[address_index]:
+                return True
+        
+    return False
+
 def login_required(route_function):
     ''' Login decorator for route functions.
 
@@ -137,6 +173,10 @@ def login_required(route_function):
 
         if not email:
             return redirect('/')
+        
+        with open(join(dirname(__file__), 'data', 'authentication.csv')) as file:
+            if not is_allowed_email(file, email):
+                raise Exception('"{}" not authenticated'.format(email))
 
         environ['GIT_AUTHOR_NAME'] = ' '
         environ['GIT_AUTHOR_EMAIL'] = email

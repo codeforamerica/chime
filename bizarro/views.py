@@ -1,7 +1,7 @@
 from logging import getLogger
 Logger = getLogger('bizarro.views')
 
-from os.path import join, isdir, splitext, isfile
+from os.path import join, isdir, splitext, isfile, dirname
 from re import compile, MULTILINE
 from mimetypes import guess_type
 from glob import glob
@@ -14,9 +14,12 @@ from flask import redirect, request, Response, render_template, session, current
 from . import bizarro as app
 from . import repo_functions, edit_functions
 from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
-from .view_functions import (ReadLocked, branch_name2path, branch_var2name, get_repo, name_branch, dos2unix,
-                             login_required, synch_required, synched_checkout_required, is_editable,
-                             sorted_paths, directory_paths, should_redirect, make_redirect)
+from .view_functions import (
+    ReadLocked, branch_name2path, branch_var2name, get_repo, name_branch, dos2unix,
+    login_required, synch_required, synched_checkout_required, is_editable,
+    sorted_paths, directory_paths, should_redirect, make_redirect,
+    is_allowed_email
+    )
 from .google_api_functions import authorize_google, callback_google, fetch_google_analytics_for_page, GA_CONFIG_FILENAME
 
 
@@ -69,7 +72,14 @@ def index():
                                review_subject=review_subject,
                                review_body=review_body))
 
-    kwargs = dict(items=list_items, email=session.get('email', None))
+    email = session.get('email', None)
+    
+    if email:
+        with open(join(dirname(__file__), 'data', 'authentication.csv')) as file:
+            if not is_allowed_email(file, email):
+                raise Exception('"{}" not authenticated'.format(email))
+    
+    kwargs = dict(items=list_items, email=email)
     return render_template('index.html', **kwargs)
 
 @app.route('/sign-in', methods=['POST'])

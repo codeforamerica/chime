@@ -94,6 +94,44 @@ class TestViewFunctions (TestCase):
         self.assertEqual(dirs_and_paths, [('root', '/tree/my-branch/edit'),
                                           ('blah', '/tree/my-branch/edit/blah/'),
                                           ('foo', '/tree/my-branch/edit/blah/foo/')])
+    
+    def test_is_allowed_email(self):
+        '''
+        '''
+        good_file = lambda: StringIO(u'''
+Some junk below
+Email domain,Organization,Email address,Organization,Name
+codeforamerica.org,Code for America,mike@teczno.com,Code for America,Mike Migurski
+*@codeforamerica.org,Code for America,,,
+''')
+        
+        org_file = lambda: StringIO(u'''
+Some junk below
+Email domain,Organization
+codeforamerica.org,Code for America
+*@codeforamerica.org,Code for America
+''')
+        
+        addr_file = lambda: StringIO(u'''
+Some junk below
+Email address,Organization,Name
+mike@teczno.com,Code for America,Mike Migurski
+''')
+        
+        self.assertTrue(view_functions.is_allowed_email(good_file(), 'mike@codeforamerica.org'))
+        self.assertTrue(view_functions.is_allowed_email(good_file(), 'frances@codeforamerica.org'))
+        self.assertTrue(view_functions.is_allowed_email(good_file(), 'mike@teczno.com'))
+        self.assertFalse(view_functions.is_allowed_email(good_file(), 'whatever@teczno.com'))
+
+        self.assertTrue(view_functions.is_allowed_email(org_file(), 'mike@codeforamerica.org'))
+        self.assertTrue(view_functions.is_allowed_email(org_file(), 'frances@codeforamerica.org'))
+        self.assertFalse(view_functions.is_allowed_email(org_file(), 'mike@teczno.com'))
+        self.assertFalse(view_functions.is_allowed_email(org_file(), 'whatever@teczno.com'))
+
+        self.assertFalse(view_functions.is_allowed_email(addr_file(), 'mike@codeforamerica.org'))
+        self.assertFalse(view_functions.is_allowed_email(addr_file(), 'frances@codeforamerica.org'))
+        self.assertTrue(view_functions.is_allowed_email(addr_file(), 'mike@teczno.com'))
+        self.assertFalse(view_functions.is_allowed_email(addr_file(), 'whatever@teczno.com'))
 
 class TestRepo (TestCase):
 
