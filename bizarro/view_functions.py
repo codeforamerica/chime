@@ -206,11 +206,11 @@ def login_required(route_function):
         email = session.get('email', None)
 
         if not email:
-            return redirect('/')
+            return redirect('/not-allowed')
         
         auth_csv_url = current_app.config['AUTH_CSV_URL']
         if not is_allowed_email(get_auth_csv_file(auth_csv_url), email):
-            return redirect('/')
+            return redirect('/not-allowed')
 
         environ['GIT_AUTHOR_NAME'] = ' '
         environ['GIT_AUTHOR_EMAIL'] = email

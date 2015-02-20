@@ -27,6 +27,7 @@ import posixpath
 import json
 
 @app.route('/')
+@login_required
 @synch_required
 def index():
     r = Repo(current_app.config['REPO_PATH']) # bare repo
@@ -73,16 +74,23 @@ def index():
                                review_body=review_body))
 
     email = session.get('email', None)
+    
+    kwargs = dict(items=list_items, email=email)
+    return render_template('index.html', **kwargs)
+
+@app.route('/not-allowed')
+def not_allowed():
+    email = session.get('email', None)
     auth_csv_url = current_app.config['AUTH_CSV_URL']
     
     if not email:
         return render_template('not-allowed.html', email=None)
-    elif not is_allowed_email(get_auth_csv_file(auth_csv_url), email):
-        auth_url = get_auth_url(auth_csv_url)
-        return render_template('not-allowed.html', auth_url=auth_url, email=email)
     
-    kwargs = dict(items=list_items, email=email)
-    return render_template('index.html', **kwargs)
+    if not is_allowed_email(get_auth_csv_file(auth_csv_url), email):
+        auth_url = get_auth_url(auth_csv_url)
+        return render_template('not-allowed.html', email=email, auth_url=auth_url)
+
+    return redirect('/')
 
 @app.route('/sign-in', methods=['POST'])
 def sign_in():
