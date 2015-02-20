@@ -18,7 +18,7 @@ from .view_functions import (
     ReadLocked, branch_name2path, branch_var2name, get_repo, name_branch, dos2unix,
     login_required, synch_required, synched_checkout_required, is_editable,
     sorted_paths, directory_paths, should_redirect, make_redirect,
-    is_allowed_email
+    get_auth_csv_file, is_allowed_email
     )
 from .google_api_functions import authorize_google, callback_google, fetch_google_analytics_for_page, GA_CONFIG_FILENAME
 
@@ -75,9 +75,9 @@ def index():
     email = session.get('email', None)
     
     if email:
-        with open(join(dirname(__file__), 'data', 'authentication.csv')) as file:
-            if not is_allowed_email(file, email):
-                raise Exception('"{}" not authenticated'.format(email))
+        auth_csv_url = current_app.config['AUTH_CSV_URL']
+        if not is_allowed_email(get_auth_csv_file(auth_csv_url), email):
+            raise Exception('"{}" not authenticated'.format(email))
     
     kwargs = dict(items=list_items, email=email)
     return render_template('index.html', **kwargs)

@@ -4,12 +4,15 @@ Logger = getLogger('bizarro.view_functions')
 from os.path import join, isdir, realpath, basename, dirname
 from os import listdir, environ
 from urllib import quote, unquote
+from urlparse import urljoin, urlparse
 from mimetypes import guess_type
 from functools import wraps
+from io import BytesIO
 import csv, re
 
 from git import Repo
 from flask import request, session, current_app, redirect
+from requests import get
 
 from .repo_functions import start_branch
 from .href import needs_redirect, get_redirect
@@ -127,8 +130,26 @@ def is_editable(file_path):
 
     return False
 
+def get_auth_csv_file(url):
+    '''
+    '''
+    base = 'file://{}'.format(realpath(__file__))
+
+    if url is None:
+        url = join('data', 'authentication.csv')
+    
+    real_url = urljoin(base, url)
+    
+    if urlparse(real_url).scheme in ('file', ''):
+        file_path = urlparse(real_url).path
+        Logger.debug('Opening {} as auth CSV file'.format(file_path))
+        return open(file_path, 'r')
+    
+    Logger.debug('Opening {} as auth CSV file'.format(real_url))
+    return BytesIO(get(real_url).content)
+
 def is_allowed_email(file, email):
-    ''' Return true is given email address is allowed in given CSV file.
+    ''' Return true if given email address is allowed in given CSV file.
     
         First argument is a file-like object.
     '''
@@ -149,6 +170,9 @@ def is_allowed_email(file, email):
             address_index = -3 if ends_right else None
             break
     
+    #
+    # Look for possible matching data row.
+    #
     for row in rows:
         if domain_index is not None:
             if domain_pat.match(row[domain_index]):
@@ -174,9 +198,9 @@ def login_required(route_function):
         if not email:
             return redirect('/')
         
-        with open(join(dirname(__file__), 'data', 'authentication.csv')) as file:
-            if not is_allowed_email(file, email):
-                raise Exception('"{}" not authenticated'.format(email))
+        auth_csv_url = current_app.config['AUTH_CSV_URL']
+        if not is_allowed_email(get_auth_csv_file(auth_csv_url), email):
+            raise Exception('"{}" not authenticated'.format(email))
 
         environ['GIT_AUTHOR_NAME'] = ' '
         environ['GIT_AUTHOR_EMAIL'] = email
