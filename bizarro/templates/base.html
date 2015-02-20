@@ -21,13 +21,7 @@
     <body>
         <h1><a href="/">City website editor</a> <span> {% if branch %}&rarr; <a href="./">{{branch}}</a></span>{% endif %}</h1>
         <form>
-            <div class="signon">
-                  {% if email %}
-                    <input type="button" id="signout" value="Sign out">
-                  {% else %}
-                 
-                  {% endif %}
-            </div>
+            
         </form>
         {% if email %}
             {% block content %}{% endblock %}
