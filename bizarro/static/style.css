@@ -254,6 +254,14 @@ body .nav-tabs>p {
 .loggedout .clue{
 	font-size:0.75em;
 }
+.signout{
+	float:right;
+	margin-top:-4em;
+	margin-right:2em;
+}
+.signout #signout{
+	background-color:#6D6E71;
+}
 /* end signon/off */
 
 

@@ -47,7 +47,13 @@
 
         <footer class="product-info">
             <p class="cfa">Created by <span><img src="/static/images/logo-black.png" alt="Code for America" height="40px" /></span></p>
-
+            <div class="signout">
+                  {% if email %}
+                    <input type="button" id="signout" value="Sign out">
+                  {% else %}
+                 
+                  {% endif %}
+            </div>
         </footer>
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script src="/static/javascript/toopaymarkdown/js//bootstrap-markdown.js"></script>
