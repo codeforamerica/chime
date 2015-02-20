@@ -2,14 +2,69 @@
 {% block title %}Setup{% endblock %}
 {% block content %}
 
-  <h1>Setup</h1>
-  <div class="layout-breve">
-	  <p>Use his tool to set up your google analytics account, to get live stats about your content.</p>
+<h1>Setup</h1>
+<div class="layout-breve">
 
-	  <form action="/authorize" method="post">
-	      <p>
-	        <button name="provider" value="google" type="submit">JFDI</button>
-	      </p>
-	  </form>
-	</div>
+    <h2>Setup</h2>
+    <p>Setup is pretty easy, you can do it right from this page. It makes the following assumptions, however:</p>
+    <ul>
+        <li>You have access to a <a href="https://www.google.com/analytics/">Google Analytics</a> account.</li>
+        <li>You have permission to use, or create, an account with <a href="http://heroku.com">Heroku</a>.</li>
+    </ul>
+
+    <h3>1. Connect To Google</h3>
+    {% if email %}
+    <div class="alert-success">
+        <p>Connected to Google as <b>{{ name }} ({{ email }})</b>.</p>
+    </div>
+
+    {% else %}
+    <div class="alert-info">
+        <form method="POST" action="/authorize">
+            <p>To view statistics for this content, connect to Google via the button below (using the email address associated with your Google Analytics account).</p>
+            <button id="authorize-button">Connect to Google</button>
+        </form>
+
+        <form action="/authorize-google" method="POST">
+            <p>Connect to Google via the button below (using your email associated with your Google Analytics account).</p>
+            <p><button>Connect To Google</button></p>
+        </form>
+    </div>
+    {% endif %}
+
+
+    <form action="/prepare-app" method="POST">
+        {% if properties %}
+        <h3>2. Pick a property</h3>
+        <div class="alert-info">
+            <p style="overflow:hidden">
+                <select name="property">
+                    {% for (id, name, url) in properties %}
+                    <option value="{{ id }} {{ url }}">{{ name }} ({{ url }})</option>
+                    {% endfor %}
+                </select>
+            </p>
+            <p class="note">You may have more than one view setup, so select the one that will show the data for the area you want on your dashboard.</p>
+        </div>
+        {% endif %}
+
+        {% if email and client_id and client_secret and refresh_token and properties %}
+        <div class="alert-info">
+            <p><strong>Create and publish your dashboard</strong>
+            </p>
+            <p>
+                <input type="hidden" name="name" value="{{ name }}">
+                <input type="hidden" name="email" value="{{ email }}">
+                <input type="hidden" name="client_id" value="{{ client_id }}">
+                <input type="hidden" name="client_secret" value="{{ client_secret }}">
+                <input type="hidden" name="refresh_token" value="{{ refresh_token }}">
+                <p>
+                    <button>Finish Setup</button>
+                </p>
+            </p>
+        </div>
+        {% endif %}
+    </form>
+
+</div>
 {% endblock %}

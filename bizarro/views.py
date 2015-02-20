@@ -17,7 +17,7 @@ from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
 from .view_functions import (ReadLocked, branch_name2path, branch_var2name, get_repo, name_branch, dos2unix,
                              login_required, synch_required, synched_checkout_required, is_editable,
                              sorted_paths, directory_paths, should_redirect, make_redirect)
-from .google_api_functions import authorize_google, callback_google, fetch_google_analytics_for_page, GA_CONFIG_FILENAME
+from .google_api_functions import authorize_google, get_google_client_info, request_new_google_access_and_refresh_tokens, get_google_personal_info, get_google_analytics_properties, fetch_google_analytics_for_page, GA_CONFIG_FILENAME
 
 
 import posixpath
@@ -105,15 +105,26 @@ def authorize():
 
 @app.route('/callback')
 def callback():
-    state = request.args.get('state')
-    code = request.args.get('code')
-    callback_uri = '{0}://{1}/callback'.format(request.scheme, request.host)
+    ''' Complete Google authentication, get web properties, and show the form.
+    '''
+    client_id, client_secret = get_google_client_info()
+
     try:
-        callback_google(state, code, callback_uri)
+        access_token, refresh_token = request_new_google_access_and_refresh_tokens(request)
+        name, email = get_google_personal_info(access_token)
+        properties = get_google_analytics_properties(access_token)
+
+        if not properties:
+            raise Exception("Your Google Account isn't associated with any Google Analytics properties. Log in to Google with a different account?")
+
     except Exception:
         return redirect('/authorization-failed')
-    else:
-        return redirect('/authorization-complete')
+
+    values = dict(client_id=client_id, client_secret=client_secret,
+                  refresh_token=refresh_token, properties=properties,
+                  style_base=get_style_base(request), name=name, email=email)
+
+    return render_template('authorize.html', **values)
 
 @app.route('/authorization-complete')
 def authorization_complete():
