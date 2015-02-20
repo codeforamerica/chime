@@ -21,17 +21,40 @@
     <body>
         <h1><a href="/">City website editor</a> <span> {% if branch %}&rarr; <a href="./">{{branch}}</a></span>{% endif %}</h1>
         <form>
-            <div class="signon">
+            
+        </form>
+        {% if email %}
+            {% block content %}{% endblock %}
+        {% else %}
+        <!-- logged out content -->
+        <div class="main-content loggedout">
+            <div class="signin">
+                <h2>Sign in</h2>
+                <p>To access the website editor, you need to be signed in:</p>
+                {% if email %}
+                {% else %}
+                    <input type="button" id="signin" value="Sign in">
+                {% endif %}
+                <h2>Don't have permission yet?</h2>
+                <p>Contact your website lead to add your email address to the list of editors.</p>
+                    <a href="mailto:poc" class="button sketchy">Email admin</a>
+            </div>
+            
+            
+            <p class="clue">Looking for the Ceviche homepage? <a href="">It's over here</a></p>
+        </div>
+        {% endif %}
+
+        <footer class="product-info">
+            <p class="cfa">Created by <span><img src="/static/images/logo-black.png" alt="Code for America" height="40px" /></span></p>
+            <div class="signout">
                   {% if email %}
                     <input type="button" id="signout" value="Sign out">
                   {% else %}
-                    <input type="button" id="signin" value="Sign in">
+                 
                   {% endif %}
             </div>
-        </form>
-
-        {% block content %}{% endblock %}
-
+        </footer>
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script src="/static/javascript/toopaymarkdown/js//bootstrap-markdown.js"></script>
 
