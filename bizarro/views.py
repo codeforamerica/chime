@@ -122,8 +122,11 @@ def callback():
 
     return render_template('authorize.html', **values)
 
-@app.route('/authorization-complete')
+@app.route('/authorization-complete', methods=['POST'])
 def authorization_complete():
+    print 'complete!'
+    print request.values
+    # :TODO: parse and save values
     return render_template('authorization-complete.html', email=session['email'])
 
 @app.route('/authorization-failed')
