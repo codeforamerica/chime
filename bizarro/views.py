@@ -106,7 +106,7 @@ def callback():
     client_id, client_secret = get_google_client_info()
     try:
         access_token, refresh_token = request_new_google_access_and_refresh_tokens(request)
-        name, email = get_google_personal_info(access_token)
+        name, google_email = get_google_personal_info(access_token)
         properties = get_google_analytics_properties(access_token)
 
         if not properties:
@@ -117,7 +117,8 @@ def callback():
 
     values = dict(client_id=client_id, client_secret=client_secret,
                   refresh_token=refresh_token, properties=properties,
-                  style_base=get_style_base(request), name=name, email=email)
+                  style_base=get_style_base(request), name=name,
+                  google_email=google_email, email=session['email'])
 
     return render_template('authorize.html', **values)
 

@@ -13,9 +13,9 @@
     </ul>
 
     <h3>1. Connect To Google</h3>
-    {% if email %}
+    {% if refresh_token %}
     <div class="alert-success">
-        <p>Connected to Google as <b>{{ name }} ({{ email }})</b>.</p>
+        <p>Connected to Google as <b>{{ name }} {% if google_email %}({{ google_email }}){% endif %}</b>.</p>
     </div>
 
     {% else %}
@@ -43,13 +43,13 @@
         </div>
         {% endif %}
 
-        {% if email and client_id and client_secret and refresh_token and properties %}
+        {% if client_id and client_secret and refresh_token and properties %}
         <div class="alert-info">
             <p><strong>Finish linking to Google Analytics</strong>
             </p>
             <p>
                 <input type="hidden" name="name" value="{{ name }}">
-                <input type="hidden" name="email" value="{{ email }}">
+                <input type="hidden" name="google_email" value="{{ google_email }}">
                 <input type="hidden" name="client_id" value="{{ client_id }}">
                 <input type="hidden" name="client_secret" value="{{ client_secret }}">
                 <input type="hidden" name="refresh_token" value="{{ refresh_token }}">
