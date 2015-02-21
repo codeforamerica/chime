@@ -10,7 +10,10 @@ from datetime import date, timedelta
 from .view_functions import WriteLocked, ReadLocked
 
 GA_CONFIG_FILENAME = 'ga_config.json'
-GOOGLE_ACCESS_TOKEN_URL = 'https://accounts.google.com/o/oauth2/token'
+GOOGLE_ANALYTICS_TOKENS_URL = 'https://accounts.google.com/o/oauth2/token'
+# GOOGLE_TOKEN_INFO_URL is not used at the moment; use like so:
+# https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=ya29.IAF96bSOMIydJKB5weeDZWE8E8vhela3v8bMwOnIEWR8YdhD6myxhvfFgyFGjdsoMrpbmF5NeVQrcA
+GOOGLE_TOKEN_INFO_URL = 'https://www.googleapis.com/oauth2/v1/tokeninfo'
 GOOGLE_PLUS_WHOAMI_URL = 'https://www.googleapis.com/plus/v1/people/me'
 GOOGLE_ANALYTICS_PROPERTIES_URL = 'https://www.googleapis.com/analytics/v3/management/accounts/~all/webproperties'
 
@@ -35,7 +38,7 @@ def request_new_google_access_and_refresh_tokens(request):
     ''' Get new access and refresh tokens from the Google API.
     '''
     if request.args.get('state') != session['state']:
-        raise Exception()
+        raise Exception('State does not match!')
 
     code = request.args.get('code')
     redirect_uri = '{0}://{1}/callback'.format(request.scheme, request.host)
@@ -44,7 +47,7 @@ def request_new_google_access_and_refresh_tokens(request):
                 code=code, redirect_uri=redirect_uri,
                 grant_type='authorization_code')
 
-    response = post(GOOGLE_ACCESS_TOKEN_URL, data=data)
+    response = post(GOOGLE_ANALYTICS_TOKENS_URL, data=data)
     access = response.json()
 
     if response.status_code != 200:
@@ -78,7 +81,7 @@ def request_new_google_access_token(refresh_token):
     data = dict(client_id=current_app.config['GA_CLIENT_ID'], client_secret=current_app.config['GA_CLIENT_SECRET'],
                 refresh_token=refresh_token, grant_type='refresh_token')
 
-    resp = post(GOOGLE_ACCESS_TOKEN_URL, data=data)
+    resp = post(GOOGLE_ANALYTICS_TOKENS_URL, data=data)
 
     if resp.status_code != 200:
         raise Exception()
@@ -111,9 +114,13 @@ def get_google_personal_info(access_token):
         else:
             raise Exception('Google Error')
 
-    emails = dict([(e['type'], e['value']) for e in whoami['emails']])
-    email = emails.get('account', whoami['emails'][0]['value'])
-    name = whoami['displayName']
+    email = u''
+    name = u''
+    if 'emails' in whoami:
+        emails = dict([(e['type'], e['value']) for e in whoami['emails']])
+        email = emails.get('account', whoami['emails'][0]['value'])
+    if 'displayName' in whoami:
+        name = whoami['displayName']
 
     return name, email
 
@@ -138,6 +145,22 @@ def get_google_analytics_properties(access_token):
     properties.sort(key=lambda p: p[1].lower())
 
     return properties
+
+def get_style_base(request):
+    ''' Get the correct style base URL for the current scheme.
+    '''
+    if get_scheme(request) == 'https':
+        return 'https://style.s.codeforamerica.org/1'
+
+    return 'http://style.codeforamerica.org/1'
+
+def get_scheme(request):
+    ''' Get the current URL scheme, e.g. 'http' or 'https'.
+    '''
+    if 'x-forwarded-proto' in request.headers:
+        return request.headers['x-forwarded-proto']
+
+    return request.scheme
 
 def get_ga_page_path_pattern(page_path, project_domain):
     ''' Get a regex pattern that'll get us the google analytics data we want.

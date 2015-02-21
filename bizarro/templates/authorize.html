@@ -21,19 +21,14 @@
     {% else %}
     <div class="alert-info">
         <form method="POST" action="/authorize">
-            <p>To view statistics for this content, connect to Google via the button below (using the email address associated with your Google Analytics account).</p>
+            <p>Connect to Google via the button below (using the email address associated with your Google Analytics account).</p>
             <button id="authorize-button">Connect to Google</button>
-        </form>
-
-        <form action="/authorize-google" method="POST">
-            <p>Connect to Google via the button below (using your email associated with your Google Analytics account).</p>
-            <p><button>Connect To Google</button></p>
         </form>
     </div>
     {% endif %}
 
 
-    <form action="/prepare-app" method="POST">
+    <form action="/authorization-complete" method="POST">
         {% if properties %}
         <h3>2. Pick a property</h3>
         <div class="alert-info">
@@ -50,7 +45,7 @@
 
         {% if email and client_id and client_secret and refresh_token and properties %}
         <div class="alert-info">
-            <p><strong>Create and publish your dashboard</strong>
+            <p><strong>Finish linking to Google Analytics</strong>
             </p>
             <p>
                 <input type="hidden" name="name" value="{{ name }}">
