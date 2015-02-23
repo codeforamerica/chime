@@ -5,10 +5,7 @@
 <h1>Setup</h1>
 <div class="layout-breve">
 
-    <p>Setup is pretty easy, you can do it right from this page. It makes the following assumptions, however:</p>
-    <ul>
-        <li>You have access to a <a href="https://www.google.com/analytics/">Google Analytics</a> account.</li>
-        <li>You have permission to use, or create, an account with <a href="http://heroku.com">Heroku</a>.</li>
+    <p>Setting up Google Analytics is pretty easy, you can do it right from this page. All you need is access to the <a href="https://www.google.com/analytics/">Google Analytics</a> account for your site.</li>
     </ul>
 
     <h3>1. Connect To Google</h3>
@@ -27,8 +24,8 @@
     {% endif %}
 
 
+    {% if properties %}
     <form action="/authorization-complete" method="POST">
-        {% if properties %}
         <h3>2. Pick a property</h3>
         <div class="alert-info">
             <p style="overflow:hidden">
@@ -40,22 +37,11 @@
             </p>
             <p class="note">You may have more than one view setup, so select the one that will show the data for the area you want on your dashboard.</p>
 
-        {% if refresh_token and properties %}
-            <p><strong>Finish linking to Google Analytics</strong>
-            </p>
-            <p>
-                <input type="hidden" name="name" value="{{ name }}">
-                <input type="hidden" name="google_email" value="{{ google_email }}">
-                <input type="hidden" name="refresh_token" value="{{ refresh_token }}">
-                <p>
-                    <button>Finish Setup</button>
-                </p>
-            </p>
-        {% endif %}
-
+            <p><strong>Finish linking to Google Analytics</strong></p>
+            <p><button>Finish Setup</button></p>
         </div>
-        {% endif %}
     </form>
+    {% endif %}
 
 </div>
 {% endblock %}
