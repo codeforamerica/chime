@@ -17,7 +17,7 @@ from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
 from .view_functions import (ReadLocked, WriteLocked, branch_name2path, branch_var2name, get_repo, name_branch,
                              dos2unix, login_required, synch_required, synched_checkout_required,
                              sorted_paths, directory_paths, should_redirect, make_redirect)
-from .google_api_functions import authorize_google, get_google_client_info, request_new_google_access_and_refresh_tokens, get_google_personal_info, get_style_base, get_google_analytics_properties, fetch_google_analytics_for_page, GA_CONFIG_FILENAME
+from .google_api_functions import get_current_google_access_and_refresh_tokens, authorize_google, get_google_personal_info, get_style_base, get_google_analytics_properties, fetch_google_analytics_for_page, GA_CONFIG_FILENAME
 
 
 import posixpath
@@ -93,9 +93,14 @@ def sign_out():
 
     return 'OK'
 
+@app.route('/setup', methods=['GET'])
+@login_required
+def setup():
+    values = dict(email=session['email'])
+    return render_template('authorize.html', **values)
+
 @app.route('/authorize', methods=['GET'])
 @app.route('/authorize', methods=['POST'])
-@login_required
 def authorize():
     return authorize_google()
 
@@ -104,8 +109,8 @@ def callback():
     ''' Complete Google authentication, get web properties, and show the form.
     '''
     try:
-        # get (and write to config) new access and refresh tokens
-        access_token, refresh_token = request_new_google_access_and_refresh_tokens(request)
+        # get (and write to config) current access and refresh tokens
+        access_token, refresh_token = get_current_google_access_and_refresh_tokens(request)
         # get the name and email associated with this google account
         name, google_email = get_google_personal_info(access_token)
         # get a list of google analytics properties associated with this google account

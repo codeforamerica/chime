@@ -34,11 +34,34 @@ def get_google_client_info():
     '''
     return current_app.config['GA_CLIENT_ID'], current_app.config['GA_CLIENT_SECRET']
 
+def get_current_google_access_and_refresh_tokens(request):
+    ''' Get current access and refresh tokens from the Google API.
+    '''
+    if request.args.get('state') != session['state']:
+        raise Exception('Error: state does not match!')
+
+    # raise an exception if Google responds with an error
+    if u'error' in request.args:
+        raise Exception('Error: "{0}"'.format(request.args['error']))
+
+    # get current stored values for access and refresh tokens
+    ga_config_path = os.path.join(current_app.config['RUNNING_STATE_DIR'], GA_CONFIG_FILENAME)
+    with ReadLocked(ga_config_path) as infile:
+        ga_config = json.load(infile)
+
+    # if there's no refresh token, get brand new tokens and return them
+    if not ga_config['refresh_token']:
+        return request_new_google_access_and_refresh_tokens(request)
+
+    # there is a refresh token, use it to get a new access token and return them
+    else:
+        return request_new_google_access_token(ga_config['refresh_token'])
+
 def request_new_google_access_and_refresh_tokens(request):
     ''' Get new access and refresh tokens from the Google API.
     '''
     if request.args.get('state') != session['state']:
-        raise Exception('State does not match!')
+        raise Exception('Error: state does not match!')
 
     code = request.args.get('code')
     redirect_uri = '{0}://{1}/callback'.format(request.scheme, request.host)
@@ -76,7 +99,7 @@ def request_new_google_access_token(refresh_token):
         authorize the app again
     '''
     if not refresh_token:
-        return False
+        return None, None
 
     data = dict(client_id=current_app.config['GA_CLIENT_ID'], client_secret=current_app.config['GA_CLIENT_SECRET'],
                 refresh_token=refresh_token, grant_type='refresh_token')
@@ -100,7 +123,7 @@ def request_new_google_access_token(refresh_token):
         iofile.truncate(0)
         json.dump(ga_config, iofile, indent=2, ensure_ascii=False)
 
-    return True
+    return access['access_token'], refresh_token
 
 def get_google_personal_info(access_token):
     ''' Get account name and email from Google Plus.
