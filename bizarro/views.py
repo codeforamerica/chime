@@ -96,12 +96,15 @@ def sign_out():
 @app.route('/setup', methods=['GET'])
 @login_required
 def setup():
+    ''' Render a form that steps through application setup (currently only google analytics).
+    '''
     values = dict(email=session['email'])
     return render_template('authorize.html', **values)
 
-@app.route('/authorize', methods=['GET'])
-@app.route('/authorize', methods=['POST'])
+@app.route('/authorize', methods=['GET', 'POST'])
 def authorize():
+    ''' Start Google authentication.
+    '''
     return authorize_google()
 
 @app.route('/callback')
