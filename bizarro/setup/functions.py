@@ -5,6 +5,7 @@ from getpass import getpass
 from re import match
 from urllib import urlencode
 from urlparse import urljoin
+from datetime import datetime
 import json
 
 from boto.ec2 import EC2Connection
@@ -102,3 +103,21 @@ def create_google_spreadsheet(credentials, reponame):
     print('    Invited {email} to "{new_title}"'.format(**locals()))
 
     return new_id
+
+def save_details(credentials, instance_dnsname, reponame, sheet_url, deploy_key):
+    '''
+    '''
+    source_id = '1ODc62B7clyNMzwRtpOeqDupsDdaomtfZK-Z_GX0CM90'
+    gc = gspread.authorize(credentials)
+    doc = gc.open_by_key(source_id)
+    sheet = doc.worksheet('Instances')
+
+    instance_row = [
+        str(datetime.now()),
+        'http://{instance_dnsname}'.format(**locals()),
+        'https://github.com/ceviche/{reponame}'.format(**locals()),
+        sheet_url,
+        deploy_key
+        ]
+
+    sheet.append_row(instance_row)

@@ -186,3 +186,9 @@ print '--> Created permanent deploy key', 'ceviche-key'
 url = urljoin(github_api_base, '/authorizations/{}'.format(github_auth_id))
 resp = requests.delete(url, auth=(username, password))
 check_status(resp, 'delete authorization {}'.format(github_auth_id))
+
+#
+# Save details of instance.
+#
+functions.save_details(gdocs_credentials, instance.dns_name, reponame,
+                       sheet_url, deploy_key)
