@@ -179,6 +179,7 @@ body .nav-tabs>p {
 .nav-tabs{
 	/*border-top:3px solid #004b6a;*/
 	border:none;
+	text-transform:none;
 }
 .nav-tab-link{
 	padding:0px 20px 0px 20px;
