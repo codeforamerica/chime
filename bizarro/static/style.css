@@ -2,7 +2,7 @@ body{
 	background-color:#444444;
 }
 body h1{
-	background-color:#e5e5e5;
+	background-color:#444444;
 	margin:0;
 	font-size:1.5em;
 	letter-spacing: 0.25px;
@@ -28,9 +28,7 @@ body h3{
 label{
 	text-transform:none;
 }
-.state-active .nav-tab-link, .nav-tab-link:hover, .nav-tab-link:focus, .nav-tab-link:active{
-	background-color:#547B97;
-}
+
 .main-content{
 	background-color:#fff;
 	clear:both;
@@ -43,7 +41,7 @@ label{
 }
 .main-content.content{
 	border-bottom:1px solid #040608;
-	padding-top:2em;
+	padding-top:1em;
 }
 .product-info{
 	border-top:6px solid #303030;
@@ -172,16 +170,29 @@ body .nav-tabs{
 	padding-top:0;
 	margin-bottom:0;
 	padding-bottom:0;
+	background-color:#fff;
 }
 body .nav-tabs>p {
 	text-align: left;
 }
 
 .nav-tabs{
-	border-bottom:3px solid #547B97;
+	/*border-top:3px solid #004b6a;*/
+	border:none;
 }
 .nav-tab-link{
-	padding:10px 20px 10px 20px
+	padding:0px 20px 0px 20px;
+}
+.state-active .nav-tab-link, .nav-tab-link:hover, .nav-tab-link:focus, .nav-tab-link:active{
+	background-color:#399fd3;
+}
+.nav-tab-link{
+	background-color:#eee;
+}
+ul.languages{
+	margin-top:0em;
+	margin-bottom:0;
+	margin-left:1.5em;
 }
 /* End edit page layout elements */
 

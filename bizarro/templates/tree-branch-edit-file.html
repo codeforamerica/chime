@@ -8,7 +8,7 @@
         
 
         {% if languages|length > 1 %}
-            <ul class="layout-semibreve layout-tight">
+            <ul class="languages">
                 {% for iso in languages %}
                     {% set lang = languages[iso] %}
                     {% if iso == 'en' %}
