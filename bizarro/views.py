@@ -2,7 +2,7 @@ from logging import getLogger
 Logger = getLogger('bizarro.views')
 
 from os.path import join, isdir, splitext, isfile
-from re import compile, MULTILINE
+from re import compile, MULTILINE, sub
 from mimetypes import guess_type
 from glob import glob
 
@@ -14,7 +14,7 @@ from flask import redirect, request, Response, render_template, session, current
 from . import bizarro as app
 from . import repo_functions, edit_functions
 from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
-from .view_functions import (ReadLocked, branch_name2path, branch_var2name, get_repo, name_branch,
+from .view_functions import (ReadLocked, WriteLocked, branch_name2path, branch_var2name, get_repo, name_branch,
                              dos2unix, login_required, synch_required, synched_checkout_required,
                              sorted_paths, directory_paths, should_redirect, make_redirect)
 from .google_api_functions import authorize_google, get_google_client_info, request_new_google_access_and_refresh_tokens, get_google_personal_info, get_style_base, get_google_analytics_properties, fetch_google_analytics_for_page, GA_CONFIG_FILENAME
@@ -103,10 +103,12 @@ def authorize():
 def callback():
     ''' Complete Google authentication, get web properties, and show the form.
     '''
-    client_id, client_secret = get_google_client_info()
     try:
+        # get (and write to config) new access and refresh tokens
         access_token, refresh_token = request_new_google_access_and_refresh_tokens(request)
+        # get the name and email associated with this google account
         name, google_email = get_google_personal_info(access_token)
+        # get a list of google analytics properties associated with this google account
         properties = get_google_analytics_properties(access_token)
 
         if not properties:
@@ -115,8 +117,7 @@ def callback():
     except Exception:
         return redirect('/authorization-failed')
 
-    values = dict(client_id=client_id, client_secret=client_secret,
-                  refresh_token=refresh_token, properties=properties,
+    values = dict(refresh_token=refresh_token, properties=properties,
                   style_base=get_style_base(request), name=name,
                   google_email=google_email, email=session['email'])
 
@@ -124,9 +125,23 @@ def callback():
 
 @app.route('/authorization-complete', methods=['POST'])
 def authorization_complete():
-    print 'complete!'
-    print request.values
-    # :TODO: parse and save values
+    profile_id, project_domain = request.form.get('property').split(' ', 1)
+    project_domain = project_domain.strip()
+    project_domain = sub(r'http(s|)://', '', project_domain)
+    # write the new values to the config file
+    ga_config_path = join(current_app.config['RUNNING_STATE_DIR'], GA_CONFIG_FILENAME)
+    with WriteLocked(ga_config_path) as iofile:
+        # read the json from the file
+        ga_config = json.load(iofile)
+        # change the values of the profile id and project domain
+        ga_config['profile_id'] = profile_id
+        ga_config['project_domain'] = project_domain
+        # write the new config json
+        iofile.seek(0)
+        iofile.truncate(0)
+        json.dump(ga_config, iofile, indent=2, ensure_ascii=False)
+
+    # :TODO: pass variables needed to summarize what's been done
     return render_template('authorization-complete.html', email=session['email'])
 
 @app.route('/authorization-failed')

@@ -5,7 +5,6 @@
 <h1>Setup</h1>
 <div class="layout-breve">
 
-    <h2>Setup</h2>
     <p>Setup is pretty easy, you can do it right from this page. It makes the following assumptions, however:</p>
     <ul>
         <li>You have access to a <a href="https://www.google.com/analytics/">Google Analytics</a> account.</li>
@@ -41,14 +40,12 @@
             </p>
             <p class="note">You may have more than one view setup, so select the one that will show the data for the area you want on your dashboard.</p>
 
-        {% if client_id and client_secret and refresh_token and properties %}
+        {% if refresh_token and properties %}
             <p><strong>Finish linking to Google Analytics</strong>
             </p>
             <p>
                 <input type="hidden" name="name" value="{{ name }}">
                 <input type="hidden" name="google_email" value="{{ google_email }}">
-                <input type="hidden" name="client_id" value="{{ client_id }}">
-                <input type="hidden" name="client_secret" value="{{ client_secret }}">
                 <input type="hidden" name="refresh_token" value="{{ refresh_token }}">
                 <p>
                     <button>Finish Setup</button>
