@@ -151,7 +151,7 @@ def get_auth_csv_url(data_href):
     '''
     _, host, path, _, _, _ = urlparse(data_href)
     
-    gdocs_pat = re.compile(r'/spreadsheets/d/(?P<id>[\w\-]+)/')
+    gdocs_pat = re.compile(r'/spreadsheets/d/(?P<id>[\w\-]+)')
     path_match = gdocs_pat.match(path)
     
     if host == 'docs.google.com' and path_match:

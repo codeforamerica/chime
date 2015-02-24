@@ -58,7 +58,7 @@ print '--> Github login OK'
 #
 gdocs_credentials = functions.authenticate_google(gdocs_client_id, gdocs_client_secret)
 sheet_id = functions.create_google_spreadsheet(gdocs_credentials, reponame)
-sheet_url = 'https://docs.google.com/a/codeforamerica.org/spreadsheets/d/{}'.format(sheet_id)
+sheet_url = 'https://docs.google.com/spreadsheets/d/{}'.format(sheet_id)
 
 print '--> Created spreadsheet {}'.format(sheet_url)
 
