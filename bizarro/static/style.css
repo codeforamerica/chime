@@ -6,11 +6,12 @@ body h1{
 	margin:0;
 	font-size:1.5em;
 	letter-spacing: 0.25px;
-	padding:0.2em 0.5em 0em 2em;
+	padding:0.4em 0.5em 0em 2em;
 	color:red;
 	text-transform:none;
 	font-weight:bold;
 	color:#fff;
+	line-height:inherit;
 }
 
 body h1 a:link, 
