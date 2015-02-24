@@ -72,3 +72,4 @@ execute "stop bizarro-cms" do
 end
 
 execute "start bizarro-cms"
+execute "apache2ctl restart"
