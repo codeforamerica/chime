@@ -59,9 +59,8 @@ print '--> Github login OK'
 gdocs_credentials = functions.authenticate_google(gdocs_client_id, gdocs_client_secret)
 sheet_id = functions.create_google_spreadsheet(gdocs_credentials, reponame)
 sheet_url = 'https://docs.google.com/a/codeforamerica.org/spreadsheets/d/{}'.format(sheet_id)
-csv_url = 'https://docs.google.com/spreadsheets/d/{}/export?format=csv'.format(sheet_id)
 
-print '--> Created spreadsheet {}'.format(csv_url)
+print '--> Created spreadsheet {}'.format(sheet_url)
 
 #
 # Create a new authorization with Github.
@@ -101,12 +100,12 @@ if check_repo_state(reponame, github_token):
 
 with open(join(dirname(__file__), 'bizarro', 'setup', 'user-data.sh')) as file:
     user_data = file.read().format(
-        branch_name='master',
+        branch_name='deployed-instance-details-#126',
         ga_client_id=gdocs_client_id,
         ga_client_secret=gdocs_client_secret,
         github_token=github_token,
         github_repo=reponame,
-        auth_csv_url=csv_url
+        auth_data_href=sheet_url
         )
 
 device_sda1 = BlockDeviceType(size=16, delete_on_termination=True)

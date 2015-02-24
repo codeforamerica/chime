@@ -130,11 +130,13 @@ def is_editable(file_path):
 
     return False
 
-def get_auth_csv_file(url):
+def get_auth_data_file(data_href):
+    ''' Get a file-like object for authentication CSV data.
     '''
-    '''
+    csv_url = get_auth_csv_url(data_href)
+    
     url_base = 'file://{}'.format(realpath(__file__))
-    real_url = urljoin(url_base, url)
+    real_url = urljoin(url_base, csv_url)
     
     if urlparse(real_url).scheme in ('file', ''):
         file_path = urlparse(real_url).path
@@ -144,19 +146,19 @@ def get_auth_csv_file(url):
     Logger.debug('Opening {} as auth CSV file'.format(real_url))
     return BytesIO(get(real_url).content)
 
-def get_auth_url(csv_url):
+def get_auth_csv_url(data_href):
+    ''' Optionally convert link to GDocs spreadsheet to CSV format.
     '''
-    '''
-    _, host, path, _, _, _ = urlparse(csv_url)
+    _, host, path, _, _, _ = urlparse(data_href)
     
-    csv_pat = re.compile(r'/spreadsheets/d/(?P<id>[\w\-]+)/')
-    path_match = csv_pat.match(path)
+    gdocs_pat = re.compile(r'/spreadsheets/d/(?P<id>[\w\-]+)/')
+    path_match = gdocs_pat.match(path)
     
     if host == 'docs.google.com' and path_match:
-        auth_path = '/spreadsheets/d/{}/edit'.format(path_match.group('id'))
-        return 'https://{host}{auth_path}'.format(**locals())
+        auth_path = '/spreadsheets/d/{}/export'.format(path_match.group('id'))
+        return 'https://{host}{auth_path}?format=csv'.format(**locals())
     
-    return csv_url
+    return data_href
 
 def is_allowed_email(file, email):
     ''' Return true if given email address is allowed in given CSV file.
@@ -208,8 +210,8 @@ def login_required(route_function):
         if not email:
             return redirect('/not-allowed')
         
-        auth_csv_url = current_app.config['AUTH_CSV_URL']
-        if not is_allowed_email(get_auth_csv_file(auth_csv_url), email):
+        auth_data_href = current_app.config['AUTH_DATA_HREF']
+        if not is_allowed_email(get_auth_data_file(auth_data_href), email):
             return redirect('/not-allowed')
 
         environ['GIT_AUTHOR_NAME'] = ' '
