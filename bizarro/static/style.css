@@ -2,18 +2,20 @@ body{
 	background-color:#444444;
 }
 body h1{
-	background-color:#444444;
+	background-color:#004b6a;
 	margin:0;
 	font-size:1.5em;
 	letter-spacing: 0.25px;
-	padding:0.5em 0.5em 0.5em 1.75em;
+	padding:0.2em 0.5em 0em 2em;
 	color:red;
 	text-transform:none;
-	font-weight:normal;
+	font-weight:bold;
+	color:#fff;
 }
+
 body h1 a:link, 
 body h1 a:visited{
-	color:#999;
+	color:#fff;
 }
 body h2,
 body h3{
