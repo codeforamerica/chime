@@ -892,7 +892,7 @@ class TestGoogleApiFunctions (TestCase):
         rmtree(self.ga_config_dir)
 
     def mock_successful_request_new_google_access_token(self, url, request):
-        if 'https://accounts.google.com/o/oauth2/token' in url.geturl():
+        if google_api_functions.GOOGLE_ANALYTICS_TOKENS_URL in url.geturl():
             content = {'access_token': 'meowser_access_token', 'token_type': 'meowser_type', 'expires_in': 3920,}
             return response(200, content)
 
@@ -900,7 +900,7 @@ class TestGoogleApiFunctions (TestCase):
             raise Exception('01 Asked for unknown URL ' + url.geturl())
 
     def mock_failed_request_new_google_access_token(self, url, request):
-        if 'https://accounts.google.com/o/oauth2/token' in url.geturl():
+        if google_api_functions.GOOGLE_ANALYTICS_TOKENS_URL in url.geturl():
             return response(500)
 
         else:
@@ -1039,15 +1039,21 @@ class TestApp (TestCase):
             raise Exception('04 Asked for unknown URL ' + url.geturl())
 
     def mock_successful_google_callback(self, url, request):
-        if 'https://accounts.google.com/o/oauth2/token' in url.geturl():
+        if google_api_functions.GOOGLE_ANALYTICS_TOKENS_URL in url.geturl():
             content = {'access_token': 'meowser_token', 'token_type': 'meowser_type', 'refresh_token': 'refresh_meows', 'expires_in': 3920,}
             return response(200, content)
+
+        elif google_api_functions.GOOGLE_PLUS_WHOAMI_URL in url.geturl():
+            return response(200, '''{"displayName": "Jane Doe", "emails": [{"type": "account", "value": "user@example.com"}]}''')
+
+        elif google_api_functions.GOOGLE_ANALYTICS_PROPERTIES_URL in url.geturl():
+            return response(200, '''{"items": [{"defaultProfileId": "12345678", "name": "Property One", "websiteUrl": "http://propertyone.example.com"}, {"defaultProfileId": "87654321", "name": "Property Two", "websiteUrl": "http://propertytwo.example.com"}]}''')
 
         else:
             raise Exception('05 Asked for unknown URL ' + url.geturl())
 
     def mock_failed_google_callback(self, url, request):
-        if 'https://accounts.google.com/o/oauth2/token' in url.geturl():
+        if google_api_functions.GOOGLE_ANALYTICS_TOKENS_URL in url.geturl():
             return response(500)
 
         else:
@@ -1147,12 +1153,7 @@ class TestApp (TestCase):
         self.assertEqual(ga_config['access_token'], 'meowser_token')
         self.assertEqual(ga_config['refresh_token'], 'refresh_meows')
 
-        print dir(response)
-        print response.location
-        print response.data
-        print response.get_wsgi_response()
-
-        self.assertTrue('authorization-complete' in response.location)
+        self.assertEqual(u'200 OK', response.status)
 
     def test_google_callback_fails(self):
         ''' Ensure we are redirected to the authorize-failed page
