@@ -5,7 +5,7 @@
 <h1>Setup</h1>
 <div class="layout-breve">
 
-    <p>Setting up Google Analytics is pretty easy, you can do it right from this page. All you need is access to the <a href="https://www.google.com/analytics/">Google Analytics</a> account for your site.</li>
+    <p>Setting up analytics is pretty easy, you can do it right from this page. All you need is access to the <a href="https://www.google.com/analytics/">Google Analytics</a> account for your site.</li>
     </ul>
 
     <h3>1. Connect To Google</h3>
@@ -17,7 +17,7 @@
     {% else %}
     <div class="alert-info">
         <form method="POST" action="/authorize">
-            <p>Connect to Google via the button below (using the email address associated with your Google Analytics account).</p>
+            <p>Press the button below to start Google's authentication process. While you're there, if you have more than one Google account, choose the one associated with the Google Analytics account for your site.</p>
             <button id="authorize-button">Connect to Google</button>
         </form>
     </div>
@@ -35,7 +35,7 @@
                     {% endfor %}
                 </select>
             </p>
-            <p class="note">You may have more than one view setup, so select the one that will show the data for the area you want on your dashboard.</p>
+            <p class="note">If you have more than one property associated with your account, select the one that corresponds to your site.</p>
             <p><strong>Finish linking to Google Analytics</strong></p>
             <input type="hidden" name="name" value="{{ name }}">
             <input type="hidden" name="google_email" value="{{ google_email }}">
