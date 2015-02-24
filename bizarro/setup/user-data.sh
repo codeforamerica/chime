@@ -18,6 +18,6 @@ DIR=/var/opt/ceviche-cms
 git clone -b {branch_name} https://github.com/codeforamerica/ceviche-cms.git $DIR
 env \
     GA_CLIENT_ID='{ga_client_id}' GA_CLIENT_SECRET='{ga_client_secret}' \
-    GITHUB_REPO='{github_repo}' GITHUB_TOKEN='{github_token}' \
+    GITHUB_REPO='{github_repo}' GITHUB_TEMPORARY_TOKEN='{github_temporary_token}' \
     AUTH_DATA_HREF='{auth_data_href}' \
     $DIR/chef/run.sh

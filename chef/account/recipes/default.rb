@@ -1,7 +1,7 @@
 package 'python-pip'
 
 name = node[:user]
-github_token = ENV['GITHUB_TOKEN']
+github_temporary_token = ENV['GITHUB_TEMPORARY_TOKEN']
 
 group name
 user name do
@@ -43,7 +43,7 @@ rm -f /var/run/#{name}/deploy-key.txt
 KEYGEN
 end
 
-if github_token then
+if github_temporary_token then
 
 execute 'pip install itsdangerous'
 
@@ -52,7 +52,7 @@ python "sign ssh public key" do
   creates "/var/run/#{name}/deploy-key.txt"
   code <<-PUBKEY
 from itsdangerous import Signer
-signer = Signer('#{github_token}', salt='deploy-key')
+signer = Signer('#{github_temporary_token}', salt='deploy-key')
 
 with open('/home/#{name}/.ssh/id_rsa.pub') as file:
     pubkey = file.readline().strip()

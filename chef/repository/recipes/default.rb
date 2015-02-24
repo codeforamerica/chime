@@ -8,7 +8,7 @@ name = node[:user]
 starter_repo = node[:starter_repo]
 github_org = node[:github_org]
 github_repo = ENV['GITHUB_REPO']
-github_token = ENV['GITHUB_TOKEN']
+github_temporary_token = ENV['GITHUB_TEMPORARY_TOKEN']
 
 bash "init bare /var/opt/bizarro-site" do
   user 'root'
@@ -36,7 +36,7 @@ git branch master FETCH_HEAD
 GIT
 end
 
-if github_repo and github_token then
+if github_repo and github_temporary_token then
 
 python "create Github repository" do
   user name
@@ -50,7 +50,7 @@ info = dict(
 
 url = 'https://api.github.com/orgs/#{github_org}/repos'
 head = {'Content-Type': 'application/json'}
-auth = ('#{github_token}', 'x-oauth-basic')
+auth = ('#{github_temporary_token}', 'x-oauth-basic')
 resp = requests.post(url, json.dumps(info), headers=head, auth=auth)
 code = resp.status_code
 
@@ -72,7 +72,7 @@ with open('/home/#{name}/.ssh/id_rsa.pub') as file:
 
 url = 'https://api.github.com/repos/#{github_org}/#{github_repo}/keys'
 head = {'Content-Type': 'application/json'}
-auth = ('#{github_token}', 'x-oauth-basic')
+auth = ('#{github_temporary_token}', 'x-oauth-basic')
 resp = requests.post(url, json.dumps(input), headers=head, auth=auth)
 code = resp.status_code
 

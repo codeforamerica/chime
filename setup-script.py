@@ -78,14 +78,14 @@ resp = requests.post(url, json.dumps(info), auth=(username, password))
 check_status(resp, 'create a new authorization')
 
 github_auth_id = resp.json().get('id')
-github_token = resp.json().get('token')
+github_temporary_token = resp.json().get('token')
 
 #
 # Verify status of Github authorization.
 # https://developer.github.com/v3/oauth_authorizations/#check-an-authorization
 #
 path = '/applications/{client_id}/tokens/{token}'
-kwargs = dict(client_id=github_client_id, token=github_token)
+kwargs = dict(client_id=github_client_id, token=github_temporary_token)
 url = urljoin(github_api_base, path.format(**kwargs))
 resp = requests.get(url, auth=(github_client_id, github_client_secret))
 check_status(resp, 'check authorization {}'.format(github_auth_id))
@@ -95,7 +95,7 @@ check_status(resp, 'check authorization {}'.format(github_auth_id))
 # Set public hostname in EC2 for Browser ID based on this:
 # http://www.onepwr.org/2012/04/26/chef-recipe-to-setup-up-a-new-nodes-fqdn-hostname-etc-properly/
 #
-if check_repo_state(reponame, github_token):
+if check_repo_state(reponame, github_temporary_token):
     raise RuntimeError('{} already exists, not going to run EC2'.format(reponame))
 
 with open(join(dirname(__file__), 'bizarro', 'setup', 'user-data.sh')) as file:
@@ -103,7 +103,7 @@ with open(join(dirname(__file__), 'bizarro', 'setup', 'user-data.sh')) as file:
         branch_name='deployed-instance-details-#126',
         ga_client_id=gdocs_client_id,
         ga_client_secret=gdocs_client_secret,
-        github_token=github_token,
+        github_temporary_token=github_temporary_token,
         github_repo=reponame,
         auth_data_href=sheet_url
         )
@@ -130,7 +130,7 @@ while True:
     print '    Waiting for', reponame
     sleep(30)
 
-    if check_repo_state(reponame, github_token):
+    if check_repo_state(reponame, github_temporary_token):
         print '   ', reponame, 'exists'
         break
 
@@ -148,7 +148,7 @@ while True:
     if resp.status_code == 200:
         break
 
-deploy_key = Signer(github_token, salt='deploy-key').unsign(resp.content)
+deploy_key = Signer(github_temporary_token, salt='deploy-key').unsign(resp.content)
 keys_url = 'https://api.github.com/repos/ceviche/{}/keys'.format(reponame)
 head = {'Content-Type': 'application/json'}
 body = json.dumps(dict(title='ceviche-key', key=deploy_key))
