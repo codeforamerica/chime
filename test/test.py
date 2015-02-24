@@ -1023,7 +1023,7 @@ class TestApp (TestCase):
         rmtree(self.temp_repo_dir)
         rmtree(self.ga_config_dir)
 
-    def persona_verify(self, url, request):
+    def mock_persona_verify(self, url, request):
         if url.geturl() == 'https://verifier.login.persona.org/verify':
             return response(200, '''{"status": "okay", "email": "user@example.com"}''', headers=dict(Link='<https://api.github.com/user/337792/repos?page=1>; rel="prev", <https://api.github.com/user/337792/repos?page=1>; rel="first"'))
 
@@ -1070,7 +1070,7 @@ class TestApp (TestCase):
         response = self.server.get('/')
         self.assertFalse('user@example.com' in response.data)
 
-        with HTTMock(self.persona_verify):
+        with HTTMock(self.mock_persona_verify):
             response = self.server.post('/sign-in', data={'email': 'user@example.com'})
             self.assertEquals(response.status_code, 200)
 
@@ -1086,7 +1086,7 @@ class TestApp (TestCase):
     def test_branches(self):
         ''' Check basic branching functionality.
         '''
-        with HTTMock(self.persona_verify):
+        with HTTMock(self.mock_persona_verify):
             self.server.post('/sign-in', data={'email': 'user@example.com'})
 
         response = self.server.post('/start', data={'branch': 'do things'},
@@ -1131,7 +1131,7 @@ class TestApp (TestCase):
         ''' Ensure we are redirected to the authorize-complete page
             when we successfully auth with google
         '''
-        with HTTMock(self.persona_verify):
+        with HTTMock(self.mock_persona_verify):
             self.server.post('/sign-in', data={'email': 'erica@example.com'})
 
         with HTTMock(self.mock_google_authorization):
@@ -1147,13 +1147,18 @@ class TestApp (TestCase):
         self.assertEqual(ga_config['access_token'], 'meowser_token')
         self.assertEqual(ga_config['refresh_token'], 'refresh_meows')
 
+        print dir(response)
+        print response.location
+        print response.data
+        print response.get_wsgi_response()
+
         self.assertTrue('authorization-complete' in response.location)
 
     def test_google_callback_fails(self):
         ''' Ensure we are redirected to the authorize-failed page
             when we fail to auth with google
         '''
-        with HTTMock(self.persona_verify):
+        with HTTMock(self.mock_persona_verify):
             self.server.post('/sign-in', data={'email': 'erica@example.com'})
 
         with HTTMock(self.mock_google_authorization):
