@@ -14,7 +14,7 @@ def create_app(environ):
     app.config['REPO_PATH'] = environ.get('REPO_PATH', 'sample-site')
     app.config['BROWSERID_URL'] = environ.get('BROWSERID_URL', 'http://127.0.0.1:5000')
     app.config['SINGLE_USER'] = bool(environ.get('SINGLE_USER', False))
-    app.config['AUTH_CSV_URL'] = environ.get('AUTH_CSV_URL', 'data/authentication.csv')
+    app.config['AUTH_DATA_HREF'] = environ.get('AUTH_DATA_HREF', 'data/authentication.csv')
     app.config['default_branch'] = 'master'
 
     # attach routes and custom error pages here

@@ -5,6 +5,7 @@ from getpass import getpass
 from re import match
 from urllib import urlencode
 from urlparse import urljoin
+from datetime import datetime
 import json
 
 from boto.ec2 import EC2Connection
@@ -102,3 +103,23 @@ def create_google_spreadsheet(credentials, reponame):
     print('    Invited {email} to "{new_title}"'.format(**locals()))
 
     return new_id
+
+def save_details(credentials, name, instance, reponame, sheet_url, deploy_key):
+    '''
+    '''
+    ceviche_url = 'http://{}'.format(instance.dns_name)
+    instance_query = 'region={}#Instances:instanceId={}'.format(instance.region.name, instance.id)
+    instance_url = 'https://console.aws.amazon.com/ec2/v2/home?{}'.format(instance_query)
+    github_url = 'https://github.com/ceviche/{}'.format(reponame)
+    
+    source_id = '1ODc62B7clyNMzwRtpOeqDupsDdaomtfZK-Z_GX0CM90'
+    gc = gspread.authorize(credentials)
+    doc = gc.open_by_key(source_id)
+    sheet = doc.worksheet('Instances')
+
+    new_row = [str(datetime.utcnow()), name,
+               ceviche_url, instance_url, github_url, sheet_url, deploy_key]
+
+    sheet.append_row(new_row)
+
+    print('--> Wrote details to instances spreadsheet')

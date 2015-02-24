@@ -18,7 +18,7 @@ from .view_functions import (
     ReadLocked, branch_name2path, branch_var2name, get_repo, name_branch, dos2unix,
     login_required, synch_required, synched_checkout_required, is_editable,
     sorted_paths, directory_paths, should_redirect, make_redirect,
-    get_auth_csv_file, get_auth_url, is_allowed_email
+    get_auth_data_file, is_allowed_email
     )
 from .google_api_functions import authorize_google, callback_google, fetch_google_analytics_for_page, GA_CONFIG_FILENAME
 
@@ -81,14 +81,13 @@ def index():
 @app.route('/not-allowed')
 def not_allowed():
     email = session.get('email', None)
-    auth_csv_url = current_app.config['AUTH_CSV_URL']
-    auth_url = get_auth_url(auth_csv_url)
-    kwargs = dict(email=email, auth_url=auth_url)
+    auth_data_href = current_app.config['AUTH_DATA_HREF']
+    kwargs = dict(email=email, auth_url=auth_data_href)
     
     if not email:
         return render_template('not-allowed.html', **kwargs)
     
-    if not is_allowed_email(get_auth_csv_file(auth_csv_url), email):
+    if not is_allowed_email(get_auth_data_file(auth_data_href), email):
         return render_template('not-allowed.html', **kwargs)
 
     return redirect('/')

@@ -98,13 +98,13 @@ class TestViewFunctions (TestCase):
     def test_auth_url(self):
         '''
         '''
-        csv_url = 'data/authentication.csv'
-        auth_url = view_functions.get_auth_url(csv_url)
-        self.assertEqual(auth_url, csv_url)
+        auth_url = 'data/authentication.csv'
+        csv_url = view_functions.get_auth_csv_url(auth_url)
+        self.assertEqual(csv_url, auth_url)
 
-        csv_url = 'https://docs.google.com/spreadsheets/d/12jUfaRBd-CU1_6BGeLFG1_qoi7Fw_vRC_SXv36eDzM0/export?format=csv'
-        auth_url = view_functions.get_auth_url(csv_url)
-        self.assertEqual(auth_url, 'https://docs.google.com/spreadsheets/d/12jUfaRBd-CU1_6BGeLFG1_qoi7Fw_vRC_SXv36eDzM0/edit')
+        auth_url = 'https://docs.google.com/spreadsheets/d/12jUfaRBd-CU1_6BGeLFG1_qoi7Fw_vRC_SXv36eDzM0/edit'
+        csv_url = view_functions.get_auth_csv_url(auth_url)
+        self.assertEqual(csv_url, 'https://docs.google.com/spreadsheets/d/12jUfaRBd-CU1_6BGeLFG1_qoi7Fw_vRC_SXv36eDzM0/export?format=csv')
 
     def test_is_allowed_email(self):
         '''
@@ -135,10 +135,10 @@ mike@teczno.com,Code for America,Mike Migurski
 
             return response(404, '')
 
-        good_file = lambda: view_functions.get_auth_csv_file('http://example.com/good-file.csv')
-        org_file = lambda: view_functions.get_auth_csv_file('http://example.com/org-file.csv')
-        addr_file = lambda: view_functions.get_auth_csv_file('http://example.com/addr-file.csv')
-        no_file = lambda: view_functions.get_auth_csv_file('http://example.com/no-file.csv')
+        good_file = lambda: view_functions.get_auth_data_file('http://example.com/good-file.csv')
+        org_file = lambda: view_functions.get_auth_data_file('http://example.com/org-file.csv')
+        addr_file = lambda: view_functions.get_auth_data_file('http://example.com/addr-file.csv')
+        no_file = lambda: view_functions.get_auth_data_file('http://example.com/no-file.csv')
         
         with HTTMock(mock_remote_authentication_file) as mock:
             self.assertTrue(view_functions.is_allowed_email(good_file(), 'mike@codeforamerica.org'))
@@ -1063,7 +1063,7 @@ class TestApp (TestCase):
         app_args['RUNNING_STATE_DIR'] = self.ga_config_dir
         app_args['WORK_PATH'] = self.work_path
         app_args['REPO_PATH'] = temp_repo_path
-        app_args['AUTH_CSV_URL'] = 'http://example.com/auth.csv'
+        app_args['AUTH_DATA_HREF'] = 'http://example.com/auth.csv'
 
         ga_config_path = join(self.ga_config_dir, google_api_functions.GA_CONFIG_FILENAME)
 
