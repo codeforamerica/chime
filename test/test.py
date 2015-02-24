@@ -1154,6 +1154,26 @@ class TestApp (TestCase):
 
         self.assertEqual(u'200 OK', response.status)
 
+    def test_analytics_setup_is_successful(self):
+        with HTTMock(self.mock_persona_verify):
+            self.server.post('/sign-in', data={'email': 'erica@example.com'})
+
+        with HTTMock(self.mock_google_authorization):
+            self.server.post('/authorize')
+
+        # mock-post the form in authorize.html to authorization-complete.html with some dummy values and check the results
+        response = self.server.post('/authorization-complete', data={'email': 'erica@example.com', 'name': 'Jane Doe', 'google_email': 'user@example.com', 'return_link': 'http://example.com', 'property': '12345678', '12345678-domain': 'http://propertyone.example.com', '12345678-name': 'Property One'})
+
+        self.assertEqual(u'200 OK', response.status)
+
+        ga_config_path = os.path.join(self.app.config['RUNNING_STATE_DIR'], google_api_functions.GA_CONFIG_FILENAME)
+        with view_functions.ReadLocked(ga_config_path) as infile:
+            ga_config = json.load(infile)
+
+        # views.authorization_complete() strips the 'http://' from the domain
+        self.assertEqual(ga_config['project_domain'], 'propertyone.example.com')
+        self.assertEqual(ga_config['profile_id'], '12345678')
+
     def test_google_callback_fails(self):
         ''' Ensure we are redirected to the authorize-failed page
             when we fail to auth with google
