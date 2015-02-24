@@ -104,22 +104,22 @@ def create_google_spreadsheet(credentials, reponame):
 
     return new_id
 
-def save_details(credentials, instance_dnsname, reponame, sheet_url, deploy_key):
+def save_details(credentials, name, instance, reponame, sheet_url, deploy_key):
     '''
     '''
+    ceviche_url = 'http://{}'.format(instance.dns_name)
+    instance_query = 'region={}#Instances:instanceId={}'.format(instance.region.name, instance.id)
+    instance_url = 'https://console.aws.amazon.com/ec2/v2/home?{}'.format(instance_query)
+    github_url = 'https://github.com/ceviche/{}'.format(reponame)
+    
     source_id = '1ODc62B7clyNMzwRtpOeqDupsDdaomtfZK-Z_GX0CM90'
     gc = gspread.authorize(credentials)
     doc = gc.open_by_key(source_id)
     sheet = doc.worksheet('Instances')
 
-    instance_row = [
-        str(datetime.utcnow()),
-        'http://{instance_dnsname}'.format(**locals()),
-        'https://github.com/ceviche/{reponame}'.format(**locals()),
-        sheet_url,
-        deploy_key
-        ]
+    new_row = [str(datetime.utcnow()), name,
+               ceviche_url, instance_url, github_url, sheet_url, deploy_key]
 
-    sheet.append_row(instance_row)
+    sheet.append_row(new_row)
 
     print('--> Wrote details to instances spreadsheet')

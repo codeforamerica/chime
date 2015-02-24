@@ -96,7 +96,7 @@ check_status(resp, 'check authorization {}'.format(github_auth_id))
 # http://www.onepwr.org/2012/04/26/chef-recipe-to-setup-up-a-new-nodes-fqdn-hostname-etc-properly/
 #
 if check_repo_state(reponame, github_temporary_token):
-    raise RuntimeError('{} already exists, not going to run EC2'.format(reponame))
+    raise RuntimeError('Repository {} already exists, not going to run EC2'.format(reponame))
 
 with open(join(dirname(__file__), 'bizarro', 'setup', 'user-data.sh')) as file:
     user_data = file.read().format(
@@ -189,5 +189,5 @@ check_status(resp, 'delete authorization {}'.format(github_auth_id))
 #
 # Save details of instance.
 #
-functions.save_details(gdocs_credentials, instance.dns_name, reponame,
-                       sheet_url, deploy_key)
+functions.save_details(gdocs_credentials,
+                       reponame, instance, reponame, sheet_url, deploy_key)
