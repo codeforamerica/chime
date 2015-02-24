@@ -893,7 +893,7 @@ class TestGoogleApiFunctions (TestCase):
 
     def mock_successful_request_new_google_access_token(self, url, request):
         if google_api_functions.GOOGLE_ANALYTICS_TOKENS_URL in url.geturl():
-            content = {'access_token': 'meowser_access_token', 'token_type': 'meowser_type', 'expires_in': 3920,}
+            content = {'access_token': 'meowser_access_token', 'token_type': 'meowser_type', 'expires_in': 3920}
             return response(200, content)
 
         else:
@@ -1032,7 +1032,7 @@ class TestApp (TestCase):
 
     def mock_google_authorization(self, url, request):
         if 'https://accounts.google.com/o/oauth2/auth' in url.geturl():
-            content = {'access_token': 'meowser_token', 'token_type': 'meowser_type', 'refresh_token': 'refresh_meows', 'expires_in': 3920,}
+            content = {'access_token': 'meowser_token', 'token_type': 'meowser_type', 'refresh_token': 'refresh_meows', 'expires_in': 3920}
             return response(200, content)
 
         else:
@@ -1040,7 +1040,7 @@ class TestApp (TestCase):
 
     def mock_successful_google_callback(self, url, request):
         if google_api_functions.GOOGLE_ANALYTICS_TOKENS_URL in url.geturl():
-            content = {'access_token': 'meowser_token', 'token_type': 'meowser_type', 'refresh_token': 'refresh_meows', 'expires_in': 3920,}
+            content = {'access_token': 'meowser_token', 'token_type': 'meowser_type', 'refresh_token': 'refresh_meows', 'expires_in': 3920}
             return response(200, content)
 
         elif google_api_functions.GOOGLE_PLUS_WHOAMI_URL in url.geturl():
