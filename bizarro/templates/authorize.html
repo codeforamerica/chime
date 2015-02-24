@@ -41,7 +41,7 @@
             <input type="hidden" name="google_email" value="{{ google_email }}">
             {% for (id, name, url) in properties %}
             <input type="hidden" name="{{ id }}-domain" value="{{ url }}">
-            <input type="hidden" name="{{ id }}-name" value="{{ name }}"
+            <input type="hidden" name="{{ id }}-name" value="{{ name }}">
             {% endfor %}
             <p><button>Finish Setup</button></p>
         </div>
