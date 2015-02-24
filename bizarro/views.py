@@ -133,9 +133,10 @@ def callback():
 
 @app.route('/authorization-complete', methods=['POST'])
 def authorization_complete():
-    profile_id, project_domain = request.form.get('property').split(' ', 1)
+    profile_id, project_domain, project_name = request.form.get('property').split(' ', 2)
     project_domain = project_domain.strip()
     project_domain = sub(r'http(s|)://', '', project_domain)
+    project_name = project_name.strip()
     # write the new values to the config file
     ga_config_path = join(current_app.config['RUNNING_STATE_DIR'], GA_CONFIG_FILENAME)
     with WriteLocked(ga_config_path) as iofile:
@@ -149,8 +150,10 @@ def authorization_complete():
         iofile.truncate(0)
         json.dump(ga_config, iofile, indent=2, ensure_ascii=False)
 
-    # :TODO: pass variables needed to summarize what's been done
-    return render_template('authorization-complete.html', email=session['email'])
+    # pass the variables needed to summarize what's been done
+    values = dict(email=session['email'], name=request.form.get('name'), google_email=request.form.get('google_email'), project_name=project_name, project_domain=project_domain, return_link='/')
+
+    return render_template('authorization-complete.html', **values)
 
 @app.route('/authorization-failed')
 def authorization_failed():

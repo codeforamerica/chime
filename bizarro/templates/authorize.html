@@ -31,13 +31,14 @@
             <p style="overflow:hidden">
                 <select name="property">
                     {% for (id, name, url) in properties %}
-                    <option value="{{ id }} {{ url }}">{{ name }} ({{ url }})</option>
+                    <option value="{{ id }} {{ url }} {{ name }}">{{ name }} ({{ url }})</option>
                     {% endfor %}
                 </select>
             </p>
             <p class="note">You may have more than one view setup, so select the one that will show the data for the area you want on your dashboard.</p>
-
             <p><strong>Finish linking to Google Analytics</strong></p>
+            <input type="hidden" name="name" value="{{ name }}">
+            <input type="hidden" name="google_email" value="{{ google_email }}">
             <p><button>Finish Setup</button></p>
         </div>
     </form>

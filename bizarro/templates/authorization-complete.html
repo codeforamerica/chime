@@ -1,20 +1,16 @@
 {% extends "base.html" %}
-{% block title %}Google authorization successful{% endblock %}
+{% block title %}Google Authorization Successful{% endblock %}
 {% block content %}
 
-	<h1>Google account authorized</h1>
-	<div class="layout-breve">
-		<p><a href="/">Continue</a></p>
-		<!--div class="sketchy">
-			<p>We just need a few more pieces of information.</p>
-			<form>
-				<ul class="list-form">
-					<li class="form-field">
-						<label for"web-property">Your website's URL</label><input type="text" id="web-property" placeholder="wwww.google.com" />
-					</li>
-				</ul>
-				<p><input type="submit" value="Set" /></p>
-			</form>
-		</div-->
-	</div>
+<h1>Google Authorization Successful</h1>
+<div class="layout-breve">
+    <p></p>
+
+    <div class="alert-success">
+    You've successfully set up Google Analytics{% if project_name or project_domain %} for <b>{% if project_name %}{{ project_name }}{% endif %}{% if project_domain %} ({{ project_domain }})</b>{% endif %}{% if name or google_email %} as {% if name %}{{ name }}{% endif %}{% if google_email %} ({{ google_email }}){% endif %}{% endif %}{% endif %}!
+    </div>
+
+    <p>Now you can <a href="{% if return_link %}{{ return_link }}{% else %}/{% endif %}">return to the application</a>.</p>
+
+</div>
 {% endblock %}
