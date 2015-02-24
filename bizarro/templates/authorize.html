@@ -17,7 +17,7 @@
     {% else %}
     <div class="alert-info">
         <form method="POST" action="/authorize">
-            <p>Press the button below to start Google's authentication process. While you're there, if you have more than one Google account, choose the one associated with the Google Analytics account for your site.</p>
+            <p>Press the button below to start Google's authentication process. While you're there: if you have more than one Google account, choose the one associated with the Google Analytics account for your site.</p>
             <button id="authorize-button">Connect to Google</button>
         </form>
     </div>
@@ -31,7 +31,7 @@
             <p style="overflow:hidden">
                 <select name="property">
                     {% for (id, name, url) in properties %}
-                    <option value="{{ id }} {{ url }} {{ name }}">{{ name }} ({{ url }})</option>
+                    <option value="{{ id }}">{{ name }} ({{ url }})</option>
                     {% endfor %}
                 </select>
             </p>
@@ -39,6 +39,10 @@
             <p><strong>Finish linking to Google Analytics</strong></p>
             <input type="hidden" name="name" value="{{ name }}">
             <input type="hidden" name="google_email" value="{{ google_email }}">
+            {% for (id, name, url) in properties %}
+            <input type="hidden" name="{{ id }}-domain" value="{{ url }}">
+            <input type="hidden" name="{{ id }}-name" value="{{ name }}"
+            {% endfor %}
             <p><button>Finish Setup</button></p>
         </div>
     </form>

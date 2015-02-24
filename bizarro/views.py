@@ -133,10 +133,12 @@ def callback():
 
 @app.route('/authorization-complete', methods=['POST'])
 def authorization_complete():
-    profile_id, project_domain, project_name = request.form.get('property').split(' ', 2)
-    project_domain = project_domain.strip()
+    profile_id = request.form.get('property')
+    project_domain = request.form.get('{}-domain'.format(profile_id))
+    project_name = request.form.get('{}-name'.format(profile_id))
     project_domain = sub(r'http(s|)://', '', project_domain)
     project_name = project_name.strip()
+    return_link = request.form.get('return_link') or u'/'
     # write the new values to the config file
     ga_config_path = join(current_app.config['RUNNING_STATE_DIR'], GA_CONFIG_FILENAME)
     with WriteLocked(ga_config_path) as iofile:
@@ -151,7 +153,7 @@ def authorization_complete():
         json.dump(ga_config, iofile, indent=2, ensure_ascii=False)
 
     # pass the variables needed to summarize what's been done
-    values = dict(email=session['email'], name=request.form.get('name'), google_email=request.form.get('google_email'), project_name=project_name, project_domain=project_domain, return_link='/')
+    values = dict(email=session['email'], name=request.form.get('name'), google_email=request.form.get('google_email'), project_name=project_name, project_domain=project_domain, return_link=return_link)
 
     return render_template('authorization-complete.html', **values)
 
