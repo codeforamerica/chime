@@ -9,7 +9,7 @@ name = node[:user]
 
 ga_client_id = ENV['GA_CLIENT_ID']
 ga_client_secret = ENV['GA_CLIENT_SECRET']
-authorization_csv_url = ENV['AUTH_CSV_URL']
+authorization_data_href = ENV['AUTH_DATA_HREF']
 ga_redirect_uri = "http://#{hostname}/callback"
 
 #
@@ -55,7 +55,7 @@ GA_CLIENT_ID="#{ga_client_id}"
 GA_CLIENT_SECRET="#{ga_client_secret}"
 GA_REDIRECT_URI="#{ga_redirect_uri}"
 
-AUTH_CSV_URL=#{authorization_csv_url}
+AUTH_DATA_HREF=#{authorization_data_href}
 CONF
 end
 
