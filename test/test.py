@@ -1134,8 +1134,7 @@ class TestApp (TestCase):
         self.assertTrue(html.index('id="fr-nav"') < html.index('id="en-nav"'))
 
     def test_google_callback_is_successful(self):
-        ''' Ensure we are redirected to the authorize-complete page
-            when we successfully auth with google
+        ''' Ensure we get a successful page load on callback from Google authentication
         '''
         with HTTMock(self.mock_persona_verify):
             self.server.post('/sign-in', data={'email': 'erica@example.com'})
