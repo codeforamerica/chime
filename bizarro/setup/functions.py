@@ -113,7 +113,7 @@ def save_details(credentials, instance_dnsname, reponame, sheet_url, deploy_key)
     sheet = doc.worksheet('Instances')
 
     instance_row = [
-        str(datetime.now()),
+        str(datetime.utcnow()),
         'http://{instance_dnsname}'.format(**locals()),
         'https://github.com/ceviche/{reponame}'.format(**locals()),
         sheet_url,
@@ -121,3 +121,5 @@ def save_details(credentials, instance_dnsname, reponame, sheet_url, deploy_key)
         ]
 
     sheet.append_row(instance_row)
+
+    print('--> Wrote details to instances spreadsheet')
