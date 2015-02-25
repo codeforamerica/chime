@@ -10,6 +10,12 @@ from datetime import date, timedelta
 from .view_functions import WriteLocked, ReadLocked
 
 GA_CONFIG_FILENAME = 'ga_config.json'
+GOOGLE_ANALYTICS_TOKENS_URL = 'https://accounts.google.com/o/oauth2/token'
+# GOOGLE_TOKEN_INFO_URL is not used at the moment; use like so:
+# https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=ya29.IAF96bSOMIydJKB5weeDZWE8E8vhela3v8bMwOnIEWR8YdhD6myxhvfFgyFGjdsoMrpbmF5NeVQrcA
+GOOGLE_TOKEN_INFO_URL = 'https://www.googleapis.com/oauth2/v1/tokeninfo'
+GOOGLE_PLUS_WHOAMI_URL = 'https://www.googleapis.com/plus/v1/people/me'
+GOOGLE_ANALYTICS_PROPERTIES_URL = 'https://www.googleapis.com/analytics/v3/management/accounts/~all/webproperties'
 
 def authorize_google():
     ''' Authorize google via oauth2
@@ -20,28 +26,37 @@ def authorize_google():
     state = ''.join(random.choice(ascii_uppercase + digits) for x in xrange(32))
     session['state'] = state
 
-
     query_string = urlencode(dict(client_id=current_app.config['GA_CLIENT_ID'], redirect_uri=current_app.config['GA_REDIRECT_URI'], scope='openid profile https://www.googleapis.com/auth/analytics', state=state, response_type='code', access_type='offline', approval_prompt='force'))
     return redirect('https://accounts.google.com/o/oauth2/auth' + '?' + query_string)
 
-def callback_google(state, code, callback_uri):
-    ''' Get the access token plus the refresh token so we can use them
-        to get a new access token every once in a while
+def get_google_client_info():
+    ''' Return client ID and secret for Google OAuth use.
     '''
-    if state != session['state']:
-        raise Exception()
+    return current_app.config['GA_CLIENT_ID'], current_app.config['GA_CLIENT_SECRET']
+
+def request_new_google_access_and_refresh_tokens(request):
+    ''' Get new access and refresh tokens from the Google API.
+    '''
+    if request.args.get('state') != session['state']:
+        raise Exception('Error: state does not match!')
+
+    code = request.args.get('code')
+    redirect_uri = '{0}://{1}/callback'.format(request.scheme, request.host)
 
     data = dict(client_id=current_app.config['GA_CLIENT_ID'], client_secret=current_app.config['GA_CLIENT_SECRET'],
-                code=code, redirect_uri=callback_uri,
+                code=code, redirect_uri=redirect_uri,
                 grant_type='authorization_code')
 
-    resp = post('https://accounts.google.com/o/oauth2/token', data=data)
+    response = post(GOOGLE_ANALYTICS_TOKENS_URL, data=data)
+    access = response.json()
 
-    if resp.status_code != 200:
-        raise Exception()
-    access = json.loads(resp.content)
+    if response.status_code != 200:
+        if 'error_description' in access:
+            raise Exception('Google says "{0}"'.format(access['error_description']))
+        else:
+            raise Exception('Google Error')
 
-    # write the new token to the config file
+    # write the new tokens to the config file
     ga_config_path = os.path.join(current_app.config['RUNNING_STATE_DIR'], GA_CONFIG_FILENAME)
     with WriteLocked(ga_config_path) as iofile:
         # read the json from the file
@@ -54,17 +69,17 @@ def callback_google(state, code, callback_uri):
         iofile.truncate(0)
         json.dump(ga_config, iofile, indent=2, ensure_ascii=False)
 
-def get_new_access_token(refresh_token):
+def request_new_google_access_token(refresh_token):
     ''' Get a new access token with the refresh token so a user doesn't need to
         authorize the app again
     '''
     if not refresh_token:
-        return False
+        return None, None
 
     data = dict(client_id=current_app.config['GA_CLIENT_ID'], client_secret=current_app.config['GA_CLIENT_SECRET'],
                 refresh_token=refresh_token, grant_type='refresh_token')
 
-    resp = post('https://accounts.google.com/o/oauth2/token', data=data)
+    resp = post(GOOGLE_ANALYTICS_TOKENS_URL, data=data)
 
     if resp.status_code != 200:
         raise Exception()
@@ -83,7 +98,67 @@ def get_new_access_token(refresh_token):
         iofile.truncate(0)
         json.dump(ga_config, iofile, indent=2, ensure_ascii=False)
 
-    return True
+    return access['access_token'], refresh_token
+
+def get_google_personal_info(access_token):
+    ''' Get account name and email from Google Plus.
+    '''
+    response = get(GOOGLE_PLUS_WHOAMI_URL, params={'access_token': access_token})
+    whoami = response.json()
+
+    if response.status_code != 200:
+        if 'error_description' in whoami:
+            raise Exception('Google says "{0}"'.format(whoami['error_description']))
+        else:
+            raise Exception('Google Error')
+
+    email = u''
+    name = u''
+    if 'emails' in whoami:
+        emails = dict([(e['type'], e['value']) for e in whoami['emails']])
+        email = emails.get('account', whoami['emails'][0]['value'])
+    if 'displayName' in whoami:
+        name = whoami['displayName']
+
+    return name, email
+
+def get_google_analytics_properties(access_token):
+    ''' Get sorted list of web properties from Google Analytics.
+    '''
+    response = get(GOOGLE_ANALYTICS_PROPERTIES_URL, params={'access_token': access_token})
+    items = response.json()
+
+    if response.status_code != 200:
+        if 'error_description' in items:
+            raise Exception('Google says "{0}"'.format(items['error_description']))
+        else:
+            raise Exception('Google Error')
+
+    properties = [
+        (item['defaultProfileId'], item['name'], item['websiteUrl'])
+        for item in items['items']
+        if item.get('defaultProfileId', False)
+    ]
+
+    properties.sort(key=lambda p: p[1].lower())
+
+    return properties
+
+def get_style_base(request):
+    ''' Get the correct style base URL for the current scheme.
+    '''
+    if get_scheme(request) == 'https':
+        return 'https://style.s.codeforamerica.org/1'
+
+    return 'http://style.codeforamerica.org/1'
+
+def get_scheme(request):
+    ''' Get the current URL scheme, e.g. 'http' or 'https'.
+    '''
+    if 'x-forwarded-proto' in request.headers:
+        return request.headers['x-forwarded-proto']
+
+    return request.scheme
 
 def get_ga_page_path_pattern(page_path, project_domain):
     ''' Get a regex pattern that'll get us the google analytics data we want.

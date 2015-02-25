@@ -1,8 +1,8 @@
 from logging import getLogger
 Logger = getLogger('bizarro.views')
 
-from os.path import join, isdir, splitext, isfile, dirname
-from re import compile, MULTILINE
+from os.path import join, isdir, splitext, isfile
+from re import compile, MULTILINE, sub
 from mimetypes import guess_type
 from glob import glob
 
@@ -14,14 +14,11 @@ from flask import redirect, request, Response, render_template, session, current
 from . import bizarro as app
 from . import repo_functions, edit_functions
 from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
-from .view_functions import (
-    ReadLocked, branch_name2path, branch_var2name, get_repo, name_branch, dos2unix,
-    login_required, synch_required, synched_checkout_required, is_editable,
-    sorted_paths, directory_paths, should_redirect, make_redirect,
-    get_auth_data_file, is_allowed_email
-    )
-from .google_api_functions import authorize_google, callback_google, fetch_google_analytics_for_page, GA_CONFIG_FILENAME
-
+from .view_functions import (ReadLocked, WriteLocked, branch_name2path, branch_var2name, get_repo, name_branch,
+                             dos2unix, login_required, synch_required, synched_checkout_required,
+                             sorted_paths, directory_paths, should_redirect, make_redirect,
+                             get_auth_data_file, is_allowed_email)
+from .google_api_functions import request_new_google_access_and_refresh_tokens, authorize_google, get_google_personal_info, get_google_analytics_properties, fetch_google_analytics_for_page, GA_CONFIG_FILENAME
 
 import posixpath
 import json
@@ -113,31 +110,76 @@ def sign_out():
 
     return 'OK'
 
-@app.route('/authorize', methods=['GET'])
+@app.route('/setup', methods=['GET'])
 @login_required
-def authorize_page():
-    kwargs = dict(email=session.get('email', None))
-    return render_template('authorize.html', **kwargs)
+def setup():
+    ''' Render a form that steps through application setup (currently only google analytics).
+    '''
+    values = dict(email=session['email'])
 
-@app.route('/authorize', methods=['POST'])
-def authorize():
-    return authorize_google()
+    # grab the ga config
+    ga_config_path = join(current_app.config['RUNNING_STATE_DIR'], GA_CONFIG_FILENAME)
+    with ReadLocked(ga_config_path) as infile:
+        ga_config = json.load(infile)
+    access_token = ga_config['access_token']
+
+    if access_token:
+        # get the name and email associated with this google account
+        name, google_email = get_google_personal_info(access_token)
+        # get a list of google analytics properties associated with this google account
+        properties = get_google_analytics_properties(access_token)
+
+        if not properties:
+            raise Exception("Your Google Account isn't associated with any Google Analytics properties. Log in to Google with a different account?")
+
+        values.update(dict(properties=properties, name=name, google_email=google_email))
+
+    return render_template('authorize.html', **values)
 
 @app.route('/callback')
 def callback():
-    state = request.args.get('state')
-    code = request.args.get('code')
-    callback_uri = '{0}://{1}/callback'.format(request.scheme, request.host)
+    ''' Complete Google authentication, get web properties, and show the form.
+    '''
     try:
-        callback_google(state, code, callback_uri)
+        # request (and write to config) current access and refresh tokens
+        request_new_google_access_and_refresh_tokens(request)
+
     except Exception:
         return redirect('/authorization-failed')
-    else:
-        return redirect('/authorization-complete')
 
-@app.route('/authorization-complete')
+    return redirect('/setup')
+
+@app.route('/authorize', methods=['GET', 'POST'])
+def authorize():
+    ''' Start Google authentication.
+    '''
+    return authorize_google()
+
+@app.route('/authorization-complete', methods=['POST'])
 def authorization_complete():
-    return render_template('authorization-complete.html', email=session['email'])
+    profile_id = request.form.get('property')
+    project_domain = request.form.get('{}-domain'.format(profile_id))
+    project_name = request.form.get('{}-name'.format(profile_id))
+    project_domain = sub(r'http(s|)://', '', project_domain)
+    project_name = project_name.strip()
+    return_link = request.form.get('return_link') or u'/'
+    # write the new values to the config file
+    ga_config_path = join(current_app.config['RUNNING_STATE_DIR'], GA_CONFIG_FILENAME)
+    with WriteLocked(ga_config_path) as iofile:
+        # read the json from the file
+        ga_config = json.load(iofile)
+        # change the values of the profile id and project domain
+        ga_config['profile_id'] = profile_id
+        ga_config['project_domain'] = project_domain
+        # write the new config json
+        iofile.seek(0)
+        iofile.truncate(0)
+        json.dump(ga_config, iofile, indent=2, ensure_ascii=False)
+
+    # pass the variables needed to summarize what's been done
+    values = dict(email=session['email'], name=request.form.get('name'), google_email=request.form.get('google_email'), project_name=project_name, project_domain=project_domain, return_link=return_link)
+
+    return render_template('authorization-complete.html', **values)
 
 @app.route('/authorization-failed')
 def authorization_failed():

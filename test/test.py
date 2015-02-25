@@ -957,16 +957,16 @@ class TestGoogleApiFunctions (TestCase):
     def tearDown(self):
         rmtree(self.ga_config_dir)
 
-    def mock_successful_get_new_access_token(self, url, request):
-        if 'https://accounts.google.com/o/oauth2/token' in url.geturl():
-            content = {'access_token': 'meowser_access_token', 'token_type': 'meowser_type', 'expires_in': 3920,}
+    def mock_successful_request_new_google_access_token(self, url, request):
+        if google_api_functions.GOOGLE_ANALYTICS_TOKENS_URL in url.geturl():
+            content = {'access_token': 'meowser_access_token', 'token_type': 'meowser_type', 'expires_in': 3920}
             return response(200, content)
 
         else:
             raise Exception('01 Asked for unknown URL ' + url.geturl())
 
-    def mock_failed_get_new_access_token(self, url, request):
-        if 'https://accounts.google.com/o/oauth2/token' in url.geturl():
+    def mock_failed_request_new_google_access_token(self, url, request):
+        if google_api_functions.GOOGLE_ANALYTICS_TOKENS_URL in url.geturl():
             return response(500)
 
         else:
@@ -982,10 +982,10 @@ class TestGoogleApiFunctions (TestCase):
             content = {u'error': {u'code': 401, u'message': u'Invalid Credentials', u'errors': [{u'locationType': u'header', u'domain': u'global', u'message': u'Invalid Credentials', u'reason': u'authError', u'location': u'Authorization'}]}}
             return response(401, content)
 
-    def test_successful_get_new_access_token(self):
+    def test_successful_request_new_google_access_token(self):
         with self.app.test_request_context():
-            with HTTMock(self.mock_successful_get_new_access_token):
-                google_api_functions.get_new_access_token('meowser_refresh_token')
+            with HTTMock(self.mock_successful_request_new_google_access_token):
+                google_api_functions.request_new_google_access_token('meowser_refresh_token')
 
                 ga_config_path = os.path.join(self.app.config['RUNNING_STATE_DIR'], google_api_functions.GA_CONFIG_FILENAME)
                 with view_functions.ReadLocked(ga_config_path) as infile:
@@ -993,11 +993,11 @@ class TestGoogleApiFunctions (TestCase):
 
                 self.assertEqual(ga_config['access_token'], 'meowser_access_token')
 
-    def test_failure_to_get_new_access_token(self):
+    def test_failure_to_request_new_google_access_token(self):
         with self.app.test_request_context():
-            with HTTMock(self.mock_failed_get_new_access_token):
+            with HTTMock(self.mock_failed_request_new_google_access_token):
                 with self.assertRaises(Exception):
-                    google_api_functions.get_new_access_token('meowser_refresh_token')
+                    google_api_functions.request_new_google_access_token('meowser_refresh_token')
 
     def test_get_analytics_page_path_pattern(self):
         ''' Verify that we're getting good page path patterns for querying google analytics
@@ -1102,7 +1102,7 @@ class TestApp (TestCase):
 
         raise Exception('Asked for unknown URL ' + url.geturl())
 
-    def persona_verify(self, url, request):
+    def mock_persona_verify(self, url, request):
         if url.geturl() == 'https://verifier.login.persona.org/verify':
             return response(200, '''{"status": "okay", "email": "user@example.com"}''', headers=dict(Link='<https://api.github.com/user/337792/repos?page=1>; rel="prev", <https://api.github.com/user/337792/repos?page=1>; rel="first"'))
 
@@ -1111,22 +1111,28 @@ class TestApp (TestCase):
 
     def mock_google_authorization(self, url, request):
         if 'https://accounts.google.com/o/oauth2/auth' in url.geturl():
-            content = {'access_token': 'meowser_token', 'token_type': 'meowser_type', 'refresh_token': 'refresh_meows', 'expires_in': 3920,}
+            content = {'access_token': 'meowser_token', 'token_type': 'meowser_type', 'refresh_token': 'refresh_meows', 'expires_in': 3920}
             return response(200, content)
 
         else:
             return self.auth_csv_example_allowed(url, request)
 
     def mock_successful_google_callback(self, url, request):
-        if 'https://accounts.google.com/o/oauth2/token' in url.geturl():
-            content = {'access_token': 'meowser_token', 'token_type': 'meowser_type', 'refresh_token': 'refresh_meows', 'expires_in': 3920,}
+        if google_api_functions.GOOGLE_ANALYTICS_TOKENS_URL in url.geturl():
+            content = {'access_token': 'meowser_token', 'token_type': 'meowser_type', 'refresh_token': 'refresh_meows', 'expires_in': 3920}
             return response(200, content)
+
+        elif google_api_functions.GOOGLE_PLUS_WHOAMI_URL in url.geturl():
+            return response(200, '''{"displayName": "Jane Doe", "emails": [{"type": "account", "value": "user@example.com"}]}''')
+
+        elif google_api_functions.GOOGLE_ANALYTICS_PROPERTIES_URL in url.geturl():
+            return response(200, '''{"items": [{"defaultProfileId": "12345678", "name": "Property One", "websiteUrl": "http://propertyone.example.com"}, {"defaultProfileId": "87654321", "name": "Property Two", "websiteUrl": "http://propertytwo.example.com"}]}''')
 
         else:
             return self.auth_csv_example_allowed(url, request)
 
     def mock_failed_google_callback(self, url, request):
-        if 'https://accounts.google.com/o/oauth2/token' in url.geturl():
+        if google_api_functions.GOOGLE_ANALYTICS_TOKENS_URL in url.geturl():
             return response(500)
 
         else:
@@ -1149,7 +1155,7 @@ class TestApp (TestCase):
         response = self.server.get('/')
         self.assertFalse('user@example.com' in response.data)
 
-        with HTTMock(self.persona_verify):
+        with HTTMock(self.mock_persona_verify):
             response = self.server.post('/sign-in', data={'email': 'user@example.com'})
             self.assertEquals(response.status_code, 200)
 
@@ -1180,7 +1186,7 @@ class TestApp (TestCase):
     def test_branches(self):
         ''' Check basic branching functionality.
         '''
-        with HTTMock(self.persona_verify):
+        with HTTMock(self.mock_persona_verify):
             self.server.post('/sign-in', data={'email': 'user@example.com'})
 
         with HTTMock(self.auth_csv_example_allowed):
@@ -1223,10 +1229,9 @@ class TestApp (TestCase):
         self.assertTrue(html.index('id="fr-nav"') < html.index('id="en-nav"'))
 
     def test_google_callback_is_successful(self):
-        ''' Ensure we are redirected to the authorize-complete page
-            when we successfully auth with google
+        ''' Ensure we get a successful page load on callback from Google authentication
         '''
-        with HTTMock(self.persona_verify):
+        with HTTMock(self.mock_persona_verify):
             self.server.post('/sign-in', data={'email': 'erica@example.com'})
 
         with HTTMock(self.mock_google_authorization):
@@ -1242,13 +1247,33 @@ class TestApp (TestCase):
         self.assertEqual(ga_config['access_token'], 'meowser_token')
         self.assertEqual(ga_config['refresh_token'], 'refresh_meows')
 
-        self.assertTrue('authorization-complete' in response.location)
+        self.assertTrue('/setup' in response.location)
+
+    def test_analytics_setup_is_successful(self):
+        with HTTMock(self.mock_persona_verify):
+            self.server.post('/sign-in', data={'email': 'erica@example.com'})
+
+        with HTTMock(self.mock_google_authorization):
+            self.server.post('/authorize')
+
+        # mock-post the form in authorize.html to authorization-complete.html with some dummy values and check the results
+        response = self.server.post('/authorization-complete', data={'email': 'erica@example.com', 'name': 'Jane Doe', 'google_email': 'user@example.com', 'return_link': 'http://example.com', 'property': '12345678', '12345678-domain': 'http://propertyone.example.com', '12345678-name': 'Property One'})
+
+        self.assertEqual(u'200 OK', response.status)
+
+        ga_config_path = os.path.join(self.app.config['RUNNING_STATE_DIR'], google_api_functions.GA_CONFIG_FILENAME)
+        with view_functions.ReadLocked(ga_config_path) as infile:
+            ga_config = json.load(infile)
+
+        # views.authorization_complete() strips the 'http://' from the domain
+        self.assertEqual(ga_config['project_domain'], 'propertyone.example.com')
+        self.assertEqual(ga_config['profile_id'], '12345678')
 
     def test_google_callback_fails(self):
         ''' Ensure we are redirected to the authorize-failed page
             when we fail to auth with google
         '''
-        with HTTMock(self.persona_verify):
+        with HTTMock(self.mock_persona_verify):
             self.server.post('/sign-in', data={'email': 'erica@example.com'})
 
         with HTTMock(self.mock_google_authorization):
