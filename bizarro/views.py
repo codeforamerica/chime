@@ -93,12 +93,17 @@ def sign_out():
 
     return 'OK'
 
-@app.route('/setup', methods=['GET'])
+@app.route('/setup', methods=['GET', 'POST'])
 @login_required
 def setup():
     ''' Render a form that steps through application setup (currently only google analytics).
     '''
+    saved_values = session.get('setup-values')
     values = dict(email=session['email'])
+    if saved_values:
+        values = dict(saved_values)
+        del session['setup-values']
+
     return render_template('authorize.html', **values)
 
 @app.route('/authorize', methods=['GET', 'POST'])
@@ -127,7 +132,10 @@ def callback():
 
     values = dict(email=session['email'], refresh_token=refresh_token, properties=properties, name=name, google_email=google_email)
 
-    return render_template('authorize.html', **values)
+    session['setup-values'] = values
+
+    return redirect('/setup')
+    # return render_template('authorize.html', **values)
 
 @app.route('/authorization-complete', methods=['POST'])
 def authorization_complete():
