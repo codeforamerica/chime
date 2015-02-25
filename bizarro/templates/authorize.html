@@ -9,7 +9,7 @@
     </ul>
 
     <h3>1. Connect To Google</h3>
-    {% if refresh_token %}
+    {% if properties %}
     <div class="alert-success">
         <p>Connected to Google as <b>{{ name }}{% if google_email %} ({{ google_email }}){% endif %}</b>.</p>
     </div>

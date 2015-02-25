@@ -93,32 +93,20 @@ def sign_out():
 
     return 'OK'
 
-@app.route('/setup', methods=['GET', 'POST'])
+@app.route('/setup', methods=['GET'])
 @login_required
 def setup():
     ''' Render a form that steps through application setup (currently only google analytics).
     '''
-    saved_values = session.get('setup-values')
     values = dict(email=session['email'])
-    if saved_values:
-        values = dict(saved_values)
-        del session['setup-values']
 
-    return render_template('authorize.html', **values)
+    # grab the ga config
+    ga_config_path = join(current_app.config['RUNNING_STATE_DIR'], GA_CONFIG_FILENAME)
+    with ReadLocked(ga_config_path) as infile:
+        ga_config = json.load(infile)
+    access_token = ga_config['access_token']
 
-@app.route('/authorize', methods=['GET', 'POST'])
-def authorize():
-    ''' Start Google authentication.
-    '''
-    return authorize_google()
-
-@app.route('/callback')
-def callback():
-    ''' Complete Google authentication, get web properties, and show the form.
-    '''
-    try:
-        # get (and write to config) current access and refresh tokens
-        access_token, refresh_token = request_new_google_access_and_refresh_tokens(request)
+    if access_token:
         # get the name and email associated with this google account
         name, google_email = get_google_personal_info(access_token)
         # get a list of google analytics properties associated with this google account
@@ -127,15 +115,28 @@ def callback():
         if not properties:
             raise Exception("Your Google Account isn't associated with any Google Analytics properties. Log in to Google with a different account?")
 
+        values.update(dict(properties=properties, name=name, google_email=google_email))
+
+    return render_template('authorize.html', **values)
+
+@app.route('/callback')
+def callback():
+    ''' Complete Google authentication, get web properties, and show the form.
+    '''
+    try:
+        # request (and write to config) current access and refresh tokens
+        request_new_google_access_and_refresh_tokens(request)
+
     except Exception:
         return redirect('/authorization-failed')
 
-    values = dict(email=session['email'], refresh_token=refresh_token, properties=properties, name=name, google_email=google_email)
-
-    session['setup-values'] = values
-
     return redirect('/setup')
-    # return render_template('authorize.html', **values)
+
+@app.route('/authorize', methods=['GET', 'POST'])
+def authorize():
+    ''' Start Google authentication.
+    '''
+    return authorize_google()
 
 @app.route('/authorization-complete', methods=['POST'])
 def authorization_complete():

@@ -69,8 +69,6 @@ def request_new_google_access_and_refresh_tokens(request):
         iofile.truncate(0)
         json.dump(ga_config, iofile, indent=2, ensure_ascii=False)
 
-    return access['access_token'], access['refresh_token']
-
 def request_new_google_access_token(refresh_token):
     ''' Get a new access token with the refresh token so a user doesn't need to
         authorize the app again
