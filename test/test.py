@@ -1152,7 +1152,7 @@ class TestApp (TestCase):
         self.assertEqual(ga_config['access_token'], 'meowser_token')
         self.assertEqual(ga_config['refresh_token'], 'refresh_meows')
 
-        self.assertEqual(u'200 OK', response.status)
+        self.assertTrue('/setup' in response.location)
 
     def test_analytics_setup_is_successful(self):
         with HTTMock(self.mock_persona_verify):
