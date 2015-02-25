@@ -92,7 +92,7 @@
             <tbody>
                
                     
-                {% for (edit_path, view_path, item_type, is_editable) in list_paths %}
+                {% for (edit_path, view_path, item_type, is_editable, modified_date) in list_paths %}
                 <form action="." method="POST">
                 <tr>
                     <td><a class="{{ item_type }}" href="{{edit_path}}">{{edit_path}}</a>
@@ -104,7 +104,7 @@
                         {%if item_type == "image" %}image{% endif %}
                     </td>
                     <td>
-                        {%if item_type == "file" or item_type == "image" %}<span class="sketchy">02-02-2014</span>{% endif %}
+                        {%if item_type == "file" or item_type == "image" %}<span class="sketchy">{{modified_date}}</span>{% endif %}
                     </td>
                     <td>
                         

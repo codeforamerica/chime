@@ -1,14 +1,16 @@
 from logging import getLogger
 Logger = getLogger('bizarro.view_functions')
 
-from os.path import join, isdir, realpath, basename, dirname
+from os.path import join, isdir, realpath, basename, getmtime
+from time import strftime, localtime
 from os import listdir, environ
 from urllib import quote, unquote
 from urlparse import urljoin, urlparse
 from mimetypes import guess_type
 from functools import wraps
 from io import BytesIO
-import csv, re
+import csv
+import re
 
 from git import Repo
 from flask import request, session, current_app, redirect
@@ -129,6 +131,9 @@ def is_editable(file_path):
         pass
 
     return False
+
+def modified_date(file_path):
+    return strftime('%Y-%m-%d', localtime(getmtime(file_path)))
 
 def get_auth_data_file(data_href):
     ''' Get a file-like object for authentication CSV data.
@@ -325,7 +330,8 @@ def sorted_paths(repo, branch, path=None):
     full_paths = [join(full_path, name) for name in file_names]
     path_pairs = zip(full_paths, view_paths)
 
-    list_paths = [(basename(fp), vp, path_type(fp), is_editable(fp))
+    # filename, path, type, editable, modified date
+    list_paths = [(basename(fp), vp, path_type(fp), is_editable(fp), modified_date(fp))
                   for (fp, vp) in path_pairs if realpath(fp) != repo.git_dir]
     return list_paths
 
