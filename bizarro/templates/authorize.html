@@ -2,51 +2,53 @@
 {% block title %}Setup{% endblock %}
 {% block content %}
 
-<h1>Setup</h1>
-<div class="layout-breve">
 
-    <p>Setting up analytics is pretty easy, you can do it right from this page. All you need is access to the <a href="https://www.google.com/analytics/">Google Analytics</a> account for your site.</li>
-    </ul>
+<div class="main-content">
+    <div class="analytics-setup">
+        <h2>Connect to Google Analytics</h2>
+        <p>Connecting your Google Analytics account to Chime will enable sthe in-page statistics on your content.</p>
+        <p>All you need is access to the <a href="https://www.google.com/analytics/">Google Analytics</a> account for your site.</li>
+        </ul>
 
-    <h3>1. Connect To Google</h3>
-    {% if properties %}
-    <div class="alert-success">
-        <p>Connected to Google as <b>{{ name }}{% if google_email %} ({{ google_email }}){% endif %}</b>.</p>
-    </div>
-
-    {% else %}
-    <div class="alert-info">
-        <form method="POST" action="/authorize">
-            <p>Press the button below to start Google's authentication process. While you're there: if you have more than one Google account, choose the one associated with the Google Analytics account for your site.</p>
-            <button id="authorize-button">Connect to Google</button>
-        </form>
-    </div>
-    {% endif %}
-
-
-    {% if properties %}
-    <form action="/authorization-complete" method="POST">
-        <h3>2. Pick a property</h3>
-        <div class="alert-info">
-            <p style="overflow:hidden">
-                <select name="property">
-                    {% for (id, name, url) in properties %}
-                    <option value="{{ id }}">{{ name }} ({{ url }})</option>
-                    {% endfor %}
-                </select>
-            </p>
-            <p class="note">If you have more than one property associated with your account, select the one that corresponds to your site.</p>
-            <p><strong>Finish linking to Google Analytics</strong></p>
-            <input type="hidden" name="name" value="{{ name }}">
-            <input type="hidden" name="google_email" value="{{ google_email }}">
-            {% for (id, name, url) in properties %}
-            <input type="hidden" name="{{ id }}-domain" value="{{ url }}">
-            <input type="hidden" name="{{ id }}-name" value="{{ name }}">
-            {% endfor %}
-            <p><button>Finish Setup</button></p>
+        <h3>1. Connect To Google</h3>
+        {% if properties %}
+        <div class="alert-success">
+            <p>Connected to Google as <b>{{ name }}{% if google_email %} ({{ google_email }}){% endif %}</b>.</p>
         </div>
-    </form>
-    {% endif %}
 
+        {% else %}
+        <div class="alert-info">
+            <form method="POST" action="/authorize">
+                <p>Press the button below to start Google's authentication process. While you're there: if you have more than one Google account, choose the one associated with the Google Analytics account for your site.</p>
+                <button id="authorize-button">Connect to Google</button>
+            </form>
+        </div>
+        {% endif %}
+
+
+        {% if properties %}
+        <form action="/authorization-complete" method="POST">
+            <h3>2. Pick a property</h3>
+            <div class="alert-info">
+                <p style="overflow:hidden">
+                    <select name="property">
+                        {% for (id, name, url) in properties %}
+                        <option value="{{ id }}">{{ name }} ({{ url }})</option>
+                        {% endfor %}
+                    </select>
+                </p>
+                <p class="note">If you have more than one property associated with your account, select the one that corresponds to your site.</p>
+                <p><strong>Finish linking to Google Analytics</strong></p>
+                <input type="hidden" name="name" value="{{ name }}">
+                <input type="hidden" name="google_email" value="{{ google_email }}">
+                {% for (id, name, url) in properties %}
+                <input type="hidden" name="{{ id }}-domain" value="{{ url }}">
+                <input type="hidden" name="{{ id }}-name" value="{{ name }}">
+                {% endfor %}
+                <p><button>Finish Setup</button></p>
+            </div>
+        </form>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}

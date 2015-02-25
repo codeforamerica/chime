@@ -64,20 +64,26 @@ label{
 }
 /* Tasks and file explorer*/
 .current-tasks,
-.file-explorer{
+.file-explorer,
+.analytics-setup{
 	margin-top:2em;
 	padding:1em;
 }
 .current-tasks h2,
-.file-explorer h2{
+.file-explorer h2,
+.analytics-setup h2{
 	padding-bottom:0;
 	margin-bottom:0;
 	font-weight:bold;
 }
 .current-tasks p,
-.file-explorer p{
+.file-explorer p,
+.analytics-setup p{
 	padding-top:0;
 	margin-top:0;
+}
+.alert-info{
+	margin-right:60%;
 }
 .file-explorer h2 span{
 	font-weight:normal;
