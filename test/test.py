@@ -1162,14 +1162,14 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_disallowed):
             response = self.server.get('/')
             self.assertFalse('Create task' in response.data)
- 
+
     def test_login(self):
         ''' Check basic log in / log out flow without talking to Persona.
         '''
         response = self.server.get('/')
         self.assertFalse('Create task' in response.data)
 
-        with HTTMock(self.persona_verify):
+        with HTTMock(self.mock_persona_verify):
             response = self.server.post('/sign-in', data={'email': 'user@example.com'})
             self.assertEquals(response.status_code, 200)
 
