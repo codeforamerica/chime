@@ -17,7 +17,7 @@ from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
 from .view_functions import (ReadLocked, WriteLocked, branch_name2path, branch_var2name, get_repo, name_branch,
                              dos2unix, login_required, synch_required, synched_checkout_required,
                              sorted_paths, directory_paths, should_redirect, make_redirect)
-from .google_api_functions import request_new_google_access_and_refresh_tokens, authorize_google, get_google_personal_info, get_style_base, get_google_analytics_properties, fetch_google_analytics_for_page, GA_CONFIG_FILENAME
+from .google_api_functions import request_new_google_access_and_refresh_tokens, authorize_google, get_google_personal_info, get_google_analytics_properties, fetch_google_analytics_for_page, GA_CONFIG_FILENAME
 
 
 import posixpath
@@ -125,9 +125,7 @@ def callback():
     except Exception:
         return redirect('/authorization-failed')
 
-    values = dict(refresh_token=refresh_token, properties=properties,
-                  style_base=get_style_base(request), name=name,
-                  google_email=google_email, email=session['email'])
+    values = dict(email=session['email'], refresh_token=refresh_token, properties=properties, name=name, google_email=google_email)
 
     return render_template('authorize.html', **values)
 
