@@ -112,7 +112,7 @@ device_sda1 = BlockDeviceType(size=16, delete_on_termination=True)
 device_map = BlockDeviceMapping(); device_map['/dev/sda1'] = device_sda1
 
 ec2_args = dict(instance_type='c3.large', user_data=user_data,
-                key_name='cfa-keypair-2015', block_device_map=device_map,
+                key_name='cfa-chime-keypair', block_device_map=device_map,
                 security_groups=['default'])
 
 instance = ec2.run_instances('ami-f8763a90', **ec2_args).instances[0]
@@ -149,7 +149,7 @@ while True:
         break
 
 deploy_key = Signer(github_temporary_token, salt='deploy-key').unsign(resp.content)
-keys_url = 'https://api.github.com/repos/ceviche/{}/keys'.format(reponame)
+keys_url = 'https://api.github.com/repos/chimecms/{}/keys'.format(reponame)
 head = {'Content-Type': 'application/json'}
 body = json.dumps(dict(title='ceviche-key', key=deploy_key))
 resp = requests.post(keys_url, body, headers=head, auth=(username, password))

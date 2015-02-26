@@ -45,7 +45,7 @@ import json, requests
 
 info = dict(
     name='#{github_repo}',
-    private=False, has_issues=False, has_wiki=False, has_downloads=False
+    private=True, has_issues=False, has_wiki=False, has_downloads=False
     )
 
 url = 'https://api.github.com/orgs/#{github_org}/repos'

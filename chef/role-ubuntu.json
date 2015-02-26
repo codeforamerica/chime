@@ -1,7 +1,7 @@
 {
     "user": "bizarro",
     "starter_repo": "https://github.com/codeforamerica/ceviche-starter.git",
-    "github_org": "ceviche",
+    "github_org": "chimecms",
     "run_list":
     [
         "apache",
