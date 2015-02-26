@@ -100,7 +100,7 @@ if check_repo_state(reponame, github_temporary_token):
 
 with open(join(dirname(__file__), 'bizarro', 'setup', 'user-data.sh')) as file:
     user_data = file.read().format(
-        branch_name='deployed-instance-details-#126',
+        branch_name='master',
         ga_client_id=gdocs_client_id,
         ga_client_secret=gdocs_client_secret,
         github_temporary_token=github_temporary_token,
