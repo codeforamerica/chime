@@ -85,6 +85,10 @@ label{
 .alert-info{
 	margin-right:60%;
 }
+.alert-info p{
+	line-height:1.4em;
+	margin-bottom:0.5em;
+}
 .file-explorer h2 span{
 	font-weight:normal;
 }
