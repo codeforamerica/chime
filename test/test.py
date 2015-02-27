@@ -73,10 +73,11 @@ class TestViewFunctions (TestCase):
         ''' Ensure files/directories are sorted in alphabetical order
         '''
         sorted_list = view_functions.sorted_paths(self.clone, 'master')
-        expected_list = [('index.md', '/tree/master/view/index.md', 'file', True),
-                         ('other', '/tree/master/view/other', 'folder', False),
-                         ('other.md', '/tree/master/view/other.md', 'file', True),
-                         ('sub', '/tree/master/view/sub', 'folder', False)]
+
+        expected_list = [('index.md', '/tree/master/view/index.md', 'file', True, 'Mar 15 2014'),
+                         ('other', '/tree/master/view/other', 'folder', False, 'Aug 29 2014'),
+                         ('other.md', '/tree/master/view/other.md', 'file', True, 'Aug 29 2014'),
+                         ('sub', '/tree/master/view/sub', 'folder', False, 'Mar 15 2014')]
         self.assertEqual(sorted_list, expected_list)
 
     def test_directory_paths_with_no_relative_path(self):
