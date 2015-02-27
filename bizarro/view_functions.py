@@ -139,7 +139,7 @@ def relative_date(git_binary, file_path, now_utc):
     ''' Get the date a file was last modified.
     '''
     file_date = git_binary.log('-1', '--format="%ad"', '--', file_path)
-    file_datetime = parser.parse(file_date[1:-1])
+    file_datetime = parser.parse(re.sub(r'(^"|"$)', '', file_date))
 
     return get_relative_date_string(file_datetime, now_utc)
 
