@@ -157,8 +157,7 @@ def get_relative_date_string(file_datetime, now_utc):
         (time_ago.days / 7, "week", "weeks"),
         (time_ago.days, "day", "days"),
         (time_ago.hours, "hour", "hours"),
-        (time_ago.minutes, "minute", "minutes"),
-        (time_ago.seconds, "second", "seconds"),
+        (time_ago.minutes, "minute", "minutes")
     )
 
     for period, singular, plural in periods:
