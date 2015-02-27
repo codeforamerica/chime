@@ -11,8 +11,7 @@ from re import search
 import random
 import json
 from datetime import date, timedelta, datetime
-from dateutil import parser
-import pytz
+from dateutil import parser, tz
 
 import sys
 import os
@@ -77,7 +76,9 @@ class TestViewFunctions (TestCase):
         '''
         sorted_list = view_functions.sorted_paths(self.clone, 'master')
 
-        now_utc = pytz.utc.localize(datetime.utcnow())
+        now_utc = datetime.utcnow()
+        now_utc = now_utc.replace(tzinfo=tz.tzutc())
+
         expected_dates = [
             'Sat Mar 15 00:55:52 2014 -0700',
             'Fri Aug 29 17:58:25 2014 -0700',

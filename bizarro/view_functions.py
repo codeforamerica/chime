@@ -12,10 +12,9 @@ from functools import wraps
 from io import BytesIO
 import csv
 import re
-import pytz
 
 from git import Repo, Git
-from dateutil import parser
+from dateutil import parser, tz
 from dateutil.relativedelta import relativedelta
 from flask import request, session, current_app, redirect
 from requests import get
@@ -373,7 +372,8 @@ def sorted_paths(repo, branch, path=None):
     path_pairs = zip(full_paths, view_paths)
 
     git_binary = Git(full_path)
-    now_utc = pytz.utc.localize(datetime.utcnow())
+    now_utc = datetime.utcnow()
+    now_utc = now_utc.replace(tzinfo=tz.tzutc())
 
     # filename, path, type, editable, modified date
     list_paths = [(basename(fp), vp, path_type(fp), is_editable(fp), relative_date(git_binary, fp, now_utc))
