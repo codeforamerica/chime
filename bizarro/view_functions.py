@@ -12,9 +12,11 @@ from functools import wraps
 from io import BytesIO
 import csv
 import re
+import pytz
 
 from git import Repo, Git
 from dateutil import parser
+from dateutil.relativedelta import relativedelta
 from flask import request, session, current_app, redirect
 from requests import get
 
@@ -137,9 +139,9 @@ def is_editable(file_path):
 def modified_date(git_binary, file_path):
     ''' Get the date a file was last modified.
     '''
-    checktime = git_binary.log('-1', '--format="%ad"', '--', file_path)
-    datetime_object = parser.parse(checktime[1:-1])
-    return datetime_object.strftime('%b %d %Y')
+    modified_date = git_binary.log('-1', '--format="%ad"', '--', file_path)
+    modified_datetime = parser.parse(modified_date[1:-1])
+    return modified_datetime.strftime('%b %d %Y')
     # return strftime('%Y-%m-%d', localtime(getmtime(file_path)))
 
 def get_epoch(dt):
@@ -147,7 +149,7 @@ def get_epoch(dt):
     '''
     epoch = datetime.utcfromtimestamp(0)
     delta = dt - epoch
-    return delta.total_seconds() * 1000.0
+    return delta.total_seconds()
 
 def get_auth_data_file(data_href):
     ''' Get a file-like object for authentication CSV data.
