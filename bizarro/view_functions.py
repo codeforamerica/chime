@@ -12,7 +12,8 @@ from io import BytesIO
 import csv
 import re
 
-from git import Repo
+from git import Repo, Git
+from dateutil import parser
 from flask import request, session, current_app, redirect
 from requests import get
 
@@ -132,8 +133,20 @@ def is_editable(file_path):
 
     return False
 
-def modified_date(file_path):
-    return strftime('%Y-%m-%d', localtime(getmtime(file_path)))
+def modified_date(git_binary, file_path):
+    ''' Get the date a file was last modified.
+    '''
+    checktime = git_binary.log('-1', '--format="%ad"', '--', file_path)
+    datetime_object = parser.parse(checktime[1:-1])
+    return datetime_object.strftime('%b %d %Y')
+    # return strftime('%Y-%m-%d', localtime(getmtime(file_path)))
+
+def get_epoch(dt):
+    ''' Get an accurate epoch seconds value for the passed datetime object.
+    '''
+    epoch = datetime.utcfromtimestamp(0)
+    delta = dt - epoch
+    return delta.total_seconds() * 1000.0
 
 def get_auth_data_file(data_href):
     ''' Get a file-like object for authentication CSV data.
@@ -330,8 +343,16 @@ def sorted_paths(repo, branch, path=None):
     full_paths = [join(full_path, name) for name in file_names]
     path_pairs = zip(full_paths, view_paths)
 
+    # tree = repo.heads.master.commit.tree
+    # print 'vvv'
+    # checkblob = tree.blobs[0]
+    # print dir(checkblob)
+    # print '^^^'
+
+    git_binary = Git(full_path)
+
     # filename, path, type, editable, modified date
-    list_paths = [(basename(fp), vp, path_type(fp), is_editable(fp), modified_date(fp))
+    list_paths = [(basename(fp), vp, path_type(fp), is_editable(fp), modified_date(git_binary, fp))
                   for (fp, vp) in path_pairs if realpath(fp) != repo.git_dir]
     return list_paths
 
