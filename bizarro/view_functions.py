@@ -3,6 +3,7 @@ Logger = getLogger('bizarro.view_functions')
 
 from os.path import join, isdir, realpath, basename, getmtime
 from time import strftime, localtime
+from datetime import datetime
 from os import listdir, environ
 from urllib import quote, unquote
 from urlparse import urljoin, urlparse
