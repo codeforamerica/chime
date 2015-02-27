@@ -136,12 +136,38 @@ def is_editable(file_path):
 
     return False
 
-def modified_date(git_binary, file_path):
+def relative_date(git_binary, file_path, now_utc):
     ''' Get the date a file was last modified.
     '''
-    modified_date = git_binary.log('-1', '--format="%ad"', '--', file_path)
-    modified_datetime = parser.parse(modified_date[1:-1])
-    return modified_datetime.strftime('%b %d %Y')
+    file_date = git_binary.log('-1', '--format="%ad"', '--', file_path)
+    file_datetime = parser.parse(file_date[1:-1])
+
+    return get_relative_date_string(file_datetime, now_utc)
+
+def get_relative_date_string(file_datetime, now_utc):
+    time_ago = relativedelta(now_utc, file_datetime)
+    default = "just now"
+
+    # if the passed date is in the future, return the default
+    if now_utc < file_datetime:
+        return default
+
+    periods = (
+        (time_ago.years, "year", "years"),
+        (time_ago.months, "month", "months"),
+        (time_ago.days / 7, "week", "weeks"),
+        (time_ago.days, "day", "days"),
+        (time_ago.hours, "hour", "hours"),
+        (time_ago.minutes, "minute", "minutes"),
+        (time_ago.seconds, "second", "seconds"),
+    )
+
+    for period, singular, plural in periods:
+        if period:
+            return "%d %s ago" % (period, singular if period == 1 else plural)
+
+    return default
+    # return file_datetime.strftime('%b %d %Y')
     # return strftime('%Y-%m-%d', localtime(getmtime(file_path)))
 
 def get_epoch(dt):
@@ -346,17 +372,13 @@ def sorted_paths(repo, branch, path=None):
     full_paths = [join(full_path, name) for name in file_names]
     path_pairs = zip(full_paths, view_paths)
 
-    # tree = repo.heads.master.commit.tree
-    # print 'vvv'
-    # checkblob = tree.blobs[0]
-    # print dir(checkblob)
-    # print '^^^'
-
     git_binary = Git(full_path)
+    now_utc = pytz.utc.localize(datetime.utcnow())
 
     # filename, path, type, editable, modified date
-    list_paths = [(basename(fp), vp, path_type(fp), is_editable(fp), modified_date(git_binary, fp))
+    list_paths = [(basename(fp), vp, path_type(fp), is_editable(fp), relative_date(git_binary, fp, now_utc))
                   for (fp, vp) in path_pairs if realpath(fp) != repo.git_dir]
+
     return list_paths
 
 def directory_paths(branch, path=None):
