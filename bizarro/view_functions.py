@@ -371,6 +371,7 @@ def sorted_paths(repo, branch, path=None):
 
     git_binary = Git(full_path)
     now_utc = datetime.utcnow()
+    # the date is naive by default; explicitly set the timezone as UTC
     now_utc = now_utc.replace(tzinfo=tz.tzutc())
 
     # filename, path, type, editable, modified date
