@@ -23,6 +23,16 @@ from .href import needs_redirect, get_redirect
 
 from fcntl import flock, LOCK_EX, LOCK_UN, LOCK_SH
 
+# files that match these regex patterns will not be shown in the file explorer
+FILE_FILTERS = [
+    r'^\.',
+    r'^_',
+    r'\.lock$',
+    r'Gemfile',
+    r'LICENSE'
+]
+FILE_FILTERS_COMPILED = re.compile('(' + '|'.join(FILE_FILTERS) + ')')
+
 class WriteLocked:
     ''' Context manager for a locked file open in a+ mode, seek(0).
     '''
@@ -361,8 +371,7 @@ def sorted_paths(repo, branch, path=None):
     full_path = join(repo.working_dir, path or '.').rstrip('/')
     all_sorted_files_dirs = sorted(listdir(full_path))
 
-    filtered_sorted_files_dirs = [i for i in all_sorted_files_dirs if not i.startswith('.')]
-    file_names = [n for n in filtered_sorted_files_dirs if not n.startswith('_')]
+    file_names = [filename for filename in all_sorted_files_dirs if not FILE_FILTERS_COMPILED.search(filename)]
     view_paths = [join('/tree/%s/view' % branch_name2path(branch), join(path or '', fn))
                   for fn in file_names]
 
