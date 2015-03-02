@@ -367,13 +367,12 @@ def synched_checkout_required(route_function):
 
     return decorated_function
 
-def sorted_paths(repo, branch, path=None):
+def sorted_paths(repo, branch, path=None, showallfiles=False):
     full_path = join(repo.working_dir, path or '.').rstrip('/')
     all_sorted_files_dirs = sorted(listdir(full_path))
 
     file_names = [filename for filename in all_sorted_files_dirs if not FILE_FILTERS_COMPILED.search(filename)]
-    # turn off filtering if 'showallfiles=true' is in the request
-    if request.args.get('showallfiles') == u'true':
+    if showallfiles:
         file_names = all_sorted_files_dirs
 
     view_paths = [join('/tree/%s/view' % branch_name2path(branch), join(path or '', fn))
