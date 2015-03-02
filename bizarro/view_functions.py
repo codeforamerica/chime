@@ -1,8 +1,7 @@
 from logging import getLogger
 Logger = getLogger('bizarro.view_functions')
 
-from os.path import join, isdir, realpath, basename, getmtime
-from time import strftime, localtime
+from os.path import join, isdir, realpath, basename
 from datetime import datetime
 from os import listdir, environ
 from urllib import quote, unquote
@@ -165,8 +164,6 @@ def get_relative_date_string(file_datetime, now_utc):
             return "%d %s ago" % (period, singular if period == 1 else plural)
 
     return default
-    # return file_datetime.strftime('%b %d %Y')
-    # return strftime('%Y-%m-%d', localtime(getmtime(file_path)))
 
 def get_epoch(dt):
     ''' Get an accurate epoch seconds value for the passed datetime object.
