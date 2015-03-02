@@ -178,15 +178,15 @@ def get_auth_data_file(data_href):
     ''' Get a file-like object for authentication CSV data.
     '''
     csv_url = get_auth_csv_url(data_href)
-    
+
     url_base = 'file://{}'.format(realpath(__file__))
     real_url = urljoin(url_base, csv_url)
-    
+
     if urlparse(real_url).scheme in ('file', ''):
         file_path = urlparse(real_url).path
         Logger.debug('Opening {} as auth CSV file'.format(file_path))
         return open(file_path, 'r')
-    
+
     Logger.debug('Opening {} as auth CSV file'.format(real_url))
     return BytesIO(get(real_url).content)
 
@@ -194,26 +194,26 @@ def get_auth_csv_url(data_href):
     ''' Optionally convert link to GDocs spreadsheet to CSV format.
     '''
     _, host, path, _, _, _ = urlparse(data_href)
-    
+
     gdocs_pat = re.compile(r'/spreadsheets/d/(?P<id>[\w\-]+)')
     path_match = gdocs_pat.match(path)
-    
+
     if host == 'docs.google.com' and path_match:
         auth_path = '/spreadsheets/d/{}/export'.format(path_match.group('id'))
         return 'https://{host}{auth_path}?format=csv'.format(**locals())
-    
+
     return data_href
 
 def is_allowed_email(file, email):
     ''' Return true if given email address is allowed in given CSV file.
-    
+
         First argument is a file-like object.
     '''
     domain_index, address_index = None, None
     domain_pat = re.compile(r'^(.*@)?(?P<domain>.+)$')
     email_domain = domain_pat.match(email).group('domain')
     rows = csv.reader(file)
-    
+
     #
     # Look for a header row.
     #
@@ -225,7 +225,7 @@ def is_allowed_email(file, email):
             domain_index = 0 if starts_right else None
             address_index = -3 if ends_right else None
             break
-    
+
     #
     # Look for possible matching data row.
     #
@@ -239,7 +239,7 @@ def is_allowed_email(file, email):
         if address_index is not None:
             if email == row[address_index]:
                 return True
-        
+
     return False
 
 def login_required(route_function):
@@ -253,7 +253,7 @@ def login_required(route_function):
 
         if not email:
             return redirect('/not-allowed')
-        
+
         auth_data_href = current_app.config['AUTH_DATA_HREF']
         if not is_allowed_email(get_auth_data_file(auth_data_href), email):
             return redirect('/not-allowed')
