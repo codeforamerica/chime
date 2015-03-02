@@ -1,16 +1,20 @@
 from logging import getLogger
 Logger = getLogger('bizarro.view_functions')
 
-from os.path import join, isdir, realpath, basename, dirname
+from os.path import join, isdir, realpath, basename
+from datetime import datetime
 from os import listdir, environ
 from urllib import quote, unquote
 from urlparse import urljoin, urlparse
 from mimetypes import guess_type
 from functools import wraps
 from io import BytesIO
-import csv, re
+import csv
+import re
 
-from git import Repo
+from git import Repo, Git
+from dateutil import parser, tz
+from dateutil.relativedelta import relativedelta
 from flask import request, session, current_app, redirect
 from requests import get
 
@@ -130,19 +134,59 @@ def is_editable(file_path):
 
     return False
 
+def relative_date(git_binary, file_path, now_utc):
+    ''' Get the date a file was last modified.
+    '''
+    file_date = git_binary.log('-1', '--format="%ad"', '--', file_path)
+    file_datetime = parser.parse(re.sub(r'(^"|"$)', '', file_date))
+
+    return get_relative_date_string(file_datetime, now_utc)
+
+def get_relative_date_string(file_datetime, now_utc):
+    ''' Get a natural-language representation of a period of time.
+    '''
+    time_ago = relativedelta(now_utc, file_datetime)
+    default = "just now"
+
+    # if the passed date is in the future, return the default
+    if now_utc < file_datetime:
+        return default
+
+    periods = (
+        (time_ago.years, "year", "years"),
+        (time_ago.months, "month", "months"),
+        (time_ago.days / 7, "week", "weeks"),
+        (time_ago.days, "day", "days"),
+        (time_ago.hours, "hour", "hours"),
+        (time_ago.minutes, "minute", "minutes")
+    )
+
+    for period, singular, plural in periods:
+        if period:
+            return "%d %s ago" % (period, singular if period == 1 else plural)
+
+    return default
+
+def get_epoch(dt):
+    ''' Get an accurate epoch seconds value for the passed datetime object.
+    '''
+    epoch = datetime.utcfromtimestamp(0)
+    delta = dt - epoch
+    return delta.total_seconds()
+
 def get_auth_data_file(data_href):
     ''' Get a file-like object for authentication CSV data.
     '''
     csv_url = get_auth_csv_url(data_href)
-    
+
     url_base = 'file://{}'.format(realpath(__file__))
     real_url = urljoin(url_base, csv_url)
-    
+
     if urlparse(real_url).scheme in ('file', ''):
         file_path = urlparse(real_url).path
         Logger.debug('Opening {} as auth CSV file'.format(file_path))
         return open(file_path, 'r')
-    
+
     Logger.debug('Opening {} as auth CSV file'.format(real_url))
     return BytesIO(get(real_url).content)
 
@@ -150,26 +194,26 @@ def get_auth_csv_url(data_href):
     ''' Optionally convert link to GDocs spreadsheet to CSV format.
     '''
     _, host, path, _, _, _ = urlparse(data_href)
-    
+
     gdocs_pat = re.compile(r'/spreadsheets/d/(?P<id>[\w\-]+)')
     path_match = gdocs_pat.match(path)
-    
+
     if host == 'docs.google.com' and path_match:
         auth_path = '/spreadsheets/d/{}/export'.format(path_match.group('id'))
         return 'https://{host}{auth_path}?format=csv'.format(**locals())
-    
+
     return data_href
 
 def is_allowed_email(file, email):
     ''' Return true if given email address is allowed in given CSV file.
-    
+
         First argument is a file-like object.
     '''
     domain_index, address_index = None, None
     domain_pat = re.compile(r'^(.*@)?(?P<domain>.+)$')
     email_domain = domain_pat.match(email).group('domain')
     rows = csv.reader(file)
-    
+
     #
     # Look for a header row.
     #
@@ -181,7 +225,7 @@ def is_allowed_email(file, email):
             domain_index = 0 if starts_right else None
             address_index = -3 if ends_right else None
             break
-    
+
     #
     # Look for possible matching data row.
     #
@@ -195,7 +239,7 @@ def is_allowed_email(file, email):
         if address_index is not None:
             if email == row[address_index]:
                 return True
-        
+
     return False
 
 def login_required(route_function):
@@ -209,7 +253,7 @@ def login_required(route_function):
 
         if not email:
             return redirect('/not-allowed')
-        
+
         auth_data_href = current_app.config['AUTH_DATA_HREF']
         if not is_allowed_email(get_auth_data_file(auth_data_href), email):
             return redirect('/not-allowed')
@@ -325,8 +369,15 @@ def sorted_paths(repo, branch, path=None):
     full_paths = [join(full_path, name) for name in file_names]
     path_pairs = zip(full_paths, view_paths)
 
-    list_paths = [(basename(fp), vp, path_type(fp), is_editable(fp))
+    git_binary = Git(full_path)
+    now_utc = datetime.utcnow()
+    # the date is naive by default; explicitly set the timezone as UTC
+    now_utc = now_utc.replace(tzinfo=tz.tzutc())
+
+    # filename, path, type, editable, modified date
+    list_paths = [(basename(fp), vp, path_type(fp), is_editable(fp), relative_date(git_binary, fp, now_utc))
                   for (fp, vp) in path_pairs if realpath(fp) != repo.git_dir]
+
     return list_paths
 
 def directory_paths(branch, path=None):

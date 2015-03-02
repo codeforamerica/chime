@@ -10,7 +10,8 @@ from uuid import uuid4
 from re import search
 import random
 import json
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
+from dateutil import parser, tz
 
 import sys
 import os
@@ -70,13 +71,27 @@ class TestViewFunctions (TestCase):
         rmtree(self.clone.working_dir)
 
     def test_sorted_paths(self):
-        ''' Ensure files/directories are sorted in alphabetical order
+        ''' Ensure files/directories are sorted in alphabetical order, and that
+            we get the expected values back from the sorted_paths method
         '''
         sorted_list = view_functions.sorted_paths(self.clone, 'master')
-        expected_list = [('index.md', '/tree/master/view/index.md', 'file', True),
-                         ('other', '/tree/master/view/other', 'folder', False),
-                         ('other.md', '/tree/master/view/other.md', 'file', True),
-                         ('sub', '/tree/master/view/sub', 'folder', False)]
+
+        now_utc = datetime.utcnow()
+        now_utc = now_utc.replace(tzinfo=tz.tzutc())
+
+        expected_dates = [
+            'Sat Mar 15 00:55:52 2014 -0700',
+            'Fri Aug 29 17:58:25 2014 -0700',
+            'Fri Aug 29 17:58:25 2014 -0700',
+            'Sat Mar 15 00:55:52 2014 -0700'
+        ]
+        expected_datetimes = [parser.parse(item) for item in expected_dates]
+        expected_relative_dates = [view_functions.get_relative_date_string(item, now_utc) for item in expected_datetimes]
+
+        expected_list = [('index.md', '/tree/master/view/index.md', 'file', True, expected_relative_dates[0]),
+                         ('other', '/tree/master/view/other', 'folder', False, expected_relative_dates[1]),
+                         ('other.md', '/tree/master/view/other.md', 'file', True, expected_relative_dates[2]),
+                         ('sub', '/tree/master/view/sub', 'folder', False, expected_relative_dates[3])]
         self.assertEqual(sorted_list, expected_list)
 
     def test_directory_paths_with_no_relative_path(self):
