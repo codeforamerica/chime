@@ -148,19 +148,20 @@ def relative_date(git_binary, file_path, now_utc):
     ''' Get the date a file was last modified.
     '''
     file_date = git_binary.log('-1', '--format="%ad"', '--', file_path)
-    file_datetime = parser.parse(re.sub(r'(^"|"$)', '', file_date))
+    file_datetime = parser.parse(re.sub(r'(^"|"$)', '', file_date)) if file_date else None
 
     return get_relative_date_string(file_datetime, now_utc)
 
 def get_relative_date_string(file_datetime, now_utc):
     ''' Get a natural-language representation of a period of time.
     '''
-    time_ago = relativedelta(now_utc, file_datetime)
     default = "just now"
 
-    # if the passed date is in the future, return the default
-    if now_utc < file_datetime:
+    # if there's no passed date, or if the passed date is in the future, return the default
+    if not file_datetime or now_utc < file_datetime:
         return default
+
+    time_ago = relativedelta(now_utc, file_datetime)
 
     periods = (
         (time_ago.years, "year", "years"),
