@@ -71,7 +71,7 @@ def index():
                                review_body=review_body))
 
     email = session.get('email', None)
-    
+
     kwargs = dict(items=list_items, email=email)
     return render_template('index.html', **kwargs)
 
@@ -80,10 +80,10 @@ def not_allowed():
     email = session.get('email', None)
     auth_data_href = current_app.config['AUTH_DATA_HREF']
     kwargs = dict(email=email, auth_url=auth_data_href)
-    
+
     if not email:
         return render_template('not-allowed.html', **kwargs)
-    
+
     if not is_allowed_email(get_auth_data_file(auth_data_href), email):
         return render_template('not-allowed.html', **kwargs)
 
