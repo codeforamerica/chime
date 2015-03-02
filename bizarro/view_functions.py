@@ -372,6 +372,10 @@ def sorted_paths(repo, branch, path=None):
     all_sorted_files_dirs = sorted(listdir(full_path))
 
     file_names = [filename for filename in all_sorted_files_dirs if not FILE_FILTERS_COMPILED.search(filename)]
+    # turn off filtering if 'showallfiles=true' is in the request
+    if request.args.get('showallfiles') == u'true':
+        file_names = all_sorted_files_dirs
+
     view_paths = [join('/tree/%s/view' % branch_name2path(branch), join(path or '', fn))
                   for fn in file_names]
 
