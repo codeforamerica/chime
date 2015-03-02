@@ -303,7 +303,7 @@ def branch_edit(branch, path=None):
         if path and not path.endswith('/'):
             return redirect('/tree/%s/edit/%s' % (safe_branch, path + '/'), code=302)
 
-        # turn off filtering if 'showallfiles=true' is in the request
+        # :NOTE: temporarily turning off filtering if 'showallfiles=true' is in the request
         showallfiles = request.args.get('showallfiles') == u'true'
 
         kwargs = dict(branch=branch, safe_branch=safe_branch, dirs_and_paths=directory_paths(branch, path),
