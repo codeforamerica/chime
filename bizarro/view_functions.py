@@ -143,6 +143,8 @@ def relative_date(git_binary, file_path, now_utc):
     return get_relative_date_string(file_datetime, now_utc)
 
 def get_relative_date_string(file_datetime, now_utc):
+    ''' Get a natural-language representation of a period of time.
+    '''
     time_ago = relativedelta(now_utc, file_datetime)
     default = "just now"
 
