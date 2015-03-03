@@ -10,6 +10,8 @@ from datetime import date, timedelta
 from .view_functions import WriteLocked, ReadLocked
 
 GA_CONFIG_FILENAME = 'ga_config.json'
+# these are the names of the values that can be saved to the google analytics config file
+GA_CONFIG_VALUES = ['access_token', 'refresh_token', 'profile_id', 'project_domain']
 GOOGLE_ANALYTICS_TOKENS_URL = 'https://accounts.google.com/o/oauth2/token'
 # GOOGLE_TOKEN_INFO_URL is not used at the moment; use like so:
 # https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=ya29.IAF96bSOMIydJKB5weeDZWE8E8vhela3v8bMwOnIEWR8YdhD6myxhvfFgyFGjdsoMrpbmF5NeVQrcA
@@ -57,17 +59,8 @@ def request_new_google_access_and_refresh_tokens(request):
             raise Exception('Google Error')
 
     # write the new tokens to the config file
-    ga_config_path = os.path.join(current_app.config['RUNNING_STATE_DIR'], GA_CONFIG_FILENAME)
-    with WriteLocked(ga_config_path) as iofile:
-        # read the json from the file
-        ga_config = json.load(iofile)
-        # change the values of the access and refresh tokens
-        ga_config['access_token'] = access['access_token']
-        ga_config['refresh_token'] = access['refresh_token']
-        # write the new config json
-        iofile.seek(0)
-        iofile.truncate(0)
-        json.dump(ga_config, iofile, indent=2, ensure_ascii=False)
+    config_values = {'access_token': access['access_token'], 'refresh_token': access['refresh_token']}
+    write_ga_config(config_values)
 
 def request_new_google_access_token(refresh_token):
     ''' Get a new access token with the refresh token so a user doesn't need to
@@ -87,18 +80,56 @@ def request_new_google_access_token(refresh_token):
     access = json.loads(resp.content)
 
     # write the new token to the config file
+    config_values = {'access_token': access['access_token']}
+    write_ga_config(config_values)
+
+    return access['access_token'], refresh_token
+
+def get_empty_ga_config():
+    ''' Get an empty copy of the google analytics config object.
+    '''
+    ga_config = {}
+    for key_name in GA_CONFIG_VALUES:
+        ga_config[key_name] = u''
+    return ga_config
+
+def read_ga_config():
+    ''' Return the contents of the google analytics config file. Create the file if it doesn't exist.
+    '''
+    ga_config_path = os.path.join(current_app.config['RUNNING_STATE_DIR'], GA_CONFIG_FILENAME)
+    try:
+        with ReadLocked(ga_config_path) as infile:
+            try:
+                ga_config = json.load(infile)
+            except ValueError:
+                return get_empty_ga_config()
+            else:
+                return ga_config
+    except IOError:
+        return get_empty_ga_config()
+
+def write_ga_config(config_values):
+    ''' Validate the passed google analytics config values and write them to disk.
+    '''
     ga_config_path = os.path.join(current_app.config['RUNNING_STATE_DIR'], GA_CONFIG_FILENAME)
     with WriteLocked(ga_config_path) as iofile:
         # read the json from the file
-        ga_config = json.load(iofile)
-        # change the value of the access token
-        ga_config['access_token'] = access['access_token']
+        try:
+            ga_config = json.load(iofile)
+        except ValueError:
+            ga_config = get_empty_ga_config()
+        # update any values that were passed
+        for key_name in config_values:
+            ga_config[key_name] = config_values[key_name]
+        # filter out any unexpected values
+        write_config = {}
+        for key_name in ga_config:
+            if key_name in GA_CONFIG_VALUES:
+                write_config[key_name] = ga_config[key_name]
         # write the new config json
         iofile.seek(0)
         iofile.truncate(0)
-        json.dump(ga_config, iofile, indent=2, ensure_ascii=False)
-
-    return access['access_token'], refresh_token
+        json.dump(write_config, iofile, indent=2, ensure_ascii=False)
 
 def get_google_personal_info(access_token):
     ''' Get account name and email from Google Plus.
@@ -178,11 +209,13 @@ def get_ga_page_path_pattern(page_path, project_domain):
 def fetch_google_analytics_for_page(config, page_path, access_token):
     ''' Get stats for a particular page
     '''
-    ga_config_path = os.path.join(config['RUNNING_STATE_DIR'], GA_CONFIG_FILENAME)
-    with ReadLocked(ga_config_path) as infile:
-        ga_config = json.load(infile)
-    ga_project_domain = ga_config['project_domain']
-    ga_profile_id = ga_config['profile_id']
+    ga_config = read_ga_config()
+    ga_project_domain = ga_config.get('project_domain')
+    ga_profile_id = ga_config.get('profile_id')
+
+    # don't bother requesting data if we don't have everything we need
+    if not ga_project_domain or not ga_profile_id or not access_token:
+        return {}
 
     start_date = (date.today() - timedelta(days=7)).isoformat()
     end_date = date.today().isoformat()

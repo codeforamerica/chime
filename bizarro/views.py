@@ -1,7 +1,7 @@
 from logging import getLogger
 Logger = getLogger('bizarro.views')
 
-from os.path import join, isdir, splitext, isfile
+from os.path import join, isdir, splitext
 from re import compile, MULTILINE, sub
 from mimetypes import guess_type
 from glob import glob
@@ -14,13 +14,12 @@ from flask import redirect, request, Response, render_template, session, current
 from . import bizarro as app
 from . import repo_functions, edit_functions
 from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
-from .view_functions import (ReadLocked, WriteLocked, branch_name2path, branch_var2name, get_repo, name_branch,
+from .view_functions import (branch_name2path, branch_var2name, get_repo, name_branch,
                              dos2unix, login_required, synch_required, synched_checkout_required,
                              sorted_paths, directory_paths, should_redirect, make_redirect,
                              get_auth_data_file, is_allowed_email)
-from .google_api_functions import request_new_google_access_and_refresh_tokens, authorize_google, get_google_personal_info, get_google_analytics_properties, fetch_google_analytics_for_page, GA_CONFIG_FILENAME
+from .google_api_functions import read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens, authorize_google, get_google_personal_info, get_google_analytics_properties, fetch_google_analytics_for_page, GA_CONFIG_FILENAME
 
-import posixpath
 import json
 
 @app.route('/')
@@ -118,10 +117,8 @@ def setup():
     values = dict(email=session['email'])
 
     # grab the ga config
-    ga_config_path = join(current_app.config['RUNNING_STATE_DIR'], GA_CONFIG_FILENAME)
-    with ReadLocked(ga_config_path) as infile:
-        ga_config = json.load(infile)
-    access_token = ga_config['access_token']
+    ga_config = read_ga_config()
+    access_token = ga_config.get('access_token')
 
     if access_token:
         # get the name and email associated with this google account
@@ -164,17 +161,8 @@ def authorization_complete():
     project_name = project_name.strip()
     return_link = request.form.get('return_link') or u'/'
     # write the new values to the config file
-    ga_config_path = join(current_app.config['RUNNING_STATE_DIR'], GA_CONFIG_FILENAME)
-    with WriteLocked(ga_config_path) as iofile:
-        # read the json from the file
-        ga_config = json.load(iofile)
-        # change the values of the profile id and project domain
-        ga_config['profile_id'] = profile_id
-        ga_config['project_domain'] = project_domain
-        # write the new config json
-        iofile.seek(0)
-        iofile.truncate(0)
-        json.dump(ga_config, iofile, indent=2, ensure_ascii=False)
+    config_values = {'profile_id': profile_id, 'project_domain': project_domain}
+    write_ga_config(config_values)
 
     # pass the variables needed to summarize what's been done
     values = dict(email=session['email'], name=request.form.get('name'), google_email=request.form.get('google_email'), project_name=project_name, project_domain=project_domain, return_link=return_link)
@@ -338,15 +326,11 @@ def branch_edit(branch, path=None):
         view_path = join('/tree/%s/view' % branch_name2path(branch), path)
         app_authorized = False
 
-        ga_config_path = posixpath.join(current_app.config['RUNNING_STATE_DIR'], GA_CONFIG_FILENAME)
+        ga_config = read_ga_config()
         analytics_dict = {}
-        if isfile(ga_config_path):
-            with ReadLocked(ga_config_path) as infile:
-                ga_config = json.load(infile)
-
-            if ga_config['access_token']:
-                app_authorized = True
-                analytics_dict = fetch_google_analytics_for_page(current_app.config, path, ga_config['access_token'])
+        if ga_config.get('access_token'):
+            app_authorized = True
+            analytics_dict = fetch_google_analytics_for_page(current_app.config, path, ga_config.get('access_token'))
 
         kwargs = dict(dict(branch=branch, safe_branch=safe_branch,
                       body=body, hexsha=c.hexsha, url_slug=url_slug,
