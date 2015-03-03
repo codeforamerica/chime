@@ -97,7 +97,10 @@ def read_ga_config():
         write_ga_config(write_config)
 
     with ReadLocked(ga_config_path) as infile:
-        ga_config = json.load(infile)
+        try:
+            ga_config = json.load(infile)
+        except ValueError:
+            ga_config = {}
     return ga_config
 
 def write_ga_config(config_values):
@@ -110,7 +113,7 @@ def write_ga_config(config_values):
             ga_config = json.load(iofile)
         except ValueError:
             ga_config = {}
-        # change any values that were passed
+        # update any values that were passed
         for key_name in config_values:
             ga_config[key_name] = config_values[key_name]
         # filter out any unexpected values
