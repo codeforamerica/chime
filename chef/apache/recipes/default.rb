@@ -34,6 +34,26 @@ execute 'a2enmod vhost_alias'
 #   recursive true
 # end
 
+file '/etc/apache2/sites-available/bizarro-cms-vhost.conf' do
+  owner 'root'
+  group 'root'
+  mode  '0644'
+  content <<-VHOST
+<VirtualHost *:80>
+    <Location />
+        ProxyPass http://127.0.0.1:5000/
+        ProxyPassReverse http://127.0.0.1:5000/
+    </Location>
+    <Proxy http://127.0.0.1:5000/*>
+        Allow from all
+    </Proxy>
+</VirtualHost>
+VHOST
+end
+
+execute 'a2dissite 000-default'
+execute 'a2ensite bizarro-cms-vhost'
+
 #
 # Make it go.
 #
