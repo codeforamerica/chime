@@ -43,27 +43,27 @@ link "/etc/apache2/mods-enabled/vhost_alias.load" do
   to "../mods-available/vhost_alias.load"
 end
 
-#
-# Create server configuration.
-#
-file "/etc/apache2/apache2.conf" do
-    owner "root"
-    group "root"
-    mode  "0644"
-    content File.open(File.dirname(__FILE__) + "/apache2.conf").read()
-end
-
-file "/etc/apache2/bizarro-cms-vhost.conf" do
-    owner "root"
-    group "root"
-    mode  "0644"
-    content File.open(File.dirname(__FILE__) + "/bizarro-cms-vhost.conf").read()
-end
-
-directory "/etc/apache2/sites-enabled" do
-  action    :delete
-  recursive true
-end
+# #
+# # Create server configuration.
+# #
+# file "/etc/apache2/apache2.conf" do
+#     owner "root"
+#     group "root"
+#     mode  "0644"
+#     content File.open(File.dirname(__FILE__) + "/apache2.conf").read()
+# end
+# 
+# file "/etc/apache2/bizarro-cms-vhost.conf" do
+#     owner "root"
+#     group "root"
+#     mode  "0644"
+#     content File.open(File.dirname(__FILE__) + "/bizarro-cms-vhost.conf").read()
+# end
+# 
+# directory "/etc/apache2/sites-enabled" do
+#   action    :delete
+#   recursive true
+# end
 
 #
 # Make it go.
