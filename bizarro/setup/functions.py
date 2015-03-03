@@ -77,7 +77,7 @@ def create_google_spreadsheet(credentials, reponame):
     print('    Created spreadsheet "{title}"'.format(**info))
 
     url = urljoin(gdocs_api_base, new_id)
-    new_title = 'Ceviche logins for {reponame}'.format(**locals())
+    new_title = 'Chime CMS logins for {reponame}'.format(**locals())
     patch = dict(title=new_title)
     
     gc = gspread.authorize(credentials)
@@ -107,7 +107,7 @@ def create_google_spreadsheet(credentials, reponame):
 def save_details(credentials, name, instance, reponame, sheet_url, deploy_key):
     '''
     '''
-    ceviche_url = 'http://{}'.format(instance.dns_name)
+    chimecms_url = 'http://{}'.format(instance.dns_name)
     instance_query = 'region={}#Instances:instanceId={}'.format(instance.region.name, instance.id)
     instance_url = 'https://console.aws.amazon.com/ec2/v2/home?{}'.format(instance_query)
     github_url = 'https://github.com/chimecms/{}'.format(reponame)
@@ -118,7 +118,7 @@ def save_details(credentials, name, instance, reponame, sheet_url, deploy_key):
     sheet = doc.worksheet('Instances')
 
     new_row = [str(datetime.utcnow()), name,
-               ceviche_url, instance_url, github_url, sheet_url, deploy_key]
+               chimecms_url, instance_url, github_url, sheet_url, deploy_key]
 
     sheet.append_row(new_row)
 

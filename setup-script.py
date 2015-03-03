@@ -1,7 +1,7 @@
-''' Setup script for new Ceviche instance in EC2.
+''' Setup script for new Chime instance in EC2.
 
 Asks for Github login credentials and desired repository
-name to create under https://github.com/ceviche organization.
+name to create under https://github.com/chimecms organization.
 
 Requires four environment variables:
 - GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET for Github authorization.
@@ -35,7 +35,7 @@ def check_repo_state(reponame, token):
     ''' Return True if repository name exists.
     '''
     auth = token, 'x-oauth-basic'
-    path = '/repos/ceviche/{}'.format(reponame)
+    path = '/repos/chimecms/{}'.format(reponame)
     resp = requests.get(urljoin(github_api_base, path), auth=auth)
     
     return bool(resp.status_code == 200)
@@ -68,7 +68,7 @@ print '--> Created spreadsheet {}'.format(sheet_url)
 #
 info = dict(
     scopes='repo',
-    note='Ceviche setup script',
+    note='Chime setup script',
     client_id=github_client_id,
     client_secret=github_client_secret
     )
@@ -116,7 +116,7 @@ ec2_args = dict(instance_type='c3.large', user_data=user_data,
                 security_groups=['default'])
 
 instance = ec2.run_instances('ami-f8763a90', **ec2_args).instances[0]
-instance.add_tag('Name', 'Ceviche Test {}'.format(reponame))
+instance.add_tag('Name', 'Chime Test {}'.format(reponame))
 
 print '    Prepared EC2 instance', instance.id
 
@@ -151,7 +151,7 @@ while True:
 deploy_key = Signer(github_temporary_token, salt='deploy-key').unsign(resp.content)
 keys_url = 'https://api.github.com/repos/chimecms/{}/keys'.format(reponame)
 head = {'Content-Type': 'application/json'}
-body = json.dumps(dict(title='ceviche-key', key=deploy_key))
+body = json.dumps(dict(title='chimecms-key', key=deploy_key))
 resp = requests.post(keys_url, body, headers=head, auth=(username, password))
 code = resp.status_code
 
@@ -176,7 +176,7 @@ if code == 422:
 elif code not in range(200, 299):
     raise RuntimeError('Github deploy key creation failed, status {}'.format(code))
 
-print '--> Created permanent deploy key', 'ceviche-key'
+print '--> Created permanent deploy key', 'chimecms-key'
 
 #
 # Delete Github authorization.
