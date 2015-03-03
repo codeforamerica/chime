@@ -23,6 +23,16 @@ from .href import needs_redirect, get_redirect
 
 from fcntl import flock, LOCK_EX, LOCK_UN, LOCK_SH
 
+# files that match these regex patterns will not be shown in the file explorer
+FILE_FILTERS = [
+    r'^\.',
+    r'^_',
+    r'\.lock$',
+    r'Gemfile',
+    r'LICENSE'
+]
+FILE_FILTERS_COMPILED = re.compile('(' + '|'.join(FILE_FILTERS) + ')')
+
 class WriteLocked:
     ''' Context manager for a locked file open in a+ mode, seek(0).
     '''
@@ -138,19 +148,20 @@ def relative_date(git_binary, file_path, now_utc):
     ''' Get the date a file was last modified.
     '''
     file_date = git_binary.log('-1', '--format="%ad"', '--', file_path)
-    file_datetime = parser.parse(re.sub(r'(^"|"$)', '', file_date))
+    file_datetime = parser.parse(re.sub(r'(^"|"$)', '', file_date)) if file_date else None
 
     return get_relative_date_string(file_datetime, now_utc)
 
 def get_relative_date_string(file_datetime, now_utc):
     ''' Get a natural-language representation of a period of time.
     '''
-    time_ago = relativedelta(now_utc, file_datetime)
     default = "just now"
 
-    # if the passed date is in the future, return the default
-    if now_utc < file_datetime:
+    # if there's no passed date, or if the passed date is in the future, return the default
+    if not file_datetime or now_utc < file_datetime:
         return default
+
+    time_ago = relativedelta(now_utc, file_datetime)
 
     periods = (
         (time_ago.years, "year", "years"),
@@ -357,12 +368,14 @@ def synched_checkout_required(route_function):
 
     return decorated_function
 
-def sorted_paths(repo, branch, path=None):
+def sorted_paths(repo, branch, path=None, showallfiles=False):
     full_path = join(repo.working_dir, path or '.').rstrip('/')
     all_sorted_files_dirs = sorted(listdir(full_path))
 
-    filtered_sorted_files_dirs = [i for i in all_sorted_files_dirs if not i.startswith('.')]
-    file_names = [n for n in filtered_sorted_files_dirs if not n.startswith('_')]
+    file_names = [filename for filename in all_sorted_files_dirs if not FILE_FILTERS_COMPILED.search(filename)]
+    if showallfiles:
+        file_names = all_sorted_files_dirs
+
     view_paths = [join('/tree/%s/view' % branch_name2path(branch), join(path or '', fn))
                   for fn in file_names]
 
