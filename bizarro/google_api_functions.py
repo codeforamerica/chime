@@ -97,17 +97,16 @@ def read_ga_config():
     ''' Return the contents of the google analytics config file. Create the file if it doesn't exist.
     '''
     ga_config_path = os.path.join(current_app.config['RUNNING_STATE_DIR'], GA_CONFIG_FILENAME)
-    # create the file if it doesn't exist
-    if not os.path.isfile(ga_config_path):
-        write_config = get_empty_ga_config()
-        write_ga_config(write_config)
-
-    with ReadLocked(ga_config_path) as infile:
-        try:
-            ga_config = json.load(infile)
-        except ValueError:
-            ga_config = get_empty_ga_config()
-    return ga_config
+    try:
+        with ReadLocked(ga_config_path) as infile:
+            try:
+                ga_config = json.load(infile)
+            except ValueError:
+                return get_empty_ga_config()
+            else:
+                return ga_config
+    except IOError:
+        return get_empty_ga_config()
 
 def write_ga_config(config_values):
     ''' Validate the passed google analytics config values and write them to disk.
