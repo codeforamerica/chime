@@ -952,22 +952,18 @@ class TestGoogleApiFunctions (TestCase):
 
         self.ga_config_dir = mkdtemp(prefix='bizarro-config-')
         app_args['RUNNING_STATE_DIR'] = self.ga_config_dir
-        app_args['CONFIG_PATH'] = self.ga_config_dir
 
         self.app = create_app(app_args)
 
-        ga_config_path = join(self.ga_config_dir, google_api_functions.GA_CONFIG_FILENAME)
-
         # write a tmp config file
-        ga_config = {
+        config_values = {
             "access_token": "meowser_token",
             "refresh_token": "refresh_meows",
             "profile_id": "12345678",
             "project_domain": ""
         }
-        with view_functions.WriteLocked(ga_config_path) as outfile:
-            outfile.truncate(0)
-            json.dump(ga_config, outfile, indent=2, ensure_ascii=False)
+        with self.app.app_context():
+            google_api_functions.write_ga_config(config_values)
 
     def tearDown(self):
         rmtree(self.ga_config_dir)
@@ -1002,10 +998,8 @@ class TestGoogleApiFunctions (TestCase):
             with HTTMock(self.mock_successful_request_new_google_access_token):
                 google_api_functions.request_new_google_access_token('meowser_refresh_token')
 
-                ga_config_path = os.path.join(self.app.config['RUNNING_STATE_DIR'], google_api_functions.GA_CONFIG_FILENAME)
-                with view_functions.ReadLocked(ga_config_path) as infile:
-                    ga_config = json.load(infile)
-
+                with self.app.app_context():
+                    ga_config = google_api_functions.read_ga_config()
                 self.assertEqual(ga_config['access_token'], 'meowser_access_token')
 
     def test_failure_to_request_new_google_access_token(self):
@@ -1035,7 +1029,8 @@ class TestGoogleApiFunctions (TestCase):
         ''' Verify that an authorized analytics response is handled correctly
         '''
         with HTTMock(self.mock_google_analytics_authorized_response):
-            analytics_dict = google_api_functions.fetch_google_analytics_for_page(self.app.config, u'index.html', 'meowser_token')
+            with self.app.app_context():
+                analytics_dict = google_api_functions.fetch_google_analytics_for_page(self.app.config, u'index.html', 'meowser_token')
             self.assertEqual(analytics_dict['page_views'], u'24')
             self.assertEqual(analytics_dict['average_time_page'], u'67')
 
@@ -1043,7 +1038,8 @@ class TestGoogleApiFunctions (TestCase):
         ''' Verify that an unauthorized analytics response is handled correctly
         '''
         with HTTMock(self.mock_google_analytics_unauthorized_response):
-            analytics_dict = google_api_functions.fetch_google_analytics_for_page(self.app.config, u'index.html', 'meowser_token')
+            with self.app.app_context():
+                analytics_dict = google_api_functions.fetch_google_analytics_for_page(self.app.config, u'index.html', 'meowser_token')
             self.assertEqual(analytics_dict, {})
 
 class TestAppConfig (TestCase):
@@ -1074,31 +1070,26 @@ class TestApp (TestCase):
         app_args['GA_CLIENT_SECRET'] = 'meow_secret'
 
         self.ga_config_dir = mkdtemp(prefix='bizarro-config-')
-        app_args['CONFIG_PATH'] = self.ga_config_dir
         app_args['RUNNING_STATE_DIR'] = self.ga_config_dir
         app_args['WORK_PATH'] = self.work_path
         app_args['REPO_PATH'] = temp_repo_path
         app_args['AUTH_DATA_HREF'] = 'http://example.com/auth.csv'
 
-        ga_config_path = join(self.ga_config_dir, google_api_functions.GA_CONFIG_FILENAME)
-
-        app = create_app(app_args)
+        self.app = create_app(app_args)
 
         # write a tmp config file
-        ga_config = {
+        config_values = {
             "access_token": "meowser_token",
             "refresh_token": "refresh_meows",
             "profile_id": "12345678",
             "project_domain": ""
         }
-        with view_functions.WriteLocked(ga_config_path) as outfile:
-            outfile.truncate(0)
-            json.dump(ga_config, outfile, indent=2, ensure_ascii=False)
+        with self.app.app_context():
+            google_api_functions.write_ga_config(config_values)
 
         random.choice = MagicMock(return_value="P")
 
-        self.server = app.test_client()
-        self.app = app
+        self.server = self.app.test_client()
 
     def tearDown(self):
         rmtree(self.work_path)
@@ -1255,9 +1246,8 @@ class TestApp (TestCase):
         with HTTMock(self.mock_successful_google_callback):
             response = self.server.get('/callback?state=PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP&code=code')
 
-        ga_config_path = os.path.join(self.app.config['RUNNING_STATE_DIR'], google_api_functions.GA_CONFIG_FILENAME)
-        with view_functions.ReadLocked(ga_config_path) as infile:
-            ga_config = json.load(infile)
+        with self.app.app_context():
+            ga_config = google_api_functions.read_ga_config()
 
         self.assertEqual(ga_config['access_token'], 'meowser_token')
         self.assertEqual(ga_config['refresh_token'], 'refresh_meows')
@@ -1276,9 +1266,8 @@ class TestApp (TestCase):
 
         self.assertEqual(u'200 OK', response.status)
 
-        ga_config_path = os.path.join(self.app.config['RUNNING_STATE_DIR'], google_api_functions.GA_CONFIG_FILENAME)
-        with view_functions.ReadLocked(ga_config_path) as infile:
-            ga_config = json.load(infile)
+        with self.app.app_context():
+            ga_config = google_api_functions.read_ga_config()
 
         # views.authorization_complete() strips the 'http://' from the domain
         self.assertEqual(ga_config['project_domain'], 'propertyone.example.com')
