@@ -3,45 +3,14 @@ package 'apache2'
 #
 # Activate minimum required modules.
 #
-link "/etc/apache2/mods-enabled/mime.conf" do
-  to "../mods-available/mime.conf"
-end
-
-link "/etc/apache2/mods-enabled/mime.load" do
-  to "../mods-available/mime.load"
-end
-
-link "/etc/apache2/mods-enabled/proxy.conf" do
-  to "../mods-available/proxy.conf"
-end
-
-link "/etc/apache2/mods-enabled/proxy.load" do
-  to "../mods-available/proxy.load"
-end
-
-link "/etc/apache2/mods-enabled/proxy_http.load" do
-  to "../mods-available/proxy_http.load"
-end
-
-link "/etc/apache2/mods-enabled/headers.load" do
-  to "../mods-available/headers.load"
-end
-
-link "/etc/apache2/mods-enabled/include.load" do
-  to "../mods-available/include.load"
-end
-
-link "/etc/apache2/mods-enabled/authz_host.load" do
-  to "../mods-available/authz_host.load"
-end
-
-# link "/etc/apache2/mods-enabled/log_config.conf" do
-#   to "../mods-available/log_config.conf"
-# end
-
-link "/etc/apache2/mods-enabled/vhost_alias.load" do
-  to "../mods-available/vhost_alias.load"
-end
+execute 'a2enmod mime'
+execute 'a2enmod proxy'
+execute 'a2enmod proxy_http'
+execute 'a2enmod headers'
+execute 'a2enmod include'
+execute 'a2enmod authz_host'
+# execute 'a2enmod log_config'
+execute 'a2enmod vhost_alias'
 
 # #
 # # Create server configuration.
