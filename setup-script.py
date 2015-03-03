@@ -131,7 +131,7 @@ while True:
     sleep(30)
 
     if check_repo_state(reponame, github_temporary_token):
-        print '   ', reponame, 'exists'
+        print '-->', 'https://github.com/chimecms/{}'.format(reponame), 'exists'
         break
 
 #
@@ -187,7 +187,14 @@ resp = requests.delete(url, auth=(username, password))
 check_status(resp, 'delete authorization {}'.format(github_auth_id))
 
 #
+# Write domain name to Route 53.
+#
+cname = '{reponame}.ceviche.chimecms.org'.format(**locals())
+functions.create_cname_record(cname, instance.dns_name)
+print '--> Prepared DNS name', cname
+
+#
 # Save details of instance.
 #
 functions.save_details(gdocs_credentials,
-                       reponame, instance, reponame, sheet_url, deploy_key)
+                       reponame, cname, instance, reponame, sheet_url, deploy_key)

@@ -9,6 +9,7 @@ from datetime import datetime
 import json
 
 from boto.ec2 import EC2Connection
+from boto.route53 import Route53Connection
 from oauth2client.client import OAuth2WebServerFlow
 import gspread
 
@@ -104,10 +105,21 @@ def create_google_spreadsheet(credentials, reponame):
 
     return new_id
 
-def save_details(credentials, name, instance, reponame, sheet_url, deploy_key):
+def create_cname_record(cname, cname_value):
     '''
     '''
-    chimecms_url = 'http://{}'.format(instance.dns_name)
+    route53 = Route53Connection()
+    zone = route53.get_zone('chimecms.org')
+    zone.add_record('CNAME', cname, cname_value, 60)
+    
+    return cname
+
+def save_details(credentials, name, cname, instance, reponame, sheet_url, deploy_key):
+    '''
+    '''
+    print('    Preparing details for instances spreadsheet')
+
+    chimecms_url = 'http://{}'.format(cname)
     instance_query = 'region={}#Instances:instanceId={}'.format(instance.region.name, instance.id)
     instance_url = 'https://console.aws.amazon.com/ec2/v2/home?{}'.format(instance_query)
     github_url = 'https://github.com/chimecms/{}'.format(reponame)
