@@ -52,7 +52,7 @@ VHOST
 end
 
 execute 'a2dissite 000-default'
-execute 'a2ensite bizarro-cms-vhost'
+execute 'a2ensite bizarro-cms-vhost.conf'
 
 #
 # Make it go.
