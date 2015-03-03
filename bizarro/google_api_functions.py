@@ -85,22 +85,28 @@ def request_new_google_access_token(refresh_token):
 
     return access['access_token'], refresh_token
 
+def get_empty_ga_config():
+    ''' Get an empty copy of the google analytics config object.
+    '''
+    ga_config = {}
+    for key_name in GA_CONFIG_VALUES:
+        ga_config[key_name] = u''
+    return ga_config
+
 def read_ga_config():
     ''' Return the contents of the google analytics config file. Create the file if it doesn't exist.
     '''
     ga_config_path = os.path.join(current_app.config['RUNNING_STATE_DIR'], GA_CONFIG_FILENAME)
     # create the file if it doesn't exist
     if not os.path.isfile(ga_config_path):
-        write_config = {}
-        for key_name in GA_CONFIG_VALUES:
-            write_config[key_name] = u''
+        write_config = get_empty_ga_config()
         write_ga_config(write_config)
 
     with ReadLocked(ga_config_path) as infile:
         try:
             ga_config = json.load(infile)
         except ValueError:
-            ga_config = {}
+            ga_config = get_empty_ga_config()
     return ga_config
 
 def write_ga_config(config_values):
@@ -112,7 +118,7 @@ def write_ga_config(config_values):
         try:
             ga_config = json.load(iofile)
         except ValueError:
-            ga_config = {}
+            ga_config = get_empty_ga_config()
         # update any values that were passed
         for key_name in config_values:
             ga_config[key_name] = config_values[key_name]
@@ -205,8 +211,12 @@ def fetch_google_analytics_for_page(config, page_path, access_token):
     ''' Get stats for a particular page
     '''
     ga_config = read_ga_config()
-    ga_project_domain = ga_config['project_domain']
-    ga_profile_id = ga_config['profile_id']
+    ga_project_domain = ga_config.get('project_domain')
+    ga_profile_id = ga_config.get('profile_id')
+
+    # don't bother requesting data if we don't have everything we need
+    if not ga_project_domain or not ga_profile_id or not access_token:
+        return {}
 
     start_date = (date.today() - timedelta(days=7)).isoformat()
     end_date = date.today().isoformat()

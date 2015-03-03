@@ -118,7 +118,7 @@ def setup():
 
     # grab the ga config
     ga_config = read_ga_config()
-    access_token = ga_config['access_token']
+    access_token = ga_config.get('access_token')
 
     if access_token:
         # get the name and email associated with this google account
@@ -326,7 +326,7 @@ def branch_edit(branch, path=None):
         analytics_dict = {}
         if ga_config.get('access_token'):
             app_authorized = True
-            analytics_dict = fetch_google_analytics_for_page(current_app.config, path, ga_config['access_token'])
+            analytics_dict = fetch_google_analytics_for_page(current_app.config, path, ga_config.get('access_token'))
 
         kwargs = dict(dict(branch=branch, safe_branch=safe_branch,
                       body=body, hexsha=c.hexsha, url_slug=url_slug,

@@ -22,7 +22,7 @@ if __name__ == '__main__':
     while True:
         try:
             ga_config = read_ga_config()
-            request_new_google_access_token(ga_config['refresh_token'])
+            request_new_google_access_token(ga_config.get('refresh_token'))
         except:
             traceback.print_exc(file=sys.stderr)
 
