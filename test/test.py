@@ -9,7 +9,6 @@ from shutil import rmtree, copytree
 from uuid import uuid4
 from re import search
 import random
-import json
 from datetime import date, timedelta, datetime
 from dateutil import parser, tz
 
@@ -960,7 +959,7 @@ class TestGoogleApiFunctions (TestCase):
             "access_token": "meowser_token",
             "refresh_token": "refresh_meows",
             "profile_id": "12345678",
-            "project_domain": ""
+            "project_domain": "example.com"
         }
         with self.app.app_context():
             google_api_functions.write_ga_config(config_values)
@@ -1007,6 +1006,98 @@ class TestGoogleApiFunctions (TestCase):
             with HTTMock(self.mock_failed_request_new_google_access_token):
                 with self.assertRaises(Exception):
                     google_api_functions.request_new_google_access_token('meowser_refresh_token')
+
+    def test_get_missing_config_file(self):
+        ''' Make sure that a missing google analytics config file doesn't raise errors.
+        '''
+        with self.app.app_context():
+            ga_config_path = os.path.join(self.app.config['RUNNING_STATE_DIR'], google_api_functions.GA_CONFIG_FILENAME)
+            # verify that the file exists
+            self.assertTrue(os.path.isfile(ga_config_path))
+            # remove the file
+            os.remove(ga_config_path)
+            # verify that the file's gone
+            self.assertFalse(os.path.isfile(ga_config_path))
+            # ask for the config contents
+            ga_config = google_api_functions.read_ga_config()
+            # there are four values
+            self.assertEqual(len(ga_config), 4)
+            # they are named as expected
+            self.assertTrue(u'access_token' in ga_config)
+            self.assertTrue(u'refresh_token' in ga_config)
+            self.assertTrue(u'project_domain' in ga_config)
+            self.assertTrue(u'profile_id' in ga_config)
+            # their values are empty strings
+            self.assertEqual(ga_config['access_token'], u'')
+            self.assertEqual(ga_config['refresh_token'], u'')
+            self.assertEqual(ga_config['project_domain'], u'')
+            self.assertEqual(ga_config['profile_id'], u'')
+            # verify that the file exists again
+            self.assertTrue(os.path.isfile(ga_config_path))
+
+    def test_get_malformed_config_file(self):
+        ''' Make sure that a malformed google analytics config file doesn't raise errors.
+        '''
+        with self.app.app_context():
+            ga_config_path = os.path.join(self.app.config['RUNNING_STATE_DIR'], google_api_functions.GA_CONFIG_FILENAME)
+            # verify that the file exists
+            self.assertTrue(os.path.isfile(ga_config_path))
+            # remove the file
+            os.remove(ga_config_path)
+            # verify that the file's gone
+            self.assertFalse(os.path.isfile(ga_config_path))
+            # write some garbage to the file
+            with view_functions.WriteLocked(ga_config_path) as iofile:
+                iofile.seek(0)
+                iofile.truncate(0)
+                iofile.write('{"access_token": "meowser_access_token", "refresh_token": "meowser_refre')
+            # verify that the file exists
+            self.assertTrue(os.path.isfile(ga_config_path))
+            # ask for the config contents
+            ga_config = google_api_functions.read_ga_config()
+            # there are four values
+            self.assertEqual(len(ga_config), 4)
+            # they are named as expected
+            self.assertTrue(u'access_token' in ga_config)
+            self.assertTrue(u'refresh_token' in ga_config)
+            self.assertTrue(u'project_domain' in ga_config)
+            self.assertTrue(u'profile_id' in ga_config)
+            # their values are empty strings
+            self.assertEqual(ga_config['access_token'], u'')
+            self.assertEqual(ga_config['refresh_token'], u'')
+            self.assertEqual(ga_config['project_domain'], u'')
+            self.assertEqual(ga_config['profile_id'], u'')
+            # verify that the file exists again
+            self.assertTrue(os.path.isfile(ga_config_path))
+
+    def test_write_unexpected_values_to_config(self):
+        ''' Make sure that we can't write unexpected values to the google analytics config file.
+        '''
+        with self.app.app_context():
+            # try to write some unexpected values to the config
+            unexpected_values = {
+                "esme_cordelia_hoggett": "magda_szubanski",
+                "farmer_arthur_hoggett": "james_cromwell",
+                "hot_headed_chef": "paul_livingston",
+                "woman_in_billowing_gown": "saskia_campbell"
+            }
+            # include an expected value too
+            unexpected_values['access_token'] = u'woofer_token'
+            google_api_functions.write_ga_config(unexpected_values)
+            # ask for the config contents
+            ga_config = google_api_functions.read_ga_config()
+            # there are four values
+            self.assertEqual(len(ga_config), 4)
+            # they are named as expected
+            self.assertTrue(u'access_token' in ga_config)
+            self.assertTrue(u'refresh_token' in ga_config)
+            self.assertTrue(u'project_domain' in ga_config)
+            self.assertTrue(u'profile_id' in ga_config)
+            # their values are as expected (including the expected value set above)
+            self.assertEqual(ga_config['access_token'], u'woofer_token')
+            self.assertEqual(ga_config['refresh_token'], u'refresh_meows')
+            self.assertEqual(ga_config['project_domain'], u'example.com')
+            self.assertEqual(ga_config['profile_id'], u'12345678')
 
     def test_get_analytics_page_path_pattern(self):
         ''' Verify that we're getting good page path patterns for querying google analytics
