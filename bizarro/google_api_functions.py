@@ -1,3 +1,6 @@
+from logging import getLogger
+Logger = getLogger('bizarro.views')
+
 from flask import current_app, redirect, session
 from requests import post, get
 from urllib import urlencode
@@ -140,16 +143,19 @@ def get_google_personal_info(access_token):
     whoami = response.json()
 
     print 'get_google_personal_info: {}'.format(whoami)
-    print '(sent to {} with params {})'.format(GOOGLE_PLUS_WHOAMI_URL, {'access_token': access_token})
-
-    if response.status_code != 200:
-        if 'error_description' in whoami:
-            raise Exception('Google says "{0}"'.format(whoami['error_description']))
-        else:
-            raise Exception('Google Error')
 
     email = u''
     name = u''
+
+    # if there's an error, log it and return blank values
+    if response.status_code != 200:
+        if 'error_description' in whoami:
+            Logger.debug('get_google_personal_info: Google says "{0}"'.format(whoami['error_description']))
+        else:
+            Logger.debug('get_google_personal_info: Google Error')
+
+        return name, email
+
     if 'emails' in whoami:
         emails = dict([(e['type'], e['value']) for e in whoami['emails']])
         email = emails.get('account', whoami['emails'][0]['value'])
