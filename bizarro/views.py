@@ -390,6 +390,8 @@ def branch_edit_file(branch, path=None):
 @login_required
 @synched_checkout_required
 def branch_history(branch, path=None):
+    branch = branch_var2name(branch)
+
     r = get_repo(current_app)
 
     full_path = join(r.working_dir, path or '.').rstrip('/')
