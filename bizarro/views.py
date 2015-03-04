@@ -17,7 +17,7 @@ from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
 from .view_functions import (branch_name2path, branch_var2name, get_repo, name_branch,
                              dos2unix, login_required, synch_required, synched_checkout_required,
                              sorted_paths, directory_paths, should_redirect, make_redirect,
-                             get_auth_data_file, is_allowed_email)
+                             get_auth_data_file, is_allowed_email, relative_datetime_string)
 from .google_api_functions import read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens, authorize_google, get_google_personal_info, get_google_analytics_properties, fetch_google_analytics_for_page, GA_CONFIG_FILENAME
 
 import json
@@ -391,8 +391,31 @@ def branch_edit_file(branch, path=None):
 @synched_checkout_required
 def branch_history(branch, path=None):
     r = get_repo(current_app)
+    
+    format = '%x00Name: %an\tEmail: %ae\tTime: %aD\tSubject: %s'
+    pattern = compile(r'^\x00Name: (.*?)\tEmail: (.*?)\tTime: (.*?)\tSubject: (.*?)$', MULTILINE)
+    log = r.git.log('-30', '--format='+format, path)
+    
+    history = []
+    
+    for (name, email, time, subject) in pattern.findall(log):
+        date = relative_datetime_string(time)
+        history.append(dict(name=name, email=email, date=date, subject=subject))
 
-    raise Exception('Yo')
+    #kwargs = dict(branch=branch, safe_branch=safe_branch,
+    #              body=body, hexsha=c.hexsha, url_slug=url_slug,
+    #              front=front, email=session['email'],
+    #              view_path=view_path, edit_path=path,
+    #              history_path=history_path,
+    #              languages=languages, app_authorized=app_authorized)
+    #
+    #kwargs.update(analytics_dict)
+    
+    kwargs = dict(history=history)
+    
+    from flask import jsonify; return jsonify(kwargs)
+
+    return render_template('tree-branch-history.html', **kwargs)
     
     build_jekyll_site(r.working_dir)
 

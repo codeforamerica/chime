@@ -152,6 +152,15 @@ def relative_date(git_binary, file_path, now_utc):
 
     return get_relative_date_string(file_datetime, now_utc)
 
+def relative_datetime_string(datetime_string):
+    ''' Get a relative date for a string.
+    '''
+    # the date is naive by default; explicitly set the timezone as UTC
+    now_utc = datetime.utcnow()
+    now_utc = now_utc.replace(tzinfo=tz.tzutc())
+
+    return get_relative_date_string(parser.parse(datetime_string), now_utc)
+
 def get_relative_date_string(file_datetime, now_utc):
     ''' Get a natural-language representation of a period of time.
     '''
