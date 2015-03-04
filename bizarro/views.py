@@ -391,6 +391,21 @@ def branch_edit_file(branch, path=None):
 @synched_checkout_required
 def branch_history(branch, path=None):
     r = get_repo(current_app)
+
+    full_path = join(r.working_dir, path or '.').rstrip('/')
+    safe_branch = branch_name2path(branch)
+
+    view_path = join('/tree/%s/view' % branch_name2path(branch), path)
+    edit_path = join('/tree/%s/edit' % branch_name2path(branch), path)
+    languages = load_languages(r.working_dir)
+
+    app_authorized = False
+
+    ga_config = read_ga_config()
+    analytics_dict = {}
+    if ga_config.get('access_token'):
+        app_authorized = True
+        analytics_dict = fetch_google_analytics_for_page(current_app.config, path, ga_config.get('access_token'))
     
     format = '%x00Name: %an\tEmail: %ae\tTime: %aD\tSubject: %s'
     pattern = compile(r'^\x00Name: (.*?)\tEmail: (.*?)\tTime: (.*?)\tSubject: (.*?)$', MULTILINE)
@@ -402,37 +417,12 @@ def branch_history(branch, path=None):
         date = relative_datetime_string(time)
         history.append(dict(name=name, email=email, date=date, subject=subject))
 
-    #kwargs = dict(branch=branch, safe_branch=safe_branch,
-    #              body=body, hexsha=c.hexsha, url_slug=url_slug,
-    #              front=front, email=session['email'],
-    #              view_path=view_path, edit_path=path,
-    #              history_path=history_path,
-    #              languages=languages, app_authorized=app_authorized)
-    #
-    #kwargs.update(analytics_dict)
-    
-    kwargs = dict(history=history)
-    
-    from flask import jsonify; return jsonify(kwargs)
+    kwargs = dict(branch=branch, safe_branch=safe_branch,
+                  history=history, email=session['email'],
+                  view_path=view_path, edit_path=edit_path,
+                  languages=languages, app_authorized=app_authorized)
 
     return render_template('tree-branch-history.html', **kwargs)
-    
-    build_jekyll_site(r.working_dir)
-
-    local_base, _ = splitext(join(join(r.working_dir, '_site'), path or ''))
-
-    if isdir(local_base):
-        local_base += '/index'
-
-    local_paths = glob(local_base + '.*')
-
-    if not local_paths:
-        return '404: ' + local_base
-
-    local_path = local_paths[0]
-    mime_type, _ = guess_type(local_path)
-
-    return Response(open(local_path).read(), 200, {'Content-Type': mime_type})
 
 @app.route('/tree/<branch>/review/', methods=['GET'])
 @login_required
