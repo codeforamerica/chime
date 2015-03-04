@@ -7,7 +7,7 @@
     <p></p>
 
     <div class="alert-success">
-    You've successfully set up Google Analytics{% if project_name or project_domain %} for <b>{% if project_name %}{{ project_name }}{% endif %}{% if project_domain %} ({{ project_domain }})</b>{% endif %}{% if name or google_email %} as {% if name %}{{ name }}{% endif %}{% if google_email %} ({{ google_email }}){% endif %}{% endif %}{% endif %}!
+    You've successfully set up Google Analytics{% if project_name or project_domain %} for <b>{% if project_name %}{{ project_name }}{% endif %}{% if project_domain %} ({{ project_domain }})</b>{% endif %}{% if name or google_email %}{% if name or google_email %} as {% if name %}{{ name }}{% endif %}{% if google_email %} ({{ google_email }}){% endif %}{% endif %}{% endif %}{% endif %}!
     </div>
 
     <p>Now you can <a href="{% if return_link %}{{ return_link }}{% else %}/{% endif %}">return to the application</a>.</p>
