@@ -37,6 +37,7 @@ def authorize_google():
 def get_google_client_info():
     ''' Return client ID and secret for Google OAuth use.
     '''
+    print 'get_google_client_info: returning id:{} ### secret:{}'.format(current_app.config['GA_CLIENT_ID'], current_app.config['GA_CLIENT_SECRET'])
     return current_app.config['GA_CLIENT_ID'], current_app.config['GA_CLIENT_SECRET']
 
 def request_new_google_access_and_refresh_tokens(request):
@@ -102,15 +103,20 @@ def read_ga_config():
     ''' Return the contents of the google analytics config file. Create the file if it doesn't exist.
     '''
     ga_config_path = os.path.join(current_app.config['RUNNING_STATE_DIR'], GA_CONFIG_FILENAME)
+
+    print 'read_ga_config: ga_config_path is {}'.format(ga_config_path)
     try:
         with ReadLocked(ga_config_path) as infile:
             try:
                 ga_config = json.load(infile)
             except ValueError:
+                print 'read_ga_config: returing empty ga_config (ValueError)'
                 return get_empty_ga_config()
             else:
+                print 'read_ga_config: returing {}'.format(ga_config)
                 return ga_config
     except IOError:
+        print 'read_ga_config: returing empty ga_config (IOError)'
         return get_empty_ga_config()
 
 def write_ga_config(config_values):
@@ -142,7 +148,7 @@ def get_google_personal_info(access_token):
     response = get(GOOGLE_PLUS_WHOAMI_URL, params={'access_token': access_token})
     whoami = response.json()
 
-    print 'get_google_personal_info: {}'.format(whoami)
+    print 'get_google_personal_info: sent {} ###### received {}'.format(access_token, whoami)
 
     email = u''
     name = u''
