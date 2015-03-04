@@ -324,6 +324,7 @@ def branch_edit(branch, path=None):
 
         url_slug, _ = splitext(path)
         view_path = join('/tree/%s/view' % branch_name2path(branch), path)
+        history_path = join('/tree/%s/history' % branch_name2path(branch), path)
         app_authorized = False
 
         ga_config = read_ga_config()
@@ -332,11 +333,14 @@ def branch_edit(branch, path=None):
             app_authorized = True
             analytics_dict = fetch_google_analytics_for_page(current_app.config, path, ga_config.get('access_token'))
 
-        kwargs = dict(dict(branch=branch, safe_branch=safe_branch,
+        kwargs = dict(branch=branch, safe_branch=safe_branch,
                       body=body, hexsha=c.hexsha, url_slug=url_slug,
                       front=front, email=session['email'],
-                      view_path=view_path, edit_path=path).items() + analytics_dict.items(),
+                      view_path=view_path, edit_path=path,
+                      history_path=history_path,
                       languages=languages, app_authorized=app_authorized)
+        
+        kwargs.update(analytics_dict)
 
         return render_template('tree-branch-edit-file.html', **kwargs)
 
@@ -380,6 +384,32 @@ def branch_edit_file(branch, path=None):
     safe_branch = branch_name2path(branch_var2name(branch))
 
     return redirect('/tree/%s/edit/%s' % (safe_branch, path_303), code=303)
+
+@app.route('/tree/<branch>/history/', methods=['GET'])
+@app.route('/tree/<branch>/history/<path:path>', methods=['GET'])
+@login_required
+@synched_checkout_required
+def branch_history(branch, path=None):
+    r = get_repo(current_app)
+
+    raise Exception('Yo')
+    
+    build_jekyll_site(r.working_dir)
+
+    local_base, _ = splitext(join(join(r.working_dir, '_site'), path or ''))
+
+    if isdir(local_base):
+        local_base += '/index'
+
+    local_paths = glob(local_base + '.*')
+
+    if not local_paths:
+        return '404: ' + local_base
+
+    local_path = local_paths[0]
+    mime_type, _ = guess_type(local_path)
+
+    return Response(open(local_path).read(), 200, {'Content-Type': mime_type})
 
 @app.route('/tree/<branch>/review/', methods=['GET'])
 @login_required
