@@ -52,6 +52,8 @@ def request_new_google_access_and_refresh_tokens(request):
     response = post(GOOGLE_ANALYTICS_TOKENS_URL, data=data)
     access = response.json()
 
+    print 'request_new_google_access_and_refresh_tokens: {}'.format(access)
+
     if response.status_code != 200:
         if 'error_description' in access:
             raise Exception('Google says "{0}"'.format(access['error_description']))
@@ -137,6 +139,9 @@ def get_google_personal_info(access_token):
     response = get(GOOGLE_PLUS_WHOAMI_URL, params={'access_token': access_token})
     whoami = response.json()
 
+    print 'get_google_personal_info: {}'.format(whoami)
+    print '(sent to {} with params {})'.format(GOOGLE_PLUS_WHOAMI_URL, {'access_token': access_token})
+
     if response.status_code != 200:
         if 'error_description' in whoami:
             raise Exception('Google says "{0}"'.format(whoami['error_description']))
@@ -158,6 +163,8 @@ def get_google_analytics_properties(access_token):
     '''
     response = get(GOOGLE_ANALYTICS_PROPERTIES_URL, params={'access_token': access_token})
     items = response.json()
+
+    print 'get_google_analytics_properties: {}'.format(items)
 
     if response.status_code != 200:
         if 'error_description' in items:
