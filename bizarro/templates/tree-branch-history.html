@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}History{% endblock %}
+{% block content %}
+
+<div class="main-content">
+    <div class="file-explorer">
+        <h2>History of changes to <i>{{path}}</i></h2>
+        <p><a href="{{edit_path}}">Return to editing</a></p>
+        <table class="history">
+            <thead>
+                <tr>
+                    <th>Editor</th>
+                    <th>Date</th>
+                    <th>Message</th>
+                    <th>&nbsp;</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for commit in history %}
+                <tr>
+                    <td>{{ commit.name or commit.email }}</td>
+                    <td>{{ commit.date }}</td>
+                    <td>{{ commit.subject }}</td>
+                    <td class="sketchy"><a href="">Revert to this version</a></td>
+                </tr>
+                {% endfor %}  
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+
