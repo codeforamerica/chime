@@ -394,7 +394,6 @@ def branch_history(branch, path=None):
 
     r = get_repo(current_app)
 
-    full_path = join(r.working_dir, path or '.').rstrip('/')
     safe_branch = branch_name2path(branch)
 
     view_path = join('/tree/%s/view' % branch_name2path(branch), path)
@@ -404,17 +403,15 @@ def branch_history(branch, path=None):
     app_authorized = False
 
     ga_config = read_ga_config()
-    analytics_dict = {}
     if ga_config.get('access_token'):
         app_authorized = True
-        analytics_dict = fetch_google_analytics_for_page(current_app.config, path, ga_config.get('access_token'))
-    
+
     format = '%x00Name: %an\tEmail: %ae\tTime: %aD\tSubject: %s'
     pattern = compile(r'^\x00Name: (.*?)\tEmail: (.*?)\tTime: (.*?)\tSubject: (.*?)$', MULTILINE)
-    log = r.git.log('-30', '--format='+format, path)
-    
+    log = r.git.log('-30', '--format=' + format, path)
+
     history = []
-    
+
     for (name, email, time, subject) in pattern.findall(log):
         date = relative_datetime_string(time)
         history.append(dict(name=name, email=email, date=date, subject=subject))
