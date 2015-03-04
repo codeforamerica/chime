@@ -124,7 +124,10 @@ def setup():
         # get the name and email associated with this google account
         name, google_email = get_google_personal_info(access_token)
         # get a list of google analytics properties associated with this google account
-        properties = get_google_analytics_properties(access_token)
+        properties, backup_google_email = get_google_analytics_properties(access_token)
+        # use the backup google email if we didn't get it from the google+ API
+        if not google_email:
+            google_email = backup_google_email
 
         if not properties:
             raise Exception("Your Google Account isn't associated with any Google Analytics properties. Log in to Google with a different account?")

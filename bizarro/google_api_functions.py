@@ -186,7 +186,11 @@ def get_google_analytics_properties(access_token):
 
     properties.sort(key=lambda p: p[1].lower())
 
-    return properties
+    google_email = u''
+    if 'username' in items:
+        google_email = items['username']
+
+    return properties, google_email
 
 def get_style_base(request):
     ''' Get the correct style base URL for the current scheme.
