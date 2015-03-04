@@ -17,7 +17,7 @@ from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
 from .view_functions import (branch_name2path, branch_var2name, get_repo, name_branch,
                              dos2unix, login_required, synch_required, synched_checkout_required,
                              sorted_paths, directory_paths, should_redirect, make_redirect,
-                             get_auth_data_file, is_allowed_email)
+                             get_auth_data_file, is_allowed_email, relative_datetime_string)
 from .google_api_functions import read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens, authorize_google, get_google_personal_info, get_google_analytics_properties, fetch_google_analytics_for_page, GA_CONFIG_FILENAME
 
 import json
@@ -324,6 +324,7 @@ def branch_edit(branch, path=None):
 
         url_slug, _ = splitext(path)
         view_path = join('/tree/%s/view' % branch_name2path(branch), path)
+        history_path = join('/tree/%s/history' % branch_name2path(branch), path)
         app_authorized = False
 
         ga_config = read_ga_config()
@@ -332,11 +333,14 @@ def branch_edit(branch, path=None):
             app_authorized = True
             analytics_dict = fetch_google_analytics_for_page(current_app.config, path, ga_config.get('access_token'))
 
-        kwargs = dict(dict(branch=branch, safe_branch=safe_branch,
+        kwargs = dict(branch=branch, safe_branch=safe_branch,
                       body=body, hexsha=c.hexsha, url_slug=url_slug,
                       front=front, email=session['email'],
-                      view_path=view_path, edit_path=path).items() + analytics_dict.items(),
+                      view_path=view_path, edit_path=path,
+                      history_path=history_path,
                       languages=languages, app_authorized=app_authorized)
+        
+        kwargs.update(analytics_dict)
 
         return render_template('tree-branch-edit-file.html', **kwargs)
 
@@ -380,6 +384,44 @@ def branch_edit_file(branch, path=None):
     safe_branch = branch_name2path(branch_var2name(branch))
 
     return redirect('/tree/%s/edit/%s' % (safe_branch, path_303), code=303)
+
+@app.route('/tree/<branch>/history/', methods=['GET'])
+@app.route('/tree/<branch>/history/<path:path>', methods=['GET'])
+@login_required
+@synched_checkout_required
+def branch_history(branch, path=None):
+    branch = branch_var2name(branch)
+
+    r = get_repo(current_app)
+
+    safe_branch = branch_name2path(branch)
+
+    view_path = join('/tree/%s/view' % branch_name2path(branch), path)
+    edit_path = join('/tree/%s/edit' % branch_name2path(branch), path)
+    languages = load_languages(r.working_dir)
+
+    app_authorized = False
+
+    ga_config = read_ga_config()
+    if ga_config.get('access_token'):
+        app_authorized = True
+
+    format = '%x00Name: %an\tEmail: %ae\tTime: %aD\tSubject: %s'
+    pattern = compile(r'^\x00Name: (.*?)\tEmail: (.*?)\tTime: (.*?)\tSubject: (.*?)$', MULTILINE)
+    log = r.git.log('-30', '--format=' + format, path)
+
+    history = []
+
+    for (name, email, time, subject) in pattern.findall(log):
+        date = relative_datetime_string(time)
+        history.append(dict(name=name, email=email, date=date, subject=subject))
+
+    kwargs = dict(branch=branch, safe_branch=safe_branch,
+                  history=history, email=session['email'],
+                  view_path=view_path, edit_path=edit_path, path=path,
+                  languages=languages, app_authorized=app_authorized)
+
+    return render_template('tree-branch-history.html', **kwargs)
 
 @app.route('/tree/<branch>/review/', methods=['GET'])
 @login_required
