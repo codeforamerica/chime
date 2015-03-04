@@ -419,7 +419,7 @@ def branch_history(branch, path=None):
 
     kwargs = dict(branch=branch, safe_branch=safe_branch,
                   history=history, email=session['email'],
-                  view_path=view_path, edit_path=edit_path,
+                  view_path=view_path, edit_path=edit_path, path=path,
                   languages=languages, app_authorized=app_authorized)
 
     return render_template('tree-branch-history.html', **kwargs)
