@@ -4,17 +4,15 @@
 
 <div class="main-content">
     <div class="file-explorer">
-        <h2>History</h2>
-        <p class="sketchy">
-            Blah blah blah.
-            <a href="{{edit_path}}">Edit {{path}}.</a>
-        </p>
+        <h2>History of changes to <span class="sketchy">{{path}}</a></h2>
+        <p><a href="{{edit_path}}">Return to editing</a></p>
         <table class="history">
             <thead>
                 <tr>
-                    <th>Name</th>
-                    <th>Modified</th>
+                    <th>Editor</th>
+                    <th>Date</th>
                     <th>Message</th>
+                    <th>&nbsp;</th>
                 </tr>
             </thead>
             <tbody>
@@ -23,6 +21,7 @@
                     <td>{{ commit.name or commit.email }}</td>
                     <td>{{ commit.date }}</td>
                     <td>{{ commit.subject }}</td>
+                    <td class="sketchy"><a href="">Revert to this version</a></td>
                 </tr>
                 {% endfor %}  
                 </tbody>
