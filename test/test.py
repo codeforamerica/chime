@@ -992,6 +992,12 @@ class TestGoogleApiFunctions (TestCase):
             content = {u'error': {u'code': 401, u'message': u'Invalid Credentials', u'errors': [{u'locationType': u'header', u'domain': u'global', u'message': u'Invalid Credentials', u'reason': u'authError', u'location': u'Authorization'}]}}
             return response(401, content)
 
+    def mock_google_plus_unauthorized_access_response(self, url, request):
+
+        if google_api_functions.GOOGLE_PLUS_WHOAMI_URL in url.geturl():
+            content = {u'error': {u'code': 403, u'message': u'Access Not Configured. The API (Google+ API) is not enabled for your project. Please use the Google Developers Console to update your configuration.', u'errors': [{u'domain': u'usageLimits', u'message': u'Access Not Configured. The API (Google+ API) is not enabled for your project. Please use the Google Developers Console to update your configuration.', u'reason': u'accessNotConfigured', u'extendedHelp': u'https://console.developers.google.com'}]}}
+            return response(403, content)
+
     def test_successful_request_new_google_access_token(self):
         with self.app.test_request_context():
             with HTTMock(self.mock_successful_request_new_google_access_token):
