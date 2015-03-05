@@ -73,9 +73,10 @@ def request_new_google_access_and_refresh_tokens(request):
 
     if response.status_code != 200:
         if 'error_description' in access:
-            raise Exception('Google says "{0}"'.format(access['error_description']))
-        else:
-            raise Exception('Google Error')
+            error_message = access['error_description']
+        elif 'error' in access and 'message' in access['error']:
+            error_message = access['error']['message']
+        raise Exception('request_new_google_access_and_refresh_tokens - Google Error: {}'.format(error_message))
 
     # write the new tokens to the config file
     config_values = {'access_token': access['access_token'], 'refresh_token': access['refresh_token']}
@@ -158,21 +159,25 @@ def write_ga_config(config_values):
 def get_google_personal_info(access_token):
     ''' Get account name and email from Google Plus.
     '''
+    email = u''
+    name = u''
+
+    if not access_token:
+        return name, email
+
     response = get(GOOGLE_PLUS_WHOAMI_URL, params={'access_token': access_token})
     whoami = response.json()
 
     app.logger.debug('**> get_google_personal_info: sent {} ###### received {}'.format(access_token, whoami))
 
-    email = u''
-    name = u''
-
     # if there's an error, log it and return blank values
     if response.status_code != 200:
+        error_message = u''
         if 'error_description' in whoami:
-            Logger.debug('get_google_personal_info: Google says "{0}"'.format(whoami['error_description']))
-        else:
-            Logger.debug('get_google_personal_info: Google Error')
-
+            error_message = whoami['error_description']
+        elif 'error' in whoami and 'message' in whoami['error']:
+            error_message = whoami['error']['message']
+        Logger.debug('get_google_analytics_properties - Google Error: {}'.format(error_message))
         return name, email
 
     if 'emails' in whoami:
@@ -186,13 +191,16 @@ def get_google_personal_info(access_token):
 def get_google_analytics_properties(access_token):
     ''' Get sorted list of web properties from Google Analytics.
     '''
+    properties = []
+    username = u''
+
+    if not access_token:
+        return properties, username
+
     response = get(GOOGLE_ANALYTICS_PROPERTIES_URL, params={'access_token': access_token})
     items = response.json()
 
     app.logger.debug('**> get_google_analytics_properties: {}'.format(items))
-
-    properties = []
-    username = u''
 
     if response.status_code != 200:
         error_message = u''

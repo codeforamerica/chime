@@ -128,7 +128,7 @@ def setup():
         name, google_email = get_google_personal_info(access_token)
         # get a list of google analytics properties associated with this google account
         properties, backup_name = get_google_analytics_properties(access_token)
-        # use the backup name if we didn't get it from the google+ API
+        # use the backup name if we didn't get a name from the google+ API
         if not name and backup_name != google_email:
             name = backup_name
 
