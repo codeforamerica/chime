@@ -18,7 +18,7 @@ from .view_functions import (branch_name2path, branch_var2name, get_repo, name_b
                              dos2unix, login_required, synch_required, synched_checkout_required,
                              sorted_paths, directory_paths, should_redirect, make_redirect,
                              get_auth_data_file, is_allowed_email)
-from .google_api_functions import read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens, authorize_google, get_google_personal_info, get_google_analytics_properties, fetch_google_analytics_for_page, GA_CONFIG_FILENAME
+from .google_api_functions import read_ga_config, write_ga_config, request_new_google_access_token, request_new_google_access_and_refresh_tokens, authorize_google, get_google_personal_info, get_google_analytics_properties, fetch_google_analytics_for_page, GA_CONFIG_FILENAME
 
 import json
 
@@ -116,18 +116,21 @@ def setup():
     '''
     values = dict(email=session['email'])
 
-    # grab the ga config
+    # get a fresh access token
     ga_config = read_ga_config()
-    access_token = ga_config.get('access_token')
+    refresh_token = ga_config.get('refresh_token')
+    access_token = u''
+    if refresh_token:
+        access_token, refresh_dupe = request_new_google_access_token(refresh_token)
 
     if access_token:
         # get the name and email associated with this google account
         name, google_email = get_google_personal_info(access_token)
         # get a list of google analytics properties associated with this google account
-        properties, backup_google_email = get_google_analytics_properties(access_token)
-        # use the backup google email if we didn't get it from the google+ API
-        if not google_email:
-            google_email = backup_google_email
+        properties, backup_name = get_google_analytics_properties(access_token)
+        # use the backup name if we didn't get it from the google+ API
+        if not name and backup_name != google_email:
+            name = backup_name
 
         if not properties:
             raise Exception("Your Google Account isn't associated with any Google Analytics properties. Log in to Google with a different account?")
