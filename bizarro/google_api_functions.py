@@ -191,11 +191,18 @@ def get_google_analytics_properties(access_token):
 
     app.logger.debug('**> get_google_analytics_properties: {}'.format(items))
 
+    properties = []
+    username = u''
+
     if response.status_code != 200:
+        error_message = u''
         if 'error_description' in items:
-            raise Exception('Google says "{0}"'.format(items['error_description']))
-        else:
-            raise Exception('Google Error')
+            error_message = items['error_description']
+        elif 'error' in items and 'message' in items['error']:
+            error_message = items['error']['message']
+        Logger.debug('get_google_analytics_properties - Google Error: {}'.format(error_message))
+        # return blank values
+        return properties, username
 
     properties = [
         (item['defaultProfileId'], item['name'], item['websiteUrl'])
@@ -205,11 +212,10 @@ def get_google_analytics_properties(access_token):
 
     properties.sort(key=lambda p: p[1].lower())
 
-    google_email = u''
     if 'username' in items:
-        google_email = items['username']
+        username = items['username']
 
-    return properties, google_email
+    return properties, username
 
 def get_style_base(request):
     ''' Get the correct style base URL for the current scheme.
