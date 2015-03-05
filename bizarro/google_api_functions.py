@@ -12,6 +12,16 @@ import json
 from datetime import date, timedelta
 from .view_functions import WriteLocked, ReadLocked
 
+from flask import Flask
+app = Flask(__name__)
+
+# log to stderr
+import logging
+from logging import StreamHandler
+file_handler = StreamHandler()
+app.logger.setLevel(logging.DEBUG)  # set the desired logging level here
+app.logger.addHandler(file_handler)
+
 GA_CONFIG_FILENAME = 'ga_config.json'
 # these are the names of the values that can be saved to the google analytics config file
 GA_CONFIG_VALUES = ['access_token', 'refresh_token', 'profile_id', 'project_domain']
@@ -33,14 +43,14 @@ def authorize_google():
 
     query_string = urlencode(dict(client_id=current_app.config['GA_CLIENT_ID'], redirect_uri=current_app.config['GA_REDIRECT_URI'], scope='openid profile https://www.googleapis.com/auth/analytics', state=state, response_type='code', access_type='offline', approval_prompt='force'))
 
-    print '**> authorize_google: sending {}'.format('https://accounts.google.com/o/oauth2/auth' + '?' + query_string)
+    app.logger.debug('**> authorize_google: sending {}'.format('https://accounts.google.com/o/oauth2/auth' + '?' + query_string))
 
     return redirect('https://accounts.google.com/o/oauth2/auth' + '?' + query_string)
 
 def get_google_client_info():
     ''' Return client ID and secret for Google OAuth use.
     '''
-    print '**> get_google_client_info: returning id:{} ### secret:{}'.format(current_app.config['GA_CLIENT_ID'], current_app.config['GA_CLIENT_SECRET'])
+    app.logger.debug('**> get_google_client_info: returning id:{} ### secret:{}'.format(current_app.config['GA_CLIENT_ID'], current_app.config['GA_CLIENT_SECRET']))
     return current_app.config['GA_CLIENT_ID'], current_app.config['GA_CLIENT_SECRET']
 
 def request_new_google_access_and_refresh_tokens(request):
@@ -59,7 +69,7 @@ def request_new_google_access_and_refresh_tokens(request):
     response = post(GOOGLE_ANALYTICS_TOKENS_URL, data=data)
     access = response.json()
 
-    print '**> request_new_google_access_and_refresh_tokens: {}'.format(access)
+    app.logger.debug('**> request_new_google_access_and_refresh_tokens: {}'.format(access))
 
     if response.status_code != 200:
         if 'error_description' in access:
@@ -107,19 +117,19 @@ def read_ga_config():
     '''
     ga_config_path = os.path.join(current_app.config['RUNNING_STATE_DIR'], GA_CONFIG_FILENAME)
 
-    print '**> read_ga_config: ga_config_path is {}'.format(ga_config_path)
+    app.logger.debug('**> read_ga_config: ga_config_path is {}'.format(ga_config_path))
     try:
         with ReadLocked(ga_config_path) as infile:
             try:
                 ga_config = json.load(infile)
             except ValueError:
-                print '**> read_ga_config: returing empty ga_config (ValueError)'
+                app.logger.debug('**> read_ga_config: returning empty ga_config (ValueError)')
                 return get_empty_ga_config()
             else:
-                print '**> read_ga_config: returing {}'.format(ga_config)
+                app.logger.debug('**> read_ga_config: returning {}'.format(ga_config))
                 return ga_config
     except IOError:
-        print '**> read_ga_config: returing empty ga_config (IOError)'
+        app.logger.debug('**> read_ga_config: returning empty ga_config (IOError)')
         return get_empty_ga_config()
 
 def write_ga_config(config_values):
@@ -151,7 +161,7 @@ def get_google_personal_info(access_token):
     response = get(GOOGLE_PLUS_WHOAMI_URL, params={'access_token': access_token})
     whoami = response.json()
 
-    print '**> get_google_personal_info: sent {} ###### received {}'.format(access_token, whoami)
+    app.logger.debug('**> get_google_personal_info: sent {} ###### received {}'.format(access_token, whoami))
 
     email = u''
     name = u''
@@ -179,7 +189,7 @@ def get_google_analytics_properties(access_token):
     response = get(GOOGLE_ANALYTICS_PROPERTIES_URL, params={'access_token': access_token})
     items = response.json()
 
-    print '**> get_google_analytics_properties: {}'.format(items)
+    app.logger.debug('**> get_google_analytics_properties: {}'.format(items))
 
     if response.status_code != 200:
         if 'error_description' in items:
