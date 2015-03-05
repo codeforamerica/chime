@@ -987,13 +987,12 @@ class TestGoogleApiFunctions (TestCase):
             content = {u'totalsForAllResults': {u'ga:pageViews': u'24', u'ga:avgTimeOnPage': u'67.36363636363636'}}
             return response(200, content)
 
-    def mock_google_analytics_unauthorized_response(self, url, request):
+    def mock_google_analytics_invalid_credentials_response(self, url, request):
         if 'https://www.googleapis.com/analytics/' in url.geturl():
             content = {u'error': {u'code': 401, u'message': u'Invalid Credentials', u'errors': [{u'locationType': u'header', u'domain': u'global', u'message': u'Invalid Credentials', u'reason': u'authError', u'location': u'Authorization'}]}}
             return response(401, content)
 
-    def mock_google_plus_unauthorized_access_response(self, url, request):
-
+    def mock_google_plus_access_not_configured_response(self, url, request):
         if google_api_functions.GOOGLE_PLUS_WHOAMI_URL in url.geturl():
             content = {u'error': {u'code': 403, u'message': u'Access Not Configured. The API (Google+ API) is not enabled for your project. Please use the Google Developers Console to update your configuration.', u'errors': [{u'domain': u'usageLimits', u'message': u'Access Not Configured. The API (Google+ API) is not enabled for your project. Please use the Google Developers Console to update your configuration.', u'reason': u'accessNotConfigured', u'extendedHelp': u'https://console.developers.google.com'}]}}
             return response(403, content)
@@ -1169,7 +1168,7 @@ class TestGoogleApiFunctions (TestCase):
     def test_handle_bad_analytics_response(self):
         ''' Verify that an unauthorized analytics response is handled correctly
         '''
-        with HTTMock(self.mock_google_analytics_unauthorized_response):
+        with HTTMock(self.mock_google_analytics_invalid_credentials_response):
             with self.app.app_context():
                 analytics_dict = google_api_functions.fetch_google_analytics_for_page(self.app.config, u'index.html', 'meowser_token')
             self.assertEqual(analytics_dict, {})
