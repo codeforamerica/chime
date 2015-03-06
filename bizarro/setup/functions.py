@@ -18,6 +18,10 @@ from itsdangerous import Signer
 import gspread, requests
 
 GITHUB_API_BASE = 'https://api.github.com/'
+GDOCS_API_BASE = 'https://www.googleapis.com/drive/v2/files/'
+CHIME_LOGIN_MASTER = '1P_X4B9aX7MTCln5ossJNNVkjxp4prnU5ny3SPeKg2qI'
+CHIME_INSTANCES_LIST = '1ODc62B7clyNMzwRtpOeqDupsDdaomtfZK-Z_GX0CM90'
+WEBHOOK_URL = 'https://ceviche-webhook.herokuapp.com'
 
 def check_status(resp, task):
     ''' Raise a RuntimeError if response is not HTTP 2XX.
@@ -86,11 +90,9 @@ def create_google_spreadsheet(credentials, reponame):
     '''
     '''
     email = 'frances@codeforamerica.org'
-    gdocs_api_base = 'https://www.googleapis.com/drive/v2/files/'
     headers = {'Content-Type': 'application/json'}
 
-    source_id = '12jUfaRBd-CU1_6BGeLFG1_qoi7Fw_vRC_SXv36eDzM0'
-    url = urljoin(gdocs_api_base, '{source_id}/copy'.format(**locals()))
+    url = urljoin(GDOCS_API_BASE, '{}/copy'.format(CHIME_LOGIN_MASTER))
 
     gc = gspread.authorize(credentials)
     resp = gc.session.post(url, '{ }', headers=headers)
@@ -99,7 +101,7 @@ def create_google_spreadsheet(credentials, reponame):
 
     print('    Created spreadsheet "{title}"'.format(**info))
 
-    url = urljoin(gdocs_api_base, new_id)
+    url = urljoin(GDOCS_API_BASE, new_id)
     new_title = 'Chime CMS logins for {reponame}'.format(**locals())
     patch = dict(title=new_title)
     
@@ -108,7 +110,7 @@ def create_google_spreadsheet(credentials, reponame):
 
     print('    Updated title to "{new_title}"'.format(**locals()))
 
-    url = urljoin(gdocs_api_base, '{new_id}/permissions'.format(**locals()))
+    url = urljoin(GDOCS_API_BASE, '{new_id}/permissions'.format(**locals()))
     permission = dict(type='anyone', role='reader', withLink=True)
 
     gc = gspread.authorize(credentials)
@@ -117,7 +119,7 @@ def create_google_spreadsheet(credentials, reponame):
     print('    Allowed anyone with the link to see "{new_title}"'.format(**locals()))
 
     query = urlencode(dict(sendNotificationEmails='true', emailMessage='Yo.'))
-    url = urljoin(gdocs_api_base, '{new_id}/permissions?{query}'.format(**locals()))
+    url = urljoin(GDOCS_API_BASE, '{new_id}/permissions?{query}'.format(**locals()))
     permission = dict(type='user', role='writer', emailAddress=email, value=email)
 
     gc = gspread.authorize(credentials)
@@ -205,7 +207,7 @@ def add_github_webhook(reponame, auth):
         https://developer.github.com/v3/repos/hooks/#create-a-hook
     '''
     url = urljoin(GITHUB_API_BASE, '/repos/chimecms/{}/hooks'.format(reponame))
-    body = dict(name='web', config=dict(url='https://ceviche-webhook.herokuapp.com'))
+    body = dict(name='web', config=dict(url=WEBHOOK_URL))
     resp = requests.post(url, data=json.dumps(body), auth=auth)
     code = resp.status_code
 
@@ -300,9 +302,8 @@ def save_details(credentials, name, cname, instance, reponame, sheet_url, deploy
     instance_url = 'https://console.aws.amazon.com/ec2/v2/home?{}'.format(instance_query)
     github_url = 'https://github.com/chimecms/{}'.format(reponame)
     
-    source_id = '1ODc62B7clyNMzwRtpOeqDupsDdaomtfZK-Z_GX0CM90'
     gc = gspread.authorize(credentials)
-    doc = gc.open_by_key(source_id)
+    doc = gc.open_by_key(CHIME_INSTANCES_LIST)
     sheet = doc.worksheet('Instances')
 
     new_row = [str(datetime.utcnow()), name,
