@@ -19,6 +19,4 @@ def create_app(environ):
 
     return app
 
-@publish.route('/', methods=['POST'])
-def index():
-    return 'Hello world'
+from . import views
