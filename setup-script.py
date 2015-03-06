@@ -153,17 +153,8 @@ print '   ', 'Webhook created'
 # Add a new repository deploy key.
 # https://developer.github.com/v3/repos/keys/#create
 #
-while True:
-    path = '/.well-known/deploy-key.txt'
-    print '    Waiting for', path
-    sleep(5)
-    
-    resp = requests.get('http://{}{}'.format(instance.dns_name, path))
-    
-    if resp.status_code == 200:
-        break
-
-deploy_key = Signer(github_temporary_token, salt='deploy-key').unsign(resp.content)
+deploy_key = functions.get_public_deploy_key(
+    instance.dns_name, secret=github_temporary_token, salt='deploy-key')
 
 functions.add_permanent_github_deploy_key(deploy_key, reponame, (username, password))
 

@@ -6,11 +6,13 @@ from re import match
 from urllib import urlencode
 from urlparse import urljoin
 from datetime import datetime
+from time import sleep
 import json
 
 from boto.ec2 import EC2Connection
 from boto.route53 import Route53Connection
 from oauth2client.client import OAuth2WebServerFlow
+from itsdangerous import Signer
 import gspread, requests
 
 GITHUB_API_BASE = 'https://api.github.com/'
@@ -113,6 +115,23 @@ def create_google_spreadsheet(credentials, reponame):
     print('    Invited {email} to "{new_title}"'.format(**locals()))
 
     return new_id
+
+def get_public_deploy_key(instance_dns_name, secret, salt):
+    ''' Wait for and retrieve instance public key.
+    '''
+    signer = Signer(secret, salt)
+    path = '/.well-known/deploy-key.txt'
+    
+    while True:
+        print('    Waiting for', path)
+        sleep(5)
+    
+        resp = requests.get('http://{}{}'.format(instance_dns_name, path))
+    
+        if resp.status_code == 200:
+            break
+
+    return signer.unsign(resp.content)
 
 def add_permanent_github_deploy_key(deploy_key, reponame, auth):
     ''' Add a new repository deploy key.
