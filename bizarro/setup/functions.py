@@ -118,6 +118,27 @@ def create_google_spreadsheet(credentials, reponame):
 
     return new_id
 
+def get_github_authorization(client_id, client_secret, auth):
+    ''' Create a new authorization with Github.
+        
+        https://developer.github.com/v3/oauth_authorizations/#create-a-new-authorization
+    '''
+    info = dict(
+        scopes='repo',
+        note='Chime setup script',
+        client_id=client_id,
+        client_secret=client_secret
+        )
+
+    url = urljoin(GITHUB_API_BASE, '/authorizations')
+    resp = requests.post(url, json.dumps(info), auth=auth)
+    check_status(resp, 'create a new authorization')
+
+    auth_id = resp.json().get('id')
+    temporary_token = resp.json().get('token')
+    
+    return auth_id, temporary_token 
+
 def verify_github_authorization(client_id, client_secret, temporary_token, auth_id):
     ''' Verify status of Github authorization.
         

@@ -66,19 +66,8 @@ print '--> Created spreadsheet {}'.format(sheet_url)
 # Create a new authorization with Github.
 # https://developer.github.com/v3/oauth_authorizations/#create-a-new-authorization
 #
-info = dict(
-    scopes='repo',
-    note='Chime setup script',
-    client_id=github_client_id,
-    client_secret=github_client_secret
-    )
-
-url = urljoin(github_api_base, '/authorizations')
-resp = requests.post(url, json.dumps(info), auth=(username, password))
-check_status(resp, 'create a new authorization')
-
-github_auth_id = resp.json().get('id')
-github_temporary_token = resp.json().get('token')
+github_auth_id, github_temporary_token = functions.get_github_authorization(
+    github_client_id, github_client_secret, (username, password))
 
 #
 # Verify status of Github authorization.
