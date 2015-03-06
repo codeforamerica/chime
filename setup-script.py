@@ -25,21 +25,6 @@ from bizarro.setup import functions
 
 github_api_base = 'https://api.github.com/'
 
-def check_status(resp, task):
-    ''' Raise a RuntimeError if response is not HTTP 2XX.
-    '''
-    if resp.status_code not in range(200, 299):
-        raise RuntimeError('Got {} trying to {}'.format(resp.status_code, task))
-
-def check_repo_state(reponame, token):
-    ''' Return True if repository name exists.
-    '''
-    auth = token, 'x-oauth-basic'
-    path = '/repos/chimecms/{}'.format(reponame)
-    resp = requests.get(urljoin(github_api_base, path), auth=auth)
-    
-    return bool(resp.status_code == 200)
-
 #
 # Establish some baseline details.
 #
@@ -71,7 +56,7 @@ functions.verify_github_authorization(
 # Set public hostname in EC2 for Browser ID based on this:
 # http://www.onepwr.org/2012/04/26/chef-recipe-to-setup-up-a-new-nodes-fqdn-hostname-etc-properly/
 #
-if check_repo_state(reponame, github_temporary_token):
+if functions.check_repo_state(reponame, github_temporary_token):
     raise RuntimeError('Repository {} already exists, not going to run EC2'.format(reponame))
 
 instance = functions.create_ec2_instance(
@@ -81,7 +66,7 @@ while True:
     print '    Waiting for', reponame
     sleep(30)
 
-    if check_repo_state(reponame, github_temporary_token):
+    if functions.check_repo_state(reponame, github_temporary_token):
         print '-->', 'https://github.com/chimecms/{}'.format(reponame), 'exists'
         break
 

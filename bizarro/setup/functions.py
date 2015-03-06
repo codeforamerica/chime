@@ -25,6 +25,15 @@ def check_status(resp, task):
     if resp.status_code not in range(200, 299):
         raise RuntimeError('Got {} trying to {}'.format(resp.status_code, task))
 
+def check_repo_state(reponame, token):
+    ''' Return True if repository name exists.
+    '''
+    auth = token, 'x-oauth-basic'
+    path = '/repos/chimecms/{}'.format(reponame)
+    resp = requests.get(urljoin(GITHUB_API_BASE, path), auth=auth)
+    
+    return bool(resp.status_code == 200)
+
 def get_input():
     '''
     '''
