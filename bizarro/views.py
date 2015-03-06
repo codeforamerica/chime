@@ -69,6 +69,10 @@ def index():
 
     email = session.get('email', None)
 
+    flash(u'this is an error message', 'error')
+    flash(u'this is a warning message', 'warning')
+    flash(u'this is a notice message', 'notice')
+
     kwargs = dict(items=list_items, email=email)
     return render_template('index.html', **kwargs)
 

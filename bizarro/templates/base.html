@@ -29,16 +29,16 @@
         </nav>
         {% endif %}
       </header>
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-            <div class="new-task">
-                <ul class="save-status-success">
-                {% for message in messages %}
-                    <li>{{ message }}</li>
-                {% endfor %}
-                </ul>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-holder">
+              <ul class="flashes">
+              {% for category, message in messages %}
+                <li class="{{ category }}">{{ message }}</li>
+              {% endfor %}
+              </ul>
             </div>
-            {% endif %}
+          {% endif %}
         {% endwith %}
 
         {% block content %}{% endblock %}
