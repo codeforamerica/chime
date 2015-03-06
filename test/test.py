@@ -3,7 +3,8 @@ from unittest import main, TestCase
 
 from tempfile import mkdtemp
 from StringIO import StringIO
-from os.path import join, exists
+from os.path import join, exists, dirname
+from urlparse import urlparse
 from os import environ
 from shutil import rmtree, copytree
 from uuid import uuid4
@@ -1429,6 +1430,20 @@ class TestPublishApp (TestCase):
 
     def tearDown(self):
         rmtree(self.work_path)
+    
+    def mock_github_request(self, url, request):
+        '''
+        '''
+        _, host, path, _, _, _ = urlparse(url.geturl())
+        
+        if (host, path) == ('github.com', '/codeforamerica/ceviche-starter/archive/93250f1308daef66c5809fe87fc242d092e61db7.zip'):
+            return response(302, '', headers={'Location': 'https://codeload.github.com/codeforamerica/ceviche-starter/tar.gz/93250f1308daef66c5809fe87fc242d092e61db7'})
+        
+        if (host, path) == ('codeload.github.com', '/codeforamerica/ceviche-starter/tar.gz/93250f1308daef66c5809fe87fc242d092e61db7'):
+            with open(join(dirname(__file__), '93250f1308daef66c5809fe87fc242d092e61db7.zip')) as file:
+                return response(200, file.read(), headers={'Content-Type': 'application/zip'})
+        
+        raise Exception('Unknown URL {}'.format(url.geturl()))
 
     def test_webhook_post(self):
         ''' Check basic log in / log out flow without talking to Persona.
@@ -1453,7 +1468,9 @@ class TestPublishApp (TestCase):
             }
             '''
         
-        response = self.client.post('/', data=payload)
+        with HTTMock(self.mock_github_request):
+            response = self.client.post('/', data=payload)
+
         self.assertTrue(response.status_code in range(200, 299))
 
 if __name__ == '__main__':

@@ -33,7 +33,7 @@ def extract_commit(unzip_dir, commit_url, commit_sha):
     #
     _, _, path, _, _, _ = urlparse(commit_url)
     parts = dict(repo=dirname(dirname(path)), sha=commit_sha)
-    tarball_url = 'https://github.com/{repo}/archive/{sha}.zip'.format(**parts)
+    tarball_url = 'https://github.com{repo}/archive/{sha}.zip'.format(**parts)
     
     got = get(tarball_url)
     zip = ZipFile(BytesIO(got.content), 'r')
