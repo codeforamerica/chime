@@ -1446,7 +1446,7 @@ class TestPublishApp (TestCase):
         raise Exception('Unknown URL {}'.format(url.geturl()))
 
     def test_webhook_post(self):
-        ''' Check basic log in / log out flow without talking to Persona.
+        ''' Check basic webhook flow.
         '''
         payload = '''
             {
