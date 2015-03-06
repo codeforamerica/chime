@@ -11,7 +11,15 @@ import json
 from boto.ec2 import EC2Connection
 from boto.route53 import Route53Connection
 from oauth2client.client import OAuth2WebServerFlow
-import gspread
+import gspread, requests
+
+GITHUB_API_BASE = 'https://api.github.com/'
+
+def check_status(resp, task):
+    ''' Raise a RuntimeError if response is not HTTP 2XX.
+    '''
+    if resp.status_code not in range(200, 299):
+        raise RuntimeError('Got {} trying to {}'.format(resp.status_code, task))
 
 def get_input():
     '''
@@ -106,8 +114,20 @@ def create_google_spreadsheet(credentials, reponame):
 
     return new_id
 
-def create_cname_record(route53, reponame, cname_value):
+def delete_temporary_github_authorization(github_auth_id, auth):
+    ''' Delete Github authorization.
+
+        https://developer.github.com/v3/oauth_authorizations/#delete-an-authorization
     '''
+    url = urljoin(GITHUB_API_BASE, '/authorizations/{}'.format(github_auth_id))
+    resp = requests.delete(url, auth=auth)
+
+    check_status(resp, 'delete authorization {}'.format(github_auth_id))
+    
+    print('--> Deleted temporary Github token')
+
+def create_cname_record(route53, reponame, cname_value):
+    ''' Write domain name to Route 53.
     '''
     cname = '{reponame}.ceviche.chimecms.org'.format(**locals())
 

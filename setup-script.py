@@ -197,9 +197,7 @@ print '--> Created permanent deploy key', 'chimecms-key'
 # Delete Github authorization.
 # https://developer.github.com/v3/oauth_authorizations/#delete-an-authorization
 #
-url = urljoin(github_api_base, '/authorizations/{}'.format(github_auth_id))
-resp = requests.delete(url, auth=(username, password))
-check_status(resp, 'delete authorization {}'.format(github_auth_id))
+functions.delete_temporary_github_authorization(github_auth_id, (username, password))
 
 #
 # Write domain name to Route 53.
