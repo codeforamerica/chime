@@ -5,11 +5,27 @@ from urlparse import urlparse
 from os.path import dirname, basename, join, exists
 from tempfile import mkdtemp
 from zipfile import ZipFile
+from shutil import rmtree
 from io import BytesIO
 
 from requests import get
 
-def extract_commit(commit_url, commit_sha):
+from ..jekyll_functions import build_jekyll_site
+
+def process_commit(commit):
+
+    try:
+        working_dir = mkdtemp()
+        checkout_dir = extract_commit(working_dir, commit['url'], commit['sha'])
+        build_jekyll_site(checkout_dir)
+
+    except Exception as e:
+        logger.warning(e)
+
+    finally:
+        rmtree(working_dir)
+
+def extract_commit(unzip_dir, commit_url, commit_sha):
     #
     # Convert commit URL to downloadable archive URL.
     # Old: https://github.com/codeforamerica/ceviche-starter/commit/93250f1308daef66c5809fe87fc242d092e61db7
@@ -21,17 +37,16 @@ def extract_commit(commit_url, commit_sha):
     
     got = get(tarball_url)
     zip = ZipFile(BytesIO(got.content), 'r')
-    
-    unzip_dir = mkdtemp()
     zip.extractall(unzip_dir)
     
+    #
+    # Check for a specially-named subdirectory made by Github.
     # ceviche-starter-93250f1308daef66c5809fe87fc242d092e61db7
+    #
     subdirectory = '{}-{}'.format(basename(parts['repo']), commit_sha)
-    working_dir = unzip_dir
+    checkout_dir = join(unzip_dir, subdirectory)
     
-    if exists(join(unzip_dir, subdirectory)):
-        working_dir = join(unzip_dir, subdirectory)
-    else:
-        print 'No', join(unzip_dir, subdirectory)
+    if not exists(checkout_dir):
+        checkout_dir = unzip_dir
     
-    print working_dir
+    return checkout_dir
