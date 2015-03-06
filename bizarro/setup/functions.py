@@ -118,6 +118,18 @@ def create_google_spreadsheet(credentials, reponame):
 
     return new_id
 
+def verify_github_authorization(client_id, client_secret, temporary_token, auth_id):
+    ''' Verify status of Github authorization.
+        
+        https://developer.github.com/v3/oauth_authorizations/#check-an-authorization
+    '''
+    path = '/applications/{client_id}/tokens/{token}'
+    kwargs = dict(client_id=client_id, token=temporary_token)
+    url = urljoin(GITHUB_API_BASE, path.format(**kwargs))
+    resp = requests.get(url, auth=(client_id, client_secret))
+
+    check_status(resp, 'check authorization {}'.format(auth_id))
+
 def create_ec2_instance(ec2, reponame, sheet_url, client_id, client_secret, token):
     '''
     '''

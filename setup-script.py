@@ -84,11 +84,8 @@ github_temporary_token = resp.json().get('token')
 # Verify status of Github authorization.
 # https://developer.github.com/v3/oauth_authorizations/#check-an-authorization
 #
-path = '/applications/{client_id}/tokens/{token}'
-kwargs = dict(client_id=github_client_id, token=github_temporary_token)
-url = urljoin(github_api_base, path.format(**kwargs))
-resp = requests.get(url, auth=(github_client_id, github_client_secret))
-check_status(resp, 'check authorization {}'.format(github_auth_id))
+functions.verify_github_authorization(
+    github_client_id, github_client_secret, github_temporary_token, github_auth_id)
 
 #
 # EC2
