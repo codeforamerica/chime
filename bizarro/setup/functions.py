@@ -116,7 +116,11 @@ def create_google_spreadsheet(credentials, reponame):
 
     print('    Invited {email} to "{new_title}"'.format(**locals()))
 
-    return new_id
+    sheet_url = 'https://docs.google.com/spreadsheets/d/{}'.format(new_id)
+
+    print('--> Created spreadsheet {}'.format(sheet_url))
+
+    return sheet_url
 
 def get_github_authorization(client_id, client_secret, auth):
     ''' Create a new authorization with Github.
@@ -136,6 +140,8 @@ def get_github_authorization(client_id, client_secret, auth):
 
     auth_id = resp.json().get('id')
     temporary_token = resp.json().get('token')
+
+    print('--> Github authorization OK')
     
     return auth_id, temporary_token 
 

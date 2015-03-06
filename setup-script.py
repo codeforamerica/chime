@@ -46,28 +46,18 @@ def check_repo_state(reponame, token):
 github_client_id, github_client_secret, gdocs_client_id, gdocs_client_secret, \
     username, password, reponame, ec2, route53 = functions.get_input()
 
-resp = requests.get(urljoin(github_api_base, '/user'), auth=(username, password))
-
-if resp.status_code != 200:
-    raise RuntimeError('Failed Github login for user "{}"'.format(username))
-
-print '--> Github login OK'
-
-#
-# Ask for Google Docs credentials and create an authentication spreadsheet.
-#
-gdocs_credentials = functions.authenticate_google(gdocs_client_id, gdocs_client_secret)
-sheet_id = functions.create_google_spreadsheet(gdocs_credentials, reponame)
-sheet_url = 'https://docs.google.com/spreadsheets/d/{}'.format(sheet_id)
-
-print '--> Created spreadsheet {}'.format(sheet_url)
-
 #
 # Create a new authorization with Github.
 # https://developer.github.com/v3/oauth_authorizations/#create-a-new-authorization
 #
 github_auth_id, github_temporary_token = functions.get_github_authorization(
     github_client_id, github_client_secret, (username, password))
+
+#
+# Ask for Google Docs credentials and create an authentication spreadsheet.
+#
+gdocs_credentials = functions.authenticate_google(gdocs_client_id, gdocs_client_secret)
+sheet_url = functions.create_google_spreadsheet(gdocs_credentials, reponame)
 
 #
 # Verify status of Github authorization.
