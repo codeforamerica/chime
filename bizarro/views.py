@@ -337,7 +337,7 @@ def branch_edit(branch, path=None):
                       view_path=view_path, edit_path=path,
                       history_path=history_path,
                       languages=languages, app_authorized=app_authorized)
-        
+
         kwargs.update(analytics_dict)
 
         return render_template('tree-branch-edit-file.html', **kwargs)
