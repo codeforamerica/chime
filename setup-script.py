@@ -44,7 +44,7 @@ def check_repo_state(reponame, token):
 # Establish some baseline details.
 #
 github_client_id, github_client_secret, gdocs_client_id, gdocs_client_secret, \
-    username, password, reponame, ec2 = functions.get_input()
+    username, password, reponame, ec2, route53 = functions.get_input()
 
 resp = requests.get(urljoin(github_api_base, '/user'), auth=(username, password))
 
@@ -204,9 +204,7 @@ check_status(resp, 'delete authorization {}'.format(github_auth_id))
 #
 # Write domain name to Route 53.
 #
-cname = '{reponame}.ceviche.chimecms.org'.format(**locals())
-functions.create_cname_record(cname, instance.dns_name)
-print '--> Prepared DNS name', cname
+cname = functions.create_cname_record(route53, reponame, instance.dns_name)
 
 #
 # Save details of instance.

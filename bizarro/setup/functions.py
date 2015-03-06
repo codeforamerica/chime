@@ -31,10 +31,11 @@ def get_input():
         raise RuntimeError('Repository "{}" does not match "\w+(-\w+)*$"'.format(reponame))
 
     ec2 = EC2Connection()
+    route53 = Route53Connection()
     
     return github_client_id, github_client_secret, \
            gdocs_client_id, gdocs_client_secret, \
-           username, password, reponame, ec2
+           username, password, reponame, ec2, route53
 
 def authenticate_google(gdocs_client_id, gdocs_client_secret):
     '''
@@ -105,13 +106,16 @@ def create_google_spreadsheet(credentials, reponame):
 
     return new_id
 
-def create_cname_record(cname, cname_value):
+def create_cname_record(route53, reponame, cname_value):
     '''
     '''
-    route53 = Route53Connection()
+    cname = '{reponame}.ceviche.chimecms.org'.format(**locals())
+
     zone = route53.get_zone('chimecms.org')
     zone.add_record('CNAME', cname, cname_value, 60)
     
+    print('--> Prepared DNS name', cname)
+
     return cname
 
 def save_details(credentials, name, cname, instance, reponame, sheet_url, deploy_key):
