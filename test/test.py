@@ -22,7 +22,10 @@ from box.util.rotunicode import RotUnicode
 from httmock import response, HTTMock
 from mock import MagicMock
 
-from bizarro import create_app, jekyll_functions, repo_functions, edit_functions, google_api_functions, view_functions
+from bizarro import (
+    create_app, jekyll_functions, repo_functions, edit_functions,
+    google_api_functions, view_functions, publish
+    )
 
 import codecs
 codecs.register(RotUnicode.search_function)
@@ -1413,6 +1416,25 @@ class TestApp (TestCase):
             response = self.server.get('/callback?state=PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP&code=code')
 
         self.assertTrue('authorization-failed' in response.location)
+
+class TestPublishApp (TestCase):
+
+    def setUp(self):
+        self.work_path = mkdtemp(prefix='bizarro-publish-app-')
+
+        app_args = {}
+
+        self.app = publish.create_app(app_args)
+        self.client = self.app.test_client()
+
+    def tearDown(self):
+        rmtree(self.work_path)
+
+    def test_bad_login(self):
+        ''' Check basic log in / log out flow without talking to Persona.
+        '''
+        response = self.client.get('/')
+        self.assertTrue('Hello' in response.data)
 
 if __name__ == '__main__':
     main()
