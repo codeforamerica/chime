@@ -13,7 +13,7 @@
         <h3>1. Connect To Google</h3>
         {% if properties %}
         <div class="alert-success">
-            <p>You are connected to Google as <b>{{ name }}{% if google_email %} ({{ google_email }}){% endif %}</b>.</p>
+            <p>You are connected to Google{% if name or google_email %} as <b>{{ name }}{% if google_email %} ({{ google_email }}){% endif %}</b>{% endif %}.</p>
         </div>
         <div class="alert-info">
             <form method="POST" action="/authorize">

@@ -2,15 +2,24 @@
 {% block title %}Google Authorization Successful{% endblock %}
 {% block content %}
 
-<h1>Google Authorization Successful</h1>
-<div class="layout-breve">
+<div class="main-content">
+    <div class="analytics-setup">
+        <h2>Google Authorization Successful</h2>
+
     <p></p>
 
     <div class="alert-success">
-    You've successfully set up Google Analytics{% if project_name or project_domain %} for <b>{% if project_name %}{{ project_name }}{% endif %}{% if project_domain %} ({{ project_domain }})</b>{% endif %}{% if name or google_email %} as {% if name %}{{ name }}{% endif %}{% if google_email %} ({{ google_email }}){% endif %}{% endif %}{% endif %}!
+    You've successfully set up Google Analytics{% if project_name or project_domain %} for <b>{% if project_name %}{{ project_name }}{% endif %}{% if project_domain %} ({{ project_domain }})</b>{% endif %}{% if name or google_email %}{% if name or google_email %} as {% if name %}{{ name }}{% endif %}{% if google_email %} ({{ google_email }}){% endif %}{% endif %}{% endif %}{% endif %}
+    </div>
+    <div class="alert-info">
+        <form method="POST" action="/authorize">
+            <p>To use a different account:</p>
+            <button id="authorize-button">Connect to Google</button>
+        </form>
     </div>
 
     <p>Now you can <a href="{% if return_link %}{{ return_link }}{% else %}/{% endif %}">return to the application</a>.</p>
 
+    </div>
 </div>
 {% endblock %}

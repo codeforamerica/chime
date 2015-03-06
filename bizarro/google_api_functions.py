@@ -1,3 +1,6 @@
+from logging import getLogger
+Logger = getLogger('bizarro.google_api_functions')
+
 from flask import current_app, redirect, session
 from requests import post, get
 from urllib import urlencode
@@ -29,6 +32,7 @@ def authorize_google():
     session['state'] = state
 
     query_string = urlencode(dict(client_id=current_app.config['GA_CLIENT_ID'], redirect_uri=current_app.config['GA_REDIRECT_URI'], scope='openid profile https://www.googleapis.com/auth/analytics', state=state, response_type='code', access_type='offline', approval_prompt='force'))
+
     return redirect('https://accounts.google.com/o/oauth2/auth' + '?' + query_string)
 
 def get_google_client_info():
@@ -54,22 +58,23 @@ def request_new_google_access_and_refresh_tokens(request):
 
     if response.status_code != 200:
         if 'error_description' in access:
-            raise Exception('Google says "{0}"'.format(access['error_description']))
-        else:
-            raise Exception('Google Error')
+            error_message = access['error_description']
+        elif 'error' in access and 'message' in access['error']:
+            error_message = access['error']['message']
+        raise Exception('request_new_google_access_and_refresh_tokens - Google Error: {}'.format(error_message))
 
     # write the new tokens to the config file
     config_values = {'access_token': access['access_token'], 'refresh_token': access['refresh_token']}
-    write_ga_config(config_values)
+    write_ga_config(config_values, current_app.config['RUNNING_STATE_DIR'])
 
-def request_new_google_access_token(refresh_token):
+def request_new_google_access_token(refresh_token, running_state_dir, client_id, client_secret):
     ''' Get a new access token with the refresh token so a user doesn't need to
         authorize the app again
     '''
     if not refresh_token:
         return None, None
 
-    data = dict(client_id=current_app.config['GA_CLIENT_ID'], client_secret=current_app.config['GA_CLIENT_SECRET'],
+    data = dict(client_id=client_id, client_secret=client_secret,
                 refresh_token=refresh_token, grant_type='refresh_token')
 
     resp = post(GOOGLE_ANALYTICS_TOKENS_URL, data=data)
@@ -81,7 +86,7 @@ def request_new_google_access_token(refresh_token):
 
     # write the new token to the config file
     config_values = {'access_token': access['access_token']}
-    write_ga_config(config_values)
+    write_ga_config(config_values, running_state_dir)
 
     return access['access_token'], refresh_token
 
@@ -93,10 +98,10 @@ def get_empty_ga_config():
         ga_config[key_name] = u''
     return ga_config
 
-def read_ga_config():
+def read_ga_config(running_state_dir):
     ''' Return the contents of the google analytics config file. Create the file if it doesn't exist.
     '''
-    ga_config_path = os.path.join(current_app.config['RUNNING_STATE_DIR'], GA_CONFIG_FILENAME)
+    ga_config_path = os.path.join(running_state_dir, GA_CONFIG_FILENAME)
     try:
         with ReadLocked(ga_config_path) as infile:
             try:
@@ -108,10 +113,10 @@ def read_ga_config():
     except IOError:
         return get_empty_ga_config()
 
-def write_ga_config(config_values):
+def write_ga_config(config_values, running_state_dir):
     ''' Validate the passed google analytics config values and write them to disk.
     '''
-    ga_config_path = os.path.join(current_app.config['RUNNING_STATE_DIR'], GA_CONFIG_FILENAME)
+    ga_config_path = os.path.join(running_state_dir, GA_CONFIG_FILENAME)
     with WriteLocked(ga_config_path) as iofile:
         # read the json from the file
         try:
@@ -134,17 +139,25 @@ def write_ga_config(config_values):
 def get_google_personal_info(access_token):
     ''' Get account name and email from Google Plus.
     '''
+    email = u''
+    name = u''
+
+    if not access_token:
+        return name, email
+
     response = get(GOOGLE_PLUS_WHOAMI_URL, params={'access_token': access_token})
     whoami = response.json()
 
+    # if there's an error, log it and return blank values
     if response.status_code != 200:
+        error_message = u''
         if 'error_description' in whoami:
-            raise Exception('Google says "{0}"'.format(whoami['error_description']))
-        else:
-            raise Exception('Google Error')
+            error_message = whoami['error_description']
+        elif 'error' in whoami and 'message' in whoami['error']:
+            error_message = whoami['error']['message']
+        Logger.debug('get_google_analytics_properties - Google Error: {}'.format(error_message))
+        return name, email
 
-    email = u''
-    name = u''
     if 'emails' in whoami:
         emails = dict([(e['type'], e['value']) for e in whoami['emails']])
         email = emails.get('account', whoami['emails'][0]['value'])
@@ -156,14 +169,24 @@ def get_google_personal_info(access_token):
 def get_google_analytics_properties(access_token):
     ''' Get sorted list of web properties from Google Analytics.
     '''
+    properties = []
+    username = u''
+
+    if not access_token:
+        return properties, username
+
     response = get(GOOGLE_ANALYTICS_PROPERTIES_URL, params={'access_token': access_token})
     items = response.json()
 
     if response.status_code != 200:
+        error_message = u''
         if 'error_description' in items:
-            raise Exception('Google says "{0}"'.format(items['error_description']))
-        else:
-            raise Exception('Google Error')
+            error_message = items['error_description']
+        elif 'error' in items and 'message' in items['error']:
+            error_message = items['error']['message']
+        Logger.debug('get_google_analytics_properties - Google Error: {}'.format(error_message))
+        # return blank values
+        return properties, username
 
     properties = [
         (item['defaultProfileId'], item['name'], item['websiteUrl'])
@@ -173,7 +196,10 @@ def get_google_analytics_properties(access_token):
 
     properties.sort(key=lambda p: p[1].lower())
 
-    return properties
+    if 'username' in items:
+        username = items['username']
+
+    return properties, username
 
 def get_style_base(request):
     ''' Get the correct style base URL for the current scheme.
@@ -209,7 +235,7 @@ def get_ga_page_path_pattern(page_path, project_domain):
 def fetch_google_analytics_for_page(config, page_path, access_token):
     ''' Get stats for a particular page
     '''
-    ga_config = read_ga_config()
+    ga_config = read_ga_config(current_app.config['RUNNING_STATE_DIR'])
     ga_project_domain = ga_config.get('project_domain')
     ga_profile_id = ga_config.get('profile_id')
 
