@@ -98,33 +98,8 @@ check_status(resp, 'check authorization {}'.format(github_auth_id))
 if check_repo_state(reponame, github_temporary_token):
     raise RuntimeError('Repository {} already exists, not going to run EC2'.format(reponame))
 
-with open(join(dirname(__file__), 'bizarro', 'setup', 'user-data.sh')) as file:
-    user_data = file.read().format(
-        branch_name='master',
-        ga_client_id=gdocs_client_id,
-        ga_client_secret=gdocs_client_secret,
-        github_temporary_token=github_temporary_token,
-        github_repo=reponame,
-        auth_data_href=sheet_url
-        )
-
-device_sda1 = BlockDeviceType(size=16, delete_on_termination=True)
-device_map = BlockDeviceMapping(); device_map['/dev/sda1'] = device_sda1
-
-ec2_args = dict(instance_type='c3.large', user_data=user_data,
-                key_name='cfa-chime-keypair', block_device_map=device_map,
-                security_groups=['default'])
-
-instance = ec2.run_instances('ami-f8763a90', **ec2_args).instances[0]
-instance.add_tag('Name', 'Chime Test {}'.format(reponame))
-
-print '    Prepared EC2 instance', instance.id
-
-while not instance.dns_name:
-    instance.update()
-    sleep(1)
-
-print '--> Available at', instance.dns_name
+instance = functions.create_ec2_instance(
+    ec2, reponame, sheet_url, gdocs_client_id, gdocs_client_secret, github_temporary_token)
 
 while True:
     print '    Waiting for', reponame
