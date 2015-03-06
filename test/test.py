@@ -1430,11 +1430,31 @@ class TestPublishApp (TestCase):
     def tearDown(self):
         rmtree(self.work_path)
 
-    def test_bad_login(self):
+    def test_webhook_post(self):
         ''' Check basic log in / log out flow without talking to Persona.
         '''
-        response = self.client.get('/')
-        self.assertTrue('Hello' in response.data)
+        payload = '''
+            {
+              "head": "93250f1308daef66c5809fe87fc242d092e61db7",
+              "ref": "refs/heads/master",
+              "size": 1,
+              "commits": [
+                {
+                  "sha": "93250f1308daef66c5809fe87fc242d092e61db7",
+                  "message": "Clean up braces",
+                  "author": {
+                    "name": "Frances Berriman",
+                    "email": "phae@example.com"
+                  },
+                  "url": "https://github.com/codeforamerica/ceviche-starter/commit/93250f1308daef66c5809fe87fc242d092e61db7",
+                  "distinct": true
+                }
+              ]
+            }
+            '''
+        
+        response = self.client.post('/', data=payload)
+        self.assertTrue(response.status_code in range(200, 299))
 
 if __name__ == '__main__':
     main()
