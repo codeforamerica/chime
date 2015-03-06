@@ -18,7 +18,7 @@ from .view_functions import (branch_name2path, branch_var2name, get_repo, name_b
                              dos2unix, login_required, synch_required, synched_checkout_required,
                              sorted_paths, directory_paths, should_redirect, make_redirect,
                              get_auth_data_file, is_allowed_email, relative_datetime_string)
-from .google_api_functions import read_ga_config, write_ga_config, request_new_google_access_token, request_new_google_access_and_refresh_tokens, authorize_google, get_google_personal_info, get_google_analytics_properties, fetch_google_analytics_for_page
+from .google_api_functions import read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens, authorize_google, get_google_personal_info, get_google_analytics_properties, fetch_google_analytics_for_page
 
 @app.route('/')
 @login_required
@@ -114,12 +114,8 @@ def setup():
     '''
     values = dict(email=session['email'])
 
-    # get a fresh access token
-    ga_config = read_ga_config()
-    refresh_token = ga_config.get('refresh_token')
-    access_token = u''
-    if refresh_token:
-        access_token, refresh_dupe = request_new_google_access_token(refresh_token)
+    ga_config = read_ga_config(current_app.config['RUNNING_STATE_DIR'])
+    access_token = ga_config.get('access_token')
 
     if access_token:
         # get the name and email associated with this google account
@@ -166,7 +162,7 @@ def authorization_complete():
     return_link = request.form.get('return_link') or u'/'
     # write the new values to the config file
     config_values = {'profile_id': profile_id, 'project_domain': project_domain}
-    write_ga_config(config_values)
+    write_ga_config(config_values, current_app.config['RUNNING_STATE_DIR'])
 
     # pass the variables needed to summarize what's been done
     values = dict(email=session['email'], name=request.form.get('name'), google_email=request.form.get('google_email'), project_name=project_name, project_domain=project_domain, return_link=return_link)
@@ -331,7 +327,7 @@ def branch_edit(branch, path=None):
         history_path = join('/tree/%s/history' % branch_name2path(branch), path)
         app_authorized = False
 
-        ga_config = read_ga_config()
+        ga_config = read_ga_config(current_app.config['RUNNING_STATE_DIR'])
         analytics_dict = {}
         if ga_config.get('access_token'):
             app_authorized = True
@@ -406,7 +402,7 @@ def branch_history(branch, path=None):
 
     app_authorized = False
 
-    ga_config = read_ga_config()
+    ga_config = read_ga_config(current_app.config['RUNNING_STATE_DIR'])
     if ga_config.get('access_token'):
         app_authorized = True
 

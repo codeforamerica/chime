@@ -3,6 +3,7 @@ Logger = getLogger('bizarro.google_access_token_update')
 
 from .google_api_functions import request_new_google_access_token, read_ga_config
 import argparse
+from os import environ
 import traceback
 import sys
 from time import sleep
@@ -21,8 +22,8 @@ if __name__ == '__main__':
     '''
     while True:
         try:
-            ga_config = read_ga_config()
-            request_new_google_access_token(ga_config.get('refresh_token'))
+            ga_config = read_ga_config(environ['RUNNING_STATE_DIR'])
+            request_new_google_access_token(ga_config.get('refresh_token'), environ['RUNNING_STATE_DIR'], environ['GA_CLIENT_ID'], environ['GA_CLIENT_SECRET'])
         except:
             traceback.print_exc(file=sys.stderr)
 

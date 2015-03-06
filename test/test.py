@@ -962,7 +962,7 @@ class TestGoogleApiFunctions (TestCase):
             "project_domain": "example.com"
         }
         with self.app.app_context():
-            google_api_functions.write_ga_config(config_values)
+            google_api_functions.write_ga_config(config_values, self.app.config['RUNNING_STATE_DIR'])
 
     def tearDown(self):
         rmtree(self.ga_config_dir)
@@ -1000,17 +1000,17 @@ class TestGoogleApiFunctions (TestCase):
     def test_successful_request_new_google_access_token(self):
         with self.app.test_request_context():
             with HTTMock(self.mock_successful_request_new_google_access_token):
-                google_api_functions.request_new_google_access_token('meowser_refresh_token')
+                google_api_functions.request_new_google_access_token('meowser_refresh_token', self.app.config['RUNNING_STATE_DIR'], self.app.config['GA_CLIENT_ID'], self.app.config['GA_CLIENT_SECRET'])
 
                 with self.app.app_context():
-                    ga_config = google_api_functions.read_ga_config()
+                    ga_config = google_api_functions.read_ga_config(self.app.config['RUNNING_STATE_DIR'])
                 self.assertEqual(ga_config['access_token'], 'meowser_access_token')
 
     def test_failure_to_request_new_google_access_token(self):
         with self.app.test_request_context():
             with HTTMock(self.mock_failed_request_new_google_access_token):
                 with self.assertRaises(Exception):
-                    google_api_functions.request_new_google_access_token('meowser_refresh_token')
+                    google_api_functions.request_new_google_access_token('meowser_refresh_token', self.app.config['RUNNING_STATE_DIR'], self.app.config['GA_CLIENT_ID'], self.app.config['GA_CLIENT_SECRET'])
 
     def test_read_missing_config_file(self):
         ''' Make sure that reading from a missing google analytics config file doesn't raise errors.
@@ -1024,7 +1024,7 @@ class TestGoogleApiFunctions (TestCase):
             # verify that the file's gone
             self.assertFalse(os.path.isfile(ga_config_path))
             # ask for the config contents
-            ga_config = google_api_functions.read_ga_config()
+            ga_config = google_api_functions.read_ga_config(self.app.config['RUNNING_STATE_DIR'])
             # there are four values
             self.assertEqual(len(ga_config), 4)
             # they are named as expected
@@ -1057,11 +1057,11 @@ class TestGoogleApiFunctions (TestCase):
                 "project_domain": "example.com"
             }
             # write the config contents
-            google_api_functions.write_ga_config(write_config)
+            google_api_functions.write_ga_config(write_config, self.app.config['RUNNING_STATE_DIR'])
             # verify that the file exists
             self.assertTrue(os.path.isfile(ga_config_path))
             # ask for the config contents
-            ga_config = google_api_functions.read_ga_config()
+            ga_config = google_api_functions.read_ga_config(self.app.config['RUNNING_STATE_DIR'])
             # there are four values
             self.assertEqual(len(ga_config), 4)
             # they are named as expected
@@ -1094,7 +1094,7 @@ class TestGoogleApiFunctions (TestCase):
             # verify that the file exists
             self.assertTrue(os.path.isfile(ga_config_path))
             # ask for the config contents
-            ga_config = google_api_functions.read_ga_config()
+            ga_config = google_api_functions.read_ga_config(self.app.config['RUNNING_STATE_DIR'])
             # there are four values
             self.assertEqual(len(ga_config), 4)
             # they are named as expected
@@ -1123,9 +1123,9 @@ class TestGoogleApiFunctions (TestCase):
             }
             # include an expected value too
             unexpected_values['access_token'] = u'woofer_token'
-            google_api_functions.write_ga_config(unexpected_values)
+            google_api_functions.write_ga_config(unexpected_values, self.app.config['RUNNING_STATE_DIR'])
             # ask for the config contents
-            ga_config = google_api_functions.read_ga_config()
+            ga_config = google_api_functions.read_ga_config(self.app.config['RUNNING_STATE_DIR'])
             # there are four values
             self.assertEqual(len(ga_config), 4)
             # they are named as expected
@@ -1216,7 +1216,7 @@ class TestApp (TestCase):
             "project_domain": ""
         }
         with self.app.app_context():
-            google_api_functions.write_ga_config(config_values)
+            google_api_functions.write_ga_config(config_values, self.app.config['RUNNING_STATE_DIR'])
 
         random.choice = MagicMock(return_value="P")
 
@@ -1378,7 +1378,7 @@ class TestApp (TestCase):
             response = self.server.get('/callback?state=PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP&code=code')
 
         with self.app.app_context():
-            ga_config = google_api_functions.read_ga_config()
+            ga_config = google_api_functions.read_ga_config(self.app.config['RUNNING_STATE_DIR'])
 
         self.assertEqual(ga_config['access_token'], 'meowser_token')
         self.assertEqual(ga_config['refresh_token'], 'refresh_meows')
@@ -1398,7 +1398,7 @@ class TestApp (TestCase):
         self.assertEqual(u'200 OK', response.status)
 
         with self.app.app_context():
-            ga_config = google_api_functions.read_ga_config()
+            ga_config = google_api_functions.read_ga_config(self.app.config['RUNNING_STATE_DIR'])
 
         # views.authorization_complete() strips the 'http://' from the domain
         self.assertEqual(ga_config['project_domain'], 'propertyone.example.com')
