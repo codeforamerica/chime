@@ -29,6 +29,17 @@
         </nav>
         {% endif %}
       </header>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            <div class="new-task">
+                <ul class="save-status-success">
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        {% endwith %}
 
         {% block content %}{% endblock %}
         <footer class="product-info">

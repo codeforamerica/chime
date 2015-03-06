@@ -9,7 +9,7 @@ from glob import glob
 from git import Repo
 from git.cmd import GitCommandError
 from requests import post
-from flask import redirect, request, Response, render_template, session, current_app
+from flask import flash, redirect, request, Response, render_template, session, current_app
 
 from . import bizarro as app
 from . import repo_functions, edit_functions
@@ -18,9 +18,7 @@ from .view_functions import (branch_name2path, branch_var2name, get_repo, name_b
                              dos2unix, login_required, synch_required, synched_checkout_required,
                              sorted_paths, directory_paths, should_redirect, make_redirect,
                              get_auth_data_file, is_allowed_email, relative_datetime_string)
-from .google_api_functions import read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens, authorize_google, get_google_personal_info, get_google_analytics_properties, fetch_google_analytics_for_page, GA_CONFIG_FILENAME
-
-import json
+from .google_api_functions import read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens, authorize_google, get_google_personal_info, get_google_analytics_properties, fetch_google_analytics_for_page
 
 @app.route('/')
 @login_required
