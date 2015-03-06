@@ -164,34 +164,8 @@ while True:
         break
 
 deploy_key = Signer(github_temporary_token, salt='deploy-key').unsign(resp.content)
-keys_url = 'https://api.github.com/repos/chimecms/{}/keys'.format(reponame)
-head = {'Content-Type': 'application/json'}
-body = json.dumps(dict(title='chimecms-key', key=deploy_key))
-resp = requests.post(keys_url, body, headers=head, auth=(username, password))
-code = resp.status_code
 
-if code == 422:
-    # Github deploy key already exists, but likely to be tied to OAuth token.
-    # Delete it, and recreate with basic auth so it survives auth deletion.
-    resp = requests.get(keys_url, auth=(username, password))
-    key_url = [k['url'] for k in resp.json() if k['title'] == 'token-key'][0]
-    resp = requests.delete(key_url, auth=(username, password))
-    code = resp.status_code
-    
-    if code not in range(200, 299):
-        raise RuntimeError('Github deploy key deletion failed, status {}'.format(code))
-    
-    print '    Deleted temporary token key'
-    resp = requests.post(keys_url, body, headers=head, auth=(username, password))
-    code = resp.status_code
-    
-    if code not in range(200, 299):
-        raise RuntimeError('Github deploy key recreation failed, status {}'.format(code))
-    
-elif code not in range(200, 299):
-    raise RuntimeError('Github deploy key creation failed, status {}'.format(code))
-
-print '--> Created permanent deploy key', 'chimecms-key'
+functions.add_permanent_github_deploy_key(deploy_key, reponame, (username, password))
 
 #
 # Delete Github authorization.

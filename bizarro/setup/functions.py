@@ -114,6 +114,41 @@ def create_google_spreadsheet(credentials, reponame):
 
     return new_id
 
+def add_permanent_github_deploy_key(deploy_key, reponame, auth):
+    ''' Add a new repository deploy key.
+
+        https://developer.github.com/v3/repos/keys/#create
+    '''
+    key_name = 'chimecms-key'
+    keys_url = urljoin(GITHUB_API_BASE, '/repos/chimecms/{}/keys'.format(reponame))
+    head = {'Content-Type': 'application/json'}
+    body = json.dumps(dict(title=key_name, key=deploy_key))
+    resp = requests.post(keys_url, body, headers=head, auth=auth)
+    code = resp.status_code
+
+    if code == 422:
+        # Github deploy key already exists, but likely to be tied to OAuth token.
+        # Delete it, and recreate with basic auth so it survives auth deletion.
+        resp = requests.get(keys_url, auth=auth)
+        key_url = [k['url'] for k in resp.json() if k['title'] == 'token-key'][0]
+        resp = requests.delete(key_url, auth=auth)
+        code = resp.status_code
+    
+        if code not in range(200, 299):
+            raise RuntimeError('Github deploy key deletion failed, status {}'.format(code))
+    
+        print('    Deleted temporary token key')
+        resp = requests.post(keys_url, body, headers=head, auth=auth)
+        code = resp.status_code
+    
+        if code not in range(200, 299):
+            raise RuntimeError('Github deploy key recreation failed, status {}'.format(code))
+    
+    elif code not in range(200, 299):
+        raise RuntimeError('Github deploy key creation failed, status {}'.format(code))
+
+    print('--> Created permanent deploy key', key_name)
+
 def delete_temporary_github_authorization(github_auth_id, auth):
     ''' Delete Github authorization.
 
