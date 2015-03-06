@@ -116,6 +116,21 @@ def create_google_spreadsheet(credentials, reponame):
 
     return new_id
 
+def add_github_webhook(reponame, auth):
+    ''' Add a new repository webhook.
+    
+        https://developer.github.com/v3/repos/hooks/#create-a-hook
+    '''
+    url = urljoin(GITHUB_API_BASE, '/repos/chimecms/{}/hooks'.format(reponame))
+    body = dict(name='web', config=dict(url='https://ceviche-webhook.herokuapp.com'))
+    resp = requests.post(url, data=json.dumps(body), auth=auth)
+    code = resp.status_code
+
+    if code not in range(200, 299):
+        raise RuntimeError('Github webhook creation failed, status {}'.format(code))
+
+    print('--> Webhook created')
+
 def get_public_deploy_key(instance_dns_name, secret, salt):
     ''' Wait for and retrieve instance public key.
     '''

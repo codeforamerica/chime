@@ -138,16 +138,7 @@ while True:
 # Add a new repository webhook.
 # https://developer.github.com/v3/repos/hooks/#create-a-hook
 #
-url = urljoin(github_api_base, '/repos/chimecms/{}/hooks'.format(reponame))
-body = dict(name='web', config=dict(url='https://ceviche-webhook.herokuapp.com'))
-auth = github_temporary_token, 'x-oauth-basic'
-resp = requests.post(url, data=json.dumps(body), auth=auth)
-code = resp.status_code
-
-if code not in range(200, 299):
-    raise RuntimeError('Github webhook creation failed, status {}'.format(code))
-
-print '   ', 'Webhook created'
+functions.add_github_webhook(reponame, (github_temporary_token, 'x-oauth-basic'))
 
 #
 # Add a new repository deploy key.
