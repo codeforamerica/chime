@@ -118,15 +118,17 @@ def setup():
     '''
     values = dict(email=session['email'])
 
-    # grab the ga config
-    ga_config = read_ga_config()
+    ga_config = read_ga_config(current_app.config['RUNNING_STATE_DIR'])
     access_token = ga_config.get('access_token')
 
     if access_token:
         # get the name and email associated with this google account
         name, google_email = get_google_personal_info(access_token)
         # get a list of google analytics properties associated with this google account
-        properties = get_google_analytics_properties(access_token)
+        properties, backup_name = get_google_analytics_properties(access_token)
+        # use the backup name if we didn't get a name from the google+ API
+        if not name and backup_name != google_email:
+            name = backup_name
 
         if not properties:
             raise Exception("Your Google Account isn't associated with any Google Analytics properties. Log in to Google with a different account?")
@@ -164,7 +166,7 @@ def authorization_complete():
     return_link = request.form.get('return_link') or u'/'
     # write the new values to the config file
     config_values = {'profile_id': profile_id, 'project_domain': project_domain}
-    write_ga_config(config_values)
+    write_ga_config(config_values, current_app.config['RUNNING_STATE_DIR'])
 
     # pass the variables needed to summarize what's been done
     values = dict(email=session['email'], name=request.form.get('name'), google_email=request.form.get('google_email'), project_name=project_name, project_domain=project_domain, return_link=return_link)
@@ -329,7 +331,7 @@ def branch_edit(branch, path=None):
         history_path = join('/tree/%s/history' % branch_name2path(branch), path)
         app_authorized = False
 
-        ga_config = read_ga_config()
+        ga_config = read_ga_config(current_app.config['RUNNING_STATE_DIR'])
         analytics_dict = {}
         if ga_config.get('access_token'):
             app_authorized = True
@@ -404,7 +406,7 @@ def branch_history(branch, path=None):
 
     app_authorized = False
 
-    ga_config = read_ga_config()
+    ga_config = read_ga_config(current_app.config['RUNNING_STATE_DIR'])
     if ga_config.get('access_token'):
         app_authorized = True
 
