@@ -11,55 +11,56 @@ Follows the process described here:
   https://github.com/codeforamerica/ceviche-cms/issues/39#issuecomment-72957188
 
 '''
+from os import environ
 from time import sleep
-from bizarro.setup import functions
+from bizarro.setup import functions as F
 
 # Establish some baseline details.
-github_client_id, github_client_secret, gdocs_client_id, gdocs_client_secret, \
-    username, password, reponame, ec2, route53 = functions.get_input()
+gh_client_id, gh_client_secret, gdocs_client_id, gdocs_client_secret, \
+    gh_username, gh_password, reponame, ec2, route53 = F.get_input(environ)
 
 # Create a new authorization with Github.
-github_auth_id, github_temporary_token = functions.get_github_authorization(
-    github_client_id, github_client_secret, (username, password))
+gh_auth_id, gh_temporary_token = F.get_github_authorization(
+    gh_client_id, gh_client_secret, (gh_username, gh_password))
 
 # Ask for Google Docs credentials and create an authentication spreadsheet.
-gdocs_credentials = functions.authenticate_google(gdocs_client_id, gdocs_client_secret)
-sheet_url = functions.create_google_spreadsheet(gdocs_credentials, reponame)
+gdocs_credentials = F.authenticate_google(gdocs_client_id, gdocs_client_secret)
+sheet_url = F.create_google_spreadsheet(gdocs_credentials, reponame)
 
 # Verify status of Github authorization.
-functions.verify_github_authorization(
-    github_client_id, github_client_secret, github_temporary_token, github_auth_id)
+F.verify_github_authorization(gh_client_id, gh_client_secret,
+                              gh_temporary_token, gh_auth_id)
 
 # Set up EC2 instance.
-if functions.check_repo_state(reponame, github_temporary_token):
+if F.check_repo_state(reponame, gh_temporary_token):
     raise RuntimeError('Repository {} already exists, not going to run EC2'.format(reponame))
 
-instance = functions.create_ec2_instance(
-    ec2, reponame, sheet_url, gdocs_client_id, gdocs_client_secret, github_temporary_token)
+instance = F.create_ec2_instance(ec2, reponame, sheet_url, gdocs_client_id,
+                                 gdocs_client_secret, gh_temporary_token)
 
 while True:
     print '    Waiting for', reponame
     sleep(30)
 
-    if functions.check_repo_state(reponame, github_temporary_token):
+    if F.check_repo_state(reponame, gh_temporary_token):
         print '-->', 'https://github.com/chimecms/{}'.format(reponame), 'exists'
         break
 
 # Add a new repository webhook.
-functions.add_github_webhook(reponame, (github_temporary_token, 'x-oauth-basic'))
+F.add_github_webhook(reponame, (gh_temporary_token, 'x-oauth-basic'))
 
 # Add a new repository deploy key.
-deploy_key = functions.get_public_deploy_key(
-    instance.dns_name, secret=github_temporary_token, salt='deploy-key')
+deploy_key = F.get_public_deploy_key(
+    instance.dns_name, secret=gh_temporary_token, salt='deploy-key')
 
-functions.add_permanent_github_deploy_key(deploy_key, reponame, (username, password))
+F.add_permanent_github_deploy_key(deploy_key, reponame, (gh_username, gh_password))
 
 # Delete Github authorization.
-functions.delete_temporary_github_authorization(github_auth_id, (username, password))
+F.delete_temporary_github_authorization(gh_auth_id, (gh_username, gh_password))
 
 # Write domain name to Route 53.
-cname = functions.create_cname_record(route53, reponame, instance.dns_name)
+cname = F.create_cname_record(route53, reponame, instance.dns_name)
 
 # Save details of instance.
-functions.save_details(gdocs_credentials,
-                       reponame, cname, instance, reponame, sheet_url, deploy_key)
+F.save_details(gdocs_credentials, reponame, cname, instance,
+               reponame, sheet_url, deploy_key)

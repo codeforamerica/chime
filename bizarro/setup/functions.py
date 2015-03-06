@@ -1,6 +1,5 @@
 from __future__ import print_function
 
-from os import environ
 from getpass import getpass
 from os.path import join, dirname
 from re import match
@@ -38,7 +37,7 @@ def check_repo_state(reponame, token):
     
     return bool(resp.status_code == 200)
 
-def get_input():
+def get_input(environ):
     '''
     '''
     github_client_id = environ['GITHUB_CLIENT_ID']
