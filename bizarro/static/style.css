@@ -79,26 +79,29 @@ label{
 }
 /* Errors, Warnings and Notices */
 .flash-holder{
-	background-color:#eee;
+	margin:0em;
 	padding:1em;
 	width:33%;
-	margin-left:1em;
-	margin-bottom:1em;
 }
-ul.flashes{
-
+ul.flashes {
+	margin:0em;
+	padding:0em;
 }
 ul.flashes li {
-	list-style-type:none;
+	background-image:none;
+	padding-left:0.5em;
+	line-height:1.4em;
 }
 ul.flashes li.error {
-	background-color:#red;
+	background-color:red;
+	color:white;
 }
 ul.flashes li.warning {
-	background-color:#yellow;
+	background-color:yellow;
 }
 ul.flashes li.notice {
-	background-color:#green;
+	background-color:green;
+	color:white;
 }
 
 /* End Errors, Warnings and Notices */
