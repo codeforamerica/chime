@@ -489,6 +489,8 @@ def branch_save(branch, path):
 
     safe_branch = branch_name2path(branch)
 
+    flash('You saved the file!', 'notice')
+
     return redirect('/tree/%s/edit/%s' % (safe_branch, path), code=303)
 
 @app.route('/.well-known/deploy-key.txt')
