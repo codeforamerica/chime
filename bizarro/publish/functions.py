@@ -13,12 +13,12 @@ from requests import get
 
 from ..jekyll_functions import build_jekyll_site
 
-def process_commit(commit):
+def process_commit(commit_url, commit_sha):
     '''
     '''
     try:
         working_dir = mkdtemp()
-        checkout_dir = extract_commit(working_dir, commit['url'], commit['sha'])
+        checkout_dir = extract_github_commit(working_dir, commit_url, commit_sha)
         built_dir = build_jekyll_site(checkout_dir)
         content = archive_commit(built_dir)
         
@@ -29,8 +29,8 @@ def process_commit(commit):
     finally:
         rmtree(working_dir)
 
-def extract_commit(work_dir, commit_url, commit_sha):
-    ''' Extract a single commit to a directory and return its path.
+def extract_github_commit(work_dir, commit_url, commit_sha):
+    ''' Extract a single commit from Github to a directory and return its path.
     '''
     #
     # Convert commit URL to downloadable archive URL.

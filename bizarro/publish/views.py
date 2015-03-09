@@ -13,6 +13,6 @@ def index():
     if commit is None or 'url' not in commit:
         return Response('No', status=400)
     
-    process_commit(commit)
+    process_commit(commit['url'], commit['sha'])
     
     return ''
