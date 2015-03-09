@@ -92,11 +92,13 @@ def request_new_google_access_token(refresh_token, running_state_dir, client_id,
                 refresh_token=refresh_token, grant_type='refresh_token')
 
     resp = post(GOOGLE_ANALYTICS_TOKENS_URL, data=data)
+    access = resp.json()
 
     if resp.status_code != 200:
-        raise Exception()
-
-    access = json.loads(resp.content)
+        # log the error and return nothing
+        error_message = extract_error_message(access)
+        Logger.debug('request_new_google_access_token - Google Error: {}'.format(error_message))
+        return None, None
 
     # write the new token to the config file
     config_values = {'access_token': access['access_token']}
