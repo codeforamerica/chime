@@ -38,16 +38,6 @@
                 {% endif %}
                 
             <div id="{{languages[iso]}}-form" style="display: {{display}}" class="glayout-minim glayout-major language-edit">
-                {% with messages = get_flashed_messages() %}
-                    {% if messages %}
-                        <ul class="save-status-success">
-                        {% for message in messages %}
-                            <li>{{ message }}</li>
-                        {% endfor %}
-                        </ul>
-                    {% endif %}
-                {% endwith %}
-                       
                 <ul class="list-form">
                     <li class="form field">
                         <label>Heading</label>

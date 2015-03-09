@@ -77,6 +77,35 @@ label{
 .cfa span{
 	display:block;
 }
+/* Errors, Warnings and Notices */
+.flash-holder{
+	margin:0em;
+	padding:1em;
+	width:33%;
+}
+ul.flashes {
+	margin:0em;
+	padding:0em;
+}
+ul.flashes li {
+	background-image:none;
+	padding-left:0.5em;
+	line-height:1.4em;
+}
+ul.flashes li.error {
+	background-color:red;
+	color:white;
+}
+ul.flashes li.warning {
+	background-color:yellow;
+}
+ul.flashes li.notice {
+	background-color:green;
+	color:white;
+}
+
+/* End Errors, Warnings and Notices */
+
 /* Tasks and file explorer*/
 .current-tasks,
 .file-explorer,
