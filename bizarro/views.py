@@ -9,7 +9,7 @@ from glob import glob
 from git import Repo
 from git.cmd import GitCommandError
 from requests import post
-from flask import flash, redirect, request, Response, render_template, session, current_app
+from flask import redirect, request, Response, render_template, session, current_app
 
 from . import bizarro as app
 from . import repo_functions, edit_functions
