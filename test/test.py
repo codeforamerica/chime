@@ -21,6 +21,7 @@ sys.path.append(here)
 from git import Repo
 from box.util.rotunicode import RotUnicode
 from httmock import response, HTTMock
+from bs4 import BeautifulSoup
 from mock import MagicMock
 
 from bizarro import (
@@ -1196,6 +1197,7 @@ class TestApp (TestCase):
 
         app_args = {}
 
+        app_args['SINGLE_USER'] = 'Yes'
         app_args['GA_CLIENT_ID'] = 'client_id'
         app_args['GA_CLIENT_SECRET'] = 'meow_secret'
 
@@ -1363,6 +1365,27 @@ class TestApp (TestCase):
 
         # Verify that navigation tabs are in the correct order.
         self.assertTrue(html.index('id="fr-nav"') < html.index('id="en-nav"'))
+            
+        #
+        # Go back to the front page, and publish the do-things branch.
+        #
+        with HTTMock(self.auth_csv_example_allowed):
+            response = self.server.get('/', follow_redirects=True)
+
+        soup = BeautifulSoup(response.data)
+        
+        # Look for the publish form button.
+        inputs = soup.find_all('input', type='hidden', value='user@example.com/do-things')
+        (form, ) = [input.find_parent('form', action='/merge') for input in inputs]
+        button = form.find('button', text='Publish')
+        
+        # Punch it, Chewie.
+        data = dict([(i['name'], i['value']) for i in form.find_all(['input'])])
+        data.update({button['name']: button['value']})
+
+        with HTTMock(self.auth_csv_example_allowed):
+            response = self.server.post(form['action'], data=data, follow_redirects=True)
+            self.assertFalse('Not Allowed' in response.data)
 
     def test_google_callback_is_successful(self):
         ''' Ensure we get a successful page load on callback from Google authentication
