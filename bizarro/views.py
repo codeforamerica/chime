@@ -13,12 +13,19 @@ from flask import redirect, request, Response, render_template, session, current
 
 from . import bizarro as app
 from . import repo_functions, edit_functions
+from . import publish
 from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
-from .view_functions import (branch_name2path, branch_var2name, get_repo, name_branch,
-                             dos2unix, login_required, synch_required, synched_checkout_required,
-                             sorted_paths, directory_paths, should_redirect, make_redirect,
-                             get_auth_data_file, is_allowed_email, relative_datetime_string)
-from .google_api_functions import read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens, authorize_google, get_google_personal_info, get_google_analytics_properties, fetch_google_analytics_for_page, GA_CONFIG_FILENAME
+from .view_functions import (
+    branch_name2path, branch_var2name, get_repo, name_branch, dos2unix,
+    login_required, synch_required, synched_checkout_required, sorted_paths,
+    directory_paths, should_redirect, make_redirect, get_auth_data_file,
+    is_allowed_email, relative_datetime_string
+    )
+from .google_api_functions import (
+    read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens,
+    authorize_google, get_google_personal_info, get_google_analytics_properties,
+    fetch_google_analytics_for_page, GA_CONFIG_FILENAME
+    )
 
 import json
 
@@ -206,6 +213,8 @@ def merge_branch():
             repo_functions.clobber_default_branch(*args)
         else:
             raise Exception('I do not know what "%s" means' % action)
+
+        publish.prepare_commit(current_app, r, r.commit().hexsha)
 
     except repo_functions.MergeConflict as conflict:
         new_files, gone_files, changed_files = conflict.files()

@@ -13,7 +13,22 @@ from requests import get
 
 from ..jekyll_functions import build_jekyll_site
 
-def process_commit(commit_url, commit_sha):
+def process_local_commit(archive_path):
+    '''
+    '''
+    try:
+        working_dir = mkdtemp()
+        checkout_dir = extract_local_commit(working_dir, archive_path)
+        built_dir = build_jekyll_site(checkout_dir)
+        content = archive_commit(built_dir)
+        
+    except Exception as e:
+        logger.warning(e)
+
+    finally:
+        rmtree(working_dir)
+
+def process_remote_commit(commit_url, commit_sha):
     '''
     '''
     try:
@@ -23,11 +38,19 @@ def process_commit(commit_url, commit_sha):
         content = archive_commit(built_dir)
         
     except Exception as e:
-        print e
         logger.warning(e)
 
     finally:
         rmtree(working_dir)
+
+def extract_local_commit(work_dir, archive_path):
+    '''
+    '''
+    with open(archive_path) as file:
+        zip = ZipFile(file, 'r')
+        zip.extractall(work_dir)
+
+    return work_dir
 
 def extract_github_commit(work_dir, commit_url, commit_sha):
     ''' Extract a single commit from Github to a directory and return its path.
@@ -69,7 +92,6 @@ def archive_commit(directory):
             archpath = relpath(filepath, directory)
             zip.write(filepath, archpath)
     
-    zip.printdir()
-    print len(content.getvalue()), 'bytes'
+    print len(zip.namelist()), 'files in', len(content.getvalue()), 'bytes'
     
     return content
