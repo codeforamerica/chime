@@ -9,7 +9,7 @@ from glob import glob
 from git import Repo
 from git.cmd import GitCommandError
 from requests import post
-from flask import redirect, request, Response, render_template, session, current_app
+from flask import current_app, flash, render_template, redirect, request, Response, session
 
 from . import bizarro as app
 from . import repo_functions, edit_functions
@@ -141,8 +141,10 @@ def callback():
         # request (and write to config) current access and refresh tokens
         request_new_google_access_and_refresh_tokens(request)
 
-    except Exception:
-        return redirect('/authorization-failed')
+    except Exception as e:
+        error_message = e.args[0]
+        error_type = e.args[1] if len(e.args) > 1 else u'warning'
+        flash(error_message, error_type)
 
     return redirect('/setup')
 

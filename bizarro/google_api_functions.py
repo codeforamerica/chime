@@ -27,6 +27,7 @@ def authorize_google():
     '''
     #
     # This is how google says the state should be generated
+    # see: https://developers.google.com/accounts/docs/OpenIDConnect#createxsrftoken
     #
     state = ''.join(random.choice(ascii_uppercase + digits) for x in xrange(32))
     session['state'] = state
@@ -40,11 +41,23 @@ def get_google_client_info():
     '''
     return current_app.config['GA_CLIENT_ID'], current_app.config['GA_CLIENT_SECRET']
 
+def extract_error_message(response_json):
+    # extract an error message from the passed json, which was returned by a Google API
+    error_message = u''
+    if 'error_description' in response_json:
+        error_message = response_json['error_description']
+    elif 'error' in response_json and 'message' in response_json['error']:
+        error_message = response_json['error']['message']
+    elif 'error' in response_json and (type(response_json['error']) is str or type(response_json['error']) is unicode):
+        error_message = response_json['error']
+    return error_message
+
 def request_new_google_access_and_refresh_tokens(request):
     ''' Get new access and refresh tokens from the Google API.
     '''
     if request.args.get('state') != session['state']:
-        raise Exception('Error: state does not match!')
+        # the state we got back from Google doesn't match the state we sent
+        raise Exception('Unable to verify connection to Google, please try again.', 'error')
 
     code = request.args.get('code')
     redirect_uri = '{0}://{1}/callback'.format(request.scheme, request.host)
@@ -57,11 +70,12 @@ def request_new_google_access_and_refresh_tokens(request):
     access = response.json()
 
     if response.status_code != 200:
-        if 'error_description' in access:
-            error_message = access['error_description']
-        elif 'error' in access and 'message' in access['error']:
-            error_message = access['error']['message']
-        raise Exception('request_new_google_access_and_refresh_tokens - Google Error: {}'.format(error_message))
+        # Google rejected our requst for some reason
+        error_message = extract_error_message(access)
+        if error_message:
+            error_message = ' ({})'.format(error_message)
+
+        raise Exception('Google rejected authorization request{}, please try again.'.format(error_message), 'error')
 
     # write the new tokens to the config file
     config_values = {'access_token': access['access_token'], 'refresh_token': access['refresh_token']}
@@ -150,11 +164,7 @@ def get_google_personal_info(access_token):
 
     # if there's an error, log it and return blank values
     if response.status_code != 200:
-        error_message = u''
-        if 'error_description' in whoami:
-            error_message = whoami['error_description']
-        elif 'error' in whoami and 'message' in whoami['error']:
-            error_message = whoami['error']['message']
+        error_message = extract_error_message(whoami)
         Logger.debug('get_google_analytics_properties - Google Error: {}'.format(error_message))
         return name, email
 
@@ -179,11 +189,7 @@ def get_google_analytics_properties(access_token):
     items = response.json()
 
     if response.status_code != 200:
-        error_message = u''
-        if 'error_description' in items:
-            error_message = items['error_description']
-        elif 'error' in items and 'message' in items['error']:
-            error_message = items['error']['message']
+        error_message = extract_error_message(items)
         Logger.debug('get_google_analytics_properties - Google Error: {}'.format(error_message))
         # return blank values
         return properties, username
