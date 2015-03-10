@@ -957,7 +957,7 @@ class TestGoogleApiFunctions (TestCase):
         self.ga_config_dir = mkdtemp(prefix='bizarro-config-')
         app_args['RUNNING_STATE_DIR'] = self.ga_config_dir
 
-        self.app = create_app(app_args, False)
+        self.app = create_app(app_args, True)
 
         # write a tmp config file
         config_values = {
@@ -1176,14 +1176,14 @@ class TestGoogleApiFunctions (TestCase):
 class TestAppConfig (TestCase):
 
     def test_missing_values(self):
-        self.assertRaises(KeyError, lambda: create_app({}, False))
+        self.assertRaises(KeyError, lambda: create_app({}, True))
 
     def test_present_values(self):
         app_config = {}
         app_config['RUNNING_STATE_DIR'] = 'Yo'
         app_config['GA_CLIENT_ID'] = 'Yo'
         app_config['GA_CLIENT_SECRET'] = 'Yo'
-        create_app(app_config, False)
+        create_app(app_config, True)
 
 class TestApp (TestCase):
 
@@ -1207,7 +1207,7 @@ class TestApp (TestCase):
         app_args['REPO_PATH'] = temp_repo_path
         app_args['AUTH_DATA_HREF'] = 'http://example.com/auth.csv'
 
-        self.app = create_app(app_args, False)
+        self.app = create_app(app_args, True)
 
         # write a tmp config file
         config_values = {
