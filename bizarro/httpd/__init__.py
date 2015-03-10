@@ -45,17 +45,6 @@ TypesConfig {MimeTypes}
 </Directory>
 '''
 
-def build_site(destination, watch):
-    '''
-    '''
-    command = 'jekyll', 'build', '-d', destination
-    
-    if watch:
-        command += ('--watch', )
-    
-    Popen(command).wait()
-    logger.debug('Built site to {}'.format(destination))
-
 def write_config(doc_root, root, port):
     ''' Look for Apache modules, write a configuration file.
     
@@ -86,45 +75,6 @@ def apache_version(httpd_path):
     major, minor, patch = [int(match.group(i)) for i in (1, 2, 3)]
 
     return major, minor
-
-def run_apache_with_jekyll(root, port, watch):
-    ''' Look for Apache executable and start it up.
-    
-        When the user cancels or kills the process, stop Apache.
-    '''
-    try:
-        doc_root = join(root, '_site')
-        mkdir(doc_root)
-        mkdir(join(root, 'logs'))
-
-        mod_path = write_config(doc_root, root, port)
-        httpd_paths = '/usr/sbin/httpd', '/usr/sbin/apache2'
-        httpd_path = filter(exists, httpd_paths)[0]
-
-        version_param = '-DVersion{}.{}'.format(*apache_version(httpd_path))
-        
-        httpd_cmd = (httpd_path, '-d', root, '-f', 'httpd.conf',
-                     '-DFOREGROUND', '-DNO_DETACH', version_param)
-        
-        if exists(join(mod_path, 'mod_unixd.so')):
-            httpd_cmd += ('-DUnixd', )
-
-        if exists(join(mod_path, 'mod_mpm_event.so')):
-            httpd_cmd += ('-DMpmEvent', )
-
-        stderr = open(join(root, 'stderr'), 'w')
-        stdout = open(join(root, 'stdout'), 'w')
-
-        try:
-            httpd = Popen(httpd_cmd, stderr=stderr, stdout=stdout)
-            logger.debug('Running Apache at http://127.0.0.1:{}'.format(port))
-            build_site(doc_root, watch)
-            sleep(7 * 86400)
-        finally:
-            httpd.kill()
-
-    except KeyboardInterrupt:
-        rmtree(root)
 
 def run_apache_forever(doc_root, root, port, watch):
     ''' Look for Apache executable and start it up.
