@@ -1,3 +1,6 @@
+from logging import getLogger
+logger = getLogger('bizarro.httpd')
+
 from os.path import join, exists
 from subprocess import Popen, PIPE, check_output
 from shutil import rmtree
@@ -51,7 +54,7 @@ def build_site(destination, watch):
         command += ('--watch', )
     
     Popen(command).wait()
-    print 'Built to', destination
+    logger.debug('Built site to {}'.format(destination))
 
 def write_config(doc_root, root, port):
     ''' Look for Apache modules, write a configuration file.
@@ -114,7 +117,7 @@ def run_apache_with_jekyll(root, port, watch):
 
         try:
             httpd = Popen(httpd_cmd, stderr=stderr, stdout=stdout)
-            print 'Running at http://127.0.0.1:{}'.format(port)
+            logger.debug('Running Apache at http://127.0.0.1:{}'.format(port))
             build_site(doc_root, watch)
             sleep(7 * 86400)
         finally:
@@ -130,8 +133,10 @@ def run_apache_forever(doc_root, root, port, watch):
         
         Assumes that jekyll build has already created root/_site.
     '''
-    if exists(join(root, 'httpd.pid')):
-        from sys import stderr; print >> stderr, 'FUCK IT'
+    pid_path = join(root, 'httpd.pid')
+    
+    if exists(pid_path):
+        logger.debug('Refusing to run Apache because {} exists'.format(pid_path))
         return None
     
     try:
@@ -158,6 +163,6 @@ def run_apache_forever(doc_root, root, port, watch):
     stdout = open(join(root, 'stdout'), 'w')
 
     httpd = Popen(httpd_cmd, stderr=stderr, stdout=stdout)
-    print 'Running at http://127.0.0.1:{} from {}'.format(port, root)
+    logger.debug('Running Apache at http://127.0.0.1:{} from {}'.format(port, root))
     
     return httpd

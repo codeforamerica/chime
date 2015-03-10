@@ -1,6 +1,7 @@
 from logging import getLogger
 logger = getLogger('bizarro.publish')
 
+from os import mkdir
 from os.path import join
 from tempfile import mkdtemp
 from shutil import rmtree
@@ -10,10 +11,10 @@ from logging import getLogger, DEBUG
 
 from .functions import process_local_commit
 
-def release_commit(app, repo, commit_sha):
+def release_commit(running_dir, repo, commit_sha):
     '''
     '''
-    print 'NEED TO RELEASE', repr(repo), commit_sha
+    logger.debug('Release commit {}'.format(commit_sha))
     
     try:
         working_dir = mkdtemp()
@@ -23,16 +24,15 @@ def release_commit(app, repo, commit_sha):
             repo.archive(file, commit_sha, format='zip')
         
         zip = process_local_commit(archive_path)
+        extract_dir = join(running_dir, 'master')
         
         try:
-            from os import mkdir
-            mkdir(join(app.config['RUNNING_STATE_DIR'], 'master'))
+            mkdir(extract_dir)
         except OSError:
             pass
-        
-        print 'YAY', join(app.config['RUNNING_STATE_DIR'], 'master'), zip
-        
-        zip.extractall(join(app.config['RUNNING_STATE_DIR'], 'master'))
+
+        logger.debug('Extracting zip archive to {}'.format(extract_dir))
+        zip.extractall(extract_dir)
         
     except Exception as e:
         print e

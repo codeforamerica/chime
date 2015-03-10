@@ -1,5 +1,10 @@
-from flask import Blueprint, Flask
 from logging import getLogger, DEBUG
+logger = getLogger('bizarro')
+
+from os import mkdir
+from os.path import realpath, join
+
+from flask import Blueprint, Flask
 
 from .httpd import run_apache_forever
 
@@ -8,31 +13,26 @@ bizarro = Blueprint('bizarro', __name__, template_folder='templates')
 class AppShim:
 
     def __init__(self, app, run_apache):
+        '''
+        '''
+        running_dir = app.config['RUNNING_STATE_DIR']
+        logger.debug('Starting AppShim in {running_dir}'.format(**locals()))
     
-        from sys import stderr; from os import getpid
-        print >> stderr, 'HERE WE GO', getpid(), app.config['RUNNING_STATE_DIR']
+        self.app = app
+        self.config = app.config
+        self.httpd = None
         
+        root = join(realpath(running_dir), 'apache')
+        doc_root = join(realpath(running_dir), 'master')
+
         if run_apache:
-            from os import mkdir; from os.path import realpath, join
-            root = join(realpath(app.config['RUNNING_STATE_DIR']), 'apache')
-            doc_root = join(realpath(app.config['RUNNING_STATE_DIR']), 'master')
             try:
                 mkdir(root)
                 mkdir(doc_root)
             except OSError:
                 pass
             port = 5001
-        
             self.httpd = run_apache_forever(doc_root, root, port, False)
-    
-        self.app = app
-        self.config = app.config
-    
-    def __delete__(self):
-        '''
-        '''
-        from sys import stderr
-        print >> stderr, 'WE ARE DONE', getpid()
     
     def app_context(self, *args, **kwargs):
         ''' Used in tests.
@@ -81,7 +81,7 @@ def create_app(environ, run_apache):
         '''
         '''
         if app.debug:
-            getLogger('bizarro').setLevel(DEBUG)
+            logger.setLevel(DEBUG)
     
     return AppShim(app, run_apache)
 

@@ -214,7 +214,7 @@ def merge_branch():
         else:
             raise Exception('I do not know what "%s" means' % action)
 
-        publish.release_commit(current_app, r, r.commit().hexsha)
+        publish.release_commit(current_app.config['RUNNING_STATE_DIR'], r, r.commit().hexsha)
 
     except repo_functions.MergeConflict as conflict:
         new_files, gone_files, changed_files = conflict.files()
