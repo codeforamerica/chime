@@ -34,6 +34,7 @@ body h3{
 	font-size:1em;
 }
 .nav{
+	padding-top:0.2em;
 	float:right;
 }
 .nav li{
@@ -43,6 +44,40 @@ body h3{
 .nav a{
 	color:#fff;
 }
+.sub-nav{
+	background-color:#004b6a;
+	margin:0;
+	padding:0;
+	text-align:right;
+	padding-right:2em;
+}
+.sub-nav ul, .sub-nav li{
+	padding:0;
+	margin:0;
+}
+.sub-nav li{
+	display:inline;
+
+}
+.sub-nav li a{
+	padding:0.3em 0.5em;
+}
+.sub-nav li a:link, .sub-nav li a:visited {
+	color:#fff;
+}
+.sub-nav li a:hover, .sub-nav li a:active {
+	background-color:#fff;
+	color:#000;
+}
+.sub-nav li.selected a:link, .sub-nav li.selected a:visited {
+	color:#000;
+	background-color:#fff;
+}
+.sub-nav li.selected a:hover, .sub-nav li.selected a:active {
+	background-color:none;
+}
+
+
 label{
 	text-transform:none;
 }
