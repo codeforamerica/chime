@@ -1183,7 +1183,7 @@ class TestAppConfig (TestCase):
         app_config['RUNNING_STATE_DIR'] = 'Yo'
         app_config['GA_CLIENT_ID'] = 'Yo'
         app_config['GA_CLIENT_SECRET'] = 'Yo'
-        create_app(app_config, True)
+        create_app(app_config, False)
 
 class TestApp (TestCase):
 
