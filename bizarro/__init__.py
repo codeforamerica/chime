@@ -7,22 +7,23 @@ bizarro = Blueprint('bizarro', __name__, template_folder='templates')
 
 class AppShim:
 
-    def __init__(self, app):
+    def __init__(self, app, run_apache):
     
         from sys import stderr; from os import getpid
         print >> stderr, 'HERE WE GO', getpid(), app.config['RUNNING_STATE_DIR']
         
-        from os import mkdir; from os.path import realpath, join
-        root = join(realpath(app.config['RUNNING_STATE_DIR']), 'apache')
-        doc_root = join(realpath(app.config['RUNNING_STATE_DIR']), 'master')
-        try:
-            mkdir(root)
-            mkdir(doc_root)
-        except OSError:
-            pass
-        port = 5001
+        if run_apache:
+            from os import mkdir; from os.path import realpath, join
+            root = join(realpath(app.config['RUNNING_STATE_DIR']), 'apache')
+            doc_root = join(realpath(app.config['RUNNING_STATE_DIR']), 'master')
+            try:
+                mkdir(root)
+                mkdir(doc_root)
+            except OSError:
+                pass
+            port = 5001
         
-        self.httpd = run_apache_forever(doc_root, root, port, False)
+            self.httpd = run_apache_forever(doc_root, root, port, False)
     
         self.app = app
         self.config = app.config
@@ -53,7 +54,7 @@ class AppShim:
         '''
         return self.app(*args, **kwargs)
 
-def create_app(environ):
+def create_app(environ, run_apache):
     app = Flask(__name__, static_folder='static')
     app.secret_key = 'boop'
     app.config['RUNNING_STATE_DIR'] = environ['RUNNING_STATE_DIR']
@@ -77,6 +78,6 @@ def create_app(environ):
         if app.debug:
             getLogger('bizarro').setLevel(DEBUG)
     
-    return AppShim(app)
+    return AppShim(app, run_apache)
 
 from . import views
