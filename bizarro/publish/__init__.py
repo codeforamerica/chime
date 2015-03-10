@@ -22,7 +22,17 @@ def release_commit(app, repo, commit_sha):
         with open(archive_path, 'w') as file:
             repo.archive(file, commit_sha, format='zip')
         
-        process_local_commit(archive_path)
+        zip = process_local_commit(archive_path)
+        
+        try:
+            from os import mkdir
+            mkdir(join(app.config['RUNNING_STATE_DIR'], 'master'))
+        except OSError:
+            pass
+        
+        print 'YAY', join(app.config['RUNNING_STATE_DIR'], 'master'), zip
+        
+        zip.extractall(join(app.config['RUNNING_STATE_DIR'], 'master'))
         
     except Exception as e:
         print e

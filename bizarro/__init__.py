@@ -14,21 +14,34 @@ class AppShim:
         
         from os import mkdir; from os.path import realpath, join
         root = join(realpath(app.config['RUNNING_STATE_DIR']), 'apache')
+        doc_root = join(realpath(app.config['RUNNING_STATE_DIR']), 'master')
         try:
             mkdir(root)
+            mkdir(doc_root)
         except OSError:
             pass
-        port = 6000
+        port = 5001
         
-        self.httpd = run_apache_forever(realpath('.'), root, port, False)
+        self.httpd = run_apache_forever(doc_root, root, port, False)
     
         self.app = app
+        self.config = app.config
     
     def __delete__(self):
         '''
         '''
         from sys import stderr
         print >> stderr, 'WE ARE DONE', getpid()
+    
+    def app_context(self, *args, **kwargs):
+        ''' Used in tests.
+        '''
+        return self.app.app_context(*args, **kwargs)
+    
+    def test_client(self, *args, **kwargs):
+        ''' Used in tests.
+        '''
+        return self.app.test_client(*args, **kwargs)
     
     def run(self, *args, **kwargs):
         ''' Used in debug context, typically by run.py.
