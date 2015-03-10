@@ -1,7 +1,44 @@
 from flask import Blueprint, Flask
 from logging import getLogger, DEBUG
 
+from .httpd import run_apache_forever
+
 bizarro = Blueprint('bizarro', __name__, template_folder='templates')
+
+class AppShim:
+
+    def __init__(self, app):
+    
+        from sys import stderr; from os import getpid
+        print >> stderr, 'HERE WE GO', getpid(), app.config['RUNNING_STATE_DIR']
+        
+        from os import mkdir; from os.path import realpath, join
+        root = join(realpath(app.config['RUNNING_STATE_DIR']), 'apache')
+        try:
+            mkdir(root)
+        except OSError:
+            pass
+        port = 6000
+        
+        self.httpd = run_apache_forever(realpath('.'), root, port, False)
+    
+        self.app = app
+    
+    def __delete__(self):
+        '''
+        '''
+        from sys import stderr
+        print >> stderr, 'WE ARE DONE', getpid()
+    
+    def run(self, *args, **kwargs):
+        ''' Used in debug context, typically by run.py.
+        '''
+        return self.app.run(*args, **kwargs)
+    
+    def __call__(self, *args, **kwargs):
+        ''' Used in WSGI context, typically by gunicorn.
+        '''
+        return self.app(*args, **kwargs)
 
 def create_app(environ):
     app = Flask(__name__, static_folder='static')
@@ -26,7 +63,7 @@ def create_app(environ):
         '''
         if app.debug:
             getLogger('bizarro').setLevel(DEBUG)
-
-    return app
+    
+    return AppShim(app)
 
 from . import views

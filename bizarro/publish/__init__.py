@@ -10,10 +10,10 @@ from logging import getLogger, DEBUG
 
 from .functions import process_local_commit
 
-def prepare_commit(app, repo, commit_sha):
+def release_commit(app, repo, commit_sha):
     '''
     '''
-    print 'NEED TO PUBLISH', repr(repo), commit_sha
+    print 'NEED TO RELEASE', repr(repo), commit_sha
     
     try:
         working_dir = mkdtemp()
