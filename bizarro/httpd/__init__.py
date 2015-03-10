@@ -10,6 +10,7 @@ LoadModule rewrite_module {ModulesPath}/mod_rewrite.so
 LoadModule alias_module {ModulesPath}/mod_alias.so
 LoadModule dir_module {ModulesPath}/mod_dir.so
 LoadModule mime_module {ModulesPath}/mod_mime.so
+LoadModule negotiation_module {ModulesPath}/mod_negotiation.so
 
 <IfDefine Unixd>
     LoadModule unixd_module {ModulesPath}/mod_unixd.so
@@ -35,8 +36,9 @@ DocumentRoot "{DocumentRoot}"
 TypesConfig {MimeTypes}
 
 <Directory "/">
-    Options +FollowSymLinks
+    Options +FollowSymLinks +MultiViews
     AllowOverride Options FileInfo Indexes
+    MultiviewsMatch Any
 </Directory>
 '''
 
