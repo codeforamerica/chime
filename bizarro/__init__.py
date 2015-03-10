@@ -44,6 +44,11 @@ class AppShim:
         '''
         return self.app.test_client(*args, **kwargs)
     
+    def test_request_context(self, *args, **kwargs):
+        ''' Used in tests.
+        '''
+        return self.app.test_request_context(*args, **kwargs)
+    
     def run(self, *args, **kwargs):
         ''' Used in debug context, typically by run.py.
         '''
