@@ -76,6 +76,46 @@ body h3{
 .sub-nav li.selected a:hover, .sub-nav li.selected a:active {
 	background-color:none;
 }
+.flash-holder{
+	position:fixed;
+	text-align:center;
+	top:0px;
+	left:30%;
+	width:30%;
+}
+
+
+.flash-holder,
+.flash-holder ul,
+.flash-holder ul li{
+	margin:0;
+	padding:0;
+}
+.flash-holder ul{
+	color:#fff;
+	background-color:#aa1c3a;
+}
+ul.flashes li {
+	background-image:none;
+	padding-left:0.5em;
+	line-height:1.4em;
+
+}
+ul.flashes li.error {
+	background-color:#aa1c3a;
+	color:white;
+}
+ul.flashes li.warning {
+	background-color:#e87d2b;
+}
+ul.flashes li.notice {
+	background-color:#00a175;
+	color:#fff;
+}
+
+/* End Errors, Warnings and Notices */
+
+
 
 
 label{
@@ -112,34 +152,7 @@ label{
 .cfa span{
 	display:block;
 }
-/* Errors, Warnings and Notices */
-.flash-holder{
-	margin:0em;
-	padding:1em;
-	width:33%;
-}
-ul.flashes {
-	margin:0em;
-	padding:0em;
-}
-ul.flashes li {
-	background-image:none;
-	padding-left:0.5em;
-	line-height:1.4em;
-}
-ul.flashes li.error {
-	background-color:red;
-	color:white;
-}
-ul.flashes li.warning {
-	background-color:yellow;
-}
-ul.flashes li.notice {
-	background-color:green;
-	color:white;
-}
 
-/* End Errors, Warnings and Notices */
 
 /* Tasks and file explorer*/
 .current-tasks,
