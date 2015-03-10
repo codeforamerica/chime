@@ -127,12 +127,15 @@ def dump_jekyll_doc(front_matter, content, file):
     file.write(content.encode('utf8'))
 
 def build_jekyll_site(dirname):
-    '''
+    ''' Build the Jekyll site inside dirname, return path to the built site.
     '''
     from subprocess import Popen
     
     build = Popen(['jekyll', 'build'], cwd=dirname)
     build.wait()
+    
+    # By default Jekyll builds into dirname/_site
+    return join(dirname, '_site')
 
 if __name__ == '__main__':
     import doctest

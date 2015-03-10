@@ -1,9 +1,65 @@
-from flask import Blueprint, Flask
 from logging import getLogger, DEBUG
+logger = getLogger('bizarro')
+
+from os import mkdir
+from os.path import realpath, join
+
+from flask import Blueprint, Flask
+
+from .httpd import run_apache_forever
 
 bizarro = Blueprint('bizarro', __name__, template_folder='templates')
 
-def create_app(environ):
+class AppShim:
+
+    def __init__(self, app, run_apache):
+        '''
+        '''
+        running_dir = app.config['RUNNING_STATE_DIR']
+        logger.debug('Starting AppShim in {running_dir}'.format(**locals()))
+    
+        self.app = app
+        self.config = app.config
+        self.httpd = None
+        
+        root = join(realpath(running_dir), 'apache')
+        doc_root = join(realpath(running_dir), 'master')
+
+        if run_apache:
+            try:
+                mkdir(root)
+                mkdir(doc_root)
+            except OSError:
+                pass
+            port = 5001
+            self.httpd = run_apache_forever(doc_root, root, port, False)
+    
+    def app_context(self, *args, **kwargs):
+        ''' Used in tests.
+        '''
+        return self.app.app_context(*args, **kwargs)
+    
+    def test_client(self, *args, **kwargs):
+        ''' Used in tests.
+        '''
+        return self.app.test_client(*args, **kwargs)
+    
+    def test_request_context(self, *args, **kwargs):
+        ''' Used in tests.
+        '''
+        return self.app.test_request_context(*args, **kwargs)
+    
+    def run(self, *args, **kwargs):
+        ''' Used in debug context, typically by run.py.
+        '''
+        return self.app.run(*args, **kwargs)
+    
+    def __call__(self, *args, **kwargs):
+        ''' Used in WSGI context, typically by gunicorn.
+        '''
+        return self.app(*args, **kwargs)
+
+def create_app(environ, run_apache):
     app = Flask(__name__, static_folder='static')
     app.secret_key = 'boop'
     app.config['RUNNING_STATE_DIR'] = environ['RUNNING_STATE_DIR']
@@ -25,8 +81,8 @@ def create_app(environ):
         '''
         '''
         if app.debug:
-            getLogger('bizarro').setLevel(DEBUG)
-
-    return app
+            logger.setLevel(DEBUG)
+    
+    return AppShim(app, run_apache)
 
 from . import views
