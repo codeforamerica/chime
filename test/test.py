@@ -971,14 +971,12 @@ class TestGoogleApiFunctions (TestCase):
         if google_api_functions.GOOGLE_ANALYTICS_TOKENS_URL in url.geturl():
             content = {'access_token': 'meowser_access_token', 'token_type': 'meowser_type', 'expires_in': 3920}
             return response(200, content)
-
         else:
             raise Exception('01 Asked for unknown URL ' + url.geturl())
 
     def mock_failed_request_new_google_access_token(self, url, request):
         if google_api_functions.GOOGLE_ANALYTICS_TOKENS_URL in url.geturl():
             return response(500)
-
         else:
             raise Exception('02 Asked for unknown URL ' + url.geturl())
 
@@ -1270,8 +1268,7 @@ class TestApp (TestCase):
 
     def mock_failed_google_callback(self, url, request):
         if google_api_functions.GOOGLE_ANALYTICS_TOKENS_URL in url.geturl():
-            return response(500)
-
+            return response(500, '''{}''')
         else:
             return self.auth_csv_example_allowed(url, request)
 
@@ -1414,10 +1411,21 @@ class TestApp (TestCase):
         with HTTMock(self.mock_google_authorization):
             self.server.post('/authorize')
 
-        with HTTMock(self.mock_failed_google_callback):
-            response = self.server.get('/callback?state=PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP&code=code')
+        from flask import session
 
-        self.assertTrue('authorization-failed' in response.location)
+        with HTTMock(self.mock_failed_google_callback):
+            # wrap in server context to access session
+            with self.server as srvr:
+                srvr.get('/callback?state=PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP&code=code')
+                self.assertTrue('_flashes' in session)
+                flashes = session.get('_flashes')
+                self.assertTrue(len(flashes))
+                found_flash = False
+                for check_flash in flashes:
+                    if u'error' in check_flash[0] and u'Google rejected authorization request' in check_flash[1]:
+                        found_flash = True
+                        break
+                self.assertTrue(found_flash)
 
 if __name__ == '__main__':
     main()

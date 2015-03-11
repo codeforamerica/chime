@@ -57,7 +57,7 @@ def request_new_google_access_and_refresh_tokens(request):
     '''
     if request.args.get('state') != session['state']:
         # the state we got back from Google doesn't match the state we sent
-        raise Exception('Unable to verify connection to Google, please try again.', 'error')
+        raise Exception(u'Unable to verify connection to Google, please try again.', u'error')
 
     code = request.args.get('code')
     redirect_uri = '{0}://{1}/callback'.format(request.scheme, request.host)
@@ -67,15 +67,19 @@ def request_new_google_access_and_refresh_tokens(request):
                 grant_type='authorization_code')
 
     response = post(GOOGLE_ANALYTICS_TOKENS_URL, data=data)
-    access = response.json()
+
+    try:
+        access = response.json()
+    except:
+        access = {}
 
     if response.status_code != 200:
-        # Google rejected our requst for some reason
+        # Google rejected our request for some reason
         error_message = extract_error_message(access)
         if error_message:
             error_message = ' ({})'.format(error_message)
 
-        raise Exception('Google rejected authorization request{}, please try again.'.format(error_message), 'error')
+        raise Exception(u'Google rejected authorization request{}, please try again.'.format(error_message), u'error')
 
     # write the new tokens to the config file
     config_values = {'access_token': access['access_token'], 'refresh_token': access['refresh_token']}
@@ -158,17 +162,16 @@ def get_google_personal_info(access_token):
     email = u''
     name = u''
 
-    if not access_token:
-        return name, email
-
     response = get(GOOGLE_PLUS_WHOAMI_URL, params={'access_token': access_token})
     whoami = response.json()
 
     # if there's an error, log it and return blank values
     if response.status_code != 200:
         error_message = extract_error_message(whoami)
-        Logger.debug('get_google_analytics_properties - Google Error: {}'.format(error_message))
-        return name, email
+        if error_message:
+            error_message = ' ({})'.format(error_message)
+
+        raise Exception('Unable to retreive personal info from the Google+ API{}'.format(error_message), 'warning')
 
     if 'emails' in whoami:
         emails = dict([(e['type'], e['value']) for e in whoami['emails']])
@@ -192,9 +195,10 @@ def get_google_analytics_properties(access_token):
 
     if response.status_code != 200:
         error_message = extract_error_message(items)
-        Logger.debug('get_google_analytics_properties - Google Error: {}'.format(error_message))
-        # return blank values
-        return properties, username
+        if error_message:
+            error_message = u' ({})'.format(error_message)
+
+        raise Exception(u'Unable to retrieve analytics properties list{}'.format(error_message), u'error')
 
     properties = [
         (item['defaultProfileId'], item['name'], item['websiteUrl'])
