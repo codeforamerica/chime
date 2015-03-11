@@ -262,6 +262,14 @@ def is_allowed_email(file, email):
 
     return False
 
+def common_template_args(app_config, session):
+    ''' Return dictionary of template arguments common to most pages.
+    '''
+    return {
+        'email': session.get('email', None),
+        'live_site_url': app_config['LIVE_SITE_URL']
+        }
+
 def login_required(route_function):
     ''' Login decorator for route functions.
 
