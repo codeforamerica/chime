@@ -78,14 +78,17 @@ def index():
 
     email = session.get('email', None)
 
-    kwargs = dict(items=list_items, email=email)
+    kwargs = dict(live_site_url=current_app.config['LIVE_SITE_URL'],
+                  items=list_items, email=email)
+
     return render_template('index.html', **kwargs)
 
 @app.route('/not-allowed')
 def not_allowed():
     email = session.get('email', None)
     auth_data_href = current_app.config['AUTH_DATA_HREF']
-    kwargs = dict(email=email, auth_url=auth_data_href)
+    kwargs = dict(live_site_url=current_app.config['LIVE_SITE_URL'],
+                  email=email, auth_url=auth_data_href)
 
     if not email:
         return render_template('not-allowed.html', **kwargs)
@@ -121,7 +124,8 @@ def sign_out():
 def setup():
     ''' Render a form that steps through application setup (currently only google analytics).
     '''
-    values = dict(email=session['email'])
+    values = dict(live_site_url=current_app.config['LIVE_SITE_URL'],
+                  email=session['email'])
 
     ga_config = read_ga_config(current_app.config['RUNNING_STATE_DIR'])
     access_token = ga_config.get('access_token')
@@ -174,13 +178,19 @@ def authorization_complete():
     write_ga_config(config_values, current_app.config['RUNNING_STATE_DIR'])
 
     # pass the variables needed to summarize what's been done
-    values = dict(email=session['email'], name=request.form.get('name'), google_email=request.form.get('google_email'), project_name=project_name, project_domain=project_domain, return_link=return_link)
+    values = dict(live_site_url=current_app.config['LIVE_SITE_URL'],
+                  email=session['email'], name=request.form.get('name'),
+                  google_email=request.form.get('google_email'),
+                  project_name=project_name, project_domain=project_domain,
+                  return_link=return_link)
 
     return render_template('authorization-complete.html', **values)
 
 @app.route('/authorization-failed')
 def authorization_failed():
-    return render_template('authorization-failed.html', email=session['email'])
+    return render_template('authorization-failed.html',
+                           live_site_url=current_app.config['LIVE_SITE_URL'],
+                           email=session['email'])
 
 @app.route('/start', methods=['POST'])
 @login_required
@@ -221,7 +231,8 @@ def merge_branch():
     except repo_functions.MergeConflict as conflict:
         new_files, gone_files, changed_files = conflict.files()
 
-        kwargs = dict(branch=branch_name, new_files=new_files,
+        kwargs = dict(live_site_url=current_app.config['LIVE_SITE_URL'],
+                      branch=branch_name, new_files=new_files,
                       gone_files=gone_files, changed_files=changed_files)
 
         return render_template('merge-conflict.html', **kwargs)
@@ -252,7 +263,8 @@ def review_branch():
         new_files, gone_files, changed_files = conflict.files()
 
         kwargs = dict(branch=branch_name, new_files=new_files,
-                      gone_files=gone_files, changed_files=changed_files)
+                      gone_files=gone_files, changed_files=changed_files,
+                      live_site_url=current_app.config['LIVE_SITE_URL'])
 
         return render_template('merge-conflict.html', **kwargs)
 
@@ -306,7 +318,8 @@ def branch_edit(branch, path=None):
         showallfiles = request.args.get('showallfiles') == u'true'
 
         kwargs = dict(branch=branch, safe_branch=safe_branch, dirs_and_paths=directory_paths(branch, path),
-                      email=session['email'], list_paths=sorted_paths(r, branch, path, showallfiles))
+                      email=session['email'], list_paths=sorted_paths(r, branch, path, showallfiles),
+                      live_site_url=current_app.config['LIVE_SITE_URL'])
 
         master_name = current_app.config['default_branch']
         kwargs['rejection_messages'] = list(repo_functions.get_rejection_messages(r, master_name, branch))
@@ -349,7 +362,8 @@ def branch_edit(branch, path=None):
                       front=front, email=session['email'],
                       view_path=view_path, edit_path=path,
                       history_path=history_path,
-                      languages=languages, app_authorized=app_authorized)
+                      languages=languages, app_authorized=app_authorized,
+                      live_site_url=current_app.config['LIVE_SITE_URL'])
 
         kwargs.update(analytics_dict)
 
@@ -430,7 +444,8 @@ def branch_history(branch, path=None):
     kwargs = dict(branch=branch, safe_branch=safe_branch,
                   history=history, email=session['email'],
                   view_path=view_path, edit_path=edit_path, path=path,
-                  languages=languages, app_authorized=app_authorized)
+                  languages=languages, app_authorized=app_authorized,
+                  live_site_url=current_app.config['LIVE_SITE_URL'])
 
     return render_template('tree-branch-history.html', **kwargs)
 
@@ -444,7 +459,8 @@ def branch_review(branch):
     c = r.commit()
 
     kwargs = dict(branch=branch, safe_branch=branch_name2path(branch),
-                  hexsha=c.hexsha, email=session['email'])
+                  hexsha=c.hexsha, email=session['email'],
+                  live_site_url=current_app.config['LIVE_SITE_URL'])
 
     return render_template('tree-branch-review.html', **kwargs)
 
