@@ -1184,11 +1184,12 @@ class TestAppConfig (TestCase):
         self.assertRaises(KeyError, lambda: create_app({}))
 
     def test_present_values(self):
-        app_config = {}
-        app_config['RUNNING_STATE_DIR'] = 'Yo'
-        app_config['GA_CLIENT_ID'] = 'Yo'
-        app_config['GA_CLIENT_SECRET'] = 'Yo'
-        create_app(app_config)
+        environment = {}
+        environment['RUNNING_STATE_DIR'] = 'Yo'
+        environment['GA_CLIENT_ID'] = 'Yo'
+        environment['GA_CLIENT_SECRET'] = 'Yo'
+        environment['LIVE_SITE_URL'] = 'Hey'
+        create_app(environment)
 
 class TestApp (TestCase):
 

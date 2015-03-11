@@ -75,8 +75,9 @@ def create_app(environ):
     app.config['LIVE_SITE_URL'] = environ.get('LIVE_SITE_URL', 'http://127.0.0.1:5001/')
     app.config['default_branch'] = 'master'
     
-    if 'LIVE_SITE_URL' in environ:
-        httpd = run_apache(app.config['RUNNING_STATE_DIR'])
+    # If no live site URL was provided, we'll use Apache to make our own.
+    if 'LIVE_SITE_URL' not in environ:
+        run_apache(app.config['RUNNING_STATE_DIR'])
 
     # attach routes and custom error pages here
     app.register_blueprint(bizarro)
