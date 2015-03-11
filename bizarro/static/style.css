@@ -186,9 +186,7 @@ label{
 	font-weight:normal;
 }
 .new-task{
-	background-color:#eee;
 	padding:1em;
-	width:50%;
 	margin-left:1em;
 }
 .new-task label{
@@ -196,6 +194,19 @@ label{
 }
 .new-task input{
 	display:inline;
+	width:300px;
+}
+.new-task .need{
+	width:400px;
+}
+.new-task .create,
+.new-task p{
+	display:inline;
+}
+.new-task .create{
+	height: 39px;
+	padding: 0 24px;
+	line-height: 28px;
 }
 .file-explorer th{
 	text-transform:none;
