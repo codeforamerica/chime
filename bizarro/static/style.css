@@ -188,11 +188,14 @@ label{
 .new-task{
 	background-color:#eee;
 	padding:1em;
-	width:33%;
+	width:50%;
 	margin-left:1em;
 }
 .new-task label{
 	text-transform: none;
+}
+.new-task input{
+	display:inline;
 }
 .file-explorer th{
 	text-transform:none;
