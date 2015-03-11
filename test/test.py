@@ -108,7 +108,7 @@ class TestViewFunctions (TestCase):
         self.assertEqual(dirs_and_paths, [('root', '/tree/my-branch/edit'),
                                           ('blah', '/tree/my-branch/edit/blah/'),
                                           ('foo', '/tree/my-branch/edit/blah/foo/')])
-    
+
     def test_auth_url(self):
         '''
         '''
@@ -153,8 +153,8 @@ mike@teczno.com,Code for America,Mike Migurski
         org_file = lambda: view_functions.get_auth_data_file('http://example.com/org-file.csv')
         addr_file = lambda: view_functions.get_auth_data_file('http://example.com/addr-file.csv')
         no_file = lambda: view_functions.get_auth_data_file('http://example.com/no-file.csv')
-        
-        with HTTMock(mock_remote_authentication_file) as mock:
+
+        with HTTMock(mock_remote_authentication_file):
             self.assertTrue(view_functions.is_allowed_email(good_file(), 'mike@codeforamerica.org'))
             self.assertTrue(view_functions.is_allowed_email(good_file(), 'frances@codeforamerica.org'))
             self.assertTrue(view_functions.is_allowed_email(good_file(), 'mike@teczno.com'))
@@ -1218,7 +1218,7 @@ class TestApp (TestCase):
 
         random.choice = MagicMock(return_value="P")
 
-        self.server = self.app.test_client()
+        self.test_client = self.app.test_client()
 
     def tearDown(self):
         rmtree(self.work_path)
@@ -1286,63 +1286,63 @@ class TestApp (TestCase):
     def test_bad_login(self):
         ''' Check basic log in / log out flow without talking to Persona.
         '''
-        response = self.server.get('/')
+        response = self.test_client.get('/')
         self.assertFalse('user@example.com' in response.data)
 
         with HTTMock(self.mock_persona_verify):
-            response = self.server.post('/sign-in', data={'email': 'user@example.com'})
+            response = self.test_client.post('/sign-in', data={'email': 'user@example.com'})
             self.assertEquals(response.status_code, 200)
 
         with HTTMock(self.auth_csv_example_disallowed):
-            response = self.server.get('/')
+            response = self.test_client.get('/')
             self.assertFalse('Create task' in response.data)
 
     def test_login(self):
         ''' Check basic log in / log out flow without talking to Persona.
         '''
-        response = self.server.get('/')
+        response = self.test_client.get('/')
         self.assertFalse('Create task' in response.data)
 
         with HTTMock(self.mock_persona_verify):
-            response = self.server.post('/sign-in', data={'email': 'user@example.com'})
+            response = self.test_client.post('/sign-in', data={'email': 'user@example.com'})
             self.assertEquals(response.status_code, 200)
 
         with HTTMock(self.auth_csv_example_allowed):
-            response = self.server.get('/')
+            response = self.test_client.get('/')
             self.assertTrue('Create task' in response.data)
 
-            response = self.server.post('/sign-out')
+            response = self.test_client.post('/sign-out')
             self.assertEquals(response.status_code, 200)
 
-            response = self.server.get('/')
+            response = self.test_client.get('/')
             self.assertFalse('Create task' in response.data)
 
     def test_branches(self):
         ''' Check basic branching functionality.
         '''
         with HTTMock(self.mock_persona_verify):
-            self.server.post('/sign-in', data={'email': 'user@example.com'})
+            self.test_client.post('/sign-in', data={'email': 'user@example.com'})
 
         with HTTMock(self.auth_csv_example_allowed):
-            response = self.server.post('/start', data={'branch': 'do things'},
+            response = self.test_client.post('/start', data={'branch': 'do things'},
                                         follow_redirects=True)
             self.assertTrue('user@example.com/do-things' in response.data)
 
         with HTTMock(self.mock_google_analytics):
-            response = self.server.post('/tree/user@example.com%252Fdo-things/edit/',
+            response = self.test_client.post('/tree/user@example.com%252Fdo-things/edit/',
                                         data={'action': 'add', 'path': 'hello.html'},
                                         follow_redirects=True)
 
             self.assertEquals(response.status_code, 200)
 
-            response = self.server.get('/tree/user@example.com%252Fdo-things/edit/')
+            response = self.test_client.get('/tree/user@example.com%252Fdo-things/edit/')
 
             self.assertTrue('hello.html' in response.data)
 
-            response = self.server.get('/tree/user@example.com%252Fdo-things/edit/hello.html')
+            response = self.test_client.get('/tree/user@example.com%252Fdo-things/edit/hello.html')
             hexsha = search(r'<input name="hexsha" value="(\w+)"', response.data).group(1)
 
-            response = self.server.post('/tree/user@example.com%252Fdo-things/save/hello.html',
+            response = self.test_client.post('/tree/user@example.com%252Fdo-things/save/hello.html',
                                         data={'layout': 'multi', 'hexsha': hexsha,
                                               'en-title': 'Greetings', 'en-body': 'Hello world.\n',
                                               'fr-title': '', 'fr-body': '',
@@ -1366,13 +1366,13 @@ class TestApp (TestCase):
         ''' Ensure we get a successful page load on callback from Google authentication
         '''
         with HTTMock(self.mock_persona_verify):
-            self.server.post('/sign-in', data={'email': 'erica@example.com'})
+            self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
 
         with HTTMock(self.mock_google_authorization):
-            self.server.post('/authorize')
+            self.test_client.post('/authorize')
 
         with HTTMock(self.mock_successful_google_callback):
-            response = self.server.get('/callback?state=PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP&code=code')
+            response = self.test_client.get('/callback?state=PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP&code=code')
 
         with self.app.app_context():
             ga_config = google_api_functions.read_ga_config(self.app.config['RUNNING_STATE_DIR'])
@@ -1384,13 +1384,13 @@ class TestApp (TestCase):
 
     def test_analytics_setup_is_successful(self):
         with HTTMock(self.mock_persona_verify):
-            self.server.post('/sign-in', data={'email': 'erica@example.com'})
+            self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
 
         with HTTMock(self.mock_google_authorization):
-            self.server.post('/authorize')
+            self.test_client.post('/authorize')
 
         # mock-post the form in authorize.html to authorization-complete.html with some dummy values and check the results
-        response = self.server.post('/authorization-complete', data={'email': 'erica@example.com', 'name': 'Jane Doe', 'google_email': 'user@example.com', 'return_link': 'http://example.com', 'property': '12345678', '12345678-domain': 'http://propertyone.example.com', '12345678-name': 'Property One'})
+        response = self.test_client.post('/authorization-complete', data={'email': 'erica@example.com', 'name': 'Jane Doe', 'google_email': 'user@example.com', 'return_link': 'http://example.com', 'property': '12345678', '12345678-domain': 'http://propertyone.example.com', '12345678-name': 'Property One'})
 
         self.assertEqual(u'200 OK', response.status)
 
@@ -1406,16 +1406,16 @@ class TestApp (TestCase):
             when we fail to auth with google
         '''
         with HTTMock(self.mock_persona_verify):
-            self.server.post('/sign-in', data={'email': 'erica@example.com'})
+            self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
 
         with HTTMock(self.mock_google_authorization):
-            self.server.post('/authorize')
+            self.test_client.post('/authorize')
 
         from flask import session
 
         with HTTMock(self.mock_failed_google_callback):
-            # wrap in server context to access session
-            with self.server as srvr:
+            # wrap in test_client context to access session
+            with self.test_client as srvr:
                 srvr.get('/callback?state=PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP&code=code')
                 self.assertTrue('_flashes' in session)
                 flashes = session.get('_flashes')
