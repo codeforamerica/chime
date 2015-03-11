@@ -1269,6 +1269,10 @@ class TestApp (TestCase):
     def mock_failed_google_callback(self, url, request):
         if google_api_functions.GOOGLE_ANALYTICS_TOKENS_URL in url.geturl():
             return response(500, '''{}''')
+        elif google_api_functions.GOOGLE_PLUS_WHOAMI_URL in url.geturl():
+            return response(200, '''{"displayName": "Jane Doe", "emails": [{"type": "account", "value": "user@example.com"}]}''')
+        elif google_api_functions.GOOGLE_ANALYTICS_PROPERTIES_URL in url.geturl():
+            return response(200, '''{"items": [{"defaultProfileId": "12345678", "name": "Property One", "websiteUrl": "http://propertyone.example.com"}, {"defaultProfileId": "87654321", "name": "Property Two", "websiteUrl": "http://propertytwo.example.com"}]}''')
         else:
             return self.auth_csv_example_allowed(url, request)
 
@@ -1411,21 +1415,10 @@ class TestApp (TestCase):
         with HTTMock(self.mock_google_authorization):
             self.test_client.post('/authorize')
 
-        from flask import session
-
         with HTTMock(self.mock_failed_google_callback):
-            # wrap in test_client context to access session
-            with self.test_client as srvr:
-                srvr.get('/callback?state=PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP&code=code')
-                self.assertTrue('_flashes' in session)
-                flashes = session.get('_flashes')
-                self.assertTrue(len(flashes))
-                found_flash = False
-                for check_flash in flashes:
-                    if u'error' in check_flash[0] and u'Google rejected authorization request' in check_flash[1]:
-                        found_flash = True
-                        break
-                self.assertTrue(found_flash)
+            response = self.test_client.get('/callback?state=PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP&code=code', follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            self.assertTrue('Google rejected authorization request, please try again.' in response.data)
 
 if __name__ == '__main__':
     main()
