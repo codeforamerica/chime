@@ -18,7 +18,7 @@
         </form>
     </div>
 
-    <p>Now you can <a href="{% if return_link %}{{ return_link }}{% else %}/{% endif %}">return to the application</a>.</p>
+    <p>Now you can <a href="{% if return_link %}{{ return_link }}{% else %}/{% endif %}">return to the application</a> or <a href="{{ url_for('.setup') }}">return to setup</a> to pick a different property.</p>
 
     </div>
 </div>
