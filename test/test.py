@@ -12,6 +12,7 @@ import random
 from datetime import date, timedelta, datetime
 from dateutil import parser, tz
 
+from bs4 import BeautifulSoup
 import sys
 import os
 here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -1406,8 +1407,7 @@ class TestApp (TestCase):
         self.assertEqual(ga_config['profile_id'], '12345678')
 
     def test_google_callback_fails(self):
-        ''' Ensure we are redirected to the authorize-failed page
-            when we fail to auth with google
+        ''' Ensure that we get an appropriate error flashed when we fail to auth with google
         '''
         with HTTMock(self.mock_persona_verify):
             self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
@@ -1417,8 +1417,16 @@ class TestApp (TestCase):
 
         with HTTMock(self.mock_failed_google_callback):
             response = self.test_client.get('/callback?state=PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP&code=code', follow_redirects=True)
-            self.assertEqual(response.status_code, 200)
-            self.assertTrue('Google rejected authorization request, please try again.' in response.data)
+
+        self.assertEqual(response.status_code, 200)
+        # parse the returned HTML to verify the error message
+        flashes = BeautifulSoup(response.data).find('ul', 'flashes').find_all('li')
+        found_flash = False
+        for flash in flashes:
+            if 'error' in flash['class'] and 'Google rejected authorization request' in flash.get_text():
+                found_flash = True
+                break
+        self.assertTrue(found_flash)
 
 if __name__ == '__main__':
     main()
