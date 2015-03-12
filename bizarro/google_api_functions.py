@@ -171,7 +171,7 @@ def get_google_personal_info(access_token):
         if error_message:
             error_message = ' ({})'.format(error_message)
 
-        raise Exception('Unable to retreive personal info from the Google+ API{}'.format(error_message), 'warning')
+        raise Exception('Unable to retrieve personal info from the Google+ API{}'.format(error_message), 'warning')
 
     if 'emails' in whoami:
         emails = dict([(e['type'], e['value']) for e in whoami['emails']])
@@ -198,7 +198,7 @@ def get_google_analytics_properties(access_token):
         if error_message:
             error_message = u' ({})'.format(error_message)
 
-        raise Exception(u'Unable to retrieve analytics properties list{}'.format(error_message), u'error')
+        raise Exception(u'Unable to retrieve analytics properties list{}'.format(error_message), u'warning')
 
     properties = [
         (item['defaultProfileId'], item['name'], item['websiteUrl'])
