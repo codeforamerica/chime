@@ -1165,7 +1165,6 @@ class TestAppConfig (TestCase):
         app_config['GA_CLIENT_SECRET'] = 'Yo'
         create_app(app_config)
 
-# ;;;
 class TestApp (TestCase):
 
     def setUp(self):
@@ -1266,6 +1265,14 @@ class TestApp (TestCase):
         elif google_api_functions.GOOGLE_PLUS_WHOAMI_URL in url.geturl():
             content = {u'error': {u'code': 403, u'message': u'Access Not Configured. The API (Google+ API) is not enabled for your project. Please use the Google Developers Console to update your configuration.', u'errors': [{u'domain': u'usageLimits', u'message': u'Access Not Configured. The API (Google+ API) is not enabled for your project. Please use the Google Developers Console to update your configuration.', u'reason': u'accessNotConfigured', u'extendedHelp': u'https://console.developers.google.com'}]}}
             return response(403, content)
+        else:
+            return self.auth_csv_example_allowed(url, request)
+
+    def mock_google_no_properties_response(self, url, request):
+        if google_api_functions.GOOGLE_ANALYTICS_PROPERTIES_URL in url.geturl():
+            return response(200, '''{"kind": "analytics#webproperties", "username": "erica@example.com", "totalResults": 0, "startIndex": 1, "itemsPerPage": 1000, "items": []}''')
+        elif google_api_functions.GOOGLE_PLUS_WHOAMI_URL in url.geturl():
+            return response(200, '''{"displayName": "Jane Doe", "emails": [{"type": "account", "value": "erica@example.com"}]}''')
         else:
             return self.auth_csv_example_allowed(url, request)
 
@@ -1429,15 +1436,27 @@ class TestApp (TestCase):
             response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
             self.assertEquals(response.status_code, 200)
 
-        with HTTMock(self.mock_google_authorization):
-            response = self.test_client.post('/authorize')
-
         with HTTMock(self.mock_google_invalid_credentials_response):
             response = self.test_client.get('/setup', follow_redirects=True)
 
         self.assertEqual(response.status_code, 200)
         # find the flashed error message in the returned HTML
         self.assertTrue('Invalid Credentials' in response.data)
+
+    def test_no_properties_found(self):
+        ''' Ensure that we get an appropriate error flashed when no analytics properties are
+            associated with the authorized Google account
+        '''
+        with HTTMock(self.mock_persona_verify):
+            response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
+            self.assertEquals(response.status_code, 200)
+
+        with HTTMock(self.mock_google_no_properties_response):
+            response = self.test_client.get('/setup', follow_redirects=True)
+
+        self.assertEqual(response.status_code, 200)
+        # find the flashed error message in the returned HTML
+        self.assertTrue('Your Google Account is not associated with any Google Analytics properties' in response.data)
 
 if __name__ == '__main__':
     main()

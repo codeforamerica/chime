@@ -148,7 +148,7 @@ def setup():
             name = backup_name
 
         if not properties:
-            flash(u'Your Google Account isn\'t associated with any Google Analytics properties. Try connecting to Google with a different account.', u'error')
+            flash(u'Your Google Account is not associated with any Google Analytics properties. Try connecting to Google with a different account.', u'error')
 
         values.update(dict(properties=properties, name=name, google_email=google_email))
 
