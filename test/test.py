@@ -1376,7 +1376,7 @@ class TestApp (TestCase):
         soup = BeautifulSoup(response.data)
 
         # Look for the publish form button.
-        inputs = soup.find_all('input', type='hidden', value='user@example.com/do-things')
+        inputs = soup.find_all('input', type='hidden', value='erica@example.com/do-things')
         (form, ) = [input.find_parent('form', action='/merge') for input in inputs]
         button = form.find('button', text='Publish')
 
