@@ -969,8 +969,7 @@ class TestGoogleApiFunctions (TestCase):
 
     def mock_successful_request_new_google_access_token(self, url, request):
         if google_api_functions.GOOGLE_ANALYTICS_TOKENS_URL in url.geturl():
-            content = {'access_token': 'meowser_access_token', 'token_type': 'meowser_type', 'expires_in': 3920}
-            return response(200, content)
+            return response(200, '''{"access_token": "meowser_access_token", "token_type": "meowser_type", "expires_in": 3920}''')
         else:
             raise Exception('01 Asked for unknown URL ' + url.geturl())
 
@@ -982,8 +981,7 @@ class TestGoogleApiFunctions (TestCase):
 
     def mock_google_analytics_authorized_response(self, url, request):
         if 'https://www.googleapis.com/analytics/' in url.geturl():
-            content = {u'totalsForAllResults': {u'ga:pageViews': u'24', u'ga:avgTimeOnPage': u'67.36363636363636'}}
-            return response(200, content)
+            return response(200, '''{"totalsForAllResults": {"ga:pageViews": "24", "ga:avgTimeOnPage": "67.36363636363636"}}''')
 
     def test_successful_request_new_google_access_token(self):
         with self.app.test_request_context():
@@ -1228,16 +1226,14 @@ class TestApp (TestCase):
 
     def mock_google_authorization(self, url, request):
         if 'https://accounts.google.com/o/oauth2/auth' in url.geturl():
-            content = {'access_token': 'meowser_token', 'token_type': 'meowser_type', 'refresh_token': 'refresh_meows', 'expires_in': 3920}
-            return response(200, content)
+            return response(200, '''{"access_token": "meowser_token", "token_type": "meowser_type", "refresh_token": "refresh_meows", "expires_in": 3920}''')
 
         else:
             return self.auth_csv_example_allowed(url, request)
 
     def mock_successful_google_callback(self, url, request):
         if google_api_functions.GOOGLE_ANALYTICS_TOKENS_URL in url.geturl():
-            content = {'access_token': 'meowser_token', 'token_type': 'meowser_type', 'refresh_token': 'refresh_meows', 'expires_in': 3920}
-            return response(200, content)
+            return response(200, '''{"access_token": "meowser_token", "token_type": "meowser_type", "refresh_token": "refresh_meows", "expires_in": 3920}''')
 
         elif google_api_functions.GOOGLE_PLUS_WHOAMI_URL in url.geturl():
             return response(200, '''{"displayName": "Jane Doe", "emails": [{"type": "account", "value": "erica@example.com"}]}''')
@@ -1260,11 +1256,9 @@ class TestApp (TestCase):
 
     def mock_google_invalid_credentials_response(self, url, request):
         if 'https://www.googleapis.com/analytics/' in url.geturl() or google_api_functions.GOOGLE_ANALYTICS_PROPERTIES_URL in url.geturl():
-            content = {u'error': {u'code': 401, u'message': u'Invalid Credentials', u'errors': [{u'locationType': u'header', u'domain': u'global', u'message': u'Invalid Credentials', u'reason': u'authError', u'location': u'Authorization'}]}}
-            return response(401, content)
+            return response(401, '''{"error": {"code": 401, "message": "Invalid Credentials", "errors": [{"locationType": "header", "domain": "global", "message": "Invalid Credentials", "reason": "authError", "location": "Authorization"}]}}''')
         elif google_api_functions.GOOGLE_PLUS_WHOAMI_URL in url.geturl():
-            content = {u'error': {u'code': 403, u'message': u'Access Not Configured. The API (Google+ API) is not enabled for your project. Please use the Google Developers Console to update your configuration.', u'errors': [{u'domain': u'usageLimits', u'message': u'Access Not Configured. The API (Google+ API) is not enabled for your project. Please use the Google Developers Console to update your configuration.', u'reason': u'accessNotConfigured', u'extendedHelp': u'https://console.developers.google.com'}]}}
-            return response(403, content)
+            return response(403, '''{"error": {"code": 403, "message": "Access Not Configured. The API (Google+ API) is not enabled for your project. Please use the Google Developers Console to update your configuration.", "errors": [{"domain": "usageLimits", "message": "Access Not Configured. The API (Google+ API) is not enabled for your project. Please use the Google Developers Console to update your configuration.", "reason": "accessNotConfigured", "extendedHelp": "https://console.developers.google.com"}]}}''')
         else:
             return self.auth_csv_example_allowed(url, request)
 
