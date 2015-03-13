@@ -13,4 +13,3 @@ itsdangerous==0.24
 gspread==0.2.2
 oauth2client==1.4.6
 python-dateutil==2.4.0
-beautifulsoup4==4.3.2

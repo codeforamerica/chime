@@ -12,7 +12,6 @@ import random
 from datetime import date, timedelta, datetime
 from dateutil import parser, tz
 
-from bs4 import BeautifulSoup
 import sys
 import os
 here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -1420,14 +1419,8 @@ class TestApp (TestCase):
             response = self.test_client.get('/callback?state=PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP&code=code', follow_redirects=True)
 
         self.assertEqual(response.status_code, 200)
-        # parse the returned HTML to verify the error message
-        flashes = BeautifulSoup(response.data).find('ul', 'flashes').find_all('li')
-        found_flash = False
-        for flash in flashes:
-            if 'error' in flash['class'] and 'Google rejected authorization request' in flash.get_text():
-                found_flash = True
-                break
-        self.assertTrue(found_flash)
+        # find the flashed error message in the returned HTML
+        self.assertTrue('Google rejected authorization request' in response.data)
 
     def test_invalid_access_token(self):
         ''' Ensure that we get an appropriate error flashed when we have an invalid access token
@@ -1443,15 +1436,8 @@ class TestApp (TestCase):
             response = self.test_client.get('/setup', follow_redirects=True)
 
         self.assertEqual(response.status_code, 200)
-        # parse the returned HTML to verify the error message
-        flashes = BeautifulSoup(response.data).find('ul', 'flashes').find_all('li')
-        found_flash = False
-        for flash in flashes:
-            if 'warning' in flash['class'] and 'Invalid Credentials' in flash.get_text():
-                found_flash = True
-                break
-        self.assertTrue(found_flash)
-
+        # find the flashed error message in the returned HTML
+        self.assertTrue('Invalid Credentials' in response.data)
 
 if __name__ == '__main__':
     main()
