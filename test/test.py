@@ -27,7 +27,7 @@ from mock import MagicMock
 from bizarro import (
     create_app, jekyll_functions, repo_functions, edit_functions,
     google_api_functions, view_functions, publish
-    )
+)
 
 import codecs
 codecs.register(RotUnicode.search_function)
@@ -1330,13 +1330,13 @@ class TestApp (TestCase):
 
         with HTTMock(self.auth_csv_example_allowed):
             response = self.test_client.post('/start', data={'branch': 'do things'},
-                                        follow_redirects=True)
+                                             follow_redirects=True)
             self.assertTrue('erica@example.com/do-things' in response.data)
 
         with HTTMock(self.mock_google_analytics):
             response = self.test_client.post('/tree/erica@example.com%252Fdo-things/edit/',
-                                        data={'action': 'add', 'path': 'hello.html'},
-                                        follow_redirects=True)
+                                             data={'action': 'add', 'path': 'hello.html'},
+                                             follow_redirects=True)
 
             self.assertEquals(response.status_code, 200)
 
@@ -1348,11 +1348,11 @@ class TestApp (TestCase):
             hexsha = search(r'<input name="hexsha" value="(\w+)"', response.data).group(1)
 
             response = self.test_client.post('/tree/erica@example.com%252Fdo-things/save/hello.html',
-                                        data={'layout': 'multi', 'hexsha': hexsha,
-                                              'en-title': 'Greetings', 'en-body': 'Hello world.\n',
-                                              'fr-title': '', 'fr-body': '',
-                                              'url-slug': 'hello'},
-                                        follow_redirects=True)
+                                             data={'layout': 'multi', 'hexsha': hexsha,
+                                                   'en-title': 'Greetings', 'en-body': 'Hello world.\n',
+                                                   'fr-title': '', 'fr-body': '',
+                                                   'url-slug': 'hello'},
+                                             follow_redirects=True)
 
             self.assertEquals(response.status_code, 200)
 
@@ -1366,26 +1366,26 @@ class TestApp (TestCase):
 
         # Verify that navigation tabs are in the correct order.
         self.assertTrue(html.index('id="fr-nav"') < html.index('id="en-nav"'))
-            
+
         #
         # Go back to the front page, and publish the do-things branch.
         #
         with HTTMock(self.auth_csv_example_allowed):
-            response = self.server.get('/', follow_redirects=True)
+            response = self.test_client.get('/', follow_redirects=True)
 
         soup = BeautifulSoup(response.data)
-        
+
         # Look for the publish form button.
         inputs = soup.find_all('input', type='hidden', value='user@example.com/do-things')
         (form, ) = [input.find_parent('form', action='/merge') for input in inputs]
         button = form.find('button', text='Publish')
-        
+
         # Punch it, Chewie.
         data = dict([(i['name'], i['value']) for i in form.find_all(['input'])])
         data.update({button['name']: button['value']})
 
         with HTTMock(self.auth_csv_example_allowed):
-            response = self.server.post(form['action'], data=data, follow_redirects=True)
+            response = self.test_client.post(form['action'], data=data, follow_redirects=True)
             self.assertFalse('Not Allowed' in response.data)
 
     def test_google_callback_is_successful(self):
@@ -1492,19 +1492,19 @@ class TestPublishApp (TestCase):
 
     def tearDown(self):
         rmtree(self.work_path)
-    
+
     def mock_github_request(self, url, request):
         '''
         '''
         _, host, path, _, _, _ = urlparse(url.geturl())
-        
+
         if (host, path) == ('github.com', '/codeforamerica/ceviche-starter/archive/93250f1308daef66c5809fe87fc242d092e61db7.zip'):
             return response(302, '', headers={'Location': 'https://codeload.github.com/codeforamerica/ceviche-starter/tar.gz/93250f1308daef66c5809fe87fc242d092e61db7'})
-        
+
         if (host, path) == ('codeload.github.com', '/codeforamerica/ceviche-starter/tar.gz/93250f1308daef66c5809fe87fc242d092e61db7'):
             with open(join(dirname(__file__), '93250f1308daef66c5809fe87fc242d092e61db7.zip')) as file:
                 return response(200, file.read(), headers={'Content-Type': 'application/zip'})
-        
+
         raise Exception('Unknown URL {}'.format(url.geturl()))
 
     def test_webhook_post(self):
@@ -1529,7 +1529,7 @@ class TestPublishApp (TestCase):
               ]
             }
             '''
-        
+
         with HTTMock(self.mock_github_request):
             response = self.client.post('/', data=payload)
 
