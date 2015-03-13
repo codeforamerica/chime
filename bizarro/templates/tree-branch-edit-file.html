@@ -1,9 +1,19 @@
 {% extends "base.html" %}
 {% block title %}Tasks{% endblock %}
 {% block content %}
-    
-<form action="/tree/{{safe_branch}}/save/{{edit_path}}" method="POST">
 
+<form action="/tree/{{safe_branch}}/save/{{edit_path}}" method="POST">
+<!-- sub nav -->
+     
+        <nav class="sub-nav">
+          <ul>
+            <li class="selected"><a href="#">Edit</a></li>
+            <li><a href="{{history_path}}">History</a></li>
+            <!--li><a href="">Statistics</a></li-->
+          </ul>
+        </nav>
+        
+     <!-- end main nav -->
     <nav class="nav-tabs" role="navigation" style="text-align:left;">
         
         {% if languages|length > 1 %}
@@ -25,6 +35,7 @@
     
 
     <div class="main-content content">
+    
         <div class="content-edit">
             {% for iso in languages %}
                 {% if iso == 'en' %}
@@ -71,7 +82,7 @@
                 </li>  
                 <li class="form-field">Layout: {{form_layout}}</li>
                 <li class="form-field">Section: {{form_section}}<li>   
-                <a href="{{history_path}}">History of changes</a>
+
             </ul>
             <div class="markdown-helper">
                 <h2>Content tips</h2>

@@ -1,11 +1,21 @@
 {% extends "base.html" %}
 {% block title %}History{% endblock %}
 {% block content %}
-
+<!-- sub nav -->
+     
+        <nav class="sub-nav">
+          <ul>
+            <li><a href="{{edit_path}}">Edit</a></li>
+            <li class="selected"><a href="#">History</a></li>
+            <!--li><a href="">Statistics</a></li-->
+          </ul>
+        </nav>
+        
+     <!-- end main nav -->
 <div class="main-content">
     <div class="file-explorer">
         <h2>History of changes to <i>{{path}}</i></h2>
-        <p><a href="{{edit_path}}">Return to editing</a></p>
+
         <table class="history">
             <thead>
                 <tr>

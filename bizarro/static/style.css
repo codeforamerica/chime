@@ -34,7 +34,9 @@ body h3{
 	font-size:1em;
 }
 .nav{
+	padding-top:0.2em;
 	float:right;
+	margin-bottom:4px;
 }
 .nav li{
 	display:inline-block;
@@ -43,6 +45,80 @@ body h3{
 .nav a{
 	color:#fff;
 }
+.sub-nav{
+	background-color:#004b6a;
+	margin:0;
+	padding:0;
+	text-align:right;
+	padding-right:2em;
+}
+.sub-nav ul, .sub-nav li{
+	padding:0;
+	margin:0;
+}
+.sub-nav li{
+	display:inline;
+
+}
+.sub-nav li a{
+	padding:0.3em 0.5em;
+}
+.sub-nav li a:link, .sub-nav li a:visited {
+	color:#fff;
+}
+.sub-nav li a:hover, .sub-nav li a:active {
+	background-color:#fff;
+	color:#000;
+}
+.sub-nav li.selected a:link, .sub-nav li.selected a:visited {
+	color:#000;
+	background-color:#fff;
+}
+.sub-nav li.selected a:hover, .sub-nav li.selected a:active {
+	background-color:none;
+}
+.flash-holder{
+	position:fixed;
+	text-align:center;
+	top:0px;
+	left:30%;
+	width:30%;
+}
+
+
+.flash-holder,
+.flash-holder ul,
+.flash-holder ul li{
+	margin:0;
+	padding:0;
+}
+.flash-holder ul{
+	color:#fff;
+	background-color:#aa1c3a;
+}
+ul.flashes li {
+	background-image:none;
+	padding-left:0.5em;
+	line-height:1.4em;
+
+}
+ul.flashes li.error {
+	background-color:#aa1c3a;
+	color:white;
+}
+ul.flashes li.warning {
+	background-color:#e87d2b;
+}
+ul.flashes li.notice {
+	background-color:#00a175;
+	color:#fff;
+}
+
+/* End Errors, Warnings and Notices */
+
+
+
+
 label{
 	text-transform:none;
 }
@@ -77,34 +153,7 @@ label{
 .cfa span{
 	display:block;
 }
-/* Errors, Warnings and Notices */
-.flash-holder{
-	margin:0em;
-	padding:1em;
-	width:33%;
-}
-ul.flashes {
-	margin:0em;
-	padding:0em;
-}
-ul.flashes li {
-	background-image:none;
-	padding-left:0.5em;
-	line-height:1.4em;
-}
-ul.flashes li.error {
-	background-color:red;
-	color:white;
-}
-ul.flashes li.warning {
-	background-color:yellow;
-}
-ul.flashes li.notice {
-	background-color:green;
-	color:white;
-}
 
-/* End Errors, Warnings and Notices */
 
 /* Tasks and file explorer*/
 .current-tasks,

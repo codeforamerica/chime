@@ -19,16 +19,23 @@
         <title>{% block title %}{% endblock %} | Chime</title>
     </head>
     <body>
+      
+      <!-- header block -->
       <header>
         <h1><a href="/" class="logo"><img src="/static/images/chime-logo-small.png" alt="Chime"></a></h1>
-        {% if branch %}
         <nav>
           <ul class="nav">
-            <li class="active-task"><a href="./">{{branch}}</a></li>
+            <li><a href="/">Tasks</a></li>
+            <li><a href="{{ live_site_url }}">Visit site</a></li>
+
+            {% if branch %}<li class="active-task"><a href="./">{{branch}}</a></li>{% endif %}
           </ul>
-        </nav>
-        {% endif %}
       </header>
+     <!-- end header block -->
+
+
+
+      <!-- feedback messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             <div class="flash-holder">
@@ -40,8 +47,13 @@
             </div>
           {% endif %}
         {% endwith %}
+     <!-- end feedback messages -->
 
+     <!-- content -->
         {% block content %}{% endblock %}
+     <!-- end content -->
+
+     <!-- footer block -->
         <footer class="product-info">
             <p class="cfa">Created by <span><img src="/static/images/logo-black.png" alt="Code for America" height="40px" /></span></p>
             <div class="signout">
@@ -52,6 +64,7 @@
                   {% endif %}
             </div>
         </footer>
+      <!-- end footer block -->
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script src="/static/javascript/toopaymarkdown/js//bootstrap-markdown.js"></script>
 

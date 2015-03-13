@@ -3,7 +3,8 @@ from unittest import main, TestCase
 
 from tempfile import mkdtemp
 from StringIO import StringIO
-from os.path import join, exists
+from os.path import join, exists, dirname
+from urlparse import urlparse
 from os import environ
 from shutil import rmtree, copytree
 from uuid import uuid4
@@ -20,9 +21,13 @@ sys.path.append(here)
 from git import Repo
 from box.util.rotunicode import RotUnicode
 from httmock import response, HTTMock
+from bs4 import BeautifulSoup
 from mock import MagicMock
 
-from bizarro import create_app, jekyll_functions, repo_functions, edit_functions, google_api_functions, view_functions
+from bizarro import (
+    create_app, jekyll_functions, repo_functions, edit_functions,
+    google_api_functions, view_functions, publish
+    )
 
 import codecs
 codecs.register(RotUnicode.search_function)
@@ -1157,11 +1162,12 @@ class TestAppConfig (TestCase):
         self.assertRaises(KeyError, lambda: create_app({}))
 
     def test_present_values(self):
-        app_config = {}
-        app_config['RUNNING_STATE_DIR'] = 'Yo'
-        app_config['GA_CLIENT_ID'] = 'Yo'
-        app_config['GA_CLIENT_SECRET'] = 'Yo'
-        create_app(app_config)
+        environment = {}
+        environment['RUNNING_STATE_DIR'] = 'Yo'
+        environment['GA_CLIENT_ID'] = 'Yo'
+        environment['GA_CLIENT_SECRET'] = 'Yo'
+        environment['LIVE_SITE_URL'] = 'Hey'
+        create_app(environment)
 
 class TestApp (TestCase):
 
@@ -1175,6 +1181,7 @@ class TestApp (TestCase):
 
         app_args = {}
 
+        app_args['SINGLE_USER'] = 'Yes'
         app_args['GA_CLIENT_ID'] = 'client_id'
         app_args['GA_CLIENT_SECRET'] = 'meow_secret'
 
@@ -1359,6 +1366,27 @@ class TestApp (TestCase):
 
         # Verify that navigation tabs are in the correct order.
         self.assertTrue(html.index('id="fr-nav"') < html.index('id="en-nav"'))
+            
+        #
+        # Go back to the front page, and publish the do-things branch.
+        #
+        with HTTMock(self.auth_csv_example_allowed):
+            response = self.server.get('/', follow_redirects=True)
+
+        soup = BeautifulSoup(response.data)
+        
+        # Look for the publish form button.
+        inputs = soup.find_all('input', type='hidden', value='user@example.com/do-things')
+        (form, ) = [input.find_parent('form', action='/merge') for input in inputs]
+        button = form.find('button', text='Publish')
+        
+        # Punch it, Chewie.
+        data = dict([(i['name'], i['value']) for i in form.find_all(['input'])])
+        data.update({button['name']: button['value']})
+
+        with HTTMock(self.auth_csv_example_allowed):
+            response = self.server.post(form['action'], data=data, follow_redirects=True)
+            self.assertFalse('Not Allowed' in response.data)
 
     def test_google_callback_is_successful(self):
         ''' Ensure we get a successful page load on callback from Google authentication
@@ -1451,6 +1479,61 @@ class TestApp (TestCase):
         self.assertEqual(response.status_code, 200)
         # find the flashed error message in the returned HTML
         self.assertTrue('Your Google Account is not associated with any Google Analytics properties' in response.data)
+
+class TestPublishApp (TestCase):
+
+    def setUp(self):
+        self.work_path = mkdtemp(prefix='bizarro-publish-app-')
+
+        app_args = {}
+
+        self.app = publish.create_app(app_args)
+        self.client = self.app.test_client()
+
+    def tearDown(self):
+        rmtree(self.work_path)
+    
+    def mock_github_request(self, url, request):
+        '''
+        '''
+        _, host, path, _, _, _ = urlparse(url.geturl())
+        
+        if (host, path) == ('github.com', '/codeforamerica/ceviche-starter/archive/93250f1308daef66c5809fe87fc242d092e61db7.zip'):
+            return response(302, '', headers={'Location': 'https://codeload.github.com/codeforamerica/ceviche-starter/tar.gz/93250f1308daef66c5809fe87fc242d092e61db7'})
+        
+        if (host, path) == ('codeload.github.com', '/codeforamerica/ceviche-starter/tar.gz/93250f1308daef66c5809fe87fc242d092e61db7'):
+            with open(join(dirname(__file__), '93250f1308daef66c5809fe87fc242d092e61db7.zip')) as file:
+                return response(200, file.read(), headers={'Content-Type': 'application/zip'})
+        
+        raise Exception('Unknown URL {}'.format(url.geturl()))
+
+    def test_webhook_post(self):
+        ''' Check basic webhook flow.
+        '''
+        payload = '''
+            {
+              "head": "93250f1308daef66c5809fe87fc242d092e61db7",
+              "ref": "refs/heads/master",
+              "size": 1,
+              "commits": [
+                {
+                  "sha": "93250f1308daef66c5809fe87fc242d092e61db7",
+                  "message": "Clean up braces",
+                  "author": {
+                    "name": "Frances Berriman",
+                    "email": "phae@example.com"
+                  },
+                  "url": "https://github.com/codeforamerica/ceviche-starter/commit/93250f1308daef66c5809fe87fc242d092e61db7",
+                  "distinct": true
+                }
+              ]
+            }
+            '''
+        
+        with HTTMock(self.mock_github_request):
+            response = self.client.post('/', data=payload)
+
+        self.assertTrue(response.status_code in range(200, 299))
 
 if __name__ == '__main__':
     main()
