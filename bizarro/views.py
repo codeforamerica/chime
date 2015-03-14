@@ -9,7 +9,7 @@ from glob import glob
 from git import Repo
 from git.cmd import GitCommandError
 from requests import post
-from flask import redirect, request, Response, render_template, session, current_app
+from flask import current_app, flash, render_template, redirect, request, Response, session
 
 from . import bizarro as app
 from . import repo_functions, edit_functions
@@ -129,16 +129,37 @@ def setup():
     access_token = ga_config.get('access_token')
 
     if access_token:
-        # get the name and email associated with this google account
-        name, google_email = get_google_personal_info(access_token)
-        # get a list of google analytics properties associated with this google account
-        properties, backup_name = get_google_analytics_properties(access_token)
-        # use the backup name if we didn't get a name from the google+ API
+        name, google_email, properties, backup_name = (None,) * 4
+        try:
+            # get the name and email associated with this google account
+            name, google_email = get_google_personal_info(access_token)
+        except Exception as e:
+            error_message = e.args[0]
+            error_type = e.args[1] if len(e.args) > 1 else None
+            # let unexpected errors raise normally
+            if error_type:
+                flash(error_message, error_type)
+            else:
+                raise
+
+        try:
+            # get a list of google analytics properties associated with this google account
+            properties, backup_name = get_google_analytics_properties(access_token)
+        except Exception as e:
+            error_message = e.args[0]
+            error_type = e.args[1] if len(e.args) > 1 else None
+            # let unexpected errors raise normally
+            if error_type:
+                flash(error_message, error_type)
+            else:
+                raise
+
+        # try using the backup name if we didn't get a name from the google+ API
         if not name and backup_name != google_email:
             name = backup_name
 
         if not properties:
-            raise Exception("Your Google Account isn't associated with any Google Analytics properties. Log in to Google with a different account?")
+            flash(u'Your Google Account is not associated with any Google Analytics properties. Try connecting to Google with a different account.', u'error')
 
         values.update(dict(properties=properties, name=name, google_email=google_email))
 
@@ -152,8 +173,14 @@ def callback():
         # request (and write to config) current access and refresh tokens
         request_new_google_access_and_refresh_tokens(request)
 
-    except Exception:
-        return redirect('/authorization-failed')
+    except Exception as e:
+        error_message = e.args[0]
+        error_type = e.args[1] if len(e.args) > 1 else None
+        # let unexpected errors raise normally
+        if error_type:
+            flash(error_message, error_type)
+        else:
+            raise
 
     return redirect('/setup')
 
