@@ -4,6 +4,7 @@ Logger = getLogger('bizarro.views')
 from os.path import join, isdir, splitext
 from re import compile, MULTILINE, sub
 from mimetypes import guess_type
+from urlparse import urljoin
 from glob import glob
 
 from git import Repo
@@ -250,7 +251,10 @@ def merge_branch():
         else:
             raise Exception('I do not know what "%s" means' % action)
 
-        publish.release_commit(current_app.config['RUNNING_STATE_DIR'], r, r.commit().hexsha)
+        build_url = urljoin(current_app.config['BROWSERID_URL'], '/builds/master.zip')
+        publish.announce_commit(build_url, r, r.commit().hexsha)
+        
+        #publish.release_commit(current_app.config['RUNNING_STATE_DIR'], r, r.commit().hexsha)
 
     except repo_functions.MergeConflict as conflict:
         new_files, gone_files, changed_files = conflict.files()
@@ -296,6 +300,18 @@ def review_branch():
         safe_branch = branch_name2path(branch_name)
 
         return redirect('/tree/%s/edit/' % safe_branch, code=303)
+
+@app.route('/builds/<build>.zip')
+@login_required
+@synch_required
+def get_branch_build(build):
+    '''
+    '''
+    r = get_repo(current_app)
+
+    bytes = publish.retrieve_commit_build(current_app.config['RUNNING_STATE_DIR'], r, build)
+    
+    return Response(bytes.getvalue(), mimetype='application/zip')
 
 @app.route('/tree/<branch>/view/', methods=['GET'])
 @app.route('/tree/<branch>/view/<path:path>', methods=['GET'])

@@ -14,40 +14,40 @@ from requests import get
 from ..jekyll_functions import build_jekyll_site
 
 def process_local_commit(archive_path):
-    '''
+    ''' Return ZipFile and underlying file object.
     '''
     try:
         working_dir = mkdtemp()
         checkout_dir = extract_local_commit(working_dir, archive_path)
         built_dir = build_jekyll_site(checkout_dir)
-        zip = archive_commit(built_dir)
+        zip, bytes = archive_commit(built_dir)
         
     except Exception as e:
         logger.warning(e)
-        zip = None
+        zip, bytes = None, None
 
     finally:
         rmtree(working_dir)
     
-    return zip
+    return zip, bytes
 
 def process_remote_commit(commit_url, commit_sha):
-    '''
+    ''' Return ZipFile and underlying file object.
     '''
     try:
         working_dir = mkdtemp()
         checkout_dir = extract_github_commit(working_dir, commit_url, commit_sha)
         built_dir = build_jekyll_site(checkout_dir)
-        zip = archive_commit(built_dir)
+        zip, bytes = archive_commit(built_dir)
         
     except Exception as e:
         logger.warning(e)
-        zip = None
+        zip, bytes = None, None
 
     finally:
         rmtree(working_dir)
     
-    return zip
+    return zip, bytes
 
 def extract_local_commit(work_dir, archive_path):
     '''
@@ -87,7 +87,7 @@ def extract_github_commit(work_dir, commit_url, commit_sha):
     return checkout_dir
 
 def archive_commit(directory):
-    ''' Pack directory into a zip archive, return zip object.
+    ''' Pack directory into a zip archive, return zip object and underlying BytesIO.
     '''
     content = BytesIO()
     zip = ZipFile(content, 'w', ZIP_DEFLATED)
@@ -100,4 +100,4 @@ def archive_commit(directory):
     
     print len(zip.namelist()), 'files in', len(content.getvalue()), 'bytes'
     
-    return zip
+    return zip, content

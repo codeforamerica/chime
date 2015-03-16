@@ -11,6 +11,33 @@ from logging import getLogger, DEBUG
 
 from .functions import process_local_commit
 
+def announce_commit(build_url, repo, commit_sha):
+    '''
+    '''
+    raise Exception(build_url)
+
+def retrieve_commit_build(running_dir, repo, commit_sha):
+    '''
+    '''
+    logger.debug('Retrieve commit {}'.format(commit_sha))
+    
+    try:
+        working_dir = mkdtemp()
+        archive_path = join(working_dir, 'archive.zip')
+        
+        with open(archive_path, 'w') as file:
+            repo.archive(file, commit_sha, format='zip')
+        
+        _, bytes = process_local_commit(archive_path)
+        return bytes
+        
+    except Exception as e:
+        print e
+        logger.warning(e)
+
+    finally:
+        rmtree(working_dir)
+
 def release_commit(running_dir, repo, commit_sha):
     '''
     '''
@@ -23,7 +50,7 @@ def release_commit(running_dir, repo, commit_sha):
         with open(archive_path, 'w') as file:
             repo.archive(file, commit_sha, format='zip')
         
-        zip = process_local_commit(archive_path)
+        zip, bytes = process_local_commit(archive_path)
         extract_dir = join(running_dir, 'master')
         
         try:
