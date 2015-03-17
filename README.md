@@ -21,11 +21,7 @@ Install
 
 4. copy env.sample to .env
 
-5. Run the app with [Foreman](http://ddollar.github.com/foreman):
-
-        $ foreman run python run.py
-
-   You can alternatively use Foreman's Python port [Honcho](https://pypi.python.org/pypi/honcho):
+5. Run app using [Honcho and the `Procfile`](https://github.com/codeforamerica/howto/blob/master/Procfile.md):
 
         $ honcho start
 
