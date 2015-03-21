@@ -14,7 +14,7 @@ from requests import get
 from ..jekyll_functions import build_jekyll_site
 
 def process_local_commit(archive_path):
-    '''
+    ''' Return ZipFile.
     '''
     try:
         working_dir = mkdtemp()
@@ -32,7 +32,7 @@ def process_local_commit(archive_path):
     return zip
 
 def process_remote_commit(commit_url, commit_sha):
-    '''
+    ''' Return ZipFile.
     '''
     try:
         working_dir = mkdtemp()
