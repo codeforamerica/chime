@@ -1,10 +1,11 @@
-Ceviche
-=======
+# What is this?
 
-An experimental CMS that edits Jekyll sites and uses Git persistence and history.  Very much a WIP that is entirely untested and unproven, consider this "Reckon 0.1".
+This is part of the Digital Front Door inititive.  You can read more about it here: https://github.com/codeforamerica/digitalfrontdoor
 
-Install
--------
+## Logging issues / ideas 
+Make an issue: https://github.com/codeforamerica/ceviche-cms/issues/new
+
+# Install
 
 1. Ceviche CMS is a Python Flask web application. Follow the instructions on
    [Python Virtual Environments](https://github.com/codeforamerica/howto/blob/master/Python-Virtualenv.md)
@@ -25,8 +26,7 @@ Install
 
         $ honcho start
 
-Who maintains this?
--------------------
+# Who maintains this?
 
 [Mike Migurski](http://github.com/migurski) and [Frances Berriman](http://github.com/phae)
 
