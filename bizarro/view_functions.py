@@ -345,6 +345,26 @@ def synch_required(route_function):
 
     return decorated_function
 
+def branch_required(route_function):
+    ''' Decorator for routes needing to have a branch exist
+
+    '''
+    @wraps(route_function)
+    def decorated_function(*args, **kwargs):
+        repo = Repo(current_app.config['REPO_PATH'])
+
+        if _remote_exists(repo, 'origin'):
+            repo.git.fetch('origin', with_exceptions=True)
+            print kwargs.get('branch_name')
+
+        if branch_var2name(kwargs.get('branch', '')) in repo.refs:
+            return route_function(*args, **kwargs)
+
+        # TODO: this should refer the user back to the url they came from
+        return redirect('/')
+
+    return decorated_function
+
 def synched_checkout_required(route_function):
     ''' Decorator for routes needing a repository checked out to a branch.
 

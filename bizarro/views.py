@@ -19,7 +19,7 @@ from .view_functions import (
     branch_name2path, branch_var2name, get_repo, name_branch, dos2unix,
     login_required, synch_required, synched_checkout_required, sorted_paths,
     directory_paths, should_redirect, make_redirect, get_auth_data_file,
-    is_allowed_email, relative_datetime_string, common_template_args
+    is_allowed_email, relative_datetime_string, common_template_args, branch_required
     )
 from .google_api_functions import (
     read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens,
@@ -85,7 +85,7 @@ def index():
 def not_allowed():
     email = session.get('email', None)
     auth_data_href = current_app.config['AUTH_DATA_HREF']
-    
+
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(auth_url=auth_data_href)
 
@@ -310,12 +310,13 @@ def get_checkout(ref):
     r = get_repo(current_app)
 
     bytes = publish.retrieve_commit_checkout(current_app.config['RUNNING_STATE_DIR'], r, ref)
-    
+
     return Response(bytes.getvalue(), mimetype='application/zip')
 
 @app.route('/tree/<branch>/view/', methods=['GET'])
 @app.route('/tree/<branch>/view/<path:path>', methods=['GET'])
 @login_required
+@branch_required
 @synched_checkout_required
 def branch_view(branch, path=None):
     r = get_repo(current_app)
@@ -340,6 +341,7 @@ def branch_view(branch, path=None):
 @app.route('/tree/<branch>/edit/', methods=['GET'])
 @app.route('/tree/<branch>/edit/<path:path>', methods=['GET'])
 @login_required
+@branch_required
 @synched_checkout_required
 def branch_edit(branch, path=None):
     branch = branch_var2name(branch)
@@ -413,6 +415,7 @@ def branch_edit(branch, path=None):
 @app.route('/tree/<branch>/edit/', methods=['POST'])
 @app.route('/tree/<branch>/edit/<path:path>', methods=['POST'])
 @login_required
+@branch_required
 @synched_checkout_required
 def branch_edit_file(branch, path=None):
     r = get_repo(current_app)
@@ -454,6 +457,7 @@ def branch_edit_file(branch, path=None):
 @app.route('/tree/<branch>/history/', methods=['GET'])
 @app.route('/tree/<branch>/history/<path:path>', methods=['GET'])
 @login_required
+@branch_required
 @synched_checkout_required
 def branch_history(branch, path=None):
     branch = branch_var2name(branch)
@@ -491,6 +495,7 @@ def branch_history(branch, path=None):
 
 @app.route('/tree/<branch>/review/', methods=['GET'])
 @login_required
+@branch_required
 @synched_checkout_required
 def branch_review(branch):
     branch = branch_var2name(branch)
@@ -506,6 +511,7 @@ def branch_review(branch):
 
 @app.route('/tree/<branch>/save/<path:path>', methods=['POST'])
 @login_required
+@branch_required
 @synch_required
 def branch_save(branch, path):
     branch = branch_var2name(branch)
