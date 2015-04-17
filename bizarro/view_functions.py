@@ -354,10 +354,11 @@ def branch_required(route_function):
         repo = Repo(current_app.config['REPO_PATH'])
 
         if _remote_exists(repo, 'origin'):
+            Logger.debug('  fetching origin {}'.format(repo))
             repo.git.fetch('origin', with_exceptions=True)
-            print kwargs.get('branch_name')
 
         if branch_var2name(kwargs.get('branch', '')) in repo.refs:
+            Logger.debug('  branch {} does not exist, redirecting'.format(kwargs.get('branch', '')))
             return route_function(*args, **kwargs)
 
         # TODO: this should refer the user back to the url they came from
