@@ -312,8 +312,8 @@ def _remote_exists(repo, remote):
     else:
         return True
 
-def redirect_decorator(route_function):
-    ''' testing
+def browserid_hostname_required(route_function):
+    ''' Decorator for routes that enforces the hostname set in the BROWSERID_URL config variable
     '''
     @wraps(route_function)
     def decorated_function(*args, **kwargs):
