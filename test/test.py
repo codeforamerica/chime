@@ -4,7 +4,7 @@ from unittest import main, TestCase
 from tempfile import mkdtemp
 from StringIO import StringIO
 from os.path import join, exists, dirname
-from urlparse import urlparse
+from urlparse import urlparse, urljoin
 from os import environ
 from shutil import rmtree, copytree
 from uuid import uuid4
@@ -1479,6 +1479,17 @@ class TestApp (TestCase):
         self.assertEqual(response.status_code, 200)
         # find the flashed error message in the returned HTML
         self.assertTrue('Your Google Account is not associated with any Google Analytics properties' in response.data)
+
+    def test_redirect(self):
+        ''' Check redirect to BROWSERID_URL.
+        '''
+        with HTTMock(self.mock_persona_verify):
+            response = self.test_client.get('/not-allowed', headers={'Host': 'wrong.local'})
+
+        expected_url = urljoin(self.app.config['BROWSERID_URL'], '/not-allowed')
+        
+        self.assertEquals(response.status_code, 302)
+        self.assertEquals(response.headers['Location'], expected_url)
 
 class TestPublishApp (TestCase):
 

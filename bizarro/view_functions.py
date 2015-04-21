@@ -5,7 +5,7 @@ from os.path import join, isdir, realpath, basename
 from datetime import datetime
 from os import listdir, environ
 from urllib import quote, unquote
-from urlparse import urljoin, urlparse
+from urlparse import urljoin, urlparse, urlunparse
 from mimetypes import guess_type
 from functools import wraps
 from io import BytesIO
@@ -311,6 +311,23 @@ def _remote_exists(repo, remote):
 
     else:
         return True
+
+def browserid_hostname_required(route_function):
+    ''' Decorator for routes that enforces the hostname set in the BROWSERID_URL config variable
+    '''
+    @wraps(route_function)
+    def decorated_function(*args, **kwargs):
+        # raise ValueError('breakpoint')
+        browserid_netloc = urlparse(current_app.config['BROWSERID_URL']).netloc
+        request_parsed = urlparse(request.url)
+        if request_parsed.netloc != browserid_netloc:
+            redirect_url = urlunparse((request_parsed.scheme, browserid_netloc, request_parsed.path, request_parsed.params, request_parsed.query, request_parsed.fragment))
+            return redirect(redirect_url)
+
+        response = route_function(*args, **kwargs)
+        return response
+
+    return decorated_function
 
 def synch_required(route_function):
     ''' Decorator for routes needing a repository synched to upstream.

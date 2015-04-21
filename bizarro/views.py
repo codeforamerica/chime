@@ -17,7 +17,7 @@ from . import publish
 from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
 from .view_functions import (
     branch_name2path, branch_var2name, get_repo, name_branch, dos2unix,
-    login_required, synch_required, synched_checkout_required, sorted_paths,
+    login_required, browserid_hostname_required, synch_required, synched_checkout_required, sorted_paths,
     directory_paths, should_redirect, make_redirect, get_auth_data_file,
     is_allowed_email, relative_datetime_string, common_template_args
     )
@@ -82,6 +82,7 @@ def index():
     return render_template('index.html', **kwargs)
 
 @app.route('/not-allowed')
+@browserid_hostname_required
 def not_allowed():
     email = session.get('email', None)
     auth_data_href = current_app.config['AUTH_DATA_HREF']
