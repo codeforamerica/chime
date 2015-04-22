@@ -1175,9 +1175,10 @@ class TestApp (TestCase):
         self.work_path = mkdtemp(prefix='bizarro-repo-clones-')
 
         repo_path = os.path.dirname(os.path.abspath(__file__)) + '/test-app.git'
-        self.temp_repo_dir = mkdtemp(prefix='bizarro-root')
-        temp_repo_path = self.temp_repo_dir + '/test-app.git'
+        temp_repo_dir = mkdtemp(prefix='bizarro-root')
+        temp_repo_path = temp_repo_dir + '/test-app.git'
         copytree(repo_path, temp_repo_path)
+        self.origin = Repo(temp_repo_path)
 
         app_args = {}
 
@@ -1209,8 +1210,8 @@ class TestApp (TestCase):
 
     def tearDown(self):
         rmtree(self.work_path)
-        rmtree(self.temp_repo_dir)
         rmtree(self.ga_config_dir)
+        rmtree(self.origin.git_dir)
 
     def auth_csv_example_disallowed(self, url, request):
         if url.geturl() == 'http://example.com/auth.csv':
@@ -1387,6 +1388,21 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             response = self.test_client.post(form['action'], data=data, follow_redirects=True)
             self.assertFalse('Not Allowed' in response.data)
+
+    def test_get_request_does_not_create_branch(self):
+        ''' Navigating to a made-up URL should not create a branch
+        '''
+        with HTTMock(self.mock_persona_verify):
+            self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
+
+        with HTTMock(self.auth_csv_example_allowed):
+            fake_branch_name = 'this-should-not-create-a-branch'
+            response = self.test_client.get('/tree/{}/edit/'.format(fake_branch_name), follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            # the branch path should not be in the returned HTML
+            self.assertFalse('/tree/{}/edit'.format(fake_branch_name) in response.data)
+            # the branch name should not be in git's branches list
+            self.assertFalse(fake_branch_name in self.origin.branches)
 
     def test_google_callback_is_successful(self):
         ''' Ensure we get a successful page load on callback from Google authentication
