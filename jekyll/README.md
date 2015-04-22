@@ -11,7 +11,7 @@ It goes something like this:
 
 * Install rbenv
   + Ubuntu: `apt-get install rbenv`
-  + MacOS: `brew install rbenv ruby-build` (using [Homebrew](http://brew.sh/))
+  + MacOS: `brew install rbenv ruby-build` or `brew upgrade rbenv ruby-build` (using [Homebrew](http://brew.sh/))
 * activate rbenv temporarily or permanently
   + temporary: `eval "$(rbenv init -)"`
   + permanent: `echo 'eval "$(rbenv init -)"' >> ~/.bash_profile` (restart shell after)
@@ -23,10 +23,11 @@ It goes something like this:
 * Install bundler
   + `gem install bundler`
   + `rbenv rehash`
-* Install the gems
+* Install the gems (using the *Gemfile* in the *jekyll/* directory)
+  + `cd jekyll`
   + `bundle install`
   + `rbenv rehash`
-* check jekyll
+* Check jekyll
   + `cd ..`
   + `jekyll/run-jekyll.sh`
   + Should produce the jekyll help, not error messages
