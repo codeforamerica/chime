@@ -15,7 +15,7 @@ import re
 from git import Repo, Git
 from dateutil import parser, tz
 from dateutil.relativedelta import relativedelta
-from flask import request, session, current_app, redirect
+from flask import request, session, current_app, redirect, flash
 from requests import get
 
 from .repo_functions import start_branch
@@ -358,10 +358,11 @@ def branch_required(route_function):
             repo.git.fetch('origin', with_exceptions=True)
 
         if branch_var2name(kwargs.get('branch', '')) in repo.refs:
-            Logger.debug('  branch {} does not exist, redirecting'.format(kwargs.get('branch', '')))
             return route_function(*args, **kwargs)
 
         # TODO: this should refer the user back to the url they came from
+        Logger.debug('  branch {} does not exist, redirecting'.format(kwargs.get('branch', '')))
+        flash(u'There is no {} branch!'.format(kwargs.get('branch', '')), u'warning')
         return redirect('/')
 
     return decorated_function
