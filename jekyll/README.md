@@ -1,10 +1,13 @@
 Jekyll Install
 =============
 
-This is our installation of jekyll, which we use to preview and
-render pages. Eventually this should happen automatically, but for
-now there's a manual process to get it set up for development. It
-goes something like this:
+This is our installation of jekyll, which we use to preview and render
+pages. Eventually this should happen automatically, but for now there's
+a manual process to get it set up for development. This assumes rbenv
+for managing ruby versions, but if you already have rvm, go ahead and
+keep using that. (You can't use both; they conflict.)
+
+It goes something like this:
 
 * Install rbenv
   + Ubuntu: `apt-get install rbenv`
