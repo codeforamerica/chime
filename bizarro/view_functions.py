@@ -317,7 +317,6 @@ def browserid_hostname_required(route_function):
     '''
     @wraps(route_function)
     def decorated_function(*args, **kwargs):
-        # raise ValueError('breakpoint')
         browserid_netloc = urlparse(current_app.config['BROWSERID_URL']).netloc
         request_parsed = urlparse(request.url)
         if request_parsed.netloc != browserid_netloc:
