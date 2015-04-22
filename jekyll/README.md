@@ -8,7 +8,7 @@ goes something like this:
 
 * Install rbenv
   + Ubuntu: `apt-get install rbenv`
-  + MacOS: `brew install rbenv ruby-build`
+  + MacOS: `brew install rbenv ruby-build` (using [Homebrew](http://brew.sh/))
 * activate rbenv temporarily or permanently
   + temporary: `eval "$(rbenv init -)"`
   + permanent: `echo 'eval "$(rbenv init -)"' >> ~/.bash_profile` (restart shell after)
