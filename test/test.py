@@ -1431,11 +1431,13 @@ class TestApp (TestCase):
     def test_post_request_does_not_create_branch(self):
         ''' Certain POSTs to a made-up URL should not create a branch
         '''
-
         with HTTMock(self.mock_persona_verify):
             self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
 
         with HTTMock(self.auth_csv_example_allowed):
+
+            # try adding a new file
+
             fake_branch_name = 'this-should-not-create-a-branch'
             response = self.test_client.post('/tree/{}/edit/'.format(fake_branch_name), data={'action': 'add', 'path': 'hello.html'}, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
@@ -1445,25 +1447,26 @@ class TestApp (TestCase):
             self.assertFalse(fake_branch_name in self.origin.branches)
 
             # create a branch then delete it right before a POSTing a save command
-            # response = self.test_client.post('/start', data={'branch': fake_branch_name}, follow_redirects=True)
+            repo_functions.start_branch(self.clone1, 'master', '{}'.format(fake_branch_name))
 
-            # response = self.test_client.post('/tree/erica@example.com%252F{}/edit/'.format(fake_branch_name), data={'action': 'add', 'path': 'hello.html'}, follow_redirects=True)
-            # self.assertEquals(response.status_code, 200)
+            response = self.test_client.post('/tree/{}/edit/'.format(fake_branch_name), data={'action': 'add', 'path': 'hello.html'}, follow_redirects=True)
+            self.assertEquals(response.status_code, 200)
 
-            # response = self.test_client.get('/tree/erica@example.com%252F{}/edit/'.format(fake_branch_name), follow_redirects=True)
-            # self.assertTrue('hello.html' in response.data)
+            response = self.test_client.get('/tree/{}/edit/'.format(fake_branch_name), follow_redirects=True)
+            self.assertEquals(response.status_code, 200)
+            self.assertTrue('hello.html' in response.data)
 
-            # response = self.test_client.get('/tree/erica@example.com%252F{}/edit/hello.html'.format(fake_branch_name))
-            # hexsha = search(r'<input name="hexsha" value="(\w+)"', response.data).group(1)
+            response = self.test_client.get('/tree/{}/edit/hello.html'.format(fake_branch_name))
+            self.assertEquals(response.status_code, 200)
+            hexsha = search(r'<input name="hexsha" value="(\w+)"', response.data).group(1)
+            repo_functions.abandon_branch(self.clone1, 'master', fake_branch_name)
 
-            # repo_functions.abandon_branch(self.origin, 'master', fake_branch_name)
-
-            # response = self.test_client.post('/tree/erica@example.com%252F{}/save/hello.html'.format(fake_branch_name), data={'layout': 'multi', 'hexsha': hexsha, 'en-title': 'Greetings', 'en-body': 'Hello world.\n', 'fr-title': '', 'fr-body': '', 'url-slug': 'hello'}, follow_redirects=True)            
-            # self.assertEqual(response.status_code, 200)
-            # # the branch path should not be in the returned HTML
-            # self.assertFalse('/{}'.format(fake_branch_name) in response.data)
-            # # the branch name should not be in git's branches list
-            # self.assertFalse(fake_branch_name in self.origin.branches)
+            response = self.test_client.post('/tree/{}/save/hello.html'.format(fake_branch_name), data={'layout': 'multi', 'hexsha': hexsha, 'en-title': 'Greetings', 'en-body': 'Hello world.\n', 'fr-title': '', 'fr-body': '', 'url-slug': 'hello'}, follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            # the branch path should not be in the returned HTML
+            self.assertFalse('/{}'.format(fake_branch_name) in response.data)
+            # the branch name should not be in git's branches list
+            self.assertFalse(fake_branch_name in self.origin.branches)
 
     def test_google_callback_is_successful(self):
         ''' Ensure we get a successful page load on callback from Google authentication

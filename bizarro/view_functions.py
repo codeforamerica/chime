@@ -352,7 +352,6 @@ def branch_required(route_function):
     @wraps(route_function)
     def decorated_function(*args, **kwargs):
         repo = Repo(current_app.config['REPO_PATH'])
-
         if _remote_exists(repo, 'origin'):
             Logger.debug('  fetching origin {}'.format(repo))
             repo.git.fetch('origin', with_exceptions=True)
