@@ -415,6 +415,7 @@ def branch_edit(branch, path=None):
 @app.route('/tree/<branch>/edit/', methods=['POST'])
 @app.route('/tree/<branch>/edit/<path:path>', methods=['POST'])
 @login_required
+@branch_required
 @synched_checkout_required
 def branch_edit_file(branch, path=None):
     r = get_repo(current_app)
@@ -510,6 +511,7 @@ def branch_review(branch):
 
 @app.route('/tree/<branch>/save/<path:path>', methods=['POST'])
 @login_required
+@branch_required
 @synch_required
 def branch_save(branch, path):
     branch = branch_var2name(branch)
