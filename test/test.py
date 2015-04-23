@@ -1180,6 +1180,8 @@ class TestApp (TestCase):
         copytree(repo_path, temp_repo_path)
         self.origin = Repo(temp_repo_path)
 
+        self.clone1 = self.origin.clone(mkdtemp(prefix='bizarro-'))
+
         app_args = {}
 
         app_args['SINGLE_USER'] = 'Yes'
@@ -1212,6 +1214,7 @@ class TestApp (TestCase):
         rmtree(self.work_path)
         rmtree(self.ga_config_dir)
         rmtree(self.origin.git_dir)
+        rmtree(self.clone1.working_dir)
 
     def auth_csv_example_disallowed(self, url, request):
         if url.geturl() == 'http://example.com/auth.csv':
