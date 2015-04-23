@@ -2,3 +2,4 @@ source 'https://rubygems.org'
 
 gem 'jekyll'
 gem 'therubyracer' # required by jekyll
+gem 'govspeak', :git => 'https://github.com/wpietri/govspeak.git', :branch => 'throwaway-chimespeak-for-user-test'
