@@ -75,7 +75,7 @@
             {% set form_layout = front['layout'] %}
             {% set form_section = front['section'] %}
             
-            <ul class="list-form slug">
+            <!--ul class="list-form slug">
                 <li class="form-field">
                     <label for="url-slug">Slug</label>
                     <input name="url-slug" type="text" value="{{url_slug}}" />  
@@ -83,14 +83,18 @@
                 <li class="form-field">Layout: {{form_layout}}</li>
                 <li class="form-field">Section: {{form_section}}<li>   
 
-            </ul>
-            <div class="markdown-helper">
+            </ul-->
+            <div class="markdown-helper" style="overflow:scroll; height:450px; border:1px solid #eee">
                 <h2>Content tips</h2>
                 <p>You can easily format your content by using special punctuation known as <a href="http://markdowntutorial.com/" target="_blank">Markdown</a>, such as:</p>
                 <ul>
-                    <li>### Use 3 hashes to indicate the line is a heading</li>
-                    <li>Wrapping text in a pair of asterisks will make it <b>**bold**</b></li>
-                    <li>Using underscores on either side of a word will make it <i>_italic_</i></li>
+                    <li><code>## </code>Use 2 or 3 hashes at the start of a line to turn it into a heading</li>
+                    <li>Wrapping text in a pair of asterisks will make it <code><b>**bold**</b></code></li>
+                    <li>Using underscores on either side of a word will make it <code><i>_italic_</i></code></li>
+                    <li>Include images with <code>{../image/path.jpg}</code></li>
+                    <li>Create links by blocking the link text with square brackets and putting the url next to it in round brackets <code>[the link text](/and/the/address/here)</code><li>
+                    <li>Indicate an address with <code>$address</code><li>
+                    <li><code>* </code>Make lists by putting a single asterisk at the start of each list item</li>
                 </ul>
             </div>    
         </div>
