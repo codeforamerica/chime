@@ -1175,9 +1175,10 @@ class TestApp (TestCase):
         self.work_path = mkdtemp(prefix='bizarro-repo-clones-')
 
         repo_path = os.path.dirname(os.path.abspath(__file__)) + '/test-app.git'
-        self.temp_repo_dir = mkdtemp(prefix='bizarro-root')
-        temp_repo_path = self.temp_repo_dir + '/test-app.git'
+        temp_repo_dir = mkdtemp(prefix='bizarro-root')
+        temp_repo_path = temp_repo_dir + '/test-app.git'
         copytree(repo_path, temp_repo_path)
+        self.origin = Repo(temp_repo_path)
 
         app_args = {}
 
@@ -1209,8 +1210,8 @@ class TestApp (TestCase):
 
     def tearDown(self):
         rmtree(self.work_path)
-        rmtree(self.temp_repo_dir)
         rmtree(self.ga_config_dir)
+        rmtree(self.origin.git_dir)
 
     def auth_csv_example_disallowed(self, url, request):
         if url.geturl() == 'http://example.com/auth.csv':
