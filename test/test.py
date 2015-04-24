@@ -1400,6 +1400,9 @@ class TestApp (TestCase):
 
         with HTTMock(self.auth_csv_example_allowed):
             fake_branch_name = 'this-should-not-create-a-branch'
+            #
+            # edit
+            #
             response = self.test_client.get('/tree/{}/edit/'.format(fake_branch_name), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # the branch path should not be in the returned HTML
@@ -1407,6 +1410,9 @@ class TestApp (TestCase):
             # the branch name should not be in git's branches list
             self.assertFalse(fake_branch_name in self.origin.branches)
 
+            #
+            # history
+            #
             response = self.test_client.get('/tree/{}/history/'.format(fake_branch_name), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # the branch path should not be in the returned HTML
@@ -1414,6 +1420,9 @@ class TestApp (TestCase):
             # the branch name should not be in git's branches list
             self.assertFalse(fake_branch_name in self.origin.branches)
 
+            #
+            # review
+            #
             response = self.test_client.get('/tree/{}/review/'.format(fake_branch_name), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # the branch path should not be in the returned HTML
@@ -1421,6 +1430,9 @@ class TestApp (TestCase):
             # the branch name should not be in git's branches list
             self.assertFalse(fake_branch_name in self.origin.branches)
 
+            #
+            # view
+            #
             response = self.test_client.get('/tree/{}/view/'.format(fake_branch_name), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # the branch path should not be in the returned HTML
@@ -1435,9 +1447,9 @@ class TestApp (TestCase):
             self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
 
         with HTTMock(self.auth_csv_example_allowed):
-
+            #
             # try adding a new file
-
+            #
             fake_branch_name = 'this-should-not-create-a-branch'
             response = self.test_client.post('/tree/{}/edit/'.format(fake_branch_name), data={'action': 'add', 'path': 'hello.html'}, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
