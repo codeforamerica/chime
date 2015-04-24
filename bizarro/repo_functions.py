@@ -22,7 +22,39 @@ class MergeConflict (Exception):
         return 'MergeConflict(%s, %s)' % (self.remote_commit, self.local_commit)
 
 def _origin(branch_name):
+    ''' Format the branch name into a origin path and return it.
+    '''
     return 'origin/' + branch_name
+
+def get_branch_start_point(clone, default_branch_name, new_branch_name):
+    ''' Return the last commit on the appropriate branch
+    '''
+    clone.git.fetch('origin')
+
+    if _origin(new_branch_name) in clone.refs:
+        return clone.refs[_origin(new_branch_name)].commit
+
+    if _origin(default_branch_name) in clone.refs:
+        return clone.refs[_origin(default_branch_name)].commit
+
+    return clone.branches[default_branch_name].commit
+
+def get_existing_branch(clone, default_branch_name, new_branch_name):
+    ''' Return an existing branch with the passed name, if it exists.
+    '''
+    clone.git.fetch('origin')
+
+    start_point = get_branch_start_point(clone, default_branch_name, new_branch_name)
+
+    # Start or update the branch, letting origin override the local repo.
+    logging.debug('get_existing_branch() start_point is %s' % repr(start_point))
+
+    # See if it already matches start_point
+    if new_branch_name in clone.branches:
+        if clone.branches[new_branch_name].commit == start_point:
+            return clone.branches[new_branch_name]
+
+    return None
 
 def start_branch(clone, default_branch_name, new_branch_name):
     ''' Start a new repository branch, push it to origin and return it.
@@ -32,21 +64,12 @@ def start_branch(clone, default_branch_name, new_branch_name):
     '''
     clone.git.fetch('origin')
 
-    if _origin(new_branch_name) in clone.refs:
-        start_point = clone.refs[_origin(new_branch_name)].commit
-    elif _origin(default_branch_name) in clone.refs:
-        start_point = clone.refs[_origin(default_branch_name)].commit
-    else:
-        start_point = clone.branches[default_branch_name].commit
+    existing_branch = get_existing_branch(clone, default_branch_name, new_branch_name)
+    if existing_branch:
+        return existing_branch
 
-    # Start or update the branch, letting origin override the local repo.
-    logging.debug('start_branch() start_point is %s' % repr(start_point))
-
-    # See if it already matches start_point
-    if new_branch_name in clone.branches:
-        if clone.branches[new_branch_name].commit == start_point:
-            return clone.branches[new_branch_name]
-
+    # no existing branch, create and return a brand new branch
+    start_point = get_branch_start_point(clone, default_branch_name, new_branch_name)
     branch = clone.create_head(new_branch_name, commit=start_point, force=True)
     clone.git.push('origin', new_branch_name)
 
