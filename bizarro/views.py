@@ -19,15 +19,11 @@ from .view_functions import (
     branch_name2path, branch_var2name, get_repo, name_branch, dos2unix,
     login_required, synch_required, synched_checkout_required, sorted_paths,
     directory_paths, should_redirect, make_redirect, get_auth_data_file,
-    is_allowed_email, relative_datetime_string, common_template_args, branch_required
-    )
+    is_allowed_email, relative_datetime_string, common_template_args, branch_required)
 from .google_api_functions import (
     read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens,
     authorize_google, get_google_personal_info, get_google_analytics_properties,
-    fetch_google_analytics_for_page, GA_CONFIG_FILENAME
-    )
-
-import json
+    fetch_google_analytics_for_page)
 
 @app.route('/')
 @login_required

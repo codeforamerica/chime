@@ -1,5 +1,6 @@
-import os, logging
-from os import environ, mkdir
+import os
+import logging
+from os import mkdir
 from os.path import join, split, exists, isdir
 from itertools import chain
 
