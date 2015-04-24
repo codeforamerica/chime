@@ -1476,12 +1476,13 @@ class TestApp (TestCase):
             hexsha = search(r'<input name="hexsha" value="(\w+)"', response.data).group(1)
 
             # delete the branch
-            response = self.test_client.post('/merge', data={'action': 'abandon', 'branch': 'erica@example.com/{}'.format(fake_branch_name)})
+            response = self.test_client.post('/merge', data={'action': 'abandon', 'branch': 'erica@example.com/{}'.format(fake_branch_name)}, follow_redirects=True)
+            self.assertEquals(response.status_code, 200)
 
             response = self.test_client.post('/tree/erica@example.com%252F{}/save/hello.html'.format(fake_branch_name), data={'layout': 'multi', 'hexsha': hexsha, 'en-title': 'Greetings', 'en-body': 'Hello world.\n', 'fr-title': '', 'fr-body': '', 'url-slug': 'hello'}, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # the branch path should not be in the returned HTML
-            self.assertFalse('/{}'.format(fake_branch_name) in response.data)
+            self.assertFalse('/erica@example.com/{}'.format(fake_branch_name) in response.data)
             # the branch name should not be in git's branches list
             self.assertFalse('erica@example.com/{}'.format(fake_branch_name) in self.origin.branches)
 

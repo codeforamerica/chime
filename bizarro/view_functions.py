@@ -18,7 +18,7 @@ from dateutil.relativedelta import relativedelta
 from flask import request, session, current_app, redirect, flash
 from requests import get
 
-from .repo_functions import start_branch
+from .repo_functions import get_existing_branch
 from .href import needs_redirect, get_redirect
 
 from fcntl import flock, LOCK_EX, LOCK_UN, LOCK_SH
@@ -345,27 +345,6 @@ def synch_required(route_function):
 
     return decorated_function
 
-def branch_required(route_function):
-    ''' Decorator for routes needing to have a branch exist
-
-    '''
-    @wraps(route_function)
-    def decorated_function(*args, **kwargs):
-        repo = Repo(current_app.config['REPO_PATH'])
-        if _remote_exists(repo, 'origin'):
-            Logger.debug('  fetching origin {}'.format(repo))
-            repo.git.fetch('origin', with_exceptions=True)
-
-        if branch_var2name(kwargs.get('branch', '')) in repo.refs:
-            return route_function(*args, **kwargs)
-
-        # TODO: this should refer the user back to the url they came from
-        Logger.debug('  branch {} does not exist, redirecting'.format(kwargs.get('branch', '')))
-        flash(u'There is no {} branch!'.format(kwargs.get('branch', '')), u'warning')
-        return redirect('/')
-
-    return decorated_function
-
 def synched_checkout_required(route_function):
     ''' Decorator for routes needing a repository checked out to a branch.
 
@@ -384,7 +363,14 @@ def synched_checkout_required(route_function):
         checkout = get_repo(current_app)
         branch_name = branch_var2name(kwargs['branch'])
         master_name = current_app.config['default_branch']
-        branch = start_branch(checkout, master_name, branch_name)
+        branch = get_existing_branch(checkout, master_name, branch_name)
+
+        # redirect and flash an error if the branch wasn't found
+        if not branch:
+            Logger.debug('  branch {} does not exist, redirecting'.format(kwargs['branch']))
+            flash(u'There is no {} branch!'.format(kwargs['branch']), u'warning')
+            return redirect('/')
+
         branch.checkout()
 
         Logger.debug('  checked out to {}'.format(branch))
