@@ -1,5 +1,6 @@
 *.DS_Store
 *.pyc
+apache
 venv-*
 sample-site
 repo-*%40*
