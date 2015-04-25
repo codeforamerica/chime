@@ -1181,6 +1181,7 @@ class TestApp (TestCase):
         self.origin = Repo(temp_repo_path)
 
         self.clone1 = self.origin.clone(mkdtemp(prefix='bizarro-'))
+        self.clone2 = self.origin.clone(mkdtemp(prefix='bizarro-'))
 
         app_args = {}
 
@@ -1215,6 +1216,7 @@ class TestApp (TestCase):
         rmtree(self.ga_config_dir)
         rmtree(self.origin.git_dir)
         rmtree(self.clone1.working_dir)
+        rmtree(self.clone2.working_dir)
 
     def auth_csv_example_disallowed(self, url, request):
         if url.geturl() == 'http://example.com/auth.csv':
@@ -1485,13 +1487,6 @@ class TestApp (TestCase):
             self.assertFalse('/erica@example.com/{}'.format(fake_branch_name) in response.data)
             # the branch name should not be in git's branches list
             self.assertFalse('erica@example.com/{}'.format(fake_branch_name) in self.origin.branches)
-
-    def test_accessing_local_branch_fetches_remote(self):
-        ''' GETting or POSTing to a URL that indicates a branch that exists remotely but not locally
-            fetches the remote branch and allows access
-        '''
-        pass
-        # ;;;
 
     def test_google_callback_is_successful(self):
         ''' Ensure we get a successful page load on callback from Google authentication
