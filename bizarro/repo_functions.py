@@ -27,7 +27,7 @@ def _origin(branch_name):
     return 'origin/' + branch_name
 
 def get_branch_start_point(clone, default_branch_name, new_branch_name):
-    ''' Return the last commit on the appropriate branch
+    ''' Return the last commit on the branch
     '''
     clone.git.fetch('origin')
 
@@ -46,7 +46,6 @@ def get_existing_branch(clone, default_branch_name, new_branch_name):
 
     start_point = get_branch_start_point(clone, default_branch_name, new_branch_name)
 
-    # Start or update the branch, letting origin override the local repo.
     logging.debug('get_existing_branch() start_point is %s' % repr(start_point))
 
     # See if it already matches start_point
@@ -68,7 +67,7 @@ def start_branch(clone, default_branch_name, new_branch_name):
     if existing_branch:
         return existing_branch
 
-    # no existing branch, create and return a brand new branch
+    # create and return a brand new branch
     start_point = get_branch_start_point(clone, default_branch_name, new_branch_name)
     branch = clone.create_head(new_branch_name, commit=start_point, force=True)
     clone.git.push('origin', new_branch_name)

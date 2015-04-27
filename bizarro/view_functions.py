@@ -365,8 +365,8 @@ def synched_checkout_required(route_function):
         master_name = current_app.config['default_branch']
         branch = get_existing_branch(checkout, master_name, branch_name)
 
-        # redirect and flash an error if the branch wasn't found
         if not branch:
+            # redirect and flash an error
             Logger.debug('  branch {} does not exist, redirecting'.format(kwargs['branch']))
             flash(u'There is no {} branch!'.format(kwargs['branch']), u'warning')
             return redirect('/')

@@ -1181,7 +1181,6 @@ class TestApp (TestCase):
         self.origin = Repo(temp_repo_path)
 
         self.clone1 = self.origin.clone(mkdtemp(prefix='bizarro-'))
-        self.clone2 = self.origin.clone(mkdtemp(prefix='bizarro-'))
 
         app_args = {}
 
@@ -1216,7 +1215,6 @@ class TestApp (TestCase):
         rmtree(self.ga_config_dir)
         rmtree(self.origin.git_dir)
         rmtree(self.clone1.working_dir)
-        rmtree(self.clone2.working_dir)
 
     def auth_csv_example_disallowed(self, url, request):
         if url.geturl() == 'http://example.com/auth.csv':
@@ -1408,8 +1406,8 @@ class TestApp (TestCase):
             response = self.test_client.get('/tree/{}/edit/'.format(fake_branch_name), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # the branch path should not be in the returned HTML
-            self.assertFalse('/{}'.format(fake_branch_name) in response.data)
-            # the branch name should not be in git's branches list
+            self.assertFalse('{}/edit'.format(fake_branch_name) in response.data)
+            # the branch name should not be in the origin's branches list
             self.assertFalse(fake_branch_name in self.origin.branches)
 
             #
@@ -1418,8 +1416,8 @@ class TestApp (TestCase):
             response = self.test_client.get('/tree/{}/history/'.format(fake_branch_name), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # the branch path should not be in the returned HTML
-            self.assertFalse('/{}'.format(fake_branch_name) in response.data)
-            # the branch name should not be in git's branches list
+            self.assertFalse('{}/edit'.format(fake_branch_name) in response.data)
+            # the branch name should not be in the origin's branches list
             self.assertFalse(fake_branch_name in self.origin.branches)
 
             #
@@ -1428,8 +1426,8 @@ class TestApp (TestCase):
             response = self.test_client.get('/tree/{}/review/'.format(fake_branch_name), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # the branch path should not be in the returned HTML
-            self.assertFalse('/{}'.format(fake_branch_name) in response.data)
-            # the branch name should not be in git's branches list
+            self.assertFalse('{}/edit'.format(fake_branch_name) in response.data)
+            # the branch name should not be in the origin's branches list
             self.assertFalse(fake_branch_name in self.origin.branches)
 
             #
@@ -1438,8 +1436,8 @@ class TestApp (TestCase):
             response = self.test_client.get('/tree/{}/view/'.format(fake_branch_name), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # the branch path should not be in the returned HTML
-            self.assertFalse('/{}'.format(fake_branch_name) in response.data)
-            # the branch name should not be in git's branches list
+            self.assertFalse('{}/edit'.format(fake_branch_name) in response.data)
+            # the branch name should not be in the origin's branches list
             self.assertFalse(fake_branch_name in self.origin.branches)
 
     def test_post_request_does_not_create_branch(self):
@@ -1456,15 +1454,15 @@ class TestApp (TestCase):
             response = self.test_client.post('/tree/{}/edit/'.format(fake_branch_name), data={'action': 'add', 'path': 'hello.html'}, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # the branch path should not be in the returned HTML
-            self.assertFalse('/{}'.format(fake_branch_name) in response.data)
-            # the branch name should not be in git's branches list
+            self.assertFalse('{}/edit'.format(fake_branch_name) in response.data)
+            # the branch name should not be in the origin's branches list
             self.assertFalse(fake_branch_name in self.origin.branches)
 
             #
             # create a branch then delete it right before a POSTing a save command
             #
             response = self.test_client.post('/start', data={'branch': fake_branch_name}, follow_redirects=True)
-            self.assertTrue('erica@example.com/{}'.format(fake_branch_name) in response.data)
+            self.assertTrue('{}/edit'.format(fake_branch_name) in response.data)
 
             response = self.test_client.post('/tree/erica@example.com%252F{}/edit/'.format(fake_branch_name), data={'action': 'add', 'path': 'hello.html'}, follow_redirects=True)
             self.assertEquals(response.status_code, 200)
@@ -1484,8 +1482,8 @@ class TestApp (TestCase):
             response = self.test_client.post('/tree/erica@example.com%252F{}/save/hello.html'.format(fake_branch_name), data={'layout': 'multi', 'hexsha': hexsha, 'en-title': 'Greetings', 'en-body': 'Hello world.\n', 'fr-title': '', 'fr-body': '', 'url-slug': 'hello'}, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # the branch path should not be in the returned HTML
-            self.assertFalse('/erica@example.com/{}'.format(fake_branch_name) in response.data)
-            # the branch name should not be in git's branches list
+            self.assertFalse('{}/edit'.format(fake_branch_name) in response.data)
+            # the branch name should not be in the origin's branches list
             self.assertFalse('erica@example.com/{}'.format(fake_branch_name) in self.origin.branches)
 
     def test_google_callback_is_successful(self):
