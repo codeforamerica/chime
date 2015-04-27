@@ -1486,6 +1486,43 @@ class TestApp (TestCase):
             # the branch name should not be in the origin's branches list
             self.assertFalse('erica@example.com/{}'.format(fake_branch_name) in self.origin.branches)
 
+    def test_accessing_local_branch_fetches_remote(self):
+        ''' GETting or POSTing to a URL that indicates a branch that exists remotely but not locally
+            fetches the remote branch and allows access
+        '''
+        with HTTMock(self.mock_persona_verify):
+            self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
+
+        with HTTMock(self.auth_csv_example_allowed):
+            # start a new branch via the http interface
+            # invokes view_functions/get_repo which creates a clone
+            disposable_branch_name = u'unimportant-branch'
+            response = self.test_client.post('/start', data={'branch': disposable_branch_name}, follow_redirects=True)
+            self.assertEquals(response.status_code, 200)
+            self.assertTrue('{}/edit'.format(disposable_branch_name) in response.data)
+
+            # create a branch programmatically on our pre-made clone
+            check_branch_name = u'the-branch-we-are-checking-for'
+            check_branch_name_full = 'erica@example.com/{}'.format(check_branch_name)
+            repo_functions.start_branch(self.clone1, 'master', check_branch_name_full)
+            self.assertTrue(check_branch_name_full in self.clone1.branches)
+            self.assertTrue(check_branch_name_full in self.origin.branches)
+            # verify that the branch doesn't exist in our new clone
+            with self.app.app_context():
+                with self.app.test_request_context():
+                    from flask import session
+                    session['email'] = 'erica@example.com'
+                    new_clone = view_functions.get_repo(self.app)
+                    self.assertFalse(check_branch_name_full in new_clone.branches)
+
+            # request an edit page for the check branch through the http interface
+            response = self.test_client.get('/tree/erica@example.com%252F{}/edit/'.format(check_branch_name), follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            # the branch path should be in the returned HTML
+            self.assertTrue('{}/edit'.format(check_branch_name) in response.data)
+            # the branch name should now be in the original repo's branches list
+            self.assertTrue(check_branch_name_full in new_clone.branches)
+
     def test_google_callback_is_successful(self):
         ''' Ensure we get a successful page load on callback from Google authentication
         '''

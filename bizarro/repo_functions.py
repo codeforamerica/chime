@@ -3,6 +3,7 @@ import logging
 from os import mkdir
 from os.path import join, split, exists, isdir
 from itertools import chain
+from git.cmd import GitCommandError
 
 class MergeConflict (Exception):
     def __init__(self, remote_commit, local_commit):
@@ -52,6 +53,15 @@ def get_existing_branch(clone, default_branch_name, new_branch_name):
     if new_branch_name in clone.branches:
         if clone.branches[new_branch_name].commit == start_point:
             return clone.branches[new_branch_name]
+
+    # If the branch exists at the origin, check it out and return it
+    try:
+        clone.git.checkout(new_branch_name)
+        clone.git.pull('origin', new_branch_name)
+        return clone.branches[new_branch_name]
+
+    except GitCommandError:
+        return None
 
     return None
 
