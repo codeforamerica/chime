@@ -30,8 +30,6 @@ def _origin(branch_name):
 def get_branch_start_point(clone, default_branch_name, new_branch_name):
     ''' Return the last commit on the branch
     '''
-    clone.git.fetch('origin')
-
     if _origin(new_branch_name) in clone.refs:
         return clone.refs[_origin(new_branch_name)].commit
 
@@ -71,8 +69,6 @@ def start_branch(clone, default_branch_name, new_branch_name):
         Don't touch the working directory. If an existing branch is found
         with the same name, use it instead of creating a fresh branch.
     '''
-    clone.git.fetch('origin')
-
     existing_branch = get_existing_branch(clone, default_branch_name, new_branch_name)
     if existing_branch:
         return existing_branch
