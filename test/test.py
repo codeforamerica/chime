@@ -280,7 +280,7 @@ class TestRepo (TestCase):
         '''
         name = str(uuid4())
 
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', name)
+        repo_functions.get_start_branch(self.clone1, 'master', name)
 
         self.assertTrue(name in self.origin.branches)
 
@@ -571,7 +571,7 @@ class TestRepo (TestCase):
         #
         with self.assertRaises(repo_functions.MergeConflict) as conflict:
             args2 = self.clone2, 'conflict.md', '...', branch2.commit.hexsha, 'master'
-            commit2 = repo_functions.save_working_file(*args2)
+            repo_functions.save_working_file(*args2)
 
         self.assertEqual(conflict.exception.remote_commit, commit1)
 
@@ -653,10 +653,10 @@ class TestRepo (TestCase):
         # Push changes from the two branches to origin.
         #
         args1 = self.clone1, 'conflict.md', '...', branch1.commit.hexsha, 'master'
-        commit1 = repo_functions.save_working_file(*args1)
+        repo_functions.save_working_file(*args1)
 
         args2 = self.clone2, 'conflict.md', '...', branch2.commit.hexsha, 'master'
-        commit2 = repo_functions.save_working_file(*args2)
+        repo_functions.save_working_file(*args2)
 
         #
         # Merge the two branches to master; show that second merge will fail.
@@ -742,7 +742,7 @@ class TestRepo (TestCase):
         ''' Test that a conflict in two branches can be abandoned.
         '''
         name = str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', 'title')
+        repo_functions.get_start_branch(self.clone1, 'master', 'title')
         branch2 = repo_functions.get_start_branch(self.clone2, 'master', name)
 
         #
@@ -1621,7 +1621,7 @@ class TestApp (TestCase):
             response = self.test_client.get('/not-allowed', headers={'Host': 'wrong.local'})
 
         expected_url = urljoin(self.app.config['BROWSERID_URL'], '/not-allowed')
-        
+
         self.assertEquals(response.status_code, 302)
         self.assertEquals(response.headers['Location'], expected_url)
 
