@@ -19,15 +19,11 @@ from .view_functions import (
     branch_name2path, branch_var2name, get_repo, name_branch, dos2unix,
     login_required, browserid_hostname_required, synch_required, synched_checkout_required, sorted_paths,
     directory_paths, should_redirect, make_redirect, get_auth_data_file,
-    is_allowed_email, relative_datetime_string, common_template_args
-    )
+    is_allowed_email, relative_datetime_string, common_template_args)
 from .google_api_functions import (
     read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens,
     authorize_google, get_google_personal_info, get_google_analytics_properties,
-    fetch_google_analytics_for_page, GA_CONFIG_FILENAME
-    )
-
-import json
+    fetch_google_analytics_for_page)
 
 @app.route('/')
 @login_required
@@ -86,7 +82,7 @@ def index():
 def not_allowed():
     email = session.get('email', None)
     auth_data_href = current_app.config['AUTH_DATA_HREF']
-    
+
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(auth_url=auth_data_href)
 
@@ -225,10 +221,10 @@ def start_branch():
     branch_desc = request.form.get('branch')
     branch_name = name_branch(branch_desc)
     master_name = current_app.config['default_branch']
-    branch = repo_functions.start_branch(r, master_name, branch_name)
+    branch = repo_functions.get_start_branch(r, master_name, branch_name)
 
     safe_branch = branch_name2path(branch.name)
-    return redirect('/tree/%s/edit/' % safe_branch, code=303)
+    return redirect('/tree/{}/edit/'.format(safe_branch), code=303)
 
 @app.route('/merge', methods=['POST'])
 @login_required
@@ -311,7 +307,7 @@ def get_checkout(ref):
     r = get_repo(current_app)
 
     bytes = publish.retrieve_commit_checkout(current_app.config['RUNNING_STATE_DIR'], r, ref)
-    
+
     return Response(bytes.getvalue(), mimetype='application/zip')
 
 @app.route('/tree/<branch>/view/', methods=['GET'])
@@ -512,9 +508,14 @@ def branch_save(branch, path):
     branch = branch_var2name(branch)
     master_name = current_app.config['default_branch']
 
-    r = get_repo(current_app)
-    b = repo_functions.start_branch(r, master_name, branch)
-    c = b.commit
+    repo = get_repo(current_app)
+    existing_branch = repo_functions.get_existing_branch(repo, master_name, branch)
+
+    if not existing_branch:
+        flash(u'There is no {} branch!'.format(branch), u'warning')
+        return redirect('/')
+
+    c = existing_branch.commit
 
     if c.hexsha != request.form.get('hexsha'):
         raise Exception('Out of date SHA: %s' % request.form.get('hexsha'))
@@ -522,32 +523,32 @@ def branch_save(branch, path):
     #
     # Write changes.
     #
-    b.checkout()
+    existing_branch.checkout()
 
     front = {'layout': dos2unix(request.form.get('layout')), 'title': dos2unix(request.form.get('en-title'))}
 
-    for iso in load_languages(r.working_dir):
+    for iso in load_languages(repo.working_dir):
         if iso != 'en':
             front['title-' + iso] = dos2unix(request.form.get(iso + '-title', ''))
             front['body-' + iso] = dos2unix(request.form.get(iso + '-body', ''))
 
     body = dos2unix(request.form.get('en-body'))
-    edit_functions.update_page(r, path, front, body)
+    edit_functions.update_page(repo, path, front, body)
 
     #
     # Try to merge from the master to the current branch.
     #
     try:
         message = 'Saved file "%s"' % path
-        c2 = repo_functions.save_working_file(r, path, message, c.hexsha, master_name)
+        c2 = repo_functions.save_working_file(repo, path, message, c.hexsha, master_name)
         new_path = request.form.get('url-slug') + splitext(path)[1]
 
         if new_path != path:
-            repo_functions.move_existing_file(r, path, new_path, c2.hexsha, master_name)
+            repo_functions.move_existing_file(repo, path, new_path, c2.hexsha, master_name)
             path = new_path
 
     except repo_functions.MergeConflict as conflict:
-        r.git.reset(c.hexsha, hard=True)
+        repo.git.reset(c.hexsha, hard=True)
 
         Logger.debug('1 {}'.format(conflict.remote_commit))
         Logger.debug('  {}'.format(repr(conflict.remote_commit.tree[path].data_stream.read())))

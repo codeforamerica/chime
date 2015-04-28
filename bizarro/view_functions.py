@@ -15,10 +15,10 @@ import re
 from git import Repo, Git
 from dateutil import parser, tz
 from dateutil.relativedelta import relativedelta
-from flask import request, session, current_app, redirect
+from flask import request, session, current_app, redirect, flash
 from requests import get
 
-from .repo_functions import start_branch
+from .repo_functions import get_existing_branch
 from .href import needs_redirect, get_redirect
 
 from fcntl import flock, LOCK_EX, LOCK_UN, LOCK_SH
@@ -379,7 +379,14 @@ def synched_checkout_required(route_function):
         checkout = get_repo(current_app)
         branch_name = branch_var2name(kwargs['branch'])
         master_name = current_app.config['default_branch']
-        branch = start_branch(checkout, master_name, branch_name)
+        branch = get_existing_branch(checkout, master_name, branch_name)
+
+        if not branch:
+            # redirect and flash an error
+            Logger.debug('  branch {} does not exist, redirecting'.format(kwargs['branch']))
+            flash(u'There is no {} branch!'.format(kwargs['branch']), u'warning')
+            return redirect('/')
+
         branch.checkout()
 
         Logger.debug('  checked out to {}'.format(branch))
