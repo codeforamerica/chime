@@ -9,7 +9,10 @@ Make an issue: https://github.com/codeforamerica/ceviche-cms/issues/new
 
 1. Ceviche CMS is a Python Flask web application. Follow the instructions on
    [Python Virtual Environments](https://github.com/codeforamerica/howto/blob/master/Python-Virtualenv.md)
-   to prepare your Python development space.
+   to prepare your Python development space. Make sure to use Python 2.7. Your commands may look something like:
+ + sudo pip install virtualenv
+ + virtualenv -p /usr/bin/python2.7 .venv
+ + source .venv/bin/activate
 
 2. Install the project requirements: `pip install -r requirements.txt`
 
