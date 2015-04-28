@@ -220,7 +220,7 @@ def start_branch():
     branch_desc = request.form.get('branch')
     branch_name = name_branch(branch_desc)
     master_name = current_app.config['default_branch']
-    branch = repo_functions.start_branch(r, master_name, branch_name)
+    branch = repo_functions.get_start_branch(r, master_name, branch_name)
 
     safe_branch = branch_name2path(branch.name)
     return redirect('/tree/%s/edit/' % safe_branch, code=303)

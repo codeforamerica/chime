@@ -63,7 +63,7 @@ def get_existing_branch(clone, default_branch_name, new_branch_name):
 
     return None
 
-def start_branch(clone, default_branch_name, new_branch_name):
+def get_start_branch(clone, default_branch_name, new_branch_name):
     ''' Start a new repository branch, push it to origin and return it.
 
         Don't touch the working directory. If an existing branch is found

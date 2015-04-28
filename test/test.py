@@ -210,11 +210,11 @@ class TestRepo (TestCase):
         branch_names = [b.name for b in self.origin.branches]
         self.assertEqual(set(branch_names), set(['master', 'title', 'body']))
 
-    def test_start_branch(self):
+    def test_get_start_branch(self):
         ''' Make a simple edit in a clone, verify that it appears in the other.
         '''
         name = str(uuid4())
-        branch1 = repo_functions.start_branch(self.clone1, 'master', name)
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', name)
 
         self.assertTrue(name in self.clone1.branches)
         self.assertTrue(name in self.origin.branches)
@@ -234,13 +234,13 @@ class TestRepo (TestCase):
         #
         # See if the branch made it to clone 2
         #
-        branch2 = repo_functions.start_branch(self.clone2, 'master', name)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', name)
 
         self.assertTrue(name in self.clone2.branches)
         self.assertEquals(branch2.commit.hexsha, branch1.commit.hexsha)
         self.assertEquals(branch2.commit.message, message)
 
-    def test_start_branch_2(self):
+    def test_get_start_branch_2(self):
         ''' Make a simple edit in a clone, verify that it appears in the other.
         '''
         name = str(uuid4())
@@ -270,7 +270,7 @@ class TestRepo (TestCase):
         #
         # Now start a branch from the second clone, and look for the new master commit.
         #
-        branch2 = repo_functions.start_branch(self.clone2, 'master', name)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', name)
 
         self.assertTrue(name in self.clone2.branches)
         self.assertEquals(branch2.commit.hexsha, self.origin.refs['master'].commit.hexsha)
@@ -280,7 +280,7 @@ class TestRepo (TestCase):
         '''
         name = str(uuid4())
 
-        branch1 = repo_functions.start_branch(self.clone1, 'master', name)
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', name)
 
         self.assertTrue(name in self.origin.branches)
 
@@ -296,7 +296,7 @@ class TestRepo (TestCase):
         ''' Make a new file and delete an old file in a clone, verify that it appears in the other.
         '''
         name = str(uuid4())
-        branch1 = repo_functions.start_branch(self.clone1, 'master', name)
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', name)
 
         self.assertTrue(name in self.clone1.branches)
         self.assertTrue(name in self.origin.branches)
@@ -325,7 +325,7 @@ class TestRepo (TestCase):
         #
         # See if the branch made it to clone 2
         #
-        branch2 = repo_functions.start_branch(self.clone2, 'master', name)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', name)
 
         self.assertTrue(name in self.clone2.branches)
         self.assertEquals(branch2.commit.hexsha, branch1.commit.hexsha)
@@ -347,7 +347,7 @@ class TestRepo (TestCase):
         ''' Make a new file and directory and delete them.
         '''
         name = str(uuid4())
-        branch1 = repo_functions.start_branch(self.clone1, 'master', name)
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', name)
 
         self.assertTrue(name in self.clone1.branches)
         self.assertTrue(name in self.origin.branches)
@@ -383,7 +383,7 @@ class TestRepo (TestCase):
         ''' Change the path of a file.
         '''
         name = str(uuid4())
-        branch1 = repo_functions.start_branch(self.clone1, 'master', name)
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', name)
 
         self.assertTrue(name in self.clone1.branches)
         self.assertTrue(name in self.origin.branches)
@@ -399,7 +399,7 @@ class TestRepo (TestCase):
         #
         # See if the new file made it to clone 2
         #
-        branch2 = repo_functions.start_branch(self.clone2, 'master', name)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', name)
         branch2.checkout()
 
         self.assertTrue(exists(join(self.clone2.working_dir, 'hello/world.md')))
@@ -408,8 +408,8 @@ class TestRepo (TestCase):
     def test_content_merge(self):
         ''' Test that non-conflicting changes on the same file merge cleanly.
         '''
-        branch1 = repo_functions.start_branch(self.clone1, 'master', 'title')
-        branch2 = repo_functions.start_branch(self.clone2, 'master', 'body')
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', 'title')
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', 'body')
 
         branch1.checkout()
         branch2.checkout()
@@ -446,8 +446,8 @@ class TestRepo (TestCase):
     def test_content_merge_extra_change(self):
         ''' Test that non-conflicting changes on the same file merge cleanly.
         '''
-        branch1 = repo_functions.start_branch(self.clone1, 'master', 'title')
-        branch2 = repo_functions.start_branch(self.clone2, 'master', 'body')
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', 'title')
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', 'body')
 
         branch1.checkout()
         branch2.checkout()
@@ -492,8 +492,8 @@ class TestRepo (TestCase):
         ''' Test that two non-conflicting new files merge cleanly.
         '''
         name = str(uuid4())
-        branch1 = repo_functions.start_branch(self.clone1, 'master', name)
-        branch2 = repo_functions.start_branch(self.clone2, 'master', name)
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', name)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', name)
 
         #
         # Make new files in each branch and save them.
@@ -532,7 +532,7 @@ class TestRepo (TestCase):
         #
         # Show that the merge from the second branch made it back to the first.
         #
-        branch1b = repo_functions.start_branch(self.clone1, 'master', name)
+        branch1b = repo_functions.get_start_branch(self.clone1, 'master', name)
 
         self.assertEquals(branch1b.commit, branch2.commit)
         self.assertEquals(branch1b.commit.author.email, self.session['email'])
@@ -542,8 +542,8 @@ class TestRepo (TestCase):
         ''' Test that a conflict in two branches appears at the right spot.
         '''
         name = str(uuid4())
-        branch1 = repo_functions.start_branch(self.clone1, 'master', name)
-        branch2 = repo_functions.start_branch(self.clone2, 'master', name)
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', name)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', name)
 
         #
         # Make new files in each branch and save them.
@@ -585,8 +585,8 @@ class TestRepo (TestCase):
         ''' Test that a conflict in two branches appears at the right spot.
         '''
         name1, name2 = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.start_branch(self.clone1, 'master', name1)
-        branch2 = repo_functions.start_branch(self.clone2, 'master', name2)
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', name1)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', name2)
 
         #
         # Make new files in each branch and save them.
@@ -634,8 +634,8 @@ class TestRepo (TestCase):
         ''' Test that a conflict in two branches appears at the right spot.
         '''
         name1, name2 = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.start_branch(self.clone1, 'master', name1)
-        branch2 = repo_functions.start_branch(self.clone2, 'master', name2)
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', name1)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', name2)
 
         #
         # Make new files in each branch and save them.
@@ -680,8 +680,8 @@ class TestRepo (TestCase):
         ''' Test that a conflict in two branches can be clobbered.
         '''
         name = str(uuid4())
-        branch1 = repo_functions.start_branch(self.clone1, 'master', 'title')
-        branch2 = repo_functions.start_branch(self.clone2, 'master', name)
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', 'title')
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', name)
 
         #
         # Add goner.md in branch1.
@@ -742,8 +742,8 @@ class TestRepo (TestCase):
         ''' Test that a conflict in two branches can be abandoned.
         '''
         name = str(uuid4())
-        branch1 = repo_functions.start_branch(self.clone1, 'master', 'title')
-        branch2 = repo_functions.start_branch(self.clone2, 'master', name)
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', 'title')
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', name)
 
         #
         # Change index.md in branch2 so it conflicts with title branch.
@@ -798,7 +798,7 @@ class TestRepo (TestCase):
         ''' Change the path of a file.
         '''
         name = str(uuid4())
-        branch1 = repo_functions.start_branch(self.clone1, 'master', name)
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', name)
 
         #
         # Make a commit.
@@ -867,7 +867,7 @@ class TestRepo (TestCase):
         '''
         '''
         name = str(uuid4())
-        branch1 = repo_functions.start_branch(self.clone1, 'master', name)
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', name)
 
         #
         # Make a commit.
@@ -1504,7 +1504,7 @@ class TestApp (TestCase):
             # create a branch programmatically on our pre-made clone
             check_branch_name = u'the-branch-we-are-checking-for'
             check_branch_name_full = 'erica@example.com/{}'.format(check_branch_name)
-            repo_functions.start_branch(self.clone1, 'master', check_branch_name_full)
+            repo_functions.get_start_branch(self.clone1, 'master', check_branch_name_full)
             self.assertTrue(check_branch_name_full in self.clone1.branches)
             self.assertTrue(check_branch_name_full in self.origin.branches)
             # verify that the branch doesn't exist in our new clone
