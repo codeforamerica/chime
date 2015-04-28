@@ -1,7 +1,11 @@
 *.DS_Store
 *.pyc
+apache
 venv-*
+.venv*
 sample-site
 repo-*%40*
 .env
 ga_config.json
+.idea
+apache

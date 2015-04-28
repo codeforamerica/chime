@@ -1,30 +1,35 @@
-Ceviche
-=======
+# What is this?
 
-An experimental CMS that edits Jekyll sites and uses Git persistence and history.  Very much a WIP that is entirely untested and unproven, consider this "Reckon 0.1".
+This is part of the Digital Front Door inititive.  You can read more about it here: https://github.com/codeforamerica/digitalfrontdoor
 
-Install
--------
+## Logging issues / ideas 
+Make an issue: https://github.com/codeforamerica/ceviche-cms/issues/new
+
+# Install
 
 1. Ceviche CMS is a Python Flask web application. Follow the instructions on
    [Python Virtual Environments](https://github.com/codeforamerica/howto/blob/master/Python-Virtualenv.md)
-   to prepare your Python development space.
+   to prepare your Python development space. Make sure to use Python 2.7. Your commands may look something like:
+ + sudo pip install virtualenv
+ + virtualenv -p /usr/bin/python2.7 .venv
+ + source .venv/bin/activate
 
-2. You will need a bare Github repository in the directory `sample-site`
-   (this will become configurable in the future).
+2. Install the project requirements: `pip install -r requirements.txt`
 
-3. copy env.sample to .env
+3. You will need a bare Github repository in the directory `sample-site` with an initial empty commit
+   (this will become configurable in the future):
 
-4. Run the app with [Foreman](http://ddollar.github.com/foreman):
+ + `cd sample-site`
+ + `git init`
+ + `git commit --allow-empty -m "First commit"`
 
-        $ foreman run python run.py
+4. copy env.sample to .env
 
-   You can alternatively use Foreman's Python port [Honcho](https://pypi.python.org/pypi/honcho):
+5. Run app using [Honcho and the `Procfile`](https://github.com/codeforamerica/howto/blob/master/Procfile.md):
 
         $ honcho start
 
-Who maintains this?
--------------------
+# Who maintains this?
 
 [Mike Migurski](http://github.com/migurski) and [Frances Berriman](http://github.com/phae)
 

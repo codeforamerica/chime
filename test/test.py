@@ -4,7 +4,7 @@ from unittest import main, TestCase
 from tempfile import mkdtemp
 from StringIO import StringIO
 from os.path import join, exists, dirname
-from urlparse import urlparse
+from urlparse import urlparse, urljoin
 from os import environ
 from shutil import rmtree, copytree
 from uuid import uuid4
@@ -27,7 +27,7 @@ from mock import MagicMock
 from bizarro import (
     create_app, jekyll_functions, repo_functions, edit_functions,
     google_api_functions, view_functions, publish
-    )
+)
 
 import codecs
 codecs.register(RotUnicode.search_function)
@@ -113,7 +113,7 @@ class TestViewFunctions (TestCase):
         self.assertEqual(dirs_and_paths, [('root', '/tree/my-branch/edit'),
                                           ('blah', '/tree/my-branch/edit/blah/'),
                                           ('foo', '/tree/my-branch/edit/blah/foo/')])
-    
+
     def test_auth_url(self):
         '''
         '''
@@ -158,8 +158,8 @@ mike@teczno.com,Code for America,Mike Migurski
         org_file = lambda: view_functions.get_auth_data_file('http://example.com/org-file.csv')
         addr_file = lambda: view_functions.get_auth_data_file('http://example.com/addr-file.csv')
         no_file = lambda: view_functions.get_auth_data_file('http://example.com/no-file.csv')
-        
-        with HTTMock(mock_remote_authentication_file) as mock:
+
+        with HTTMock(mock_remote_authentication_file):
             self.assertTrue(view_functions.is_allowed_email(good_file(), 'mike@codeforamerica.org'))
             self.assertTrue(view_functions.is_allowed_email(good_file(), 'frances@codeforamerica.org'))
             self.assertTrue(view_functions.is_allowed_email(good_file(), 'mike@teczno.com'))
@@ -210,11 +210,11 @@ class TestRepo (TestCase):
         branch_names = [b.name for b in self.origin.branches]
         self.assertEqual(set(branch_names), set(['master', 'title', 'body']))
 
-    def test_start_branch(self):
+    def test_get_start_branch(self):
         ''' Make a simple edit in a clone, verify that it appears in the other.
         '''
         name = str(uuid4())
-        branch1 = repo_functions.start_branch(self.clone1, 'master', name)
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', name)
 
         self.assertTrue(name in self.clone1.branches)
         self.assertTrue(name in self.origin.branches)
@@ -234,13 +234,13 @@ class TestRepo (TestCase):
         #
         # See if the branch made it to clone 2
         #
-        branch2 = repo_functions.start_branch(self.clone2, 'master', name)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', name)
 
         self.assertTrue(name in self.clone2.branches)
         self.assertEquals(branch2.commit.hexsha, branch1.commit.hexsha)
         self.assertEquals(branch2.commit.message, message)
 
-    def test_start_branch_2(self):
+    def test_get_start_branch_2(self):
         ''' Make a simple edit in a clone, verify that it appears in the other.
         '''
         name = str(uuid4())
@@ -270,7 +270,7 @@ class TestRepo (TestCase):
         #
         # Now start a branch from the second clone, and look for the new master commit.
         #
-        branch2 = repo_functions.start_branch(self.clone2, 'master', name)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', name)
 
         self.assertTrue(name in self.clone2.branches)
         self.assertEquals(branch2.commit.hexsha, self.origin.refs['master'].commit.hexsha)
@@ -280,7 +280,7 @@ class TestRepo (TestCase):
         '''
         name = str(uuid4())
 
-        branch1 = repo_functions.start_branch(self.clone1, 'master', name)
+        repo_functions.get_start_branch(self.clone1, 'master', name)
 
         self.assertTrue(name in self.origin.branches)
 
@@ -296,7 +296,7 @@ class TestRepo (TestCase):
         ''' Make a new file and delete an old file in a clone, verify that it appears in the other.
         '''
         name = str(uuid4())
-        branch1 = repo_functions.start_branch(self.clone1, 'master', name)
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', name)
 
         self.assertTrue(name in self.clone1.branches)
         self.assertTrue(name in self.origin.branches)
@@ -325,7 +325,7 @@ class TestRepo (TestCase):
         #
         # See if the branch made it to clone 2
         #
-        branch2 = repo_functions.start_branch(self.clone2, 'master', name)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', name)
 
         self.assertTrue(name in self.clone2.branches)
         self.assertEquals(branch2.commit.hexsha, branch1.commit.hexsha)
@@ -347,7 +347,7 @@ class TestRepo (TestCase):
         ''' Make a new file and directory and delete them.
         '''
         name = str(uuid4())
-        branch1 = repo_functions.start_branch(self.clone1, 'master', name)
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', name)
 
         self.assertTrue(name in self.clone1.branches)
         self.assertTrue(name in self.origin.branches)
@@ -383,7 +383,7 @@ class TestRepo (TestCase):
         ''' Change the path of a file.
         '''
         name = str(uuid4())
-        branch1 = repo_functions.start_branch(self.clone1, 'master', name)
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', name)
 
         self.assertTrue(name in self.clone1.branches)
         self.assertTrue(name in self.origin.branches)
@@ -399,7 +399,7 @@ class TestRepo (TestCase):
         #
         # See if the new file made it to clone 2
         #
-        branch2 = repo_functions.start_branch(self.clone2, 'master', name)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', name)
         branch2.checkout()
 
         self.assertTrue(exists(join(self.clone2.working_dir, 'hello/world.md')))
@@ -408,8 +408,8 @@ class TestRepo (TestCase):
     def test_content_merge(self):
         ''' Test that non-conflicting changes on the same file merge cleanly.
         '''
-        branch1 = repo_functions.start_branch(self.clone1, 'master', 'title')
-        branch2 = repo_functions.start_branch(self.clone2, 'master', 'body')
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', 'title')
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', 'body')
 
         branch1.checkout()
         branch2.checkout()
@@ -446,8 +446,8 @@ class TestRepo (TestCase):
     def test_content_merge_extra_change(self):
         ''' Test that non-conflicting changes on the same file merge cleanly.
         '''
-        branch1 = repo_functions.start_branch(self.clone1, 'master', 'title')
-        branch2 = repo_functions.start_branch(self.clone2, 'master', 'body')
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', 'title')
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', 'body')
 
         branch1.checkout()
         branch2.checkout()
@@ -492,8 +492,8 @@ class TestRepo (TestCase):
         ''' Test that two non-conflicting new files merge cleanly.
         '''
         name = str(uuid4())
-        branch1 = repo_functions.start_branch(self.clone1, 'master', name)
-        branch2 = repo_functions.start_branch(self.clone2, 'master', name)
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', name)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', name)
 
         #
         # Make new files in each branch and save them.
@@ -532,7 +532,7 @@ class TestRepo (TestCase):
         #
         # Show that the merge from the second branch made it back to the first.
         #
-        branch1b = repo_functions.start_branch(self.clone1, 'master', name)
+        branch1b = repo_functions.get_start_branch(self.clone1, 'master', name)
 
         self.assertEquals(branch1b.commit, branch2.commit)
         self.assertEquals(branch1b.commit.author.email, self.session['email'])
@@ -542,8 +542,8 @@ class TestRepo (TestCase):
         ''' Test that a conflict in two branches appears at the right spot.
         '''
         name = str(uuid4())
-        branch1 = repo_functions.start_branch(self.clone1, 'master', name)
-        branch2 = repo_functions.start_branch(self.clone2, 'master', name)
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', name)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', name)
 
         #
         # Make new files in each branch and save them.
@@ -571,7 +571,7 @@ class TestRepo (TestCase):
         #
         with self.assertRaises(repo_functions.MergeConflict) as conflict:
             args2 = self.clone2, 'conflict.md', '...', branch2.commit.hexsha, 'master'
-            commit2 = repo_functions.save_working_file(*args2)
+            repo_functions.save_working_file(*args2)
 
         self.assertEqual(conflict.exception.remote_commit, commit1)
 
@@ -585,8 +585,8 @@ class TestRepo (TestCase):
         ''' Test that a conflict in two branches appears at the right spot.
         '''
         name1, name2 = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.start_branch(self.clone1, 'master', name1)
-        branch2 = repo_functions.start_branch(self.clone2, 'master', name2)
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', name1)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', name2)
 
         #
         # Make new files in each branch and save them.
@@ -634,8 +634,8 @@ class TestRepo (TestCase):
         ''' Test that a conflict in two branches appears at the right spot.
         '''
         name1, name2 = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.start_branch(self.clone1, 'master', name1)
-        branch2 = repo_functions.start_branch(self.clone2, 'master', name2)
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', name1)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', name2)
 
         #
         # Make new files in each branch and save them.
@@ -653,10 +653,10 @@ class TestRepo (TestCase):
         # Push changes from the two branches to origin.
         #
         args1 = self.clone1, 'conflict.md', '...', branch1.commit.hexsha, 'master'
-        commit1 = repo_functions.save_working_file(*args1)
+        repo_functions.save_working_file(*args1)
 
         args2 = self.clone2, 'conflict.md', '...', branch2.commit.hexsha, 'master'
-        commit2 = repo_functions.save_working_file(*args2)
+        repo_functions.save_working_file(*args2)
 
         #
         # Merge the two branches to master; show that second merge will fail.
@@ -680,8 +680,8 @@ class TestRepo (TestCase):
         ''' Test that a conflict in two branches can be clobbered.
         '''
         name = str(uuid4())
-        branch1 = repo_functions.start_branch(self.clone1, 'master', 'title')
-        branch2 = repo_functions.start_branch(self.clone2, 'master', name)
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', 'title')
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', name)
 
         #
         # Add goner.md in branch1.
@@ -742,8 +742,8 @@ class TestRepo (TestCase):
         ''' Test that a conflict in two branches can be abandoned.
         '''
         name = str(uuid4())
-        branch1 = repo_functions.start_branch(self.clone1, 'master', 'title')
-        branch2 = repo_functions.start_branch(self.clone2, 'master', name)
+        repo_functions.get_start_branch(self.clone1, 'master', 'title')
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', name)
 
         #
         # Change index.md in branch2 so it conflicts with title branch.
@@ -798,7 +798,7 @@ class TestRepo (TestCase):
         ''' Change the path of a file.
         '''
         name = str(uuid4())
-        branch1 = repo_functions.start_branch(self.clone1, 'master', name)
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', name)
 
         #
         # Make a commit.
@@ -867,7 +867,7 @@ class TestRepo (TestCase):
         '''
         '''
         name = str(uuid4())
-        branch1 = repo_functions.start_branch(self.clone1, 'master', name)
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', name)
 
         #
         # Make a commit.
@@ -974,33 +974,19 @@ class TestGoogleApiFunctions (TestCase):
 
     def mock_successful_request_new_google_access_token(self, url, request):
         if google_api_functions.GOOGLE_ANALYTICS_TOKENS_URL in url.geturl():
-            content = {'access_token': 'meowser_access_token', 'token_type': 'meowser_type', 'expires_in': 3920}
-            return response(200, content)
-
+            return response(200, '''{"access_token": "meowser_access_token", "token_type": "meowser_type", "expires_in": 3920}''')
         else:
             raise Exception('01 Asked for unknown URL ' + url.geturl())
 
     def mock_failed_request_new_google_access_token(self, url, request):
         if google_api_functions.GOOGLE_ANALYTICS_TOKENS_URL in url.geturl():
             return response(500)
-
         else:
             raise Exception('02 Asked for unknown URL ' + url.geturl())
 
     def mock_google_analytics_authorized_response(self, url, request):
         if 'https://www.googleapis.com/analytics/' in url.geturl():
-            content = {u'totalsForAllResults': {u'ga:pageViews': u'24', u'ga:avgTimeOnPage': u'67.36363636363636'}}
-            return response(200, content)
-
-    def mock_google_analytics_invalid_credentials_response(self, url, request):
-        if 'https://www.googleapis.com/analytics/' in url.geturl():
-            content = {u'error': {u'code': 401, u'message': u'Invalid Credentials', u'errors': [{u'locationType': u'header', u'domain': u'global', u'message': u'Invalid Credentials', u'reason': u'authError', u'location': u'Authorization'}]}}
-            return response(401, content)
-
-    def mock_google_plus_access_not_configured_response(self, url, request):
-        if google_api_functions.GOOGLE_PLUS_WHOAMI_URL in url.geturl():
-            content = {u'error': {u'code': 403, u'message': u'Access Not Configured. The API (Google+ API) is not enabled for your project. Please use the Google Developers Console to update your configuration.', u'errors': [{u'domain': u'usageLimits', u'message': u'Access Not Configured. The API (Google+ API) is not enabled for your project. Please use the Google Developers Console to update your configuration.', u'reason': u'accessNotConfigured', u'extendedHelp': u'https://console.developers.google.com'}]}}
-            return response(403, content)
+            return response(200, '''{"totalsForAllResults": {"ga:pageViews": "24", "ga:avgTimeOnPage": "67.36363636363636"}}''')
 
     def test_successful_request_new_google_access_token(self):
         with self.app.test_request_context():
@@ -1170,14 +1156,6 @@ class TestGoogleApiFunctions (TestCase):
             self.assertEqual(analytics_dict['page_views'], u'24')
             self.assertEqual(analytics_dict['average_time_page'], u'67')
 
-    def test_handle_bad_analytics_response(self):
-        ''' Verify that an unauthorized analytics response is handled correctly
-        '''
-        with HTTMock(self.mock_google_analytics_invalid_credentials_response):
-            with self.app.app_context():
-                analytics_dict = google_api_functions.fetch_google_analytics_for_page(self.app.config, u'index.html', 'meowser_token')
-            self.assertEqual(analytics_dict, {})
-
 class TestAppConfig (TestCase):
 
     def test_missing_values(self):
@@ -1197,9 +1175,11 @@ class TestApp (TestCase):
         self.work_path = mkdtemp(prefix='bizarro-repo-clones-')
 
         repo_path = os.path.dirname(os.path.abspath(__file__)) + '/test-app.git'
-        self.temp_repo_dir = mkdtemp(prefix='bizarro-root')
-        temp_repo_path = self.temp_repo_dir + '/test-app.git'
+        temp_repo_dir = mkdtemp(prefix='bizarro-root')
+        temp_repo_path = temp_repo_dir + '/test-app.git'
         copytree(repo_path, temp_repo_path)
+        self.origin = Repo(temp_repo_path)
+        self.clone1 = self.origin.clone(mkdtemp(prefix='bizarro-'))
 
         app_args = {}
 
@@ -1227,12 +1207,13 @@ class TestApp (TestCase):
 
         random.choice = MagicMock(return_value="P")
 
-        self.server = self.app.test_client()
+        self.test_client = self.app.test_client()
 
     def tearDown(self):
         rmtree(self.work_path)
-        rmtree(self.temp_repo_dir)
         rmtree(self.ga_config_dir)
+        rmtree(self.origin.git_dir)
+        rmtree(self.clone1.working_dir)
 
     def auth_csv_example_disallowed(self, url, request):
         if url.geturl() == 'http://example.com/auth.csv':
@@ -1248,26 +1229,24 @@ class TestApp (TestCase):
 
     def mock_persona_verify(self, url, request):
         if url.geturl() == 'https://verifier.login.persona.org/verify':
-            return response(200, '''{"status": "okay", "email": "user@example.com"}''', headers=dict(Link='<https://api.github.com/user/337792/repos?page=1>; rel="prev", <https://api.github.com/user/337792/repos?page=1>; rel="first"'))
+            return response(200, '''{"status": "okay", "email": "erica@example.com"}''', headers=dict(Link='<https://api.github.com/user/337792/repos?page=1>; rel="prev", <https://api.github.com/user/337792/repos?page=1>; rel="first"'))
 
         else:
             return self.auth_csv_example_allowed(url, request)
 
     def mock_google_authorization(self, url, request):
         if 'https://accounts.google.com/o/oauth2/auth' in url.geturl():
-            content = {'access_token': 'meowser_token', 'token_type': 'meowser_type', 'refresh_token': 'refresh_meows', 'expires_in': 3920}
-            return response(200, content)
+            return response(200, '''{"access_token": "meowser_token", "token_type": "meowser_type", "refresh_token": "refresh_meows", "expires_in": 3920}''')
 
         else:
             return self.auth_csv_example_allowed(url, request)
 
     def mock_successful_google_callback(self, url, request):
         if google_api_functions.GOOGLE_ANALYTICS_TOKENS_URL in url.geturl():
-            content = {'access_token': 'meowser_token', 'token_type': 'meowser_type', 'refresh_token': 'refresh_meows', 'expires_in': 3920}
-            return response(200, content)
+            return response(200, '''{"access_token": "meowser_token", "token_type": "meowser_type", "refresh_token": "refresh_meows", "expires_in": 3920}''')
 
         elif google_api_functions.GOOGLE_PLUS_WHOAMI_URL in url.geturl():
-            return response(200, '''{"displayName": "Jane Doe", "emails": [{"type": "account", "value": "user@example.com"}]}''')
+            return response(200, '''{"displayName": "Jane Doe", "emails": [{"type": "account", "value": "erica@example.com"}]}''')
 
         elif google_api_functions.GOOGLE_ANALYTICS_PROPERTIES_URL in url.geturl():
             return response(200, '''{"items": [{"defaultProfileId": "12345678", "name": "Property One", "websiteUrl": "http://propertyone.example.com"}, {"defaultProfileId": "87654321", "name": "Property Two", "websiteUrl": "http://propertytwo.example.com"}]}''')
@@ -1277,8 +1256,27 @@ class TestApp (TestCase):
 
     def mock_failed_google_callback(self, url, request):
         if google_api_functions.GOOGLE_ANALYTICS_TOKENS_URL in url.geturl():
-            return response(500)
+            return response(500, '''{}''')
+        elif google_api_functions.GOOGLE_PLUS_WHOAMI_URL in url.geturl():
+            return response(200, '''{"displayName": "Jane Doe", "emails": [{"type": "account", "value": "erica@example.com"}]}''')
+        elif google_api_functions.GOOGLE_ANALYTICS_PROPERTIES_URL in url.geturl():
+            return response(200, '''{"items": [{"defaultProfileId": "12345678", "name": "Property One", "websiteUrl": "http://propertyone.example.com"}, {"defaultProfileId": "87654321", "name": "Property Two", "websiteUrl": "http://propertytwo.example.com"}]}''')
+        else:
+            return self.auth_csv_example_allowed(url, request)
 
+    def mock_google_invalid_credentials_response(self, url, request):
+        if 'https://www.googleapis.com/analytics/' in url.geturl() or google_api_functions.GOOGLE_ANALYTICS_PROPERTIES_URL in url.geturl():
+            return response(401, '''{"error": {"code": 401, "message": "Invalid Credentials", "errors": [{"locationType": "header", "domain": "global", "message": "Invalid Credentials", "reason": "authError", "location": "Authorization"}]}}''')
+        elif google_api_functions.GOOGLE_PLUS_WHOAMI_URL in url.geturl():
+            return response(403, '''{"error": {"code": 403, "message": "Access Not Configured. The API (Google+ API) is not enabled for your project. Please use the Google Developers Console to update your configuration.", "errors": [{"domain": "usageLimits", "message": "Access Not Configured. The API (Google+ API) is not enabled for your project. Please use the Google Developers Console to update your configuration.", "reason": "accessNotConfigured", "extendedHelp": "https://console.developers.google.com"}]}}''')
+        else:
+            return self.auth_csv_example_allowed(url, request)
+
+    def mock_google_no_properties_response(self, url, request):
+        if google_api_functions.GOOGLE_ANALYTICS_PROPERTIES_URL in url.geturl():
+            return response(200, '''{"kind": "analytics#webproperties", "username": "erica@example.com", "totalResults": 0, "startIndex": 1, "itemsPerPage": 1000, "items": []}''')
+        elif google_api_functions.GOOGLE_PLUS_WHOAMI_URL in url.geturl():
+            return response(200, '''{"displayName": "Jane Doe", "emails": [{"type": "account", "value": "erica@example.com"}]}''')
         else:
             return self.auth_csv_example_allowed(url, request)
 
@@ -1296,68 +1294,68 @@ class TestApp (TestCase):
     def test_bad_login(self):
         ''' Check basic log in / log out flow without talking to Persona.
         '''
-        response = self.server.get('/')
-        self.assertFalse('user@example.com' in response.data)
+        response = self.test_client.get('/')
+        self.assertFalse('erica@example.com' in response.data)
 
         with HTTMock(self.mock_persona_verify):
-            response = self.server.post('/sign-in', data={'email': 'user@example.com'})
+            response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
             self.assertEquals(response.status_code, 200)
 
         with HTTMock(self.auth_csv_example_disallowed):
-            response = self.server.get('/')
+            response = self.test_client.get('/')
             self.assertFalse('Create' in response.data)
 
     def test_login(self):
         ''' Check basic log in / log out flow without talking to Persona.
         '''
-        response = self.server.get('/')
+        response = self.test_client.get('/')
         self.assertFalse('Create' in response.data)
 
         with HTTMock(self.mock_persona_verify):
-            response = self.server.post('/sign-in', data={'email': 'user@example.com'})
+            response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
             self.assertEquals(response.status_code, 200)
 
         with HTTMock(self.auth_csv_example_allowed):
-            response = self.server.get('/')
+            response = self.test_client.get('/')
             self.assertTrue('Create' in response.data)
 
-            response = self.server.post('/sign-out')
+            response = self.test_client.post('/sign-out')
             self.assertEquals(response.status_code, 200)
 
-            response = self.server.get('/')
+            response = self.test_client.get('/')
             self.assertFalse('Create' in response.data)
 
     def test_branches(self):
         ''' Check basic branching functionality.
         '''
         with HTTMock(self.mock_persona_verify):
-            self.server.post('/sign-in', data={'email': 'user@example.com'})
+            self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
 
         with HTTMock(self.auth_csv_example_allowed):
-            response = self.server.post('/start', data={'branch': 'do things'},
-                                        follow_redirects=True)
-            self.assertTrue('user@example.com/do-things' in response.data)
+            response = self.test_client.post('/start', data={'branch': 'do things'},
+                                             follow_redirects=True)
+            self.assertTrue('erica@example.com/do-things' in response.data)
 
         with HTTMock(self.mock_google_analytics):
-            response = self.server.post('/tree/user@example.com%252Fdo-things/edit/',
-                                        data={'action': 'add', 'path': 'hello.html'},
-                                        follow_redirects=True)
+            response = self.test_client.post('/tree/erica@example.com%252Fdo-things/edit/',
+                                             data={'action': 'add', 'path': 'hello.html'},
+                                             follow_redirects=True)
 
             self.assertEquals(response.status_code, 200)
 
-            response = self.server.get('/tree/user@example.com%252Fdo-things/edit/')
+            response = self.test_client.get('/tree/erica@example.com%252Fdo-things/edit/')
 
             self.assertTrue('hello.html' in response.data)
 
-            response = self.server.get('/tree/user@example.com%252Fdo-things/edit/hello.html')
+            response = self.test_client.get('/tree/erica@example.com%252Fdo-things/edit/hello.html')
             hexsha = search(r'<input name="hexsha" value="(\w+)"', response.data).group(1)
 
-            response = self.server.post('/tree/user@example.com%252Fdo-things/save/hello.html',
-                                        data={'layout': 'multi', 'hexsha': hexsha,
-                                              'en-title': 'Greetings', 'en-body': 'Hello world.\n',
-                                              'fr-title': '', 'fr-body': '',
-                                              'url-slug': 'hello'},
-                                        follow_redirects=True)
+            response = self.test_client.post('/tree/erica@example.com%252Fdo-things/save/hello.html',
+                                             data={'layout': 'multi', 'hexsha': hexsha,
+                                                   'en-title': 'Greetings', 'en-body': 'Hello world.\n',
+                                                   'fr-title': '', 'fr-body': '',
+                                                   'url-slug': 'hello'},
+                                             follow_redirects=True)
 
             self.assertEquals(response.status_code, 200)
 
@@ -1371,39 +1369,170 @@ class TestApp (TestCase):
 
         # Verify that navigation tabs are in the correct order.
         self.assertTrue(html.index('id="fr-nav"') < html.index('id="en-nav"'))
-            
+
         #
         # Go back to the front page, and publish the do-things branch.
         #
         with HTTMock(self.auth_csv_example_allowed):
-            response = self.server.get('/', follow_redirects=True)
+            response = self.test_client.get('/', follow_redirects=True)
 
         soup = BeautifulSoup(response.data)
-        
+
         # Look for the publish form button.
-        inputs = soup.find_all('input', type='hidden', value='user@example.com/do-things')
+        inputs = soup.find_all('input', type='hidden', value='erica@example.com/do-things')
         (form, ) = [input.find_parent('form', action='/merge') for input in inputs]
         button = form.find('button', text='Publish')
-        
+
         # Punch it, Chewie.
         data = dict([(i['name'], i['value']) for i in form.find_all(['input'])])
         data.update({button['name']: button['value']})
 
         with HTTMock(self.auth_csv_example_allowed):
-            response = self.server.post(form['action'], data=data, follow_redirects=True)
+            response = self.test_client.post(form['action'], data=data, follow_redirects=True)
             self.assertFalse('Not Allowed' in response.data)
+
+    def test_get_request_does_not_create_branch(self):
+        ''' Navigating to a made-up URL should not create a branch
+        '''
+        with HTTMock(self.mock_persona_verify):
+            self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
+
+        with HTTMock(self.auth_csv_example_allowed):
+            fake_branch_name = 'this-should-not-create-a-branch'
+            #
+            # edit
+            #
+            response = self.test_client.get('/tree/{}/edit/'.format(fake_branch_name), follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            # the branch path should not be in the returned HTML
+            self.assertFalse('{}/edit'.format(fake_branch_name) in response.data)
+            # the branch name should not be in the origin's branches list
+            self.assertFalse(fake_branch_name in self.origin.branches)
+
+            #
+            # history
+            #
+            response = self.test_client.get('/tree/{}/history/'.format(fake_branch_name), follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            # the branch path should not be in the returned HTML
+            self.assertFalse('{}/edit'.format(fake_branch_name) in response.data)
+            # the branch name should not be in the origin's branches list
+            self.assertFalse(fake_branch_name in self.origin.branches)
+
+            #
+            # review
+            #
+            response = self.test_client.get('/tree/{}/review/'.format(fake_branch_name), follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            # the branch path should not be in the returned HTML
+            self.assertFalse('{}/edit'.format(fake_branch_name) in response.data)
+            # the branch name should not be in the origin's branches list
+            self.assertFalse(fake_branch_name in self.origin.branches)
+
+            #
+            # view
+            #
+            response = self.test_client.get('/tree/{}/view/'.format(fake_branch_name), follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            # the branch path should not be in the returned HTML
+            self.assertFalse('{}/edit'.format(fake_branch_name) in response.data)
+            # the branch name should not be in the origin's branches list
+            self.assertFalse(fake_branch_name in self.origin.branches)
+
+    def test_post_request_does_not_create_branch(self):
+        ''' Certain POSTs to a made-up URL should not create a branch
+        '''
+        with HTTMock(self.mock_persona_verify):
+            self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
+
+        with HTTMock(self.auth_csv_example_allowed):
+            #
+            # try adding a new file
+            #
+            fake_branch_name = 'this-should-not-create-a-branch'
+            response = self.test_client.post('/tree/{}/edit/'.format(fake_branch_name), data={'action': 'add', 'path': 'hello.html'}, follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            # the branch path should not be in the returned HTML
+            self.assertFalse('{}/edit'.format(fake_branch_name) in response.data)
+            # the branch name should not be in the origin's branches list
+            self.assertFalse(fake_branch_name in self.origin.branches)
+
+            #
+            # create a branch then delete it right before a POSTing a save command
+            #
+            response = self.test_client.post('/start', data={'branch': fake_branch_name}, follow_redirects=True)
+            self.assertTrue('{}/edit'.format(fake_branch_name) in response.data)
+
+            response = self.test_client.post('/tree/erica@example.com%252F{}/edit/'.format(fake_branch_name), data={'action': 'add', 'path': 'hello.html'}, follow_redirects=True)
+            self.assertEquals(response.status_code, 200)
+
+            response = self.test_client.get('/tree/erica@example.com%252F{}/edit/'.format(fake_branch_name), follow_redirects=True)
+            self.assertEquals(response.status_code, 200)
+            self.assertTrue('hello.html' in response.data)
+
+            response = self.test_client.get('/tree/erica@example.com%252F{}/edit/hello.html'.format(fake_branch_name))
+            self.assertEquals(response.status_code, 200)
+            hexsha = search(r'<input name="hexsha" value="(\w+)"', response.data).group(1)
+
+            # delete the branch
+            response = self.test_client.post('/merge', data={'action': 'abandon', 'branch': 'erica@example.com/{}'.format(fake_branch_name)}, follow_redirects=True)
+            self.assertEquals(response.status_code, 200)
+
+            response = self.test_client.post('/tree/erica@example.com%252F{}/save/hello.html'.format(fake_branch_name), data={'layout': 'multi', 'hexsha': hexsha, 'en-title': 'Greetings', 'en-body': 'Hello world.\n', 'fr-title': '', 'fr-body': '', 'url-slug': 'hello'}, follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            # the branch path should not be in the returned HTML
+            self.assertFalse('{}/edit'.format(fake_branch_name) in response.data)
+            # the branch name should not be in the origin's branches list
+            self.assertFalse('erica@example.com/{}'.format(fake_branch_name) in self.origin.branches)
+
+    def test_accessing_local_branch_fetches_remote(self):
+        ''' GETting or POSTing to a URL that indicates a branch that exists remotely but not locally
+            fetches the remote branch and allows access
+        '''
+        with HTTMock(self.mock_persona_verify):
+            self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
+
+        with HTTMock(self.auth_csv_example_allowed):
+            # start a new branch via the http interface
+            # invokes view_functions/get_repo which creates a clone
+            disposable_branch_name = u'unimportant-branch'
+            response = self.test_client.post('/start', data={'branch': disposable_branch_name}, follow_redirects=True)
+            self.assertEquals(response.status_code, 200)
+            self.assertTrue('{}/edit'.format(disposable_branch_name) in response.data)
+
+            # create a branch programmatically on our pre-made clone
+            check_branch_name = u'the-branch-we-are-checking-for'
+            check_branch_name_full = 'erica@example.com/{}'.format(check_branch_name)
+            repo_functions.get_start_branch(self.clone1, 'master', check_branch_name_full)
+            self.assertTrue(check_branch_name_full in self.clone1.branches)
+            self.assertTrue(check_branch_name_full in self.origin.branches)
+            # verify that the branch doesn't exist in our new clone
+            with self.app.app_context():
+                with self.app.test_request_context():
+                    from flask import session
+                    session['email'] = 'erica@example.com'
+                    new_clone = view_functions.get_repo(self.app)
+                    self.assertFalse(check_branch_name_full in new_clone.branches)
+
+            # request an edit page for the check branch through the http interface
+            response = self.test_client.get('/tree/erica@example.com%252F{}/edit/'.format(check_branch_name), follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            # the branch path should be in the returned HTML
+            self.assertTrue('{}/edit'.format(check_branch_name) in response.data)
+            # the branch name should now be in the original repo's branches list
+            self.assertTrue(check_branch_name_full in new_clone.branches)
 
     def test_google_callback_is_successful(self):
         ''' Ensure we get a successful page load on callback from Google authentication
         '''
         with HTTMock(self.mock_persona_verify):
-            self.server.post('/sign-in', data={'email': 'erica@example.com'})
+            self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
 
         with HTTMock(self.mock_google_authorization):
-            self.server.post('/authorize')
+            self.test_client.post('/authorize')
 
         with HTTMock(self.mock_successful_google_callback):
-            response = self.server.get('/callback?state=PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP&code=code')
+            response = self.test_client.get('/callback?state=PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP&code=code')
 
         with self.app.app_context():
             ga_config = google_api_functions.read_ga_config(self.app.config['RUNNING_STATE_DIR'])
@@ -1415,13 +1544,13 @@ class TestApp (TestCase):
 
     def test_analytics_setup_is_successful(self):
         with HTTMock(self.mock_persona_verify):
-            self.server.post('/sign-in', data={'email': 'erica@example.com'})
+            self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
 
         with HTTMock(self.mock_google_authorization):
-            self.server.post('/authorize')
+            self.test_client.post('/authorize')
 
         # mock-post the form in authorize.html to authorization-complete.html with some dummy values and check the results
-        response = self.server.post('/authorization-complete', data={'email': 'erica@example.com', 'name': 'Jane Doe', 'google_email': 'user@example.com', 'return_link': 'http://example.com', 'property': '12345678', '12345678-domain': 'http://propertyone.example.com', '12345678-name': 'Property One'})
+        response = self.test_client.post('/authorization-complete', data={'email': 'erica@example.com', 'name': 'Jane Doe', 'google_email': 'erica@example.com', 'return_link': 'http://example.com', 'property': '12345678', '12345678-domain': 'http://propertyone.example.com', '12345678-name': 'Property One'})
 
         self.assertEqual(u'200 OK', response.status)
 
@@ -1432,20 +1561,69 @@ class TestApp (TestCase):
         self.assertEqual(ga_config['project_domain'], 'propertyone.example.com')
         self.assertEqual(ga_config['profile_id'], '12345678')
 
+    def test_handle_bad_analytics_response(self):
+        ''' Verify that an unauthorized analytics response is handled correctly
+        '''
+        with HTTMock(self.mock_google_invalid_credentials_response):
+            with self.app.app_context():
+                analytics_dict = google_api_functions.fetch_google_analytics_for_page(self.app.config, u'index.html', 'meowser_token')
+            self.assertEqual(analytics_dict, {})
+
     def test_google_callback_fails(self):
-        ''' Ensure we are redirected to the authorize-failed page
-            when we fail to auth with google
+        ''' Ensure that we get an appropriate error flashed when we fail to auth with google
         '''
         with HTTMock(self.mock_persona_verify):
-            self.server.post('/sign-in', data={'email': 'erica@example.com'})
+            response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
 
         with HTTMock(self.mock_google_authorization):
-            self.server.post('/authorize')
+            response = self.test_client.post('/authorize')
 
         with HTTMock(self.mock_failed_google_callback):
-            response = self.server.get('/callback?state=PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP&code=code')
+            response = self.test_client.get('/callback?state=PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP&code=code', follow_redirects=True)
 
-        self.assertTrue('authorization-failed' in response.location)
+        self.assertEqual(response.status_code, 200)
+        # find the flashed error message in the returned HTML
+        self.assertTrue('Google rejected authorization request' in response.data)
+
+    def test_invalid_access_token(self):
+        ''' Ensure that we get an appropriate error flashed when we have an invalid access token
+        '''
+        with HTTMock(self.mock_persona_verify):
+            response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
+            self.assertEquals(response.status_code, 200)
+
+        with HTTMock(self.mock_google_invalid_credentials_response):
+            response = self.test_client.get('/setup', follow_redirects=True)
+
+        self.assertEqual(response.status_code, 200)
+        # find the flashed error message in the returned HTML
+        self.assertTrue('Invalid Credentials' in response.data)
+
+    def test_no_properties_found(self):
+        ''' Ensure that we get an appropriate error flashed when no analytics properties are
+            associated with the authorized Google account
+        '''
+        with HTTMock(self.mock_persona_verify):
+            response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
+            self.assertEquals(response.status_code, 200)
+
+        with HTTMock(self.mock_google_no_properties_response):
+            response = self.test_client.get('/setup', follow_redirects=True)
+
+        self.assertEqual(response.status_code, 200)
+        # find the flashed error message in the returned HTML
+        self.assertTrue('Your Google Account is not associated with any Google Analytics properties' in response.data)
+
+    def test_redirect(self):
+        ''' Check redirect to BROWSERID_URL.
+        '''
+        with HTTMock(self.mock_persona_verify):
+            response = self.test_client.get('/not-allowed', headers={'Host': 'wrong.local'})
+
+        expected_url = urljoin(self.app.config['BROWSERID_URL'], '/not-allowed')
+
+        self.assertEquals(response.status_code, 302)
+        self.assertEquals(response.headers['Location'], expected_url)
 
 class TestPublishApp (TestCase):
 
@@ -1459,19 +1637,19 @@ class TestPublishApp (TestCase):
 
     def tearDown(self):
         rmtree(self.work_path)
-    
+
     def mock_github_request(self, url, request):
         '''
         '''
         _, host, path, _, _, _ = urlparse(url.geturl())
-        
+
         if (host, path) == ('github.com', '/codeforamerica/ceviche-starter/archive/93250f1308daef66c5809fe87fc242d092e61db7.zip'):
             return response(302, '', headers={'Location': 'https://codeload.github.com/codeforamerica/ceviche-starter/tar.gz/93250f1308daef66c5809fe87fc242d092e61db7'})
-        
+
         if (host, path) == ('codeload.github.com', '/codeforamerica/ceviche-starter/tar.gz/93250f1308daef66c5809fe87fc242d092e61db7'):
             with open(join(dirname(__file__), '93250f1308daef66c5809fe87fc242d092e61db7.zip')) as file:
                 return response(200, file.read(), headers={'Content-Type': 'application/zip'})
-        
+
         raise Exception('Unknown URL {}'.format(url.geturl()))
 
     def test_webhook_post(self):
@@ -1496,7 +1674,7 @@ class TestPublishApp (TestCase):
               ]
             }
             '''
-        
+
         with HTTMock(self.mock_github_request):
             response = self.client.post('/', data=payload)
 

@@ -5,7 +5,7 @@ from os.path import join, isdir, realpath, basename
 from datetime import datetime
 from os import listdir, environ
 from urllib import quote, unquote
-from urlparse import urljoin, urlparse
+from urlparse import urljoin, urlparse, urlunparse
 from mimetypes import guess_type
 from functools import wraps
 from io import BytesIO
@@ -15,10 +15,10 @@ import re
 from git import Repo, Git
 from dateutil import parser, tz
 from dateutil.relativedelta import relativedelta
-from flask import request, session, current_app, redirect
+from flask import request, session, current_app, redirect, flash
 from requests import get
 
-from .repo_functions import start_branch
+from .repo_functions import get_existing_branch
 from .href import needs_redirect, get_redirect
 
 from fcntl import flock, LOCK_EX, LOCK_UN, LOCK_SH
@@ -312,6 +312,22 @@ def _remote_exists(repo, remote):
     else:
         return True
 
+def browserid_hostname_required(route_function):
+    ''' Decorator for routes that enforces the hostname set in the BROWSERID_URL config variable
+    '''
+    @wraps(route_function)
+    def decorated_function(*args, **kwargs):
+        browserid_netloc = urlparse(current_app.config['BROWSERID_URL']).netloc
+        request_parsed = urlparse(request.url)
+        if request_parsed.netloc != browserid_netloc:
+            redirect_url = urlunparse((request_parsed.scheme, browserid_netloc, request_parsed.path, request_parsed.params, request_parsed.query, request_parsed.fragment))
+            return redirect(redirect_url)
+
+        response = route_function(*args, **kwargs)
+        return response
+
+    return decorated_function
+
 def synch_required(route_function):
     ''' Decorator for routes needing a repository synched to upstream.
 
@@ -363,7 +379,14 @@ def synched_checkout_required(route_function):
         checkout = get_repo(current_app)
         branch_name = branch_var2name(kwargs['branch'])
         master_name = current_app.config['default_branch']
-        branch = start_branch(checkout, master_name, branch_name)
+        branch = get_existing_branch(checkout, master_name, branch_name)
+
+        if not branch:
+            # redirect and flash an error
+            Logger.debug('  branch {} does not exist, redirecting'.format(kwargs['branch']))
+            flash(u'There is no {} branch!'.format(kwargs['branch']), u'warning')
+            return redirect('/')
+
         branch.checkout()
 
         Logger.debug('  checked out to {}'.format(branch))
