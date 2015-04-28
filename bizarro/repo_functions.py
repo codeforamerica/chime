@@ -52,10 +52,13 @@ def get_existing_branch(clone, default_branch_name, new_branch_name):
         if clone.branches[new_branch_name].commit == start_point:
             return clone.branches[new_branch_name]
 
-    # If the branch exists at the origin, check it out and return it
+    # See if the branch exists at the origin
     try:
+        # pull the branch but keep the active branch checked out
+        active_branch = clone.active_branch
         clone.git.checkout(new_branch_name)
         clone.git.pull('origin', new_branch_name)
+        clone.git.checkout(active_branch.name)
         return clone.branches[new_branch_name]
 
     except GitCommandError:
