@@ -30,80 +30,80 @@ _marker = "---\n"
 
 def load_languages(directory):
     ''' Load languages from site configuration.
-    
+
         Configuration language block will look like this:
-        
+
             languages:
             - iso: name
             - iso: name
-        
+
         The dashes tell YAML that it's ordered.
     '''
     config_path = join(directory, '_config.yml')
-    
+
     if exists(config_path):
         with open(config_path) as file:
             config = yaml.load(file).get('languages', [])
-        
+
         if type(config) is not list:
             raise ValueError()
     else:
         config = []
-    
+
     languages = OrderedDict()
-    
+
     for iso_name in config:
         for (iso, name) in iso_name.items():
             languages[iso] = name
-    
+
     # We want English always present.
     if 'en' not in languages:
         languages['en'] = 'English'
-    
+
     return languages
 
 def load_jekyll_doc(file):
     ''' Load jekyll front matter and remaining content from a file.
-        
+
         Sample output:
-          
+
           {"title": "Greetings"}, "Hello world."
     '''
     # Check for presence of document separator.
     file.seek(0)
-    
+
     if file.read(len(_marker)) != _marker:
         raise Exception('No front-matter in %s' % getattr(file, 'name', None))
-    
+
     # Seek to just after the initial document separator.
     file.seek(len(_marker))
-    
+
     for token in yaml.scan(file):
         # Look for a token that shows we're about to reach the content.
         if type(token) is yaml.DocumentStartToken:
-        
+
             # Seek to the beginning, and load the complete content.
             file.seek(0)
             chars = file.read().decode('utf8')
 
             # Load the front matter as a document.
             front_matter = yaml.safe_load(chars[:token.end_mark.index])
-            
+
             # Seek just after the document separator, and get remaining string.
             content = chars[token.end_mark.index + len("\n" + _marker):]
-            
+
             return front_matter, content
-    
+
     raise Exception('Never found a yaml.DocumentStartToken')
 
 def dump_jekyll_doc(front_matter, content, file):
     ''' Dump jekyll front matter and content to a file.
-    
+
         To provide some guarantee of human-editable output, front matter
         is dumped using the newline-preserving block literal form.
-        
+
         Sample output:
-        
+
           ---
           "title": |-
             Greetings
@@ -115,7 +115,7 @@ def dump_jekyll_doc(front_matter, content, file):
     dump_kwargs = dict(Dumper=yaml.SafeDumper, default_flow_style=False,
                        canonical=False, default_style='|', indent=2,
                        allow_unicode=True)
-    
+
     # Write front matter to the start of the file.
     file.seek(0)
     file.truncate()
@@ -131,10 +131,10 @@ def build_jekyll_site(dirname):
     '''
 
     from subprocess import Popen
-    
+
     build = Popen(['../jekyll/run-jekyll.sh', 'build'], cwd=dirname)
     build.wait()
-    
+
     # By default Jekyll builds into dirname/_site
     return join(dirname, '_site')
 
