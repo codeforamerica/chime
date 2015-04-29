@@ -229,10 +229,8 @@ def make_working_file(clone, dir, path):
     #
     # Create directory tree.
     #
-    stuff = []
-
     for i in range(len(dirs)):
-        dir_path = join(clone.working_dir, os.sep.join(dirs[:i+1]))
+        dir_path = join(clone.working_dir, os.sep.join(dirs[:i + 1]))
 
         if not isdir(dir_path):
             mkdir(dir_path)
@@ -329,7 +327,7 @@ def needs_peer_review(repo, default_branch_name, working_branch_name):
         return False
 
     return not is_peer_approved(repo, default_branch_name, working_branch_name) \
-       and not is_peer_rejected(repo, default_branch_name, working_branch_name)
+        and not is_peer_rejected(repo, default_branch_name, working_branch_name)
 
 def ineligible_peer(repo, default_branch_name, working_branch_name):
     ''' Returns the email address of a peer who shouldn't review this branch.
