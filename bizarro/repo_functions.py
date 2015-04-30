@@ -7,7 +7,7 @@ from git.cmd import GitCommandError
 from datetime import datetime
 import hashlib
 import yaml
-from .edit_functions import delete_file
+import edit_functions
 
 TASK_METADATA_FILENAME = u'_task.yml'
 
@@ -136,7 +136,7 @@ def delete_task_metadata_for_branch(clone, default_branch_name):
     ''' Delete the task metadata file and return its contents
     '''
     task_metadata = get_task_metadata_for_branch(clone)
-    delete_file(clone, None, TASK_METADATA_FILENAME)
+    edit_functions.delete_file(clone, None, TASK_METADATA_FILENAME)
     message = u'Deleted task metadata file "{}"'.format(TASK_METADATA_FILENAME)
     save_working_file(clone, TASK_METADATA_FILENAME, message, clone.commit().hexsha, default_branch_name)
     return task_metadata
@@ -528,8 +528,6 @@ def provide_feedback(clone, comments):
 def get_rejection_messages(repo, default_branch_name, working_branch_name):
     '''
     '''
-    messages = []
-
     base_commit = repo.git.merge_base(default_branch_name, working_branch_name)
     last_commit = repo.branches[working_branch_name].commit
     commit_log = chain([last_commit], last_commit.iter_parents())

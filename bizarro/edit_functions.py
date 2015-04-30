@@ -1,7 +1,7 @@
 from os.path import exists, isdir, join
 from os import rmdir, remove
 
-from .repo_functions import make_working_file
+import repo_functions
 from .jekyll_functions import dump_jekyll_doc
 
 def update_page(clone, file_path, front, body):
@@ -18,7 +18,7 @@ def update_page(clone, file_path, front, body):
 def create_new_page(clone, path, file_name, front, body):
     ''' Create a new Jekyll page in the working directory, return its path.
     '''
-    file_path, full_path = make_working_file(clone, path, file_name)
+    file_path, full_path = repo_functions.make_working_file(clone, path, file_name)
 
     if exists(full_path):
         raise Exception()
@@ -31,7 +31,7 @@ def create_new_page(clone, path, file_name, front, body):
 def upload_new_file(clone, path, upload):
     ''' Upload a new file in the working directory, return its path.
     '''
-    file_path, full_path = make_working_file(clone, path, upload.filename)
+    file_path, full_path = repo_functions.make_working_file(clone, path, upload.filename)
 
     if not exists(full_path):
         with open(full_path, 'w') as file:
