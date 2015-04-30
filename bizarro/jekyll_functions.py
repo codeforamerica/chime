@@ -25,6 +25,7 @@ Jekyll likes to have the "---" document separator at the top:
 from os.path import join, exists
 from collections import OrderedDict
 import yaml
+import logging
 
 _marker = "---\n"
 
@@ -131,10 +132,21 @@ def build_jekyll_site(dirname):
     '''
 
     from subprocess import Popen
-    
-    build = Popen(['../jekyll/run-jekyll.sh', 'build'], cwd=dirname)
-    build.wait()
-    
+    import os
+
+    bizarro_dir = os.path.dirname(os.path.realpath(__file__))
+    ceviche_dir = os.path.join(bizarro_dir, "..")
+    jekyll_script = os.path.realpath(os.path.join(ceviche_dir, 'jekyll/run-jekyll.sh'))
+
+    call = [jekyll_script, 'build']
+    try:
+        build = Popen(call, cwd=dirname)
+        build.wait()
+    except:
+        logger = logging.getLogger('bizarro.jekyll')
+        logger.error("Unexpected failure running %s in %s", call, dirname)
+        raise
+
     # By default Jekyll builds into dirname/_site
     return join(dirname, '_site')
 
