@@ -90,17 +90,21 @@ def get_start_branch(clone, default_branch_name, branch_description, author_emai
     branch = clone.create_head(new_branch_name, commit=start_point, force=True)
     clone.git.push('origin', new_branch_name)
 
-    # add and populate a task metadata file, then commit it
+    # create the task metadata file
+    metadata_values = {"author_email": author_email, "task_description": branch_description, "full_name_sha": full_sha}
+    save_task_metadata_for_branch(clone, default_branch_name, metadata_values)
 
     return branch
 
 # ;;;
-def save_task_metadata_for_branch(clone, values={}):
-    ''' Save the passed values to the task metadata file, preserving values that aren't overwritten.
+def save_task_metadata_for_branch(clone, default_branch_name, values={}):
+    ''' Save the passed values to the branch's task metadata file, preserving values that aren't overwritten.
     '''
     # Get the current task metadata (if any)
     task_metadata = get_task_metadata_for_branch(clone)
     check_metadata = dict(task_metadata)
+    verbed = u'Created' if task_metadata == {} else u'Updated'
+    message = u'{} task metadata file "{}".'.format(verbed, TASK_METADATA_FILENAME)
     # update with the new values
     try:
         task_metadata.update(values)
@@ -123,6 +127,9 @@ def save_task_metadata_for_branch(clone, values={}):
         file.seek(0)
         file.truncate()
         yaml.dump(task_metadata, file, **dump_kwargs)
+
+    # add & commit the file to the branch
+    save_working_file(clone, TASK_METADATA_FILENAME, message, clone.commit().hexsha, default_branch_name)
 
 def get_task_metadata_for_branch(clone):
     ''' Retrieve task metadata from the file
@@ -268,11 +275,17 @@ def clobber_default_branch(clone, default_branch_name, working_branch_name):
     clone.remotes.origin.push(':' + working_branch_name)
     clone.delete_head([working_branch_name])
 
+# ;;;
 def make_working_file(clone, dir, path):
-    ''' Create a new working file, return its local git and real absolute paths.
+    ''' Determine the relative and absolute location of a new file, create
+        any directories in its path that don't already exist, and return
+        its local git and real absolute paths. Does not create the actual
+        file.
 
-        Creates a new file under the given directory, building whatever
-        intermediate directories are necessary to write the file.
+        `dir` is the existing directory the file is being created in
+
+        `path` is the path that was entered to create the file, which may
+               include existing or new directories
     '''
     repo_path = join((dir or '').rstrip('/'), path)
     real_path = join(clone.working_dir, repo_path)
