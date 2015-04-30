@@ -7,6 +7,7 @@ from git.cmd import GitCommandError
 from datetime import datetime
 import hashlib
 import yaml
+from .edit_functions import delete_file
 
 TASK_METADATA_FILENAME = u'_task.yml'
 
@@ -130,6 +131,16 @@ def save_task_metadata_for_branch(clone, default_branch_name, values={}):
     # add & commit the file to the branch
     save_working_file(clone, TASK_METADATA_FILENAME, message, clone.commit().hexsha, default_branch_name)
 
+# ;;;
+def delete_task_metadata_for_branch(clone, default_branch_name):
+    ''' Delete the task metadata file and return its contents
+    '''
+    task_metadata = get_task_metadata_for_branch(clone)
+    delete_file(clone, None, TASK_METADATA_FILENAME)
+    message = u'Deleted task metadata file "{}"'.format(TASK_METADATA_FILENAME)
+    save_working_file(clone, TASK_METADATA_FILENAME, message, clone.commit().hexsha, default_branch_name)
+    return task_metadata
+
 def get_task_metadata_for_branch(clone):
     ''' Retrieve task metadata from the file
     '''
@@ -171,6 +182,9 @@ def complete_branch(clone, default_branch_name, working_branch_name):
     '''
     message = 'Merged work from "%s"' % working_branch_name
 
+    # get the task metadata and delete the task metadata file
+    task_metadata = delete_task_metadata_for_branch(clone, default_branch_name)
+
     clone.git.checkout(default_branch_name)
     clone.git.pull('origin', default_branch_name)
 
@@ -186,6 +200,8 @@ def complete_branch(clone, default_branch_name, working_branch_name):
 
         clone.git.reset(default_branch_name, hard=True)
         clone.git.checkout(working_branch_name)
+        # re-create the task metadata file
+        save_task_metadata_for_branch(clone, default_branch_name, task_metadata)
         raise MergeConflict(remote_commit, clone.commit())
 
     else:
