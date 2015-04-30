@@ -104,7 +104,7 @@ def save_task_metadata_for_branch(clone, default_branch_name, values={}):
     task_metadata = get_task_metadata_for_branch(clone)
     check_metadata = dict(task_metadata)
     verbed = u'Created' if task_metadata == {} else u'Updated'
-    message = u'{} task metadata file "{}".'.format(verbed, TASK_METADATA_FILENAME)
+    message = u'{} task metadata file "{}"'.format(verbed, TASK_METADATA_FILENAME)
     # update with the new values
     try:
         task_metadata.update(values)
@@ -123,7 +123,7 @@ def save_task_metadata_for_branch(clone, default_branch_name, values={}):
                        allow_unicode=True)
 
     task_file_path = join(clone.working_dir, TASK_METADATA_FILENAME)
-    with open(task_file_path) as file:
+    with open(task_file_path, 'w') as file:
         file.seek(0)
         file.truncate()
         yaml.dump(task_metadata, file, **dump_kwargs)
