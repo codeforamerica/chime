@@ -96,7 +96,6 @@ def get_start_branch(clone, default_branch_name, branch_description, author_emai
 
     return branch
 
-# ;;;
 def save_task_metadata_for_branch(clone, default_branch_name, values={}):
     ''' Save the passed values to the branch's task metadata file, preserving values that aren't overwritten.
     '''
@@ -275,7 +274,6 @@ def clobber_default_branch(clone, default_branch_name, working_branch_name):
     clone.remotes.origin.push(':' + working_branch_name)
     clone.delete_head([working_branch_name])
 
-# ;;;
 def make_working_file(clone, dir, path):
     ''' Determine the relative and absolute location of a new file, create
         any directories in its path that don't already exist, and return
