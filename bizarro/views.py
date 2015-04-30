@@ -217,11 +217,13 @@ def authorization_failed():
 @login_required
 @synch_required
 def start_branch():
-    r = get_repo(current_app)
+    repo = get_repo(current_app)
     branch_desc = request.form.get('branch')
-    branch_name = name_branch(branch_desc)
+    # branch_name = name_branch(branch_desc)
     master_name = current_app.config['default_branch']
-    branch = repo_functions.get_start_branch(r, master_name, branch_name)
+    # branch = repo_functions.get_start_branch(repo, master_name, branch_name)
+
+    branch = repo_functions.get_start_branch(repo, master_name, branch_desc, session['email'])
 
     safe_branch = branch_name2path(branch.name)
     return redirect('/tree/{}/edit/'.format(safe_branch), code=303)

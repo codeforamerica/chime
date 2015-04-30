@@ -4,6 +4,11 @@ from os import mkdir
 from os.path import join, split, exists, isdir
 from itertools import chain
 from git.cmd import GitCommandError
+from datetime import datetime
+import hashlib
+import yaml
+
+TASK_METADATA_FILENAME = u'_task.yml'
 
 class MergeConflict (Exception):
     def __init__(self, remote_commit, local_commit):
@@ -66,12 +71,16 @@ def get_existing_branch(clone, default_branch_name, new_branch_name):
 
     return None
 
-def get_start_branch(clone, default_branch_name, new_branch_name):
+def get_start_branch(clone, default_branch_name, branch_description, author_email):
     ''' Start a new repository branch, push it to origin and return it.
 
         Don't touch the working directory. If an existing branch is found
         with the same name, use it instead of creating a fresh branch.
     '''
+    # generate a branch name based on unique details
+    full_sha = get_branch_sha(branch_description, author_email)
+    new_branch_name = full_sha[0:7]
+
     existing_branch = get_existing_branch(clone, default_branch_name, new_branch_name)
     if existing_branch:
         return existing_branch
@@ -81,7 +90,61 @@ def get_start_branch(clone, default_branch_name, new_branch_name):
     branch = clone.create_head(new_branch_name, commit=start_point, force=True)
     clone.git.push('origin', new_branch_name)
 
+    # add and populate a task metadata file, then commit it
+
     return branch
+
+# ;;;
+def save_task_metadata_for_branch(clone, values={}):
+    ''' Save the passed values to the task metadata file, preserving values that aren't overwritten.
+    '''
+    # Get the current task metadata (if any)
+    task_metadata = get_task_metadata_for_branch(clone)
+    check_metadata = dict(task_metadata)
+    # update with the new values
+    try:
+        task_metadata.update(values)
+    except ValueError:
+        raise Exception(u'Unable to save task metadata for branch.', u'error')
+
+    # Don't write if there haven't been any changes
+    if check_metadata == task_metadata:
+        return
+
+    # Dump the updated task metadata to disk
+    # Use newline-preserving block literal form.
+    # yaml.SafeDumper ensures best unicode output.
+    dump_kwargs = dict(Dumper=yaml.SafeDumper, default_flow_style=False,
+                       canonical=False, default_style='|', indent=2,
+                       allow_unicode=True)
+
+    task_file_path = join(clone.working_dir, TASK_METADATA_FILENAME)
+    with open(task_file_path) as file:
+        file.seek(0)
+        file.truncate()
+        yaml.dump(task_metadata, file, **dump_kwargs)
+
+def get_task_metadata_for_branch(clone):
+    ''' Retrieve task metadata from the file
+    '''
+    task_metadata = {}
+    task_file_path = join(clone.working_dir, TASK_METADATA_FILENAME)
+    if exists(task_file_path):
+        with open(task_file_path) as file:
+            task_metadata = yaml.load(file)
+
+        if type(task_metadata) is not dict:
+            raise ValueError()
+
+    return task_metadata
+
+def get_branch_sha(branch_description, author_email):
+    ''' use details about a branch to generate a 'unique' name
+    '''
+    # get epoch seconds as a string
+    epoch_seconds = datetime.utcnow().strftime("%s")
+    seed = '{}{}{}'.format(epoch_seconds, branch_description, author_email)
+    return hashlib.sha1(seed).hexdigest()
 
 def complete_branch(clone, default_branch_name, working_branch_name):
     ''' Complete a branch merging, deleting it, and returning the merge commit.
