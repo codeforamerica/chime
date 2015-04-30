@@ -61,10 +61,10 @@ def get_existing_branch(clone, default_branch_name, new_branch_name):
     # See if the branch exists at the origin
     try:
         # pull the branch but keep the active branch checked out
-        active_branch = clone.active_branch
+        active_branch_name = clone.active_branch.name
         clone.git.checkout(new_branch_name)
         clone.git.pull('origin', new_branch_name)
-        clone.git.checkout(active_branch.name)
+        clone.git.checkout(active_branch_name)
         return clone.branches[new_branch_name]
 
     except GitCommandError:
@@ -86,14 +86,17 @@ def get_start_branch(clone, default_branch_name, branch_description, author_emai
     if existing_branch:
         return existing_branch
 
-    # create and return a brand new branch
+    # create a brand new branch
     start_point = get_branch_start_point(clone, default_branch_name, new_branch_name)
     branch = clone.create_head(new_branch_name, commit=start_point, force=True)
     clone.git.push('origin', new_branch_name)
 
-    # create the task metadata file
+    # create the task metadata file in the new branch
+    active_branch_name = clone.active_branch.name
+    clone.git.checkout(new_branch_name)
     metadata_values = {"author_email": author_email, "task_description": branch_description, "full_name_sha": full_sha}
     save_task_metadata_for_branch(clone, default_branch_name, metadata_values)
+    clone.git.checkout(active_branch_name)
 
     return branch
 
