@@ -65,12 +65,19 @@ def index():
         review_subject = 'Plz review this thing'
         review_body = '%s/tree/%s/edit' % (request.url, path)
 
+        # contains 'author_email', 'task_description', 'full_name_sha'
+        task_metadata = repo_functions.get_task_metadata_for_branch(repo, name)
+        author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
+        task_description = task_metadata['task_description'] if 'task_description' in task_metadata else name
+
         list_items.append(dict(name=name, path=path, behind=behind, ahead=ahead,
                                needs_peer_review=needs_peer_review,
                                is_peer_approved=is_peer_approved,
                                is_peer_rejected=is_peer_rejected,
                                review_subject=review_subject,
-                               review_body=review_body))
+                               review_body=review_body,
+                               author_email=author_email,
+                               task_description=task_description))
 
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(items=list_items)
