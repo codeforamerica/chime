@@ -76,8 +76,7 @@ def index():
                                is_peer_rejected=is_peer_rejected,
                                review_subject=review_subject,
                                review_body=review_body,
-                               author_email=author_email,
-                               task_description=task_description))
+                               author_email=author_email, task_description=task_description))
 
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(items=list_items)
@@ -236,13 +235,18 @@ def start_branch():
 @login_required
 @synch_required
 def merge_branch():
-    r = get_repo(current_app)
+    repo = get_repo(current_app)
     branch_name = request.form.get('branch')
     master_name = current_app.config['default_branch']
 
+    # contains 'author_email', 'task_description', 'full_name_sha'
+    task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch_name)
+    author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
+    task_description = task_metadata['task_description'] if 'task_description' in task_metadata else u''
+
     try:
         action = request.form.get('action', '').lower()
-        args = r, master_name, branch_name
+        args = repo, master_name, branch_name
 
         if action == 'merge':
             repo_functions.complete_branch(*args)
@@ -254,17 +258,18 @@ def merge_branch():
             raise Exception('I do not know what "%s" means' % action)
 
         if current_app.config['PUBLISH_SERVICE_URL']:
-            publish.announce_commit(current_app.config['BROWSERID_URL'], r, r.commit().hexsha)
+            publish.announce_commit(current_app.config['BROWSERID_URL'], repo, repo.commit().hexsha)
 
         else:
-            publish.release_commit(current_app.config['RUNNING_STATE_DIR'], r, r.commit().hexsha)
+            publish.release_commit(current_app.config['RUNNING_STATE_DIR'], repo, repo.commit().hexsha)
 
     except repo_functions.MergeConflict as conflict:
         new_files, gone_files, changed_files = conflict.files()
 
         kwargs = common_template_args(current_app.config, session)
         kwargs.update(branch=branch_name, new_files=new_files,
-                      gone_files=gone_files, changed_files=changed_files)
+                      gone_files=gone_files, changed_files=changed_files,
+                      author_email=author_email, task_description=task_description)
 
         return render_template('merge-conflict.html', **kwargs)
 
@@ -274,19 +279,24 @@ def merge_branch():
 @app.route('/review', methods=['POST'])
 @login_required
 def review_branch():
-    r = get_repo(current_app)
+    repo = get_repo(current_app)
     branch_name = request.form.get('branch')
-    branch = r.branches[branch_name]
+    branch = repo.branches[branch_name]
     branch.checkout()
+
+    # contains 'author_email', 'task_description', 'full_name_sha'
+    task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch_name)
+    author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
+    task_description = task_metadata['task_description'] if 'task_description' in task_metadata else u''
 
     try:
         action = request.form.get('action', '').lower()
 
         if action == 'approve':
-            repo_functions.mark_as_reviewed(r)
+            repo_functions.mark_as_reviewed(repo)
         elif action == 'feedback':
             comments = request.form.get('comments')
-            repo_functions.provide_feedback(r, comments)
+            repo_functions.provide_feedback(repo, comments)
         else:
             raise Exception('I do not know what "%s" means' % action)
 
@@ -295,7 +305,8 @@ def review_branch():
 
         kwargs = common_template_args(current_app.config, session)
         kwargs.update(branch=branch_name, new_files=new_files,
-                      gone_files=gone_files, changed_files=changed_files)
+                      gone_files=gone_files, changed_files=changed_files,
+                      author_email=author_email, task_description=task_description)
 
         return render_template('merge-conflict.html', **kwargs)
 
@@ -468,13 +479,18 @@ def branch_edit_file(branch, path=None):
 def branch_history(branch, path=None):
     branch = branch_var2name(branch)
 
-    r = get_repo(current_app)
+    repo = get_repo(current_app)
 
     safe_branch = branch_name2path(branch)
 
+    # contains 'author_email', 'task_description', 'full_name_sha'
+    task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch)
+    author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
+    task_description = task_metadata['task_description'] if 'task_description' in task_metadata else u''
+
     view_path = join('/tree/%s/view' % branch_name2path(branch), path)
     edit_path = join('/tree/%s/edit' % branch_name2path(branch), path)
-    languages = load_languages(r.working_dir)
+    languages = load_languages(repo.working_dir)
 
     app_authorized = False
 
@@ -484,7 +500,7 @@ def branch_history(branch, path=None):
 
     format = '%x00Name: %an\tEmail: %ae\tTime: %aD\tSubject: %s'
     pattern = compile(r'^\x00Name: (.*?)\tEmail: (.*?)\tTime: (.*?)\tSubject: (.*?)$', MULTILINE)
-    log = r.git.log('-30', '--format=' + format, path)
+    log = repo.git.log('-30', '--format=' + format, path)
 
     history = []
 
@@ -495,7 +511,8 @@ def branch_history(branch, path=None):
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(branch=branch, safe_branch=safe_branch,
                   history=history, view_path=view_path, edit_path=edit_path,
-                  path=path, languages=languages, app_authorized=app_authorized)
+                  path=path, languages=languages, app_authorized=app_authorized,
+                  author_email=author_email, task_description=task_description)
 
     return render_template('tree-branch-history.html', **kwargs)
 
@@ -505,12 +522,17 @@ def branch_history(branch, path=None):
 def branch_review(branch):
     branch = branch_var2name(branch)
 
-    r = get_repo(current_app)
-    c = r.commit()
+    repo = get_repo(current_app)
+    c = repo.commit()
+
+    # contains 'author_email', 'task_description', 'full_name_sha'
+    task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch)
+    author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
+    task_description = task_metadata['task_description'] if 'task_description' in task_metadata else u''
 
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(branch=branch, safe_branch=branch_name2path(branch),
-                  hexsha=c.hexsha)
+                  hexsha=c.hexsha, author_email=author_email, task_description=task_description)
 
     return render_template('tree-branch-review.html', **kwargs)
 
