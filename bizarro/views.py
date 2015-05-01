@@ -29,9 +29,9 @@ from .google_api_functions import (
 @login_required
 @synch_required
 def index():
-    r = Repo(current_app.config['REPO_PATH']) # bare repo
+    repo = Repo(current_app.config['REPO_PATH']) # bare repo
     master_name = current_app.config['default_branch']
-    branch_names = [b.name for b in r.branches if b.name != master_name]
+    branch_names = [b.name for b in repo.branches if b.name != master_name]
 
     list_items = []
 
@@ -39,13 +39,13 @@ def index():
         path = branch_name2path(name)
 
         try:
-            base = r.git.merge_base(master_name, name)
+            base = repo.git.merge_base(master_name, name)
         except GitCommandError:
             # Skip this branch if it looks to be an orphan. Just don't show it.
             continue
 
-        behind_raw = r.git.log(base + '..' + master_name, format='%H %at %ae')
-        ahead_raw = r.git.log(base + '..' + name, format='%H %at %ae')
+        behind_raw = repo.git.log(base + '..' + master_name, format='%H %at %ae')
+        ahead_raw = repo.git.log(base + '..' + name, format='%H %at %ae')
 
         pattern = compile(r'^(\w+) (\d+) (.+)$', MULTILINE)
         # behind = [r.commit(sha) for (sha, t, e) in pattern.findall(behind_raw)]
@@ -58,9 +58,9 @@ def index():
             is_peer_approved = True
             is_peer_rejected = False
         else:
-            needs_peer_review = repo_functions.needs_peer_review(r, master_name, name)
-            is_peer_approved = repo_functions.is_peer_approved(r, master_name, name)
-            is_peer_rejected = repo_functions.is_peer_rejected(r, master_name, name)
+            needs_peer_review = repo_functions.needs_peer_review(repo, master_name, name)
+            is_peer_approved = repo_functions.is_peer_approved(repo, master_name, name)
+            is_peer_rejected = repo_functions.is_peer_rejected(repo, master_name, name)
 
         review_subject = 'Plz review this thing'
         review_body = '%s/tree/%s/edit' % (request.url, path)
