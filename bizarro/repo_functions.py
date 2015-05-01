@@ -144,19 +144,32 @@ def delete_task_metadata_for_branch(clone, default_branch_name):
     save_working_file(clone, TASK_METADATA_FILENAME, message, clone.commit().hexsha, default_branch_name)
     return task_metadata
 
-def get_task_metadata_for_branch(clone):
+def get_task_metadata_for_branch(clone, working_branch_name=None):
     ''' Retrieve task metadata from the file
     '''
     task_metadata = {}
-    task_file_path = join(clone.working_dir, TASK_METADATA_FILENAME)
-    if exists(task_file_path):
-        with open(task_file_path) as file:
-            task_metadata = yaml.load(file)
-
+    task_file_contents = get_file_contents_from_branch(clone, TASK_METADATA_FILENAME, working_branch_name)
+    if task_file_contents:
+        task_metadata = yaml.safe_load(task_file_contents)
         if type(task_metadata) is not dict:
             raise ValueError()
 
     return task_metadata
+
+def get_file_contents_from_branch(clone, file_path, working_branch_name=None):
+    ''' Return the contents of the file in the passed branch without checking it out.
+    '''
+    # use the active branch if no branch name was passed
+    branch_name = working_branch_name if working_branch_name else clone.active_branch.name
+    if branch_name in clone.heads:
+        try:
+            blob = (clone.heads[branch_name].commit.tree / file_path)
+        except KeyError:
+            return None
+
+        return blob.data_stream.read().decode('utf-8')
+
+    return None
 
 def get_branch_sha(branch_description, author_email):
     ''' use details about a branch to generate a 'unique' name
