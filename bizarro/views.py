@@ -347,11 +347,16 @@ def branch_view(branch, path=None):
 def branch_edit(branch, path=None):
     branch = branch_var2name(branch)
 
-    r = get_repo(current_app)
-    c = r.commit()
+    repo = get_repo(current_app)
+    c = repo.commit()
 
-    full_path = join(r.working_dir, path or '.').rstrip('/')
+    full_path = join(repo.working_dir, path or '.').rstrip('/')
     safe_branch = branch_name2path(branch)
+
+    # contains 'author_email', 'task_description', 'full_name_sha'
+    task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch)
+    author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
+    task_description = task_metadata['task_description'] if 'task_description' in task_metadata else u''
 
     if isdir(full_path):
         if path and not path.endswith('/'):
@@ -363,10 +368,11 @@ def branch_edit(branch, path=None):
         kwargs = common_template_args(current_app.config, session)
         kwargs.update(branch=branch, safe_branch=safe_branch,
                       dirs_and_paths=directory_paths(branch, path),
-                      list_paths=sorted_paths(r, branch, path, showallfiles))
+                      list_paths=sorted_paths(repo, branch, path, showallfiles),
+                      author_email=author_email, task_description=task_description)
 
         master_name = current_app.config['default_branch']
-        kwargs['rejection_messages'] = list(repo_functions.get_rejection_messages(r, master_name, branch))
+        kwargs['rejection_messages'] = list(repo_functions.get_rejection_messages(repo, master_name, branch))
 
         # TODO: the above might throw a GitCommandError if branch is an orphan.
 
@@ -376,10 +382,10 @@ def branch_edit(branch, path=None):
             kwargs['is_peer_approved'] = True
             kwargs['is_peer_rejected'] = False
         else:
-            kwargs['eligible_peer'] = session['email'] != repo_functions.ineligible_peer(r, master_name, branch)
-            kwargs['needs_peer_review'] = repo_functions.needs_peer_review(r, master_name, branch)
-            kwargs['is_peer_approved'] = repo_functions.is_peer_approved(r, master_name, branch)
-            kwargs['is_peer_rejected'] = repo_functions.is_peer_rejected(r, master_name, branch)
+            kwargs['eligible_peer'] = session['email'] != repo_functions.ineligible_peer(repo, master_name, branch)
+            kwargs['needs_peer_review'] = repo_functions.needs_peer_review(repo, master_name, branch)
+            kwargs['is_peer_approved'] = repo_functions.is_peer_approved(repo, master_name, branch)
+            kwargs['is_peer_rejected'] = repo_functions.is_peer_rejected(repo, master_name, branch)
 
         if kwargs['is_peer_rejected']:
             kwargs['rejecting_peer'], kwargs['rejection_message'] = kwargs['rejection_messages'].pop(0)
@@ -388,7 +394,7 @@ def branch_edit(branch, path=None):
 
     with open(full_path, 'r') as file:
         front, body = load_jekyll_doc(file)
-        languages = load_languages(r.working_dir)
+        languages = load_languages(repo.working_dir)
 
         url_slug, _ = splitext(path)
         view_path = join('/tree/%s/view' % branch_name2path(branch), path)
@@ -407,7 +413,8 @@ def branch_edit(branch, path=None):
                       body=body, hexsha=c.hexsha, url_slug=url_slug,
                       front=front, view_path=view_path, edit_path=path,
                       history_path=history_path, languages=languages,
-                      app_authorized=app_authorized)
+                      app_authorized=app_authorized,
+                      author_email=author_email, task_description=task_description)
 
         kwargs.update(analytics_dict)
 

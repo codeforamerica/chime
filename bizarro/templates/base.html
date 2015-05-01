@@ -28,7 +28,11 @@
             <li><a href="/">Tasks</a></li>
             <li><a href="{{ live_site_url }}">Visit site</a></li>
 
-            {% if branch %}<li class="active-task"><a href="./">{{branch}}</a></li>{% endif %}
+            {% if author_email and task_description %}
+            <li class="active-task"><a href="./">{{author_email}}/<b>{{task_description}}</b></a></li>
+            {% elif branch %}
+            <li class="active-task"><a href="./">{{branch}}</a></li>
+            {% endif %}
           </ul>
       </header>
      <!-- end header block -->
