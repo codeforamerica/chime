@@ -162,9 +162,9 @@ def get_branch_sha(branch_description, author_email):
     ''' use details about a branch to generate a 'unique' name
     '''
     # get epoch seconds as a string
-    epoch_seconds = datetime.utcnow().strftime("%s")
-    seed = '{}{}{}'.format(epoch_seconds, branch_description, author_email)
-    return hashlib.sha1(seed).hexdigest()
+    epoch_seconds = unicode(datetime.utcnow().strftime("%s"))
+    seed = u'{}{}{}'.format(epoch_seconds, unicode(branch_description), unicode(author_email))
+    return hashlib.sha1(seed.encode('utf-8')).hexdigest()
 
 def complete_branch(clone, default_branch_name, working_branch_name):
     ''' Complete a branch merging, deleting it, and returning the merge commit.
