@@ -62,7 +62,7 @@ fabconf['ACTIVATE'] = "source /home/{user}/.virtualenvs/{project}/bin/activate".
 )
 
 # Name tag for your server instance on EC2
-fabconf['INSTANCE_NAME_TAG'] = os.environ.get('INSTANCE_NAME_TAG')
+fabconf['INSTANCE_NAME_TAG'] = os.environ.get('INSTANCE_NAME_TAG', 'ChimeCMS')
 
 # EC2 key.
 fabconf['AWS_ACCESS_KEY'] = os.environ.get('AWS_ACCESS_KEY')

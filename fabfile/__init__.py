@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from tasks import (
-    spawn_instance
+    spawn_instance,
+    despawn_instance
 )

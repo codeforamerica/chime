@@ -4,7 +4,7 @@ import boto.ec2
 import time
 
 from fabric.api import task, env
-from fabric.colors import green, yellow
+from fabric.colors import green, yellow, red
 from fabconf import fabconf
 
 @task
@@ -19,10 +19,12 @@ def spawn_instance():
     env.host_string = _create_ec2_instance()
 
 @task
-def spin_down_instance(public_dns):
+def despawn_instance(public_dns):
     print(yellow('Shutting down instance {dns}'.format(
         dns=public_dns
     )))
+
+    _despawn_instance(public_dns, terminate=True)
 
 def _connect_to_ec2():
     '''
@@ -47,12 +49,11 @@ def _create_ec2_instance():
     # get all images returns a list of available images
     image = conn.get_all_images(fabconf.get('EC2_AMIS'))
 
-
     # use the first available image to create a new reservation
     # http://docs.pythonboto.org/en/latest/ref/ec2.html#boto.ec2.instance.Reservation
     reservation = image[0].run(
         1, 1, key_name=fabconf.get('EC2_KEY_PAIR'),
-        security_groups=fabconf.get('AWS_SECURITY_GROUPS'),
+        security_groups=[fabconf.get('AWS_SECURITY_GROUPS')],
         instance_type=fabconf.get('EC2_INSTANCE_TYPE')
     )
 
@@ -70,3 +71,21 @@ def _create_ec2_instance():
     print(green('Public DNS: {dns}'.format(dns=instance.public_dns_name)))
 
     return instance.public_dns_name
+
+def _despawn_instance(dns, terminate=False):
+    conn = _connect_to_ec2()
+
+    for res in conn.get_all_reservations():
+        for instance in res.instances:
+            if instance.public_dns_name == dns:
+                instance.terminate() if terminate else instance.stop()
+
+                while instance.state in ('running', 'pending', 'stopping'):
+                    print(yellow('Instance state: {state}'.format(state=instance.state)))
+                    time.sleep(10)
+                    instance.update()
+
+                print(green('Instance state: {state}'.format(state=instance.state)))
+                return
+
+    print(red('DNS not found.'))
