@@ -134,9 +134,9 @@ def build_jekyll_site(dirname):
     from subprocess import Popen
     import os
 
-    bizarro_dir = os.path.dirname(os.path.realpath(__file__))
-    ceviche_dir = os.path.join(bizarro_dir, "..")
-    jekyll_script = os.path.realpath(os.path.join(ceviche_dir, 'jekyll/run-jekyll.sh'))
+    python_dir = os.path.dirname(os.path.realpath(__file__))
+    project_dir = os.path.join(python_dir, "..")
+    jekyll_script = os.path.realpath(os.path.join(project_dir, 'jekyll/run-jekyll.sh'))
 
     call = [jekyll_script, 'build']
     try:
