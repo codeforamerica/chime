@@ -5,7 +5,7 @@ require 'socket'
 
 hostname = Socket.gethostbyname(Socket.gethostname).first
 repo_dir = File.realpath(File.join(File.dirname(__FILE__), '..', '..', '..'))
-name = node[:user]
+username = node[:user]
 
 ga_client_id = ENV['GA_CLIENT_ID']
 ga_client_secret = ENV['GA_CLIENT_SECRET']
@@ -34,8 +34,8 @@ directory "/var/opt/bizarro-work" do
 end
 
 directory "/var/opt/bizarro-work" do
-  owner name
-  group name
+  owner username
+  group username
   mode "0775"
 end
 
@@ -46,10 +46,10 @@ env_file = '/etc/ceviche.conf'
 
 file env_file do
   content <<-CONF
-RUNNING_STATE_DIR=/var/run/#{name}
+RUNNING_STATE_DIR=/var/run/#{username}
 REPO_PATH=/var/opt/bizarro-site
 WORK_PATH=/var/opt/bizarro-work
-BROWSERID_URL=#{hostname}
+BROWSERID_URL=http://#{hostname}/
 
 GA_CLIENT_ID="#{ga_client_id}"
 GA_CLIENT_SECRET="#{ga_client_secret}"
@@ -60,7 +60,7 @@ CONF
 end
 
 execute "honcho export upstart /etc/init" do
-  command "honcho -e #{env_file} export -u #{name} -a bizarro-cms upstart /etc/init"
+  command "honcho -e #{env_file} export -u #{username} -a bizarro-cms upstart /etc/init"
   cwd repo_dir
 end
 

@@ -32,6 +32,9 @@ from bizarro import (
 import codecs
 codecs.register(RotUnicode.search_function)
 
+import logging
+logging.disable(logging.CRITICAL)
+
 class TestJekyll (TestCase):
 
     def test_good_files(self):
@@ -951,6 +954,7 @@ class TestGoogleApiFunctions (TestCase):
 
     def setUp(self):
         app_args = {}
+        app_args['BROWSERID_URL'] = 'http://example.com'
         app_args['GA_CLIENT_ID'] = 'client_id'
         app_args['GA_CLIENT_SECRET'] = 'meow_secret'
 
@@ -1167,6 +1171,7 @@ class TestAppConfig (TestCase):
         environment['GA_CLIENT_ID'] = 'Yo'
         environment['GA_CLIENT_SECRET'] = 'Yo'
         environment['LIVE_SITE_URL'] = 'Hey'
+        environment['BROWSERID_URL'] = 'Hey'
         create_app(environment)
 
 class TestApp (TestCase):
@@ -1192,6 +1197,7 @@ class TestApp (TestCase):
         app_args['WORK_PATH'] = self.work_path
         app_args['REPO_PATH'] = temp_repo_path
         app_args['AUTH_DATA_HREF'] = 'http://example.com/auth.csv'
+        app_args['BROWSERID_URL'] = 'http://localhost'
 
         self.app = create_app(app_args)
 
