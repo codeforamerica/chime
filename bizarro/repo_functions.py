@@ -4,7 +4,6 @@ from os import mkdir
 from os.path import join, split, exists, isdir
 from itertools import chain
 from git.cmd import GitCommandError
-from datetime import datetime
 import hashlib
 import yaml
 import edit_functions
@@ -175,8 +174,7 @@ def get_branch_sha(branch_description, author_email):
     ''' use details about a branch to generate a 'unique' name
     '''
     # get epoch seconds as a string
-    epoch_seconds = unicode(datetime.utcnow().strftime("%s"))
-    seed = u'{}{}{}'.format(epoch_seconds, unicode(branch_description), unicode(author_email))
+    seed = u'{}{}'.format(unicode(branch_description), unicode(author_email))
     return hashlib.sha1(seed.encode('utf-8')).hexdigest()
 
 def complete_branch(clone, default_branch_name, working_branch_name):
