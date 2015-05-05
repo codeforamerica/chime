@@ -1334,47 +1334,67 @@ class TestApp (TestCase):
     def test_branches(self):
         ''' Check basic branching functionality.
         '''
+        fake_branch_name = u'do things'
+        fake_author_email = u'erica@example.com'
+        fake_page_slug = u'hello'
+        fake_page_name = u'{}.html'.format(fake_page_slug)
+        fake_page_content = u'Hello world.'
         with HTTMock(self.mock_persona_verify):
-            self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
+            self.test_client.post('/sign-in', data={'email': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
-            response = self.test_client.post('/start', data={'branch': 'do things'},
-                                             follow_redirects=True)
-            self.assertTrue('erica@example.com/do-things' in response.data)
+            # create a new branch
+            response = self.test_client.post('/start', data={'branch': fake_branch_name}, follow_redirects=True)
+            self.assertTrue(EDIT_LISTDIR_TASK_NAME_PATTERN.format(fake_branch_name) in response.data)
+            self.assertTrue(EDIT_LISTDIR_AUTHOR_EMAIL_PATTERN.format(fake_author_email) in response.data)
+
+            # extract the generated branch name from the returned HTML
+            generated_branch_search = search(r'\/tree\/(.{7})\/edit', response.data)
+            self.assertIsNotNone(generated_branch_search)
+            try:
+                generated_branch_name = generated_branch_search.group(1)
+            except AttributeError:
+                raise Exception('No match for generated branch name.')
 
         with HTTMock(self.mock_google_analytics):
-            response = self.test_client.post('/tree/erica@example.com%252Fdo-things/edit/',
-                                             data={'action': 'add', 'path': 'hello.html'},
+            # create a new file
+            response = self.test_client.post('/tree/{}/edit/'.format(generated_branch_name),
+                                             data={'action': 'add', 'path': fake_page_name},
                                              follow_redirects=True)
-
             self.assertEquals(response.status_code, 200)
+            self.assertTrue(fake_page_name in response.data)
 
-            response = self.test_client.get('/tree/erica@example.com%252Fdo-things/edit/')
+            # get the index page for the branch and verify that the new file is listed
+            response = self.test_client.get('/tree/{}/edit/'.format(generated_branch_name), follow_redirects=True)
+            self.assertEquals(response.status_code, 200)
+            self.assertTrue(fake_page_name in response.data)
 
-            self.assertTrue('hello.html' in response.data)
-
-            response = self.test_client.get('/tree/erica@example.com%252Fdo-things/edit/hello.html')
+            # get the edit page for the new file and extract the hexsha value
+            response = self.test_client.get('/tree/{}/edit/hello.html'.format(generated_branch_name))
+            self.assertEquals(response.status_code, 200)
+            self.assertTrue(fake_page_name in response.data)
             hexsha = search(r'<input name="hexsha" value="(\w+)"', response.data).group(1)
-
-            response = self.test_client.post('/tree/erica@example.com%252Fdo-things/save/hello.html',
+            # now save the file with new content
+            response = self.test_client.post('/tree/{}/save/hello.html'.format(generated_branch_name),
                                              data={'layout': 'multi', 'hexsha': hexsha,
-                                                   'en-title': 'Greetings', 'en-body': 'Hello world.\n',
+                                                   'en-title': 'Greetings',
+                                                   'en-body': u'{}\n'.format(fake_page_content),
                                                    'fr-title': '', 'fr-body': '',
-                                                   'url-slug': 'hello'},
+                                                   'url-slug': fake_page_slug},
                                              follow_redirects=True)
 
             self.assertEquals(response.status_code, 200)
-
-        html = response.data
+            self.assertTrue(fake_page_name in response.data)
+            self.assertTrue(fake_page_content in response.data)
 
         # Check that English and French forms are both present.
-        self.assertTrue('id="fr-nav" class="nav-tab"' in html)
-        self.assertTrue('id="en-nav" class="nav-tab state-active"' in html)
-        self.assertTrue('id="French-form" style="display: none"' in html)
-        self.assertTrue('id="English-form" style="display: block"' in html)
+        self.assertTrue('id="fr-nav" class="nav-tab"' in response.data)
+        self.assertTrue('id="en-nav" class="nav-tab state-active"' in response.data)
+        self.assertTrue('id="French-form" style="display: none"' in response.data)
+        self.assertTrue('id="English-form" style="display: block"' in response.data)
 
         # Verify that navigation tabs are in the correct order.
-        self.assertTrue(html.index('id="fr-nav"') < html.index('id="en-nav"'))
+        self.assertTrue(response.data.index('id="fr-nav"') < response.data.index('id="en-nav"'))
 
         #
         # Go back to the front page, and publish the do-things branch.
@@ -1385,17 +1405,18 @@ class TestApp (TestCase):
         soup = BeautifulSoup(response.data)
 
         # Look for the publish form button.
-        inputs = soup.find_all('input', type='hidden', value='erica@example.com/do-things')
+        inputs = soup.find_all('input', type='hidden', value=generated_branch_name)
         (form, ) = [input.find_parent('form', action='/merge') for input in inputs]
         button = form.find('button', text='Publish')
 
         # Punch it, Chewie.
         data = dict([(i['name'], i['value']) for i in form.find_all(['input'])])
         data.update({button['name']: button['value']})
-
         with HTTMock(self.auth_csv_example_allowed):
             response = self.test_client.post(form['action'], data=data, follow_redirects=True)
+            self.assertEquals(response.status_code, 200)
             self.assertFalse('Not Allowed' in response.data)
+            self.assertFalse(fake_branch_name in response.data)
 
     def test_get_request_does_not_create_branch(self):
         ''' Navigating to a made-up URL should not create a branch
