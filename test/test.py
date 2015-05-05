@@ -639,9 +639,11 @@ class TestRepo (TestCase):
     def test_upstream_push_conflict(self):
         ''' Test that a conflict in two branches appears at the right spot.
         '''
-        name1, name2 = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', name1, u'erica@example.com')
-        branch2 = repo_functions.get_start_branch(self.clone2, 'master', name2, u'erica@example.com')
+        fake_author_email = u'erica@example.com'
+        task_name1, task_name2 = str(uuid4()), str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_name1, fake_author_email)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_name2, fake_author_email)
+        branch1_name, branch2_name = branch1.name, branch2.name
 
         #
         # Make new files in each branch and save them.
@@ -667,11 +669,11 @@ class TestRepo (TestCase):
         #
         # Merge the two branches to master; show that second merge will fail.
         #
-        repo_functions.complete_branch(self.clone1, 'master', name1)
-        self.assertFalse(name1 in self.origin.branches)
+        repo_functions.complete_branch(self.clone1, 'master', branch1_name)
+        self.assertFalse(branch1_name in self.origin.branches)
 
         with self.assertRaises(repo_functions.MergeConflict) as conflict:
-            repo_functions.complete_branch(self.clone2, 'master', name2)
+            repo_functions.complete_branch(self.clone2, 'master', branch2_name)
 
         self.assertEqual(conflict.exception.remote_commit, self.origin.commit())
         self.assertEqual(conflict.exception.local_commit, self.clone2.commit())
