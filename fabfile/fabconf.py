@@ -78,7 +78,9 @@ fabconf['EC2_REGION'] = os.environ.get('EC2_REGION', 'us-west-1')
 fabconf['EC2_AMIS'] = os.environ.get('EC2_AMIS', 'ami-d05e75b8').split(',')
 
 # Name of the keypair you use in EC2.
-fabconf['EC2_KEY_PAIR'] = os.environ.get('EC2_KEY_PAIR')
+fabconf['EC2_KEY_PAIR'] = os.environ.get('EC2_KEY_PAIR') \
+    if os.environ.get('EC2_KEY_PAIR') \
+    else fabconf.get('EC2_KEY_NAME')
 
 # Name of the security group.
 fabconf['AWS_SECURITY_GROUPS'] = os.environ.get('AWS_SECURITY_GROUPS')
