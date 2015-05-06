@@ -424,10 +424,14 @@ def move_existing_file(clone, old_path, new_path, base_sha, default_branch_name)
 def needs_peer_review(repo, default_branch_name, working_branch_name):
     ''' Returns true if the active branch appears to be in need of review.
     '''
-    base_commit = repo.git.merge_base(default_branch_name, working_branch_name)
-    last_commit = repo.branches[working_branch_name].commit.hexsha
+    base_commit_hexsha = repo.git.merge_base(default_branch_name, working_branch_name)
+    last_commit = repo.branches[working_branch_name].commit
+    # we don't need peer review if the only change is
+    # the commit of the task metadata file
+    if TASK_METADATA_FILENAME in last_commit.message:
+        last_commit = last_commit.parents[0]
 
-    if base_commit == last_commit:
+    if base_commit_hexsha == last_commit.hexsha:
         return False
 
     return not is_peer_approved(repo, default_branch_name, working_branch_name) \
@@ -448,7 +452,7 @@ def is_peer_approved(repo, default_branch_name, working_branch_name):
     last_commit = repo.branches[working_branch_name].commit
 
     if 'Approved changes.' not in last_commit.message:
-        # To do: why does "commit: " get prefixed to the message?
+        # TODO: why does "commit: " get prefixed to the message?
         return False
 
     reviewer_email = last_commit.author.email
@@ -470,7 +474,7 @@ def is_peer_rejected(repo, default_branch_name, working_branch_name):
     last_commit = repo.branches[working_branch_name].commit
 
     if 'Provided feedback.' not in last_commit.message:
-        # To do: why does "commit: " get prefixed to the message?
+        # TODO: why does "commit: " get prefixed to the message?
         return False
 
     reviewer_email = last_commit.author.email
