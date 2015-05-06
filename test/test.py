@@ -497,9 +497,11 @@ class TestRepo (TestCase):
     def test_multifile_merge(self):
         ''' Test that two non-conflicting new files merge cleanly.
         '''
-        name = str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', name, u'erica@example.com')
-        branch2 = repo_functions.get_start_branch(self.clone2, 'master', name, u'erica@example.com')
+        fake_author_email = u'erica@example.com'
+        task_name = str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_name, fake_author_email)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_name, fake_author_email)
+        branch1_name, branch2_name = branch1.name, branch2.name
 
         #
         # Make new files in each branch and save them.
@@ -519,9 +521,9 @@ class TestRepo (TestCase):
         args1 = self.clone1, 'file1.md', '...', branch1.commit.hexsha, 'master'
         commit1 = repo_functions.save_working_file(*args1)
 
-        self.assertEquals(self.origin.branches[name].commit, commit1)
-        self.assertEquals(self.origin.branches[name].commit.author.email, self.session['email'])
-        self.assertEquals(self.origin.branches[name].commit.committer.email, self.session['email'])
+        self.assertEquals(self.origin.branches[branch1_name].commit, commit1)
+        self.assertEquals(self.origin.branches[branch1_name].commit.author.email, self.session['email'])
+        self.assertEquals(self.origin.branches[branch1_name].commit.committer.email, self.session['email'])
         self.assertEquals(commit1, branch1.commit)
 
         #
@@ -530,15 +532,15 @@ class TestRepo (TestCase):
         args2 = self.clone2, 'file2.md', '...', branch2.commit.hexsha, 'master'
         commit2 = repo_functions.save_working_file(*args2)
 
-        self.assertEquals(self.origin.branches[name].commit, commit2)
-        self.assertEquals(self.origin.branches[name].commit.author.email, self.session['email'])
-        self.assertEquals(self.origin.branches[name].commit.committer.email, self.session['email'])
+        self.assertEquals(self.origin.branches[branch2_name].commit, commit2)
+        self.assertEquals(self.origin.branches[branch2_name].commit.author.email, self.session['email'])
+        self.assertEquals(self.origin.branches[branch2_name].commit.committer.email, self.session['email'])
         self.assertEquals(commit2, branch2.commit)
 
         #
         # Show that the merge from the second branch made it back to the first.
         #
-        branch1b = repo_functions.get_start_branch(self.clone1, 'master', name, u'erica@example.com')
+        branch1b = repo_functions.get_start_branch(self.clone1, 'master', task_name, fake_author_email)
 
         self.assertEquals(branch1b.commit, branch2.commit)
         self.assertEquals(branch1b.commit.author.email, self.session['email'])
