@@ -547,9 +547,11 @@ class TestRepo (TestCase):
     def test_same_branch_conflict(self):
         ''' Test that a conflict in two branches appears at the right spot.
         '''
-        name = str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', name, u'erica@example.com')
-        branch2 = repo_functions.get_start_branch(self.clone2, 'master', name, u'erica@example.com')
+        fake_author_email = u'erica@example.com'
+        task_name = str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_name, fake_author_email)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_name, fake_author_email)
+        branch1_name = branch1.name
 
         #
         # Make new files in each branch and save them.
@@ -569,7 +571,7 @@ class TestRepo (TestCase):
         args1 = self.clone1, 'conflict.md', '...', branch1.commit.hexsha, 'master'
         commit1 = repo_functions.save_working_file(*args1)
 
-        self.assertEquals(self.origin.branches[name].commit, commit1)
+        self.assertEquals(self.origin.branches[branch1_name].commit, commit1)
         self.assertEquals(commit1, branch1.commit)
 
         #
