@@ -885,10 +885,12 @@ class TestRepo (TestCase):
         self.assertEqual(repo_functions.ineligible_peer(self.clone1, 'master', branch1_name), None)
 
     def test_peer_rejected(self):
+        ''' Feedback and edits by peers are handled as expected.
         '''
-        '''
-        name = str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', name, u'erica@example.com')
+        fake_author_email = u'erica@example.com'
+        task_name = str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_name, fake_author_email)
+        branch1_name = branch1.name
 
         #
         # Make a commit.
@@ -899,22 +901,22 @@ class TestRepo (TestCase):
         environ['GIT_COMMITTER_EMAIL'] = 'creator@example.com'
 
         branch1.checkout()
-        self.assertFalse(repo_functions.needs_peer_review(self.clone1, 'master', name))
-        self.assertFalse(repo_functions.is_peer_approved(self.clone1, 'master', name))
+        self.assertFalse(repo_functions.needs_peer_review(self.clone1, 'master', branch1_name))
+        self.assertFalse(repo_functions.is_peer_approved(self.clone1, 'master', branch1_name))
 
         edit_functions.update_page(self.clone1, 'index.md',
-                                   dict(title=name), 'Hello you-all.')
+                                   dict(title=task_name), 'Hello you-all.')
 
         repo_functions.save_working_file(self.clone1, 'index.md', 'I made a change',
                                          self.clone1.commit().hexsha, 'master')
 
-        self.assertTrue(repo_functions.needs_peer_review(self.clone1, 'master', name))
-        self.assertFalse(repo_functions.is_peer_approved(self.clone1, 'master', name))
-        self.assertFalse(repo_functions.is_peer_rejected(self.clone1, 'master', name))
-        self.assertEqual(repo_functions.ineligible_peer(self.clone1, 'master', name), 'creator@example.com')
+        self.assertTrue(repo_functions.needs_peer_review(self.clone1, 'master', branch1_name))
+        self.assertFalse(repo_functions.is_peer_approved(self.clone1, 'master', branch1_name))
+        self.assertFalse(repo_functions.is_peer_rejected(self.clone1, 'master', branch1_name))
+        self.assertEqual(repo_functions.ineligible_peer(self.clone1, 'master', branch1_name), 'creator@example.com')
 
         #
-        # Approve the work as someone else.
+        # Provide feedback on the work as someone else.
         #
         environ['GIT_AUTHOR_NAME'] = 'Joe Reviewer'
         environ['GIT_COMMITTER_NAME'] = 'Joe Reviewer'
@@ -923,27 +925,27 @@ class TestRepo (TestCase):
 
         repo_functions.provide_feedback(self.clone1, 'This sucks.')
 
-        self.assertFalse(repo_functions.needs_peer_review(self.clone1, 'master', name))
-        self.assertFalse(repo_functions.is_peer_approved(self.clone1, 'master', name))
-        self.assertTrue(repo_functions.is_peer_rejected(self.clone1, 'master', name))
-        self.assertEqual(repo_functions.ineligible_peer(self.clone1, 'master', name), None)
+        self.assertFalse(repo_functions.needs_peer_review(self.clone1, 'master', branch1_name))
+        self.assertFalse(repo_functions.is_peer_approved(self.clone1, 'master', branch1_name))
+        self.assertTrue(repo_functions.is_peer_rejected(self.clone1, 'master', branch1_name))
+        self.assertEqual(repo_functions.ineligible_peer(self.clone1, 'master', branch1_name), None)
 
         #
-        # Make another commit.
+        # Make another commit as the reviewer.
         #
         edit_functions.update_page(self.clone1, 'index.md',
-                                   dict(title=name), 'Hello you there.')
+                                   dict(title=task_name), 'Hello you there.')
 
         repo_functions.save_working_file(self.clone1, 'index.md', 'I made a change',
                                          self.clone1.commit().hexsha, 'master')
 
-        self.assertTrue(repo_functions.needs_peer_review(self.clone1, 'master', name))
-        self.assertFalse(repo_functions.is_peer_approved(self.clone1, 'master', name))
-        self.assertFalse(repo_functions.is_peer_rejected(self.clone1, 'master', name))
-        self.assertEqual(repo_functions.ineligible_peer(self.clone1, 'master', name), 'reviewer@example.com')
+        self.assertTrue(repo_functions.needs_peer_review(self.clone1, 'master', branch1_name))
+        self.assertFalse(repo_functions.is_peer_approved(self.clone1, 'master', branch1_name))
+        self.assertFalse(repo_functions.is_peer_rejected(self.clone1, 'master', branch1_name))
+        self.assertEqual(repo_functions.ineligible_peer(self.clone1, 'master', branch1_name), 'reviewer@example.com')
 
         #
-        # Approve the work as someone else.
+        # Provide feedback on the work as yet another person.
         #
         environ['GIT_AUTHOR_NAME'] = 'Jane Reviewer'
         environ['GIT_COMMITTER_NAME'] = 'Jane Reviewer'
@@ -952,14 +954,12 @@ class TestRepo (TestCase):
 
         repo_functions.provide_feedback(self.clone1, 'This still sucks.')
 
-        self.assertFalse(repo_functions.needs_peer_review(self.clone1, 'master', name))
-        self.assertFalse(repo_functions.is_peer_approved(self.clone1, 'master', name))
-        self.assertTrue(repo_functions.is_peer_rejected(self.clone1, 'master', name))
-        self.assertEqual(repo_functions.ineligible_peer(self.clone1, 'master', name), None)
+        self.assertFalse(repo_functions.needs_peer_review(self.clone1, 'master', branch1_name))
+        self.assertFalse(repo_functions.is_peer_approved(self.clone1, 'master', branch1_name))
+        self.assertTrue(repo_functions.is_peer_rejected(self.clone1, 'master', branch1_name))
+        self.assertEqual(repo_functions.ineligible_peer(self.clone1, 'master', branch1_name), None)
 
-        #
-
-        (email2, message2), (email1, message1) = repo_functions.get_rejection_messages(self.clone1, 'master', name)
+        (email2, message2), (email1, message1) = repo_functions.get_rejection_messages(self.clone1, 'master', branch1_name)
 
         self.assertEqual(email1, 'reviewer@example.com')
         self.assertTrue('This sucks.' in message1)
