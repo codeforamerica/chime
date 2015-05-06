@@ -979,6 +979,29 @@ class TestRepo (TestCase):
         self.assertEqual(email2, 'reviewer@example.org')
         self.assertTrue('This still sucks.' in message2)
 
+    def test_task_metadata_creation(self):
+        ''' The task metadata file is created when a branch is started, and contains the expected information.
+        '''
+        fake_author_email = u'erica@example.com'
+        task_name = str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_name, fake_author_email)
+        branch1_name = branch1.name
+
+        # verify that the most recent commit on the new branch is for the task metadata file
+        # by checking for the name of the file in the commit message
+        self.assertTrue(repo_functions.TASK_METADATA_FILENAME in branch1.commit.message)
+
+        # validate the existence of the task metadata file
+        task_metadata = repo_functions.get_task_metadata_for_branch(self.clone1, branch1_name)
+        self.assertEqual(type(task_metadata), dict)
+        self.assertTrue(len(task_metadata) > 0)
+
+        # validate the contents of the task metadata file
+        self.assertEqual(task_metadata['author_email'], fake_author_email)
+        self.assertEqual(task_metadata['task_description'], task_name)
+        # full_name_sha is the full sha that's used to create the unique name of the task in repo_functions.get_start_branch
+        self.assertEqual(task_metadata['full_name_sha'][0:7], branch1_name)
+
 ''' Test functions that are called outside of the google authing/analytics data fetching via the UI
 '''
 class TestGoogleApiFunctions (TestCase):

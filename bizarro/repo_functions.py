@@ -105,6 +105,7 @@ def save_task_metadata_for_branch(clone, default_branch_name, values={}):
     # Get the current task metadata (if any)
     task_metadata = get_task_metadata_for_branch(clone)
     check_metadata = dict(task_metadata)
+    # :NOTE: changing the commit message may break tests
     verbed = u'Created' if task_metadata == {} else u'Updated'
     message = u'{} task metadata file "{}"'.format(verbed, TASK_METADATA_FILENAME)
     # update with the new values
