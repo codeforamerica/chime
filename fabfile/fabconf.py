@@ -16,6 +16,7 @@ fabconf = {}
 
 #  Do not edit
 fabconf['FAB_CONFIG_PATH'] = os.path.dirname(__file__)
+fabconf['FAB_HOSTS_FILE'] = fabconf.get('FAB_CONFIG_PATH') + '/hosts.txt'
 
 # Project name
 fabconf['PROJECT_NAME'] = os.environ.get('PROJECT_NAME', 'chime')
@@ -71,7 +72,7 @@ fabconf['AWS_ACCESS_KEY'] = os.environ.get('AWS_ACCESS_KEY')
 fabconf['AWS_SECRET_KEY'] = os.environ.get('AWS_SECRET_KEY')
 
 #EC2 region. Defaults to us-west-1
-fabconf['EC2_REGION'] = os.environ.get('EC2_REGION', 'us-west-1')
+fabconf['EC2_REGION'] = os.environ.get('EC2_REGION', 'us-east-1')
 
 # AMI name. Either pass in a comma-delimited list of values.
 # Defaults to Ubuntu 14.04

@@ -3,9 +3,11 @@
 import boto.ec2
 import time
 
+from fabric.operations import local
 from fabric.api import task, env, run, sudo
 from fabric.colors import green, yellow, red
 from fabconf import fabconf
+from fabric.exceptions import NetworkError
 
 @task
 def spawn_instance():
@@ -32,7 +34,7 @@ def despawn_instance(public_dns):
     _despawn_instance(public_dns, terminate=True)
 
 @task(alias='boot')
-def boot_chime(public_dns=None):
+def boot_chime():
     '''
     Installs and boots up chime.
 
@@ -42,18 +44,75 @@ def boot_chime(public_dns=None):
     # set some login variables
     env.user = fabconf.get('SERVER_USERNAME')
 
-    if public_dns is None and env.hosts == []:
+    hosts = _read_hosts_from_file()
+
+    if len(hosts) == 0:
         public_dns = _create_ec2_instance()
         print(yellow('Waiting for server to come online...'))
         time.sleep(10)
-
-        if public_dns not in env.hosts or env.hosts == []:
-            env.hosts.extend([public_dns])
-
-    elif len(env.hosts) > 0:
-        public_dns = env.hosts[0]
+        print(yellow('Writing public DNS to host file...'))
+        _write_host_to_file(public_dns)
+    else:
+        env.hosts = hosts
+        public_dns = hosts[0]
 
     _server_setup(public_dns)
+
+@task
+def test_chime(setup=True, despawn=True):
+    '''
+    Create a chime instance and run selenium tests.
+
+    Takes two optional params: setup, and despawn.
+    When setup is True, it will set up the server to work
+    with Chime. When despawn is True, it will terminate
+    the instance after running the tests.
+    '''
+    env.user = fabconf.get('SERVER_USERNAME')
+
+    hosts = _read_hosts_from_file()
+
+    if len(hosts) == 0:
+        public_dns = _create_ec2_instance()
+        print(yellow('Waiting for server to come online...'))
+        time.sleep(10)
+        print(yellow('Writing public DNS to host file...'))
+        _write_host_to_file(public_dns)
+
+    else:
+        env.hosts = hosts
+        public_dns = hosts[0]
+
+    if setup is True:
+        print(green('wtf'))
+        _server_setup(public_dns)
+
+    local('python ' + fabconf.get('FAB_CONFIG_PATH') + '/../test/selenium/e2e.py')
+
+    if despawn is True:
+        _despawn_instance(public_dns)
+
+def _read_hosts_from_file():
+    hostfile = fabconf.get('FAB_HOSTS_FILE')
+    try:
+        with open(hostfile, 'r+') as f:
+            hosts = f.read().split(',')
+        return [h for h in hosts if h != '']
+    except IOError:
+        return []
+
+def _write_host_to_file(host):
+    hostfile = fabconf.get('FAB_HOSTS_FILE')
+    with open(hostfile, 'w+') as f:
+        f.write(host + ',')
+
+def _strip_host_from_file(host):
+    hostfile = fabconf.get('FAB_HOSTS_FILE')
+    hosts = _read_hosts_from_file()
+    hosts.remove(host)
+    with open(hostfile, 'w+') as f:
+        for remainder in hosts:
+            f.write(remainder+',')
 
 def _connect_to_ec2():
     '''
@@ -115,6 +174,8 @@ def _despawn_instance(dns, terminate=False):
                     instance.update()
 
                 print(green('Instance state: {state}'.format(state=instance.state)))
+                print(green('Removing {dns} from hosts file').format(dns=dns))
+                _strip_host_from_file(dns)
                 return
 
     print(red('DNS not found.'))
@@ -127,11 +188,24 @@ def _server_setup(fqdn=None):
     the first available host in env.hosts
     '''
 
-    env.host_string = fqdn if fqdn else env.hosts[0]
+    hostname = fqdn if fqdn else env.hosts[0]
+    env.host_string = hostname
+
+    print(yellow('Waiting for host to come online...'))
+    retries = 0
+    while retries < 10:
+        try:
+            run('whoami')
+            retries = 10
+        except NetworkError:
+            retries += 1
+            if retries >= 10:
+                print(red('Host still not online. Aborting.'))
+                return
+            print(yellow('Host still not alive. Waiting five seconds and retrying...'))
+            time.sleep(5)
 
     print(green('Setting up hostname'))
-    hostname = fqdn if fqdn else env.hosts[0]
-    run('ls /')
     sudo("echo '" + hostname + "' > " + '/etc/hostname')
     sudo('hostname -F /etc/hostname')
 

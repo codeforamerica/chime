@@ -3,5 +3,6 @@
 from tasks import (
     spawn_instance,
     despawn_instance,
-    boot_chime
+    boot_chime,
+    test_chime
 )
