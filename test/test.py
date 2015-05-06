@@ -769,9 +769,12 @@ class TestRepo (TestCase):
     def test_conflict_resolution_abandon(self):
         ''' Test that a conflict in two branches can be abandoned.
         '''
-        name = str(uuid4())
-        repo_functions.get_start_branch(self.clone1, 'master', 'title', u'erica@example.com')
-        branch2 = repo_functions.get_start_branch(self.clone2, 'master', name, u'erica@example.com')
+        fake_author_email = u'erica@example.com'
+        task_name = str(uuid4())
+        title_branch_name = 'title'
+        repo_functions.get_existing_branch(self.clone1, 'master', title_branch_name)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_name, fake_author_email)
+        branch2_name = branch2.name
 
         #
         # Change index.md in branch2 so it conflicts with title branch.
@@ -780,10 +783,10 @@ class TestRepo (TestCase):
         branch2.checkout()
 
         edit_functions.update_page(self.clone2, 'index.md',
-                                   dict(title=name), 'Hello hello.')
+                                   dict(title=task_name), 'Hello hello.')
 
         edit_functions.create_new_page(self.clone2, '', 'goner.md',
-                                       dict(title=name), 'Woooo woooo.')
+                                       dict(title=task_name), 'Woooo woooo.')
 
         args = self.clone2, 'index.md', '...', branch2.commit.hexsha, 'master'
         commit = repo_functions.save_working_file(*args)
@@ -794,12 +797,14 @@ class TestRepo (TestCase):
         #
         # Merge the original title branch, fail to merge our conflicting branch.
         #
-        repo_functions.complete_branch(self.clone1, 'master', 'title')
+        repo_functions.complete_branch(self.clone1, 'master', title_branch_name)
 
         with self.assertRaises(repo_functions.MergeConflict) as conflict:
-            repo_functions.complete_branch(self.clone2, 'master', name)
+            repo_functions.complete_branch(self.clone2, 'master', branch2_name)
 
-        self.assertEqual(conflict.exception.local_commit, commit)
+        # compare the second-to-last commit on the branch (by adding ".parents[0]", as
+        # the most recent one is the creation of the task metadata file
+        self.assertEqual(conflict.exception.local_commit.parents[0], commit)
 
         diffs = conflict.exception.remote_commit.diff(conflict.exception.local_commit)
 
@@ -810,13 +815,13 @@ class TestRepo (TestCase):
         #
         # Merge our conflicting branch and abandon it to the default branch.
         #
-        repo_functions.abandon_branch(self.clone2, 'master', name)
+        repo_functions.abandon_branch(self.clone2, 'master', branch2_name)
 
         with open(join(self.clone2.working_dir, 'index.md')) as file:
             front, body = jekyll_functions.load_jekyll_doc(file)
 
-        self.assertNotEqual(front['title'], name)
-        self.assertFalse(name in self.origin.branches)
+        self.assertNotEqual(front['title'], task_name)
+        self.assertFalse(branch2_name in self.origin.branches)
 
         # If goner.md is still around, then the branch wasn't fully abandoned.
         self.assertFalse(exists(join(self.clone2.working_dir, 'goner.md')))
