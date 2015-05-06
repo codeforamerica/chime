@@ -1002,6 +1002,33 @@ class TestRepo (TestCase):
         # full_name_sha is the full sha that's used to create the unique name of the task in repo_functions.get_start_branch
         self.assertEqual(task_metadata['full_name_sha'][0:7], branch1_name)
 
+    def test_task_metadata_deletion(self):
+        ''' The task metadata file is deleted when a branch is completed, and isn't merged.
+        '''
+        fake_author_email = u'erica@example.com'
+        task_name = str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_name, fake_author_email)
+        branch1_name = branch1.name
+
+        # Add a file and complete the branch
+        branch1.checkout()
+        edit_functions.create_new_page(self.clone1, '', 'happy.md', dict(title='Hello'), 'Hello hello.')
+        args1 = self.clone1, 'happy.md', 'added cool file', branch1.commit.hexsha, 'master'
+        repo_functions.save_working_file(*args1)
+        merge_commit = repo_functions.complete_branch(self.clone1, 'master', branch1_name)
+
+        # The commit message is expected
+        self.assertTrue('Merged' in merge_commit.message and branch1_name in merge_commit.message)
+        # The branch is gone
+        self.assertFalse(branch1_name in self.origin.branches)
+        self.assertFalse(branch1_name in self.clone1.branches)
+        # The file we created exists
+        self.assertTrue(repo_functions.get_file_exists_in_branch(self.clone1, 'happy.md', 'master'))
+        self.assertTrue(repo_functions.get_file_exists_in_branch(self.origin, 'happy.md', 'master'))
+        # the task metadata file doesn't exist
+        self.assertFalse(repo_functions.get_file_exists_in_branch(self.clone1, repo_functions.TASK_METADATA_FILENAME, 'master'))
+        self.assertFalse(repo_functions.get_file_exists_in_branch(self.origin, repo_functions.TASK_METADATA_FILENAME, 'master'))
+
 ''' Test functions that are called outside of the google authing/analytics data fetching via the UI
 '''
 class TestGoogleApiFunctions (TestCase):
