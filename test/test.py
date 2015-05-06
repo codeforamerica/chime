@@ -277,7 +277,7 @@ class TestRepo (TestCase):
         branch2 = repo_functions.get_start_branch(self.clone2, 'master', name, self.session['email'])
 
         self.assertTrue(branch2.name in self.clone2.branches)
-        # compare the 2nd-to-last commit on branch2 (by adding ".parents[0]", as
+        # compare the second-to-last commit on branch2 (by adding ".parents[0]", as
         # the most recent one is the creation of the task metadata file
         self.assertEquals(branch2.commit.parents[0].hexsha, self.origin.refs['master'].commit.hexsha)
 
@@ -687,28 +687,30 @@ class TestRepo (TestCase):
     def test_conflict_resolution_clobber(self):
         ''' Test that a conflict in two branches can be clobbered.
         '''
-        name = str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', 'title', u'erica@example.com')
-        branch2 = repo_functions.get_start_branch(self.clone2, 'master', name, u'erica@example.com')
+        fake_author_email = u'erica@example.com'
+        task_name2 = str(uuid4())
+        title_branch = repo_functions.get_existing_branch(self.clone1, 'master', 'title')
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_name2, fake_author_email)
+        title_branch_name, branch2_name = title_branch.name, branch2.name
 
         #
-        # Add goner.md in branch1.
+        # Add goner.md in title_branch.
         #
-        branch1.checkout()
+        title_branch.checkout()
 
         edit_functions.create_new_page(self.clone1, '', 'goner.md',
-                                       dict(title=name), 'Woooo woooo.')
+                                       dict(title=task_name2), 'Woooo woooo.')
 
-        args = self.clone1, 'goner.md', '...', branch1.commit.hexsha, 'master'
+        args = self.clone1, 'goner.md', '...', title_branch.commit.hexsha, 'master'
         commit = repo_functions.save_working_file(*args)
 
         #
-        # Change index.md in branch2 so it conflicts with title branch.
+        # Change index.md in branch2 so it conflicts with the title branch.
         #
         branch2.checkout()
 
         edit_functions.update_page(self.clone2, 'index.md',
-                                   dict(title=name), 'Hello hello.')
+                                   dict(title=task_name2), 'Hello hello.')
 
         args = self.clone2, 'index.md', '...', branch2.commit.hexsha, 'master'
         commit = repo_functions.save_working_file(*args)
@@ -716,12 +718,14 @@ class TestRepo (TestCase):
         #
         # Merge the original title branch, fail to merge our conflicting branch.
         #
-        repo_functions.complete_branch(self.clone1, 'master', 'title')
+        repo_functions.complete_branch(self.clone1, 'master', title_branch_name)
 
         with self.assertRaises(repo_functions.MergeConflict) as conflict:
-            repo_functions.complete_branch(self.clone2, 'master', name)
+            repo_functions.complete_branch(self.clone2, 'master', branch2_name)
 
-        self.assertEqual(conflict.exception.local_commit, commit)
+        # compare the second-to-last commit on the branch (by adding ".parents[0]", as
+        # the most recent one is the creation of the task metadata file
+        self.assertEqual(conflict.exception.local_commit.parents[0], commit)
 
         diffs = conflict.exception.remote_commit.diff(conflict.exception.local_commit)
 
@@ -732,13 +736,13 @@ class TestRepo (TestCase):
         #
         # Merge our conflicting branch and clobber the default branch.
         #
-        repo_functions.clobber_default_branch(self.clone2, 'master', name)
+        repo_functions.clobber_default_branch(self.clone2, 'master', branch2_name)
 
         with open(join(self.clone2.working_dir, 'index.md')) as file:
             front, body = jekyll_functions.load_jekyll_doc(file)
 
-        self.assertEqual(front['title'], name)
-        self.assertFalse(name in self.origin.branches)
+        self.assertEqual(front['title'], task_name2)
+        self.assertFalse(branch2_name in self.origin.branches)
 
         # If goner.md is still around, then master wasn't fully clobbered.
         self.clone1.branches['master'].checkout()
