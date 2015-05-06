@@ -590,9 +590,11 @@ class TestRepo (TestCase):
     def test_upstream_pull_conflict(self):
         ''' Test that a conflict in two branches appears at the right spot.
         '''
-        name1, name2 = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', name1, u'erica@example.com')
-        branch2 = repo_functions.get_start_branch(self.clone2, 'master', name2, u'erica@example.com')
+        fake_author_email = u'erica@example.com'
+        task_name1, task_name2 = str(uuid4()), str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_name1, fake_author_email)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_name2, fake_author_email)
+        branch1_name = branch1.name
 
         #
         # Make new files in each branch and save them.
@@ -612,14 +614,14 @@ class TestRepo (TestCase):
         args1 = self.clone1, 'conflict.md', '...', branch1.commit.hexsha, 'master'
         commit1 = repo_functions.save_working_file(*args1)
 
-        self.assertEquals(self.origin.branches[name1].commit, commit1)
+        self.assertEquals(self.origin.branches[branch1_name].commit, commit1)
         self.assertEquals(commit1, branch1.commit)
 
         #
         # Merge the first branch to master.
         #
-        commit2 = repo_functions.complete_branch(self.clone1, 'master', name1)
-        self.assertFalse(name1 in self.origin.branches)
+        commit2 = repo_functions.complete_branch(self.clone1, 'master', branch1_name)
+        self.assertFalse(branch1_name in self.origin.branches)
 
         #
         # Show that the changes from the second branch conflict with the first.
@@ -632,9 +634,13 @@ class TestRepo (TestCase):
 
         diffs = conflict.exception.remote_commit.diff(conflict.exception.local_commit)
 
-        self.assertEqual(len(diffs), 1)
-        self.assertEqual(diffs[0].a_blob.name, 'conflict.md')
-        self.assertEqual(diffs[0].b_blob.name, 'conflict.md')
+        # there are two diffs; the first is addition of the
+        # task metadata file, the second is the conflict file
+        self.assertEqual(len(diffs), 2)
+        self.assertIsNone(diffs[0].a_blob)
+        self.assertEqual(diffs[0].b_blob.name, repo_functions.TASK_METADATA_FILENAME)
+        self.assertEqual(diffs[1].a_blob.name, 'conflict.md')
+        self.assertEqual(diffs[1].b_blob.name, 'conflict.md')
 
     def test_upstream_push_conflict(self):
         ''' Test that a conflict in two branches appears at the right spot.
