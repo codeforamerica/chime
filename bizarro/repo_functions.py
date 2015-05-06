@@ -171,6 +171,21 @@ def get_file_contents_from_branch(clone, file_path, working_branch_name=None):
 
     return None
 
+def get_file_exists_in_branch(clone, file_path, working_branch_name=None):
+    ''' Check whether the indicated file exists.
+    '''
+    # use the active branch if no branch name was passed
+    branch_name = working_branch_name if working_branch_name else clone.active_branch.name
+    if branch_name in clone.heads:
+        try:
+            (clone.heads[branch_name].commit.tree / file_path)
+        except KeyError:
+            return False
+
+        return True
+
+    return False
+
 def get_branch_sha(branch_description, author_email):
     ''' use details about a branch to generate a 'unique' name
     '''
