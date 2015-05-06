@@ -210,10 +210,13 @@ def complete_branch(clone, default_branch_name, working_branch_name):
         Deletes the working branch in the clone and the origin, and leaves
         the working directory checked out to the merged default branch.
     '''
-    message = 'Merged work from "%s"' % working_branch_name
-
     # get the task metadata and delete the task metadata file
     task_metadata = delete_task_metadata_for_branch(clone, default_branch_name)
+
+    try:
+        message = 'Merged work by {} for the task {} from branch {}'.format(task_metadata['author_email'], task_metadata['task_description'], working_branch_name)
+    except KeyError:
+        message = 'Merged work from "{}"'.format(working_branch_name)
 
     clone.git.checkout(default_branch_name)
     clone.git.pull('origin', default_branch_name)
