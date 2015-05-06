@@ -414,11 +414,13 @@ class TestRepo (TestCase):
     def test_content_merge(self):
         ''' Test that non-conflicting changes on the same file merge cleanly.
         '''
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', 'title', u'erica@example.com')
-        branch2 = repo_functions.get_start_branch(self.clone2, 'master', 'body', u'erica@example.com')
+        title_branch_name = 'title'
+        body_branch_name = 'body'
+        title_branch = repo_functions.get_existing_branch(self.clone1, 'master', title_branch_name)
+        body_branch = repo_functions.get_existing_branch(self.clone2, 'master', body_branch_name)
 
-        branch1.checkout()
-        branch2.checkout()
+        title_branch.checkout()
+        body_branch.checkout()
 
         with open(self.clone1.working_dir + '/index.md') as file:
             front1, _ = jekyll_functions.load_jekyll_doc(file)
@@ -429,12 +431,13 @@ class TestRepo (TestCase):
         #
         # Show that only the title branch title is now present on master.
         #
-        repo_functions.complete_branch(self.clone1, 'master', 'title')
+        repo_functions.complete_branch(self.clone1, 'master', title_branch_name)
 
         with open(self.clone1.working_dir + '/index.md') as file:
             front1b, body1b = jekyll_functions.load_jekyll_doc(file)
 
-        self.assertEqual(front1b['title'], front1['title'])
+        title_key_name = 'title'
+        self.assertEqual(front1b[title_key_name], front1[title_key_name])
         self.assertNotEqual(body1b, body2)
 
         #
@@ -445,7 +448,7 @@ class TestRepo (TestCase):
         with open(self.clone2.working_dir + '/index.md') as file:
             front2b, body2b = jekyll_functions.load_jekyll_doc(file)
 
-        self.assertEqual(front2b['title'], front1['title'])
+        self.assertEqual(front2b[title_key_name], front1[title_key_name])
         self.assertEqual(body2b, body2)
         self.assertTrue(self.clone2.commit().message.startswith('Merged work from'))
 
