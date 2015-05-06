@@ -133,14 +133,14 @@ def save_task_metadata_for_branch(clone, default_branch_name, values={}):
     # add & commit the file to the branch
     save_working_file(clone, TASK_METADATA_FILENAME, message, clone.commit().hexsha, default_branch_name)
 
-# ;;;
 def delete_task_metadata_for_branch(clone, default_branch_name):
     ''' Delete the task metadata file and return its contents
     '''
     task_metadata = get_task_metadata_for_branch(clone)
-    edit_functions.delete_file(clone, None, TASK_METADATA_FILENAME)
-    message = u'Deleted task metadata file "{}"'.format(TASK_METADATA_FILENAME)
-    save_working_file(clone, TASK_METADATA_FILENAME, message, clone.commit().hexsha, default_branch_name)
+    file_path, do_save = edit_functions.delete_file(clone, None, TASK_METADATA_FILENAME)
+    if do_save:
+        message = u'Deleted task metadata file "{}"'.format(TASK_METADATA_FILENAME)
+        save_working_file(clone, TASK_METADATA_FILENAME, message, clone.commit().hexsha, default_branch_name)
     return task_metadata
 
 def get_task_metadata_for_branch(clone, working_branch_name=None):
