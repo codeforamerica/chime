@@ -44,12 +44,12 @@ def delete_file(clone, path, file_name):
     '''
     file_path = join(path or '', file_name)
     full_path = join(clone.working_dir, file_path)
-    do_save = True
+    do_save = False
 
     if isdir(full_path):
         rmdir(full_path)
-        do_save = False
-    else:
+    elif exists(full_path):
         remove(full_path)
+        do_save = True
 
     return (file_path, do_save)
