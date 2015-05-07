@@ -280,11 +280,15 @@ def login_required(route_function):
         email = session.get('email', None)
 
         if not email:
-            return redirect('/not-allowed')
+            redirect_url = '/not-allowed'
+            Logger.info("No email; redirecting to %s", redirect_url)
+            return redirect(redirect_url)
 
         auth_data_href = current_app.config['AUTH_DATA_HREF']
         if not is_allowed_email(get_auth_data_file(auth_data_href), email):
-            return redirect('/not-allowed')
+            redirect_url = '/not-allowed'
+            Logger.info("Email not allowed; redirecting to %s", redirect_url)
+            return redirect(redirect_url)
 
         environ['GIT_AUTHOR_NAME'] = ' '
         environ['GIT_AUTHOR_EMAIL'] = email
@@ -320,7 +324,9 @@ def browserid_hostname_required(route_function):
         browserid_netloc = urlparse(current_app.config['BROWSERID_URL']).netloc
         request_parsed = urlparse(request.url)
         if request_parsed.netloc != browserid_netloc:
+            Logger.info("Redirecting because request_parsed.netloc != browserid_netloc: %s != %s",request_parsed.netloc,browserid_netloc)
             redirect_url = urlunparse((request_parsed.scheme, browserid_netloc, request_parsed.path, request_parsed.params, request_parsed.query, request_parsed.fragment))
+            Logger.info("Redirecting to %s", redirect_url)
             return redirect(redirect_url)
 
         response = route_function(*args, **kwargs)

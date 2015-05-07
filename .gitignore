@@ -8,4 +8,5 @@ repo-*%40*
 .env
 ga_config.json
 .idea
+*.iml
 apache

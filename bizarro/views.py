@@ -98,6 +98,7 @@ def not_allowed():
     if not is_allowed_email(get_auth_data_file(auth_data_href), email):
         return render_template('not-allowed.html', **kwargs)
 
+    Logger.info("Redirecting from /not-allowed to /")
     return redirect('/')
 
 @app.route('/sign-in', methods=['POST'])
