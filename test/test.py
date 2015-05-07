@@ -1004,7 +1004,7 @@ class TestRepo (TestCase):
         self.assertEqual(task_metadata['author_email'], fake_author_email)
         self.assertEqual(task_metadata['task_description'], task_name)
         # full_name_sha is the full sha that's used to create the unique name of the task in repo_functions.get_start_branch
-        self.assertEqual(task_metadata['full_name_sha'][0:7], branch1_name)
+        self.assertEqual(task_metadata['full_name_sha'][0:repo_functions.BRANCH_NAME_LENGTH], branch1_name)
 
     def test_task_metadata_creation_with_unicode(self):
         ''' The task metadata file is created when a branch is started, and contains the expected information.
@@ -1028,7 +1028,7 @@ class TestRepo (TestCase):
         self.assertEqual(task_metadata['author_email'], fake_author_email)
         self.assertEqual(task_metadata['task_description'], task_name)
         # full_name_sha is the full sha that's used to create the unique name of the task in repo_functions.get_start_branch
-        self.assertEqual(task_metadata['full_name_sha'][0:7], branch1_name)
+        self.assertEqual(task_metadata['full_name_sha'][0:repo_functions.BRANCH_NAME_LENGTH], branch1_name)
 
     def test_task_metadata_update(self):
         ''' The task metadata file can be updated
@@ -1053,7 +1053,7 @@ class TestRepo (TestCase):
         self.assertEqual(task_metadata['task_description'], task_name)
         # full_name_sha is the full sha that's used to create the unique name of
         # the task in repo_functions.get_start_branch
-        self.assertEqual(task_metadata['full_name_sha'][0:7], branch1_name)
+        self.assertEqual(task_metadata['full_name_sha'][0:repo_functions.BRANCH_NAME_LENGTH], branch1_name)
 
         # write a new task name and some other arbitrary data
         metadata_update = {'task_description': u'Changed my mind', 'lead_singer': u'Johnny Rotten'}

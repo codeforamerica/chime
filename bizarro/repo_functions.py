@@ -9,6 +9,7 @@ import yaml
 import edit_functions
 
 TASK_METADATA_FILENAME = u'_task.yml'
+BRANCH_NAME_LENGTH = 7
 
 class MergeConflict (Exception):
     def __init__(self, remote_commit, local_commit):
@@ -79,7 +80,7 @@ def get_start_branch(clone, default_branch_name, branch_description, author_emai
     '''
     # generate a branch name based on unique details
     full_sha = get_branch_sha(branch_description, author_email)
-    new_branch_name = full_sha[0:7]
+    new_branch_name = full_sha[0:BRANCH_NAME_LENGTH]
 
     existing_branch = get_existing_branch(clone, default_branch_name, new_branch_name)
     if existing_branch:
