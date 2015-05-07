@@ -94,7 +94,7 @@ def get_start_branch(clone, default_branch_name, branch_description, author_emai
     # create the task metadata file in the new branch
     active_branch_name = clone.active_branch.name
     clone.git.checkout(new_branch_name)
-    metadata_values = {"author_email": author_email, "task_description": branch_description, "full_name_sha": full_sha}
+    metadata_values = {"author_email": author_email, "task_description": branch_description}
     save_task_metadata_for_branch(clone, default_branch_name, metadata_values)
     clone.git.checkout(active_branch_name)
 

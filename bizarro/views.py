@@ -65,7 +65,7 @@ def index():
         review_subject = 'Plz review this thing'
         review_body = '%s/tree/%s/edit' % (request.url, path)
 
-        # contains 'author_email', 'task_description', 'full_name_sha'
+        # contains 'author_email', 'task_description'
         task_metadata = repo_functions.get_task_metadata_for_branch(repo, name)
         author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
         task_description = task_metadata['task_description'] if 'task_description' in task_metadata else name
@@ -240,7 +240,7 @@ def merge_branch():
     branch_name = request.form.get('branch')
     master_name = current_app.config['default_branch']
 
-    # contains 'author_email', 'task_description', 'full_name_sha'
+    # contains 'author_email', 'task_description'
     task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch_name)
     author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
     task_description = task_metadata['task_description'] if 'task_description' in task_metadata else u''
@@ -285,7 +285,7 @@ def review_branch():
     branch = repo.branches[branch_name]
     branch.checkout()
 
-    # contains 'author_email', 'task_description', 'full_name_sha'
+    # contains 'author_email', 'task_description'
     task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch_name)
     author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
     task_description = task_metadata['task_description'] if 'task_description' in task_metadata else u''
@@ -365,7 +365,7 @@ def branch_edit(branch, path=None):
     full_path = join(repo.working_dir, path or '.').rstrip('/')
     safe_branch = branch_name2path(branch)
 
-    # contains 'author_email', 'task_description', 'full_name_sha'
+    # contains 'author_email', 'task_description'
     task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch)
     author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
     task_description = task_metadata['task_description'] if 'task_description' in task_metadata else u''
@@ -484,7 +484,7 @@ def branch_history(branch, path=None):
 
     safe_branch = branch_name2path(branch)
 
-    # contains 'author_email', 'task_description', 'full_name_sha'
+    # contains 'author_email', 'task_description'
     task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch)
     author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
     task_description = task_metadata['task_description'] if 'task_description' in task_metadata else u''
@@ -526,7 +526,7 @@ def branch_review(branch):
     repo = get_repo(current_app)
     c = repo.commit()
 
-    # contains 'author_email', 'task_description', 'full_name_sha'
+    # contains 'author_email', 'task_description'
     task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch)
     author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
     task_description = task_metadata['task_description'] if 'task_description' in task_metadata else u''
