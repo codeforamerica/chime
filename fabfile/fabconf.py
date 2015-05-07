@@ -20,6 +20,7 @@ fabconf['FAB_HOSTS_FILE'] = fabconf.get('FAB_CONFIG_PATH') + '/hosts.txt'
 
 # Project name
 fabconf['PROJECT_NAME'] = os.environ.get('PROJECT_NAME', 'chime')
+fabconf['GIT_BRANCH'] = 'master'
 
 # Username for connecting to EC2 instaces - Do not edit unless you have a reason to
 fabconf['SERVER_USERNAME'] = 'ubuntu'
@@ -36,11 +37,6 @@ fabconf['SSH_PRIVATE_KEY_PATH'] = os.environ.get(
     '{path}/{name}'.format(path=fabconf.get('SSH_PATH'), name=fabconf.get('EC2_KEY_NAME'))
 )
 
-# SSL certificate and key location
-fabconf['SSL_CERT_PATH'] = os.environ.get('SSL_CERT_PATH')
-fabconf['SSL_CERT_NAME'] = os.environ.get('SSL_CERT_NAME')
-fabconf['SSL_CERT_KEY'] = os.environ.get('SSL_CERT_KEY')
-
 # Where to install apps
 fabconf['APPS_DIR'] = "/home/{user}/web".format(user=fabconf.get('SERVER_USERNAME'))
 
@@ -53,15 +49,6 @@ fabconf['PROJECT_PATH'] = '{apps}/{project}'.format(
 # Space-delimited list of app domains
 fabconf['DOMAINS'] = os.environ.get('DOMAINS')
 
-# Path for virtualenvs
-fabconf['VIRTUALENV_DIR'] = "/home/{user}/.virtualenvs".format(user=fabconf.get('SERVER_USERNAME'))
-
-# Virtualenv activate command
-fabconf['ACTIVATE'] = "source /home/{user}/.virtualenvs/{project}/bin/activate".format(
-    user=fabconf.get('SERVER_USERNAME'),
-    project=fabconf.get('PROJECT_NAME')
-)
-
 # Name tag for your server instance on EC2
 fabconf['INSTANCE_NAME_TAG'] = os.environ.get('INSTANCE_NAME_TAG', 'ChimeCMS')
 
@@ -71,7 +58,7 @@ fabconf['AWS_ACCESS_KEY'] = os.environ.get('AWS_ACCESS_KEY')
 # EC2 secret.
 fabconf['AWS_SECRET_KEY'] = os.environ.get('AWS_SECRET_KEY')
 
-#EC2 region. Defaults to us-west-1
+#EC2 region. Defaults to us-east-1
 fabconf['EC2_REGION'] = os.environ.get('EC2_REGION', 'us-east-1')
 
 # AMI name. Either pass in a comma-delimited list of values.

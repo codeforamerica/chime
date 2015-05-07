@@ -23,10 +23,13 @@ def spawn_instance():
     env.host_string = _create_ec2_instance()
 
 @task
-def despawn_instance(public_dns):
+def despawn_instance(public_dns=None):
     '''
     Destroys an EC2 instance.
     '''
+    if public_dns is None:
+        public_dns = _read_hosts_from_file()[0]
+
     print(yellow('Shutting down instance {dns}'.format(
         dns=public_dns
     )))
@@ -39,7 +42,8 @@ def boot_chime():
     Installs and boots up chime.
 
     Spawns an EC2 instance if no dns is given and boots
-    up chime on that instance.
+    up chime on that instance. Can only deploy the master
+    branch.
     '''
     # set some login variables
     env.user = fabconf.get('SERVER_USERNAME')
@@ -59,16 +63,24 @@ def boot_chime():
     _server_setup(public_dns)
 
 @task
-def test_chime(setup=True, despawn=True):
+def test_chime(setup=True, despawn=True, branch='master'):
     '''
     Create a chime instance and run selenium tests.
 
     Takes two optional params: setup, and despawn.
     When setup is True, it will set up the server to work
     with Chime. When despawn is True, it will terminate
-    the instance after running the tests.
+    the instance after running the tests. Accepted values
+    for setup/despawn to be considered True are 'True', 't',
+    'true', and 'y'. Using any other value will either
+    not run the setup scripts or keep the instance alive,
+    respectively.
+
+    Additionally, the branch that should be tested can be
+    specified with the branch argument
     '''
     env.user = fabconf.get('SERVER_USERNAME')
+    fabconf['GIT_BRANCH'] = branch
 
     hosts = _read_hosts_from_file()
 
@@ -83,13 +95,13 @@ def test_chime(setup=True, despawn=True):
         env.hosts = hosts
         public_dns = hosts[0]
 
-    if setup is True:
-        print(green('wtf'))
+    if setup in [True, 'True', 'true', 't', 'y']:
         _server_setup(public_dns)
 
     local('python ' + fabconf.get('FAB_CONFIG_PATH') + '/../test/selenium/e2e.py')
 
-    if despawn is True:
+    if despawn in [True, 'True', 'true', 't', 'y']:
+        print(green('Despawning EC2 instance'))
         _despawn_instance(public_dns)
 
 def _read_hosts_from_file():
@@ -212,7 +224,11 @@ def _server_setup(fqdn=None):
     print(green('Installing git & chime'))
     time.sleep(2)
     sudo('apt-get update && apt-get install -y git')
-    run('git clone https://github.com/codeforamerica/ceviche-cms.git')
+    run(
+        'git clone --branch={branch} https://github.com/codeforamerica/ceviche-cms.git'.format(
+            branch=fabconf.get('GIT_BRANCH')
+        )
+    )
 
     print(green('Running chef setup scripts...'))
     time.sleep(2)
