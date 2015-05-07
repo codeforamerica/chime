@@ -32,6 +32,9 @@ from bizarro import (
 import codecs
 codecs.register(RotUnicode.search_function)
 
+import logging
+logging.disable(logging.CRITICAL)
+
 # these patterns help us search the HTML of a response to determine if the expected page loaded
 EDIT_LISTDIR_TASK_NAME_PATTERN = "<h3>Current task: <strong>{}</strong></h3>"
 EDIT_LISTDIR_AUTHOR_EMAIL_PATTERN = "<li>Started by: {}</li>"
