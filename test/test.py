@@ -986,6 +986,7 @@ class TestRepo (TestCase):
         task_name = str(uuid4())
         branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_name, fake_author_email)
         branch1_name = branch1.name
+        branch1.checkout()
 
         # verify that the most recent commit on the new branch is for the task metadata file
         # by checking for the name of the file in the commit message
@@ -1002,6 +1003,66 @@ class TestRepo (TestCase):
         # full_name_sha is the full sha that's used to create the unique name of the task in repo_functions.get_start_branch
         self.assertEqual(task_metadata['full_name_sha'][0:7], branch1_name)
 
+    def test_task_metadata_creation_with_unicode(self):
+        ''' The task metadata file is created when a branch is started, and contains the expected information.
+        '''
+        fake_author_email = u'¯\_(ツ)_/¯@快速狐狸.com'
+        task_name = u'(╯°□°）╯︵ ┻━┻'
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_name, fake_author_email)
+        branch1_name = branch1.name
+        branch1.checkout()
+
+        # verify that the most recent commit on the new branch is for the task metadata file
+        # by checking for the name of the file in the commit message
+        self.assertTrue(repo_functions.TASK_METADATA_FILENAME in branch1.commit.message)
+
+        # validate the existence of the task metadata file
+        task_metadata = repo_functions.get_task_metadata_for_branch(self.clone1, branch1_name)
+        self.assertEqual(type(task_metadata), dict)
+        self.assertTrue(len(task_metadata) > 0)
+
+        # validate the contents of the task metadata file
+        self.assertEqual(task_metadata['author_email'], fake_author_email)
+        self.assertEqual(task_metadata['task_description'], task_name)
+        # full_name_sha is the full sha that's used to create the unique name of the task in repo_functions.get_start_branch
+        self.assertEqual(task_metadata['full_name_sha'][0:7], branch1_name)
+
+    def test_task_metadata_update(self):
+        ''' The task metadata file can be updated
+        '''
+        fake_author_email = u'erica@example.com'
+        task_name = str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_name, fake_author_email)
+        branch1_name = branch1.name
+        branch1.checkout()
+
+        # verify that the most recent commit on the new branch is for the task metadata file
+        # by checking for the name of the file in the commit message
+        self.assertTrue(repo_functions.TASK_METADATA_FILENAME in branch1.commit.message)
+
+        # validate the existence of the task metadata file
+        task_metadata = repo_functions.get_task_metadata_for_branch(self.clone1, branch1_name)
+        self.assertEqual(type(task_metadata), dict)
+        self.assertTrue(len(task_metadata) > 0)
+
+        # validate the contents of the task metadata file
+        self.assertEqual(task_metadata['author_email'], fake_author_email)
+        self.assertEqual(task_metadata['task_description'], task_name)
+        # full_name_sha is the full sha that's used to create the unique name of
+        # the task in repo_functions.get_start_branch
+        self.assertEqual(task_metadata['full_name_sha'][0:7], branch1_name)
+
+        # write a new task name and some other arbitrary data
+        metadata_update = {'task_description': u'Changed my mind', 'lead_singer': u'Johnny Rotten'}
+        repo_functions.save_task_metadata_for_branch(self.clone1, 'master', metadata_update)
+
+        # validate the contents of the task metadata file
+        new_task_metadata = repo_functions.get_task_metadata_for_branch(self.clone1, branch1_name)
+        self.assertEqual(type(new_task_metadata), dict)
+        self.assertTrue(len(new_task_metadata) > 0)
+        self.assertEqual(new_task_metadata['task_description'], metadata_update['task_description'])
+        self.assertEqual(new_task_metadata['lead_singer'], metadata_update['lead_singer'])
+
     def test_task_metadata_deletion(self):
         ''' The task metadata file is deleted when a branch is completed, and isn't merged.
         '''
@@ -1009,9 +1070,9 @@ class TestRepo (TestCase):
         task_name = str(uuid4())
         branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_name, fake_author_email)
         branch1_name = branch1.name
+        branch1.checkout()
 
         # Add a file and complete the branch
-        branch1.checkout()
         edit_functions.create_new_page(self.clone1, '', 'happy.md', dict(title='Hello'), 'Hello hello.')
         args1 = self.clone1, 'happy.md', 'added cool file', branch1.commit.hexsha, 'master'
         repo_functions.save_working_file(*args1)
