@@ -12,14 +12,11 @@ from fabric.exceptions import NetworkError
 @task
 def spawn_instance():
     '''
-    Creates a new EC2 instance.
-
-    The DNS will be printed as a
-    part of the creation process. This address should be
-    logged for later use.
+    Creates a new EC2 instance and stores the
+    resulting DNS in a hosts.txt file.
     '''
     print(green('Spawning new instance...'))
-
+    env.key_filename = fabconf.get('SSH_PRIVATE_KEY_PATH')
     env.host_string = _create_ec2_instance()
 
 @task
@@ -29,7 +26,7 @@ def despawn_instance(public_dns=None):
     '''
     if public_dns is None:
         public_dns = _read_hosts_from_file()[0]
-
+        env.key_filename = fabconf.get('SSH_PRIVATE_KEY_PATH')
     print(yellow('Shutting down instance {dns}'.format(
         dns=public_dns
     )))
@@ -47,7 +44,7 @@ def boot_chime():
     '''
     # set some login variables
     env.user = fabconf.get('SERVER_USERNAME')
-
+    env.key_filename = fabconf.get('SSH_PRIVATE_KEY_PATH')
     hosts = _read_hosts_from_file()
 
     if len(hosts) == 0:
@@ -80,8 +77,7 @@ def test_chime(setup=True, despawn=True, branch='master'):
     specified with the branch argument
     '''
     env.user = fabconf.get('SERVER_USERNAME')
-    fabconf['GIT_BRANCH'] = branch
-
+    env.key_filename = fabconf.get('SSH_PRIVATE_KEY_PATH')
     hosts = _read_hosts_from_file()
 
     if len(hosts) == 0:
@@ -98,6 +94,13 @@ def test_chime(setup=True, despawn=True, branch='master'):
     if setup in [True, 'True', 'true', 't', 'y']:
         _server_setup(public_dns)
 
+    if branch:
+        env.host_string = hosts[0]
+        print(green('Checking out to {branch}...'.format(branch=branch)))
+        run('git checkout {branch}'.format(branch=branch))
+
+    print(green('Running tests...'))
+    time.sleep(2)
     local('python ' + fabconf.get('FAB_CONFIG_PATH') + '/../test/selenium/e2e.py')
 
     if despawn in [True, 'True', 'true', 't', 'y']:
@@ -224,11 +227,7 @@ def _server_setup(fqdn=None):
     print(green('Installing git & chime'))
     time.sleep(2)
     sudo('apt-get update && apt-get install -y git')
-    run(
-        'git clone --branch={branch} https://github.com/codeforamerica/ceviche-cms.git'.format(
-            branch=fabconf.get('GIT_BRANCH')
-        )
-    )
+    run('git clone https://github.com/codeforamerica/ceviche-cms.git')
 
     print(green('Running chef setup scripts...'))
     time.sleep(2)

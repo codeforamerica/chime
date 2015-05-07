@@ -28,13 +28,10 @@ fabconf['SERVER_USERNAME'] = 'ubuntu'
 # Full local path for .ssh
 fabconf['SSH_PATH'] = os.environ.get('SSH_PATH', '~/.ssh')
 
-# Name of the private key file you use to connect to EC2 instances
-fabconf['EC2_KEY_NAME'] = os.environ.get('EC2_KEY_NAME')
-
 # Don't edit. Full path of the ssh key you use to connect to EC2 instances
 fabconf['SSH_PRIVATE_KEY_PATH'] = os.environ.get(
     'SSH_PRIVATE_KEY_PATH',
-    '{path}/{name}'.format(path=fabconf.get('SSH_PATH'), name=fabconf.get('EC2_KEY_NAME'))
+    '{path}/{name}'.format(path=fabconf.get('SSH_PATH'), name=os.environ['SSH_KEY_NAME'])
 )
 
 # Where to install apps
@@ -53,10 +50,10 @@ fabconf['DOMAINS'] = os.environ.get('DOMAINS')
 fabconf['INSTANCE_NAME_TAG'] = os.environ.get('INSTANCE_NAME_TAG', 'ChimeCMS')
 
 # EC2 key.
-fabconf['AWS_ACCESS_KEY'] = os.environ.get('AWS_ACCESS_KEY')
+fabconf['AWS_ACCESS_KEY'] = os.environ['AWS_ACCESS_KEY']
 
 # EC2 secret.
-fabconf['AWS_SECRET_KEY'] = os.environ.get('AWS_SECRET_KEY')
+fabconf['AWS_SECRET_KEY'] = os.environ['AWS_SECRET_KEY']
 
 #EC2 region. Defaults to us-east-1
 fabconf['EC2_REGION'] = os.environ.get('EC2_REGION', 'us-east-1')
@@ -66,15 +63,10 @@ fabconf['EC2_REGION'] = os.environ.get('EC2_REGION', 'us-east-1')
 fabconf['EC2_AMIS'] = os.environ.get('EC2_AMIS', 'ami-d05e75b8').split(',')
 
 # Name of the keypair you use in EC2.
-fabconf['EC2_KEY_PAIR'] = os.environ.get('EC2_KEY_PAIR') \
-    if os.environ.get('EC2_KEY_PAIR') \
-    else fabconf.get('EC2_KEY_NAME')
+fabconf['EC2_KEY_PAIR'] = os.environ.get('EC2_KEY_PAIR', 'cfa-chime-keypair')
 
 # Name of the security group.
-fabconf['AWS_SECURITY_GROUPS'] = os.environ.get('AWS_SECURITY_GROUPS')
+fabconf['AWS_SECURITY_GROUPS'] = os.environ.get('AWS_SECURITY_GROUPS', 'default')
 
 # API Name of instance type. Defaults to t2.micro
 fabconf['EC2_INSTANCE_TYPE'] = os.environ.get('EC2_INSTANCE_TYPE', 't2.micro')
-
-# Existing instances - add the public dns of your instances here when you have spawned them
-fabconf['EC2_INSTANCES'] = []
