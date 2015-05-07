@@ -79,7 +79,7 @@ def get_start_branch(clone, default_branch_name, branch_description, author_emai
         with the same name, use it instead of creating a fresh branch.
     '''
     # generate a branch name based on unique details
-    full_sha = get_branch_sha(branch_description, author_email)
+    full_sha = make_branch_sha(branch_description, author_email)
     new_branch_name = full_sha[0:BRANCH_NAME_LENGTH]
 
     existing_branch = get_existing_branch(clone, default_branch_name, new_branch_name)
@@ -187,7 +187,7 @@ def get_file_exists_in_branch(clone, file_path, working_branch_name=None):
 
     return False
 
-def get_branch_sha(branch_description, author_email):
+def make_branch_sha(branch_description, author_email):
     ''' use details about a branch to generate a 'unique' name
     '''
     # get epoch seconds as a string
