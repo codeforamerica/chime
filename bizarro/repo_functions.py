@@ -79,9 +79,8 @@ def get_start_branch(clone, default_branch_name, branch_description, author_emai
         Don't touch the working directory. If an existing branch is found
         with the same name, use it instead of creating a fresh branch.
     '''
-    # generate a branch name based on unique details
-    full_sha = make_branch_sha(branch_description, author_email)
-    new_branch_name = full_sha[0:BRANCH_NAME_LENGTH]
+    # make a branch name based on unique details
+    new_branch_name = make_branch_name(branch_description, author_email)
 
     existing_branch = get_existing_branch(clone, default_branch_name, new_branch_name)
     if existing_branch:
@@ -199,7 +198,7 @@ def make_shortened_task_name(task_description):
 
     # crop to the nearest word boundary
     suggested = u' '.join(task_description[:DESCRIPTION_MAX_LENGTH + 1].split(' ')[:-1])
-    # if the text's length is too short, just cut at the max length
+    # if the cropped text is too short, just cut at the max length
     if len(suggested) < DESCRIPTION_MAX_LENGTH * .66:
         return task_description[:DESCRIPTION_MAX_LENGTH]
 
@@ -211,6 +210,12 @@ def make_branch_sha(branch_description, author_email):
     # get epoch seconds as a string
     seed = u'{}{}'.format(unicode(branch_description), unicode(author_email))
     return hashlib.sha1(seed.encode('utf-8')).hexdigest()
+
+def make_branch_name(branch_description, author_email):
+    ''' Return a short, URL- and Git-compatible name for a branch
+    '''
+    short_sha = make_branch_sha(branch_description, author_email)[0:BRANCH_NAME_LENGTH]
+    return short_sha
 
 def complete_branch(clone, default_branch_name, working_branch_name):
     ''' Complete a branch merging, deleting it, and returning the merge commit.
