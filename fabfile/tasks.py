@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import with_statement
+
 import boto.ec2
 import time
 
+from fabric.context_managers import cd
 from fabric.operations import local
 from fabric.api import task, env, run, sudo
 from fabric.colors import green, yellow, red
-from fabconf import fabconf
 from fabric.exceptions import NetworkError
 
 @task
@@ -15,6 +17,7 @@ def spawn_instance():
     Creates a new EC2 instance and stores the
     resulting DNS in a hosts.txt file.
     '''
+    from fabconf import fabconf
     print(green('Spawning new instance...'))
     env.key_filename = fabconf.get('SSH_PRIVATE_KEY_PATH')
     env.host_string = _create_ec2_instance()
@@ -24,6 +27,7 @@ def despawn_instance(public_dns=None):
     '''
     Destroys an EC2 instance.
     '''
+    from fabconf import fabconf
     if public_dns is None:
         public_dns = _read_hosts_from_file()[0]
         env.key_filename = fabconf.get('SSH_PRIVATE_KEY_PATH')
@@ -42,6 +46,7 @@ def boot_chime():
     up chime on that instance. Can only deploy the master
     branch.
     '''
+    from fabconf import fabconf
     # set some login variables
     env.user = fabconf.get('SERVER_USERNAME')
     env.key_filename = fabconf.get('SSH_PRIVATE_KEY_PATH')
@@ -60,7 +65,7 @@ def boot_chime():
     _server_setup(public_dns)
 
 @task
-def test_chime(setup=True, despawn=True, branch='master'):
+def test_chime(setup=True, despawn=True, branch=None):
     '''
     Create a chime instance and run selenium tests.
 
@@ -76,6 +81,7 @@ def test_chime(setup=True, despawn=True, branch='master'):
     Additionally, the branch that should be tested can be
     specified with the branch argument
     '''
+    from fabconf import fabconf
     env.user = fabconf.get('SERVER_USERNAME')
     env.key_filename = fabconf.get('SSH_PRIVATE_KEY_PATH')
     hosts = _read_hosts_from_file()
@@ -95,9 +101,12 @@ def test_chime(setup=True, despawn=True, branch='master'):
         _server_setup(public_dns)
 
     if branch:
-        env.host_string = hosts[0]
+        if env.host_string is None:
+            hosts = _read_hosts_from_file()
+            env.host_string = hosts[0]
         print(green('Checking out to {branch}...'.format(branch=branch)))
-        run('git checkout {branch}'.format(branch=branch))
+        with cd('ceviche-cms'):
+            run('git checkout -q {branch}'.format(branch=branch))
 
     print(green('Running tests...'))
     time.sleep(2)
@@ -108,6 +117,7 @@ def test_chime(setup=True, despawn=True, branch='master'):
         _despawn_instance(public_dns)
 
 def _read_hosts_from_file():
+    from fabconf import fabconf
     hostfile = fabconf.get('FAB_HOSTS_FILE')
     try:
         with open(hostfile, 'r+') as f:
@@ -117,11 +127,13 @@ def _read_hosts_from_file():
         return []
 
 def _write_host_to_file(host):
+    from fabconf import fabconf
     hostfile = fabconf.get('FAB_HOSTS_FILE')
     with open(hostfile, 'w+') as f:
         f.write(host + ',')
 
 def _strip_host_from_file(host):
+    from fabconf import fabconf
     hostfile = fabconf.get('FAB_HOSTS_FILE')
     hosts = _read_hosts_from_file()
     hosts.remove(host)
@@ -133,6 +145,7 @@ def _connect_to_ec2():
     '''
     Returns a boto connection object
     '''
+    from fabconf import fabconf
     print(yellow('Connecting to EC2...'))
     conn = boto.ec2.connect_to_region(
         fabconf.get('EC2_REGION'), aws_access_key_id=fabconf.get('AWS_ACCESS_KEY'),
@@ -145,6 +158,7 @@ def _create_ec2_instance():
     '''
     Actually creates the ec2 instance
     '''
+    from fabconf import fabconf
     conn = _connect_to_ec2()
 
     print(yellow('Booting up instance...'))

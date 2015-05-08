@@ -25,14 +25,8 @@ fabconf['GIT_BRANCH'] = 'master'
 # Username for connecting to EC2 instaces - Do not edit unless you have a reason to
 fabconf['SERVER_USERNAME'] = 'ubuntu'
 
-# Full local path for .ssh
-fabconf['SSH_PATH'] = os.environ.get('SSH_PATH', '~/.ssh')
-
 # Don't edit. Full path of the ssh key you use to connect to EC2 instances
-fabconf['SSH_PRIVATE_KEY_PATH'] = os.environ.get(
-    'SSH_PRIVATE_KEY_PATH',
-    '{path}/{name}'.format(path=fabconf.get('SSH_PATH'), name=os.environ['SSH_KEY_NAME'])
-)
+fabconf['SSH_PRIVATE_KEY_PATH'] = os.environ.get('SSH_PRIVATE_KEY_PATH')
 
 # Where to install apps
 fabconf['APPS_DIR'] = "/home/{user}/web".format(user=fabconf.get('SERVER_USERNAME'))
@@ -47,7 +41,7 @@ fabconf['PROJECT_PATH'] = '{apps}/{project}'.format(
 fabconf['DOMAINS'] = os.environ.get('DOMAINS')
 
 # Name tag for your server instance on EC2
-fabconf['INSTANCE_NAME_TAG'] = os.environ.get('INSTANCE_NAME_TAG', 'ChimeCMS')
+fabconf['INSTANCE_NAME_TAG'] = os.environ.get('INSTANCE_NAME_TAG', 'ChimeCMS Autotest')
 
 # EC2 key.
 fabconf['AWS_ACCESS_KEY'] = os.environ['AWS_ACCESS_KEY']
@@ -70,3 +64,7 @@ fabconf['AWS_SECURITY_GROUPS'] = os.environ.get('AWS_SECURITY_GROUPS', 'default'
 
 # API Name of instance type. Defaults to t2.micro
 fabconf['EC2_INSTANCE_TYPE'] = os.environ.get('EC2_INSTANCE_TYPE', 't2.micro')
+
+# Assorted other config (described in AcceptanceTests.md) used here to fail fast
+fabconf['TESTING_EMAIL'] = os.environ['TESTING_EMAIL']
+fabconf['TESTING_PASSWORD'] = os.environ['TESTING_PASSWORD']

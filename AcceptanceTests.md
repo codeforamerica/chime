@@ -7,13 +7,21 @@ The simplest way to run an acceptance test is to run `fab test_chime`.
 
 ### Requirements:
 
+**AWS IAM Setup**:
+
+In order to run these acceptance tests, you are first going to have to get setup on Amazon with an [IAM account](http://aws.amazon.com/iam/):
+
+1. Create an IAM and generate a key. This should give you values to use to fill in the required `AWS_ACCESS_KEY` and `AWS_SECRET_KEY` environmental variables below.
+2. Ensure either that the user or a group the user belongs to has `AmazonEC2FullAccess`.
+3. Create a keypair and download the .pem file. This is essentially interchangable with an .id-rsa file. After you download the file, make sure that SSH can discover it, or manually set fabric to use it by setting the `SSH_PRIVATE_KEY_PATH` below.
+
 **Environmental Variables for Fabric**:
 
-+ `AWS_ACCESS_KEY`: The access ID that accompanies your Amazon IAM account. For more about Amazon IAM, please consult [here](http://aws.amazon.com/iam/).
++ `AWS_ACCESS_KEY`: The access ID that accompanies your Amazon IAM account.
 + `AWS_SECRET_KEY`: The secret key that accompanies your Amazon IAM account.
-+ `SSH_KEY_NAME`: The filename for the private key you want to you use for SSH. NOTE: This assumes that this key lives in your `~/.ssh` directory. If it is somewhere else, you can instead set the `SSH_PRIVATE_KEY_PATH` variable with the full path to your private key file.
 + `EC2_KEY_PAIR`: The name of the keypair on AWS. This defaults to 'cfa-chime-keypair'
 + `AWS_SECURITY_GROUPS`: The name of your AWS Security Group. This defaults to 'default'
++ `SSH_PRIVATE_KEY_PATH`: This is optional. If you haven't added all of your keys via [ssh-add](http://linux.die.net/man/1/ssh-add) or another way of configuring SSH, you can use this variable to describe the absolute location of the SSH keypair that you are using to connect to EC2.
 
 **Environmental Variables for Acceptance Tests**:
 
