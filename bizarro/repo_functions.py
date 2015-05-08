@@ -10,6 +10,7 @@ import edit_functions
 
 TASK_METADATA_FILENAME = u'_task.yml'
 BRANCH_NAME_LENGTH = 7
+DESCRIPTION_MAX_LENGTH = 15
 
 class MergeConflict (Exception):
     def __init__(self, remote_commit, local_commit):
@@ -186,6 +187,23 @@ def get_file_exists_in_branch(clone, file_path, working_branch_name=None):
         return True
 
     return False
+
+def make_shortened_task_name(task_description):
+    ''' Shorten the passed description, cutting on a word boundary if possible
+    '''
+    if len(task_description) <= DESCRIPTION_MAX_LENGTH:
+        return task_description
+
+    if u' ' not in task_description[:DESCRIPTION_MAX_LENGTH]:
+        return task_description[:DESCRIPTION_MAX_LENGTH]
+
+    # crop to the nearest word boundary
+    suggested = u' '.join(task_description[:DESCRIPTION_MAX_LENGTH + 1].split(' ')[:-1])
+    # if the text's length is too short, just cut at the max length
+    if len(suggested) < DESCRIPTION_MAX_LENGTH * .66:
+        return task_description[:DESCRIPTION_MAX_LENGTH]
+
+    return suggested
 
 def make_branch_sha(branch_description, author_email):
     ''' use details about a branch to generate a 'unique' name
