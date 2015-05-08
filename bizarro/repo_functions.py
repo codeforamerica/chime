@@ -251,7 +251,7 @@ def complete_branch(clone, default_branch_name, working_branch_name):
     try:
         clone.git.merge(working_branch_name, '--no-ff', m=message)
 
-    except:
+    except GitCommandError:
         # raise the two commits in conflict.
         remote_commit = clone.refs[_origin(default_branch_name)].commit
 
@@ -384,6 +384,22 @@ def make_working_file(clone, dir, path):
 
     return repo_path, real_path
 
+def sync_with_default_and_upstream_branches(clone, sync_branch_name):
+    ''' Sync the passed branch with default and upstream branches.
+    '''
+    msg = 'Merged work from "%s"' % sync_branch_name
+    clone.git.fetch('origin', sync_branch_name)
+
+    try:
+        clone.git.merge('FETCH_HEAD', '--no-ff', m=msg)
+
+    except GitCommandError:
+        # raise the two commits in conflict.
+        remote_commit = clone.refs[_origin(sync_branch_name)].commit
+
+        clone.git.reset(hard=True)
+        raise MergeConflict(remote_commit, clone.commit())
+
 def save_working_file(clone, path, message, base_sha, default_branch_name):
     ''' Save a file in the working dir, push it to origin, return the commit.
 
@@ -408,18 +424,10 @@ def save_working_file(clone, path, message, base_sha, default_branch_name):
     # Sync with the default and upstream branches in case someone made a change.
     #
     for sync_branch_name in (active_branch_name, default_branch_name):
-        msg = 'Merged work from "%s"' % sync_branch_name
-        clone.git.fetch('origin', sync_branch_name)
-
         try:
-            clone.git.merge('FETCH_HEAD', '--no-ff', m=msg)
-
-        except:
-            # raise the two commits in conflict.
-            remote_commit = clone.refs[_origin(sync_branch_name)].commit
-
-            clone.git.reset(hard=True)
-            raise MergeConflict(remote_commit, clone.commit())
+            sync_with_default_and_upstream_branches(clone, sync_branch_name)
+        except MergeConflict as conflict:
+            raise conflict
 
     clone.git.push('origin', active_branch_name)
 
@@ -447,18 +455,10 @@ def move_existing_file(clone, old_path, new_path, base_sha, default_branch_name)
     # Sync with the default and upstream branches in case someone made a change.
     #
     for sync_branch_name in (active_branch_name, default_branch_name):
-        msg = 'Merged work from "%s"' % sync_branch_name
-        clone.git.fetch('origin', sync_branch_name)
-
         try:
-            clone.git.merge('FETCH_HEAD', '--no-ff', m=msg)
-
-        except:
-            # raise the two commits in conflict.
-            remote_commit = clone.refs[_origin(sync_branch_name)].commit
-
-            clone.git.reset(hard=True)
-            raise MergeConflict(remote_commit, clone.commit())
+            sync_with_default_and_upstream_branches(clone, sync_branch_name)
+        except MergeConflict as conflict:
+            raise conflict
 
     clone.git.push('origin', active_branch_name)
 
@@ -542,18 +542,10 @@ def mark_as_reviewed(clone):
     # Sync with the default and upstream branches in case someone made a change.
     #
     for sync_branch_name in (active_branch_name, ):
-        msg = 'Merged work from "%s"' % sync_branch_name
-        clone.git.fetch('origin', sync_branch_name)
-
         try:
-            clone.git.merge('FETCH_HEAD', '--no-ff', m=msg)
-
-        except:
-            # raise the two commits in conflict.
-            remote_commit = clone.refs[_origin(sync_branch_name)].commit
-
-            clone.git.reset(hard=True)
-            raise MergeConflict(remote_commit, clone.commit())
+            sync_with_default_and_upstream_branches(clone, sync_branch_name)
+        except MergeConflict as conflict:
+            raise conflict
 
     clone.git.push('origin', active_branch_name)
 
@@ -569,18 +561,10 @@ def provide_feedback(clone, comments):
     # Sync with the default and upstream branches in case someone made a change.
     #
     for sync_branch_name in (active_branch_name, ):
-        msg = 'Merged work from "%s"' % sync_branch_name
-        clone.git.fetch('origin', sync_branch_name)
-
         try:
-            clone.git.merge('FETCH_HEAD', '--no-ff', m=msg)
-
-        except:
-            # raise the two commits in conflict.
-            remote_commit = clone.refs[_origin(sync_branch_name)].commit
-
-            clone.git.reset(hard=True)
-            raise MergeConflict(remote_commit, clone.commit())
+            sync_with_default_and_upstream_branches(clone, sync_branch_name)
+        except MergeConflict as conflict:
+            raise conflict
 
     clone.git.push('origin', active_branch_name)
 
