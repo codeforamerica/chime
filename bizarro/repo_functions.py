@@ -172,7 +172,7 @@ def get_file_contents_from_branch(clone, file_path, working_branch_name=None):
 
     return None
 
-def get_file_exists_in_branch(clone, file_path, working_branch_name=None):
+def verify_file_exists_in_branch(clone, file_path, working_branch_name=None):
     ''' Check whether the indicated file exists.
     '''
     # use the active branch if no branch name was passed

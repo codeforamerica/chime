@@ -1080,11 +1080,11 @@ class TestRepo (TestCase):
         self.assertFalse(branch1_name in self.origin.branches)
         self.assertFalse(branch1_name in self.clone1.branches)
         # The file we created exists
-        self.assertTrue(repo_functions.get_file_exists_in_branch(self.clone1, 'happy.md', 'master'))
-        self.assertTrue(repo_functions.get_file_exists_in_branch(self.origin, 'happy.md', 'master'))
+        self.assertTrue(repo_functions.verify_file_exists_in_branch(self.clone1, 'happy.md', 'master'))
+        self.assertTrue(repo_functions.verify_file_exists_in_branch(self.origin, 'happy.md', 'master'))
         # the task metadata file doesn't exist
-        self.assertFalse(repo_functions.get_file_exists_in_branch(self.clone1, repo_functions.TASK_METADATA_FILENAME, 'master'))
-        self.assertFalse(repo_functions.get_file_exists_in_branch(self.origin, repo_functions.TASK_METADATA_FILENAME, 'master'))
+        self.assertFalse(repo_functions.verify_file_exists_in_branch(self.clone1, repo_functions.TASK_METADATA_FILENAME, 'master'))
+        self.assertFalse(repo_functions.verify_file_exists_in_branch(self.origin, repo_functions.TASK_METADATA_FILENAME, 'master'))
 
 ''' Test functions that are called outside of the google authing/analytics data fetching via the UI
 '''
