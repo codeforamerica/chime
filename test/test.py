@@ -1699,6 +1699,40 @@ class TestApp (TestCase):
             # the branch name should now be in the original repo's branches list
             self.assertTrue(check_branch.name in new_clone.branches)
 
+    def test_task_metadata_should_exist(self):
+        ''' Task metadata file should exist but doesn't
+        '''
+        fake_author_email = u'erica@example.com'
+        with HTTMock(self.mock_persona_verify):
+            self.test_client.post('/sign-in', data={'email': fake_author_email})
+
+        task_name = str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_name, fake_author_email)
+        branch1_name = branch1.name
+        branch1.checkout()
+
+        # verify that the most recent commit on the new branch is for the task metadata file
+        # by checking for the name of the file in the commit message
+        self.assertTrue(repo_functions.TASK_METADATA_FILENAME in branch1.commit.message)
+
+        # validate the existence of the task metadata file
+        self.assertTrue(repo_functions.verify_file_exists_in_branch(self.clone1, repo_functions.TASK_METADATA_FILENAME, branch1_name))
+
+        # now delete it
+        repo_functions.delete_task_metadata_for_branch(self.clone1, 'master')
+        self.assertFalse(repo_functions.verify_file_exists_in_branch(self.clone1, repo_functions.TASK_METADATA_FILENAME, branch1_name))
+
+        # verify that we can load a functional edit page for the branch
+        with HTTMock(self.auth_csv_example_allowed):
+            # request an edit page for the check branch through the http interface
+            response = self.test_client.get('/tree/{}/edit/'.format(branch1_name), follow_redirects=True)
+            # it's a good response
+            self.assertEqual(response.status_code, 200)
+            # the branch name should be in the returned HTML
+            self.assertTrue(EDIT_LISTDIR_TASK_NAME_PATTERN.format(branch1_name) in response.data)
+            # the 'Started by' should be 'Unknown' for now
+            self.assertTrue(EDIT_LISTDIR_AUTHOR_EMAIL_PATTERN.format(u'Unknown') in response.data)
+
     def test_google_callback_is_successful(self):
         ''' Ensure we get a successful page load on callback from Google authentication
         '''
