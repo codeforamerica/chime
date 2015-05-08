@@ -50,8 +50,19 @@ class TestJekyll (TestCase):
         file.seek(0)
         file.read(4) == '---\n'
 
+    def test_missing_front_matter(self):
+        '''
+        Should read properly with valid, minimal front matter
+        '''
+        expected_body = 'Missing front matter'
+        actual_front, actual_body = jekyll_functions.load_jekyll_doc(StringIO(expected_body))
+        self.assertEqual({}, actual_front)
+        self.assertEqual(actual_body, expected_body)
+
+
     def test_bad_files(self):
         file = StringIO('Missing front matter')
+        _front, _body = jekyll_functions.load_jekyll_doc(file)
 
         with self.assertRaises(Exception):
             jekyll_functions.load_jekyll_doc(file)
