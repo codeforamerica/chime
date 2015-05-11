@@ -110,13 +110,13 @@ def ignore_task_metadata_on_merge(clone, default_branch_name):
     # create the .gitattributes file if it doesn't exist
     attributes_path = join(clone.working_dir, '.gitattributes')
     if not exists(attributes_path):
-        content = u'{} merge=ours'.format(TASK_METADATA_FILENAME)
+        content = u'{} merge=ignored'.format(TASK_METADATA_FILENAME)
         with open(attributes_path, 'w') as file:
             file.write(content.encode('utf8'))
 
     # set the config (it's okay to set redundantly)
     c_writer = clone.config_writer()
-    c_writer.set_value('merge "ours"', 'driver', 'true')
+    c_writer.set_value('merge "ignored"', 'driver', 'true')
     c_writer = None
 
 def save_task_metadata_for_branch(clone, default_branch_name, values={}):
