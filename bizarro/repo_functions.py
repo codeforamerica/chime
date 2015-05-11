@@ -79,6 +79,9 @@ def get_start_branch(clone, default_branch_name, branch_description, author_emai
         Don't touch the working directory. If an existing branch is found
         with the same name, use it instead of creating a fresh branch.
     '''
+
+    # :TODO: create .gitattributes file in the mater branch somewhere here??
+
     # make a branch name based on unique details
     new_branch_name = make_branch_name(branch_description, author_email)
 
@@ -96,9 +99,25 @@ def get_start_branch(clone, default_branch_name, branch_description, author_emai
     clone.git.checkout(new_branch_name)
     metadata_values = {"author_email": author_email, "task_description": branch_description}
     save_task_metadata_for_branch(clone, default_branch_name, metadata_values)
+    ignore_task_metadata_on_merge(clone, default_branch_name)
     clone.git.checkout(active_branch_name)
 
     return branch
+
+def ignore_task_metadata_on_merge(clone, default_branch_name):
+    ''' Do the setup necessary so that Git will ignore the task metadata file on merge
+    '''
+    # create the .gitattributes file if it doesn't exist
+    attributes_path = join(clone.working_dir, '.gitattributes')
+    if not exists(attributes_path):
+        content = u'{} merge=ours'.format(TASK_METADATA_FILENAME)
+        with open(attributes_path, 'w') as file:
+            file.write(content.encode('utf8'))
+
+    # set the config (it's okay to set redundantly)
+    c_writer = clone.config_writer()
+    c_writer.set_value('merge "ours"', 'driver', 'true')
+    c_writer = None
 
 def save_task_metadata_for_branch(clone, default_branch_name, values={}):
     ''' Save the passed values to the branch's task metadata file, preserving values that aren't overwritten.
@@ -244,12 +263,13 @@ def complete_branch(clone, default_branch_name, working_branch_name):
 
     clone.git.checkout(default_branch_name)
     clone.git.pull('origin', default_branch_name)
+    # :TODO: confirm/create and commit the .gitattributes file here??
 
     #
     # Merge the working branch back to the default branch.
     #
     try:
-        clone.git.merge(working_branch_name, '--no-ff', m=message)
+        clone.git.merge(working_branch_name, '--no-ff', m=message) # <-- or --no-commit here (and no message)
 
     except GitCommandError:
         # raise the two commits in conflict.
@@ -262,6 +282,8 @@ def complete_branch(clone, default_branch_name, working_branch_name):
         raise MergeConflict(remote_commit, clone.commit())
 
     else:
+        # kill task file here
+        # clone.git.commit('--amend', m=message) # <-- something like this
         clone.git.push('origin', default_branch_name)
 
     #

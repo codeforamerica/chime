@@ -1086,6 +1086,35 @@ class TestRepo (TestCase):
         self.assertFalse(repo_functions.verify_file_exists_in_branch(self.clone1, repo_functions.TASK_METADATA_FILENAME, 'master'))
         self.assertFalse(repo_functions.verify_file_exists_in_branch(self.origin, repo_functions.TASK_METADATA_FILENAME, 'master'))
 
+    def test_task_metadata_merge_conflict(self):
+        ''' Task metadata file merge conflict is handled correctly
+        '''
+        fake_author_email1 = u'erica@example.com'
+        fake_author_email2 = u'nobody@example.com'
+        task_name1, task_name2 = str(uuid4()), str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_name1, fake_author_email1)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_name2, fake_author_email2)
+        branch1_name = branch1.name
+
+        # Check out the branches
+        branch1.checkout()
+        branch2.checkout()
+
+        # Save the task metadata file and merge it to master
+        args1 = self.clone1, repo_functions.TASK_METADATA_FILENAME, 'this would never happen', branch1.commit.hexsha, 'master'
+        commit1 = repo_functions.save_working_file(*args1)
+        self.assertEquals(self.origin.branches[branch1_name].commit, commit1)
+        self.assertEquals(commit1, branch1.commit)
+        repo_functions.complete_branch(self.clone1, 'master', branch1_name)
+        self.assertFalse(branch1_name in self.origin.branches)
+
+        # Although there are conflicting changes in the two task metadata files, there should be no conflict raised!
+        try:
+            args2 = self.clone2, repo_functions.TASK_METADATA_FILENAME, 'this would also not happen', branch2.commit.hexsha, 'master'
+            repo_functions.save_working_file(*args2)
+        except repo_functions.MergeConflict:
+            self.assertTrue(False)
+
 ''' Test functions that are called outside of the google authing/analytics data fetching via the UI
 '''
 class TestGoogleApiFunctions (TestCase):

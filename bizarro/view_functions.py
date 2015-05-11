@@ -90,6 +90,8 @@ def get_repo(flask_app):
     else:
         user_repo = source_repo.clone(user_dir, bare=False)
 
+    # :TODO: write .git/info/attributes here?? && .git/config changes
+
     return user_repo
 
 def name_branch(description):
