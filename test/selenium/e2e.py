@@ -5,9 +5,9 @@ from unittest import main, TestCase
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+
 
 class TestSelenium(TestCase):
     def setUp(self):
@@ -21,99 +21,96 @@ class TestSelenium(TestCase):
         self.live_site = 'http://' + hosts[0]
 
     def test_create_page_and_preview(self):
-        try:
-            driver = self.driver
-            driver.get(self.live_site)
-            main_window = driver.current_window_handle
-            driver.find_element_by_id('signin').click()
+        driver = self.driver
+        driver.get(self.live_site)
+        main_window = driver.current_window_handle
+        driver.find_element_by_id('signin').click()
 
-            # have to loop because the persona link doesn't have a target
-            for window in driver.window_handles:
-                if window == main_window:
-                    pass
-                else:
-                    persona_window = window
+        # have to loop because the persona link doesn't have a target
+        for window in driver.window_handles:
+            if window == main_window:
+                pass
+            else:
+                persona_window = window
 
-            driver.switch_to_window(persona_window)
-            email = driver.find_element_by_id('authentication_email')
-            email.send_keys(self.email)
+        driver.switch_to_window(persona_window)  - "export DISPLAY=:99.0"
+  - "sh -e /etc/init.d/xvfb start"
 
-            # there are many possible submit buttons on this page
-            # so grab the whole row and then click the first button
-            submit_row = driver.find_element_by_css_selector('.submit.cf.buttonrow')
-            submit_row.find_element_by_css_selector('.isStart.isAddressInfo').click()
+        email = driver.find_element_by_id('authentication_email')
+        email.send_keys(self.email)
 
-            # ajax, wait until the element is visible
-            password = WebDriverWait(driver, 10).until(
-                EC.visibility_of_element_located((By.ID, 'authentication_password'))
-            )
-            password.send_keys(self.password)
+        # there are many possible submit buttons on this page
+        # so grab the whole row and then click the first button
+        submit_row = driver.find_element_by_css_selector('.submit.cf.buttonrow')
+        submit_row.find_element_by_css_selector('.isStart.isAddressInfo').click()
 
-            submit_row.find_element_by_css_selector('.isReturning.isTransitionToSecondary').click()
+        # ajax, wait until the element is visible
+        password = WebDriverWait(driver, 10).until(
+            EC.visibility_of_element_located((By.ID, 'authentication_password'))
+        )
+        password.send_keys(self.password)
 
-            # give the server a few seconds to respond
-            time.sleep(5)
+        submit_row.find_element_by_css_selector('.isReturning.isTransitionToSecondary').click()
 
-            # switch back to the main window
-            driver.switch_to_window(main_window)
+        # give the server a few seconds to respond
+        time.sleep(5)
 
-            # make sure we're back to Chime
-            self.assertEquals(driver.title, 'Tasks | Chime')
+        # switch back to the main window
+        driver.switch_to_window(main_window)
 
-            main_url = driver.current_url
+        # make sure we're back to Chime
+        self.assertEquals(driver.title, 'Tasks | Chime')
 
-            # start a new task
-            driver.find_element_by_xpath("//input[@type='text'][@name='branch']").send_keys('foobar')
-            driver.find_element_by_xpath("//form[@action='/start']").find_element_by_tag_name('button').click()
+        main_url = driver.current_url
 
-            # create a new page
-            driver.find_element_by_xpath("//form[@action='.']/input[@type='text']").send_keys('foobar')
-            driver.find_element_by_xpath("//form[@action='.']/input[@type='submit']").click()
+        # start a new task
+        driver.find_element_by_xpath("//input[@type='text'][@name='branch']").send_keys('foobar')
+        driver.find_element_by_xpath("//form[@action='/start']").find_element_by_tag_name('button').click()
 
-            # add some content to that page
-            driver.find_element_by_name('en-title').send_keys('foo')
-            driver.find_element_by_id('en-body markItUp').send_keys(
-                'This is some test content.',
-                Keys.RETURN, Keys.RETURN,
-                '# This is a test h1',
-                Keys.RETURN, Keys.RETURN,
-                '> This is a test pull-quote'
-            )
+        # create a new page
+        driver.find_element_by_xpath("//form[@action='.']/input[@type='text']").send_keys('foobar')
+        driver.find_element_by_xpath("//form[@action='.']/input[@type='submit']").click()
 
-            # save the page
-            driver.find_element_by_xpath("//div[@class='button-group']/input[@value='Save']").click()
+        # add some content to that page
+        driver.find_element_by_name('en-title').send_keys('foo')
+        driver.find_element_by_id('en-body markItUp').send_keys(
+            'This is some test content.',
+            Keys.RETURN, Keys.RETURN,
+            '# This is a test h1',
+            Keys.RETURN, Keys.RETURN,
+            '> This is a test pull-quote'
+        )
 
-            # preview the page
-            preview = driver.find_element_by_xpath("//div[@class='button-group']/a[@target='_blank']")
-            preview.click()
+        # save the page
+        driver.find_element_by_xpath("//div[@class='button-group']/input[@value='Save']").click()
 
-            # switch to and close the preview window
-            # have to loop because new window doesn't have a target
-            for window in driver.window_handles:
-                if window == main_window:
-                    pass
-                else:
-                    preview_window = window
+        # preview the page
+        preview = driver.find_element_by_xpath("//div[@class='button-group']/a[@target='_blank']")
+        preview.click()
 
-            driver.switch_to_window(preview_window)
-            WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.TAG_NAME, 'body'))
-            )
-            driver.close()
-            driver.switch_to_window(main_window)
+        # switch to and close the preview window
+        # have to loop because new window doesn't have a target
+        for window in driver.window_handles:
+            if window == main_window:
+                pass
+            else:
+                preview_window = window
 
-            # go back to the main page
-            driver.get(main_url)
-            # delete our branch
-            driver.find_element_by_xpath("//form[@action='/merge']/button[@value='abandon']").click()
+        driver.switch_to_window(preview_window)
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.TAG_NAME, 'body'))
+        )
+        driver.close()
+        driver.switch_to_window(main_window)
 
-        except WebDriverException, e:
-            # catch any selenium barfs and fail the test
-            print e.message
-            self.assertTrue(False)
+        # go back to the main page
+        driver.get(main_url)
+        # delete our branch
+        driver.find_element_by_xpath("//form[@action='/merge']/button[@value='abandon']").click()
 
     def tearDown(self):
         self.driver.close()
+
 
 if __name__ == '__main__':
     main()
