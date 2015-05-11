@@ -33,9 +33,7 @@ class TestSelenium(TestCase):
             else:
                 persona_window = window
 
-        driver.switch_to_window(persona_window)  - "export DISPLAY=:99.0"
-  - "sh -e /etc/init.d/xvfb start"
-
+        driver.switch_to_window(persona_window)
         email = driver.find_element_by_id('authentication_email')
         email.send_keys(self.email)
 
