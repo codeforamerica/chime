@@ -1108,18 +1108,42 @@ class TestRepo (TestCase):
         branch1.checkout()
         branch2.checkout()
 
-        # Save the task metadata file and merge it to master
-        args1 = self.clone1, repo_functions.TASK_METADATA_FILENAME, 'this would never happen', branch1.commit.hexsha, 'master'
-        commit1 = repo_functions.save_working_file(*args1)
+        # Save a task metadata file
+        fake_metadata = {'task_description': u'Changed my mind', 'lead_singer': u'Johnny Rotten'}
+        commit1 = repo_functions.save_task_metadata_for_branch(self.clone1, 'master', fake_metadata)
         self.assertEquals(self.origin.branches[branch1_name].commit, commit1)
         self.assertEquals(commit1, branch1.commit)
-        repo_functions.complete_branch(self.clone1, 'master', branch1_name)
+
+        # merge the branch to master manually so the task metadata file will be included
+        message = 'Manual merge including task metadata'
+        self.clone1.git.checkout('master')
+        self.clone1.git.pull('origin', 'master')
+
+        try:
+            self.clone1.git.merge(branch1_name, '--no-ff', m=message)
+
+        except GitCommandError:
+            # raise the two commits in conflict.
+            remote_commit = self.clone1.refs['origin/master'].commit
+            self.clone1.git.reset('master', hard=True)
+            self.clone1.git.checkout(branch1_name)
+            raise repo_functions.MergeConflict(remote_commit, self.clone1.commit())
+
+        else:
+            self.clone1.git.push('origin', 'master')
+
+        # Delete the working branch.
+        self.clone1.remotes.origin.push(':' + branch1_name)
+        self.clone1.delete_head([branch1_name])
+
+        # verify that the branch has been deleted
         self.assertFalse(branch1_name in self.origin.branches)
 
-        # Although there are conflicting changes in the two task metadata files, there should be no conflict raised!
+        # Although there are conflicting changes in the two task metadata files,
+        # there should be no conflict raised!
         try:
-            args2 = self.clone2, repo_functions.TASK_METADATA_FILENAME, 'this would also not happen', branch2.commit.hexsha, 'master'
-            repo_functions.save_working_file(*args2)
+            args = self.clone2, repo_functions.TASK_METADATA_FILENAME, '...', branch2.commit.hexsha, 'master'
+            repo_functions.save_working_file(*args)
         except repo_functions.MergeConflict:
             self.assertTrue(False)
 
