@@ -18,7 +18,7 @@ from dateutil.relativedelta import relativedelta
 from flask import request, session, current_app, redirect, flash
 from requests import get
 
-from .repo_functions import get_existing_branch
+from .repo_functions import get_existing_branch, ignore_task_metadata_on_merge
 from .href import needs_redirect, get_redirect
 
 from fcntl import flock, LOCK_EX, LOCK_UN, LOCK_SH
@@ -89,6 +89,9 @@ def get_repo(flask_app):
         user_repo.remotes.origin.fetch()
     else:
         user_repo = source_repo.clone(user_dir, bare=False)
+
+    # tell git to ignore merge conflicts on the task metadata file
+    ignore_task_metadata_on_merge(user_repo)
 
     return user_repo
 
@@ -268,7 +271,7 @@ def common_template_args(app_config, session):
     return {
         'email': session.get('email', None),
         'live_site_url': app_config['LIVE_SITE_URL']
-        }
+    }
 
 def login_required(route_function):
     ''' Login decorator for route functions.
