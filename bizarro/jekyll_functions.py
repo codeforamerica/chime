@@ -63,22 +63,7 @@ def load_languages(directory):
 
     return languages
 
-def load_jekyll_doc(file):
-    ''' Load jekyll front matter and remaining content from a file.
-
-        Sample output:
-
-          {"title": "Greetings"}, "Hello world."
-    '''
-    # Check for presence of document separator.
-    file.seek(0)
-
-    if file.read(len(_marker)) != _marker:
-        raise Exception('No front-matter in %s' % getattr(file, 'name', None))
-
-    # Seek to just after the initial document separator.
-    file.seek(len(_marker))
-
+def load_yaml_and_body(file):
     for token in yaml.scan(file):
         # Look for a token that shows we're about to reach the content.
         if type(token) is yaml.DocumentStartToken:
@@ -96,6 +81,23 @@ def load_jekyll_doc(file):
             return front_matter, content
 
     raise Exception('Never found a yaml.DocumentStartToken')
+
+def load_jekyll_doc(file):
+    ''' Load jekyll front matter and remaining content from a file.
+
+        Sample output:
+
+          {"title": "Greetings"}, "Hello world."
+    '''
+    # Check for presence of document separator.
+    file.seek(0)
+
+    if file.read(len(_marker)) == _marker:
+        file.seek(len(_marker))
+        return load_yaml_and_body(file)
+    else:
+        file.seek(0)
+        return {}, file.read().decode('utf8')
 
 def dump_jekyll_doc(front_matter, content, file):
     ''' Dump jekyll front matter and content to a file.
