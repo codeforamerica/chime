@@ -89,7 +89,7 @@ class TestViewFunctions (TestCase):
         rmtree(self.clone.working_dir)
 
     def test_sorted_paths(self):
-        ''' Ensure files/directories are sorted in awhat we wantlphabetical order, and that
+        ''' Ensure files/directories are sorted in alphabetical order, and that
             we get the expected values back from the sorted_paths method
         '''
         sorted_list = view_functions.sorted_paths(self.clone, 'master')

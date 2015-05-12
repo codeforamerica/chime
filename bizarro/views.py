@@ -356,10 +356,17 @@ def branch_view(branch, path=None):
 def render_list_dir(repo, branch, path):
     # :NOTE: temporarily turning off filtering if 'showallfiles=true' is in the request
     showallfiles = request.args.get('showallfiles') == u'true'
+
+    # get the task metadata; contains 'author_email', 'task_description'
+    task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch)
+    author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
+    task_description = task_metadata['task_description'] if 'task_description' in task_metadata else u''
+
     kwargs = common_template_args(current_app.config, session)
-    kwargs.update(branch=branch, safe_branch = branch_name2path(branch),
+    kwargs.update(branch=branch, safe_branch=branch_name2path(branch),
                   dirs_and_paths=directory_paths(branch, path),
-                  list_paths=sorted_paths(repo, branch, path, showallfiles))
+                  list_paths=sorted_paths(repo, branch, path, showallfiles),
+                  author_email=author_email, task_description=task_description)
     master_name = current_app.config['default_branch']
     kwargs['rejection_messages'] = list(repo_functions.get_rejection_messages(repo, master_name, branch))
     # TODO: the above might throw a GitCommandError if branch is an orphan.
@@ -391,12 +398,19 @@ def render_edit_view(repo, branch, path, file):
         app_authorized = True
         analytics_dict = fetch_google_analytics_for_page(current_app.config, path, ga_config.get('access_token'))
     commit = repo.commit()
+
+    # get the task metadata; contains 'author_email', 'task_description'
+    task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch)
+    author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
+    task_description = task_metadata['task_description'] if 'task_description' in task_metadata else u''
+
     kwargs = common_template_args(current_app.config, session)
-    kwargs.update(branch=branch, safe_branch = branch_name2path(branch),
+    kwargs.update(branch=branch, safe_branch=branch_name2path(branch),
                   body=body, hexsha=commit.hexsha, url_slug=url_slug,
                   front=front, view_path=view_path, edit_path=path,
                   history_path=history_path, languages=languages,
-                  app_authorized=app_authorized)
+                  app_authorized=app_authorized,
+                  author_email=author_email, task_description=task_description)
     kwargs.update(analytics_dict)
     return render_template('tree-branch-edit-file.html', **kwargs)
 
