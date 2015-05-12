@@ -276,12 +276,15 @@ def complete_branch(clone, default_branch_name, working_branch_name):
         raise MergeConflict(remote_commit, clone.commit())
 
     else:
-        # remove the task metadata file
-        edit_functions.delete_file(clone, None, TASK_METADATA_FILENAME)
-        clone.index.remove([TASK_METADATA_FILENAME])
-        # amend the merge commit to include the deletion and push it
-        clone.git.commit('--amend', '--no-edit', '--reset-author')
-        clone.git.push('origin', default_branch_name)
+        # remove the task metadata file if it exists
+        _, do_save = edit_functions.delete_file(clone, None, TASK_METADATA_FILENAME)
+        if do_save:
+            clone.index.remove([TASK_METADATA_FILENAME])
+            # amend the merge commit to include the deletion and push it
+            clone.git.commit('--amend', '--no-edit', '--reset-author')
+
+    # now push the changes to origin
+    clone.git.push('origin', default_branch_name)
 
     #
     # Delete the working branch.
