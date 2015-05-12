@@ -19,6 +19,7 @@ here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(here)
 
 from git import Repo
+from git.cmd import GitCommandError
 from box.util.rotunicode import RotUnicode
 from httmock import response, HTTMock
 from bs4 import BeautifulSoup
@@ -262,6 +263,9 @@ class TestRepo (TestCase):
         #
         self.clone1.branches.master.checkout()
         self.clone2.branches.master.checkout()
+
+        self.assertEquals(self.clone1.refs['master'].commit.hexsha, self.origin.refs['master'].commit.hexsha)
+        self.assertEquals(self.clone1.refs['master'].commit.hexsha, self.clone2.refs['master'].commit.hexsha)
 
         #
         # Make a change to the first clone and push it.
@@ -702,11 +706,12 @@ class TestRepo (TestCase):
         self.assertEqual(conflict.exception.remote_commit, self.origin.commit())
         self.assertEqual(conflict.exception.local_commit, self.clone2.commit())
 
-        diffs = conflict.exception.remote_commit.diff(conflict.exception.local_commit)
+        # conflict.exception is the MergeConflict exception object
+        _, _, changed_files = conflict.exception.files()
 
-        self.assertEqual(len(diffs), 1)
-        self.assertEqual(diffs[0].a_blob.name, 'conflict.md')
-        self.assertEqual(diffs[0].b_blob.name, 'conflict.md')
+        self.assertEqual(len(changed_files), 1)
+        self.assertEqual(changed_files[0], 'conflict.md')
+        self.assertEqual(changed_files[0], 'conflict.md')
 
     def test_conflict_resolution_clobber(self):
         ''' Test that a conflict in two branches can be clobbered.
@@ -747,15 +752,14 @@ class TestRepo (TestCase):
         with self.assertRaises(repo_functions.MergeConflict) as conflict:
             repo_functions.complete_branch(self.clone2, 'master', branch2_name)
 
-        # compare the second-to-last commit on the branch (by adding ".parents[0]", as
-        # the most recent one is the creation of the task metadata file
-        self.assertEqual(conflict.exception.local_commit.parents[0], commit)
+        self.assertEqual(conflict.exception.local_commit, commit)
 
         diffs = conflict.exception.remote_commit.diff(conflict.exception.local_commit)
 
-        self.assertEqual(len(diffs), 2)
-        self.assertTrue(diffs[0].a_blob.name in ('index.md', 'goner.md'))
-        self.assertTrue(diffs[1].a_blob.name in ('index.md', 'goner.md'))
+        self.assertEqual(len(diffs), 3)
+        for diff in diffs:
+            if diff.a_blob:
+                self.assertTrue(diff.a_blob.name in ('index.md', 'goner.md'))
 
         #
         # Merge our conflicting branch and clobber the default branch.
@@ -810,15 +814,14 @@ class TestRepo (TestCase):
         with self.assertRaises(repo_functions.MergeConflict) as conflict:
             repo_functions.complete_branch(self.clone2, 'master', branch2_name)
 
-        # compare the second-to-last commit on the branch (by adding ".parents[0]", as
-        # the most recent one is the creation of the task metadata file
-        self.assertEqual(conflict.exception.local_commit.parents[0], commit)
+        self.assertEqual(conflict.exception.local_commit, commit)
 
         diffs = conflict.exception.remote_commit.diff(conflict.exception.local_commit)
 
-        self.assertEqual(len(diffs), 2)
-        self.assertTrue(diffs[0].b_blob.name in ('index.md', 'goner.md'))
-        self.assertTrue(diffs[1].b_blob.name in ('index.md', 'goner.md'))
+        self.assertEqual(len(diffs), 3)
+        self.assertTrue(diffs[0].b_blob.name in ('index.md', 'goner.md', repo_functions.TASK_METADATA_FILENAME))
+        self.assertTrue(diffs[1].b_blob.name in ('index.md', 'goner.md', repo_functions.TASK_METADATA_FILENAME))
+        self.assertTrue(diffs[2].b_blob.name in ('index.md', 'goner.md', repo_functions.TASK_METADATA_FILENAME))
 
         #
         # Merge our conflicting branch and abandon it to the default branch.
