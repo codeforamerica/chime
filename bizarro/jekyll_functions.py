@@ -25,6 +25,7 @@ Jekyll likes to have the "---" document separator at the top:
 from os.path import join, exists
 from collections import OrderedDict
 import yaml
+import logging
 
 _marker = "---\n"
 
@@ -62,6 +63,25 @@ def load_languages(directory):
     
     return languages
 
+
+def load_yaml_and_body(file):
+    for token in yaml.scan(file):
+        # Look for a token that shows we're about to reach the content.
+        if type(token) is yaml.DocumentStartToken:
+
+            # Seek to the beginning, and load the complete content.
+            file.seek(0)
+            chars = file.read().decode('utf8')
+
+            # Load the front matter as a document.
+            front_matter = yaml.safe_load(chars[:token.end_mark.index])
+
+            # Seek just after the document separator, and get remaining string.
+            content = chars[token.end_mark.index + len("\n" + _marker):]
+
+            return front_matter, content
+    raise Exception('Never found a yaml.DocumentStartToken')
+
 def load_jekyll_doc(file):
     ''' Load jekyll front matter and remaining content from a file.
         
@@ -72,34 +92,17 @@ def load_jekyll_doc(file):
     # Check for presence of document separator.
     file.seek(0)
     
-    if file.read(len(_marker)) != _marker:
-        raise Exception('No front-matter in %s' % getattr(file, 'name', None))
-    
-    # Seek to just after the initial document separator.
-    file.seek(len(_marker))
-    
-    for token in yaml.scan(file):
-        # Look for a token that shows we're about to reach the content.
-        if type(token) is yaml.DocumentStartToken:
-        
-            # Seek to the beginning, and load the complete content.
-            file.seek(0)
-            chars = file.read().decode('utf8')
-
-            # Load the front matter as a document.
-            front_matter = yaml.safe_load(chars[:token.end_mark.index])
-            
-            # Seek just after the document separator, and get remaining string.
-            content = chars[token.end_mark.index + len("\n" + _marker):]
-            
-            return front_matter, content
-    
-    raise Exception('Never found a yaml.DocumentStartToken')
+    if file.read(len(_marker)) == _marker:
+        file.seek(len(_marker))
+        return load_yaml_and_body(file)
+    else:
+        file.seek(0)
+        return {}, file.read().decode('utf8')
 
 def dump_jekyll_doc(front_matter, content, file):
     ''' Dump jekyll front matter and content to a file.
     
-        To provide some guarantee of human-editable output, front matter
+        To provide some guarantee ofile.seek(len(_marker))f human-editable output, front matter
         is dumped using the newline-preserving block literal form.
         
         Sample output:
@@ -131,10 +134,21 @@ def build_jekyll_site(dirname):
     '''
 
     from subprocess import Popen
-    
-    build = Popen(['../jekyll/run-jekyll.sh', 'build'], cwd=dirname)
-    build.wait()
-    
+    import os
+
+    python_dir = os.path.dirname(os.path.realpath(__file__))
+    project_dir = os.path.join(python_dir, "..")
+    jekyll_script = os.path.realpath(os.path.join(project_dir, 'jekyll/run-jekyll.sh'))
+
+    call = [jekyll_script, 'build']
+    try:
+        build = Popen(call, cwd=dirname)
+        build.wait()
+    except:
+        logger = logging.getLogger('bizarro.jekyll')
+        logger.error("Unexpected failure running %s in %s", call, dirname)
+        raise
+
     # By default Jekyll builds into dirname/_site
     return join(dirname, '_site')
 

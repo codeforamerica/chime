@@ -92,6 +92,7 @@ def not_allowed():
     if not is_allowed_email(get_auth_data_file(auth_data_href), email):
         return render_template('not-allowed.html', **kwargs)
 
+    Logger.info("Redirecting from /not-allowed to /")
     return redirect('/')
 
 @app.route('/sign-in', methods=['POST'])
@@ -334,6 +335,55 @@ def branch_view(branch, path=None):
 
     return Response(open(local_path).read(), 200, {'Content-Type': mime_type})
 
+
+def render_list_dir(repo, branch, path):
+    # :NOTE: temporarily turning off filtering if 'showallfiles=true' is in the request
+    showallfiles = request.args.get('showallfiles') == u'true'
+    kwargs = common_template_args(current_app.config, session)
+    kwargs.update(branch=branch, safe_branch = branch_name2path(branch),
+                  dirs_and_paths=directory_paths(branch, path),
+                  list_paths=sorted_paths(repo, branch, path, showallfiles))
+    master_name = current_app.config['default_branch']
+    kwargs['rejection_messages'] = list(repo_functions.get_rejection_messages(repo, master_name, branch))
+    # TODO: the above might throw a GitCommandError if branch is an orphan.
+    if current_app.config['SINGLE_USER']:
+        kwargs['eligible_peer'] = True
+        kwargs['needs_peer_review'] = False
+        kwargs['is_peer_approved'] = True
+        kwargs['is_peer_rejected'] = False
+    else:
+        kwargs['eligible_peer'] = session['email'] != repo_functions.ineligible_peer(repo, master_name, branch)
+        kwargs['needs_peer_review'] = repo_functions.needs_peer_review(repo, master_name, branch)
+        kwargs['is_peer_approved'] = repo_functions.is_peer_approved(repo, master_name, branch)
+        kwargs['is_peer_rejected'] = repo_functions.is_peer_rejected(repo, master_name, branch)
+    if kwargs['is_peer_rejected']:
+        kwargs['rejecting_peer'], kwargs['rejection_message'] = kwargs['rejection_messages'].pop(0)
+    return render_template('tree-branch-edit-listdir.html', **kwargs)
+
+
+def render_edit_view(repo, branch, path, file):
+    front, body = load_jekyll_doc(file)
+    languages = load_languages(repo.working_dir)
+    url_slug, _ = splitext(path)
+    view_path = join('/tree/%s/view' % branch_name2path(branch), path)
+    history_path = join('/tree/%s/history' % branch_name2path(branch), path)
+    app_authorized = False
+    ga_config = read_ga_config(current_app.config['RUNNING_STATE_DIR'])
+    analytics_dict = {}
+    if ga_config.get('access_token'):
+        app_authorized = True
+        analytics_dict = fetch_google_analytics_for_page(current_app.config, path, ga_config.get('access_token'))
+    commit = repo.commit()
+    kwargs = common_template_args(current_app.config, session)
+    kwargs.update(branch=branch, safe_branch = branch_name2path(branch),
+                  body=body, hexsha=commit.hexsha, url_slug=url_slug,
+                  front=front, view_path=view_path, edit_path=path,
+                  history_path=history_path, languages=languages,
+                  app_authorized=app_authorized)
+    kwargs.update(analytics_dict)
+    return render_template('tree-branch-edit-file.html', **kwargs)
+
+
 @app.route('/tree/<branch>/edit/', methods=['GET'])
 @app.route('/tree/<branch>/edit/<path:path>', methods=['GET'])
 @login_required
@@ -341,71 +391,16 @@ def branch_view(branch, path=None):
 def branch_edit(branch, path=None):
     branch = branch_var2name(branch)
 
-    r = get_repo(current_app)
-    c = r.commit()
-
-    full_path = join(r.working_dir, path or '.').rstrip('/')
-    safe_branch = branch_name2path(branch)
+    repo = get_repo(current_app)
+    full_path = join(repo.working_dir, path or '.').rstrip('/')
 
     if isdir(full_path):
         if path and not path.endswith('/'):
-            return redirect('/tree/%s/edit/%s' % (safe_branch, path + '/'), code=302)
+            return redirect('/tree/%s/edit/%s' % (branch_name2path(branch), path + '/'), code=302)
 
-        # :NOTE: temporarily turning off filtering if 'showallfiles=true' is in the request
-        showallfiles = request.args.get('showallfiles') == u'true'
+        return render_list_dir(repo, branch, path)
 
-        kwargs = common_template_args(current_app.config, session)
-        kwargs.update(branch=branch, safe_branch=safe_branch,
-                      dirs_and_paths=directory_paths(branch, path),
-                      list_paths=sorted_paths(r, branch, path, showallfiles))
-
-        master_name = current_app.config['default_branch']
-        kwargs['rejection_messages'] = list(repo_functions.get_rejection_messages(r, master_name, branch))
-
-        # TODO: the above might throw a GitCommandError if branch is an orphan.
-
-        if current_app.config['SINGLE_USER']:
-            kwargs['eligible_peer'] = True
-            kwargs['needs_peer_review'] = False
-            kwargs['is_peer_approved'] = True
-            kwargs['is_peer_rejected'] = False
-        else:
-            kwargs['eligible_peer'] = session['email'] != repo_functions.ineligible_peer(r, master_name, branch)
-            kwargs['needs_peer_review'] = repo_functions.needs_peer_review(r, master_name, branch)
-            kwargs['is_peer_approved'] = repo_functions.is_peer_approved(r, master_name, branch)
-            kwargs['is_peer_rejected'] = repo_functions.is_peer_rejected(r, master_name, branch)
-
-        if kwargs['is_peer_rejected']:
-            kwargs['rejecting_peer'], kwargs['rejection_message'] = kwargs['rejection_messages'].pop(0)
-
-        return render_template('tree-branch-edit-listdir.html', **kwargs)
-
-    with open(full_path, 'r') as file:
-        front, body = load_jekyll_doc(file)
-        languages = load_languages(r.working_dir)
-
-        url_slug, _ = splitext(path)
-        view_path = join('/tree/%s/view' % branch_name2path(branch), path)
-        history_path = join('/tree/%s/history' % branch_name2path(branch), path)
-        app_authorized = False
-
-        ga_config = read_ga_config(current_app.config['RUNNING_STATE_DIR'])
-        analytics_dict = {}
-        if ga_config.get('access_token'):
-            app_authorized = True
-            analytics_dict = fetch_google_analytics_for_page(current_app.config, path, ga_config.get('access_token'))
-
-        kwargs = common_template_args(current_app.config, session)
-
-        kwargs.update(branch=branch, safe_branch=safe_branch,
-                      body=body, hexsha=c.hexsha, url_slug=url_slug,
-                      front=front, view_path=view_path, edit_path=path,
-                      history_path=history_path, languages=languages,
-                      app_authorized=app_authorized)
-
-        kwargs.update(analytics_dict)
-
-        return render_template('tree-branch-edit-file.html', **kwargs)
+    return render_edit_view(repo, branch, path, open(full_path, 'r'))
 
 @app.route('/tree/<branch>/edit/', methods=['POST'])
 @app.route('/tree/<branch>/edit/<path:path>', methods=['POST'])

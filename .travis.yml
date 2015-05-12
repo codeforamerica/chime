@@ -9,3 +9,6 @@ install: pip install -r requirements.txt
 script:  python test/test.py
 notifications:
   webhooks: http://project-monitor.codeforamerica.org/projects/1bf2f3b3-bed8-42bc-91e8-d47f873443de/status
+  slack:
+    secure: Xjg6TC3rHw8jX+ODmS32FOXKX95IgjgViQSC7E7VL3ZF+3C8IBVCipX70MRVfUb3pVa
+

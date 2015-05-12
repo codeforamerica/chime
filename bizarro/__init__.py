@@ -1,10 +1,14 @@
 from logging import getLogger, DEBUG
 logger = getLogger('bizarro')
 
+import os
 from os import mkdir
 from os.path import realpath, join
 
 from flask import Blueprint, Flask
+
+import logging
+from logging import handlers
 
 from .httpd import run_apache_forever
 
@@ -60,6 +64,12 @@ def run_apache(running_dir):
     
     return run_apache_forever(doc_root, root, port, False)
 
+def log_file(app):
+    log_dir = '/var/log/bizarro-cms'
+    if not os.access(log_dir,os.W_OK | os.X_OK):
+        log_dir = app.config['WORK_PATH']
+    return join(realpath(log_dir), 'app.log')
+
 def create_app(environ):
     app = Flask(__name__, static_folder='static')
     app.secret_key = 'boop'
@@ -69,7 +79,7 @@ def create_app(environ):
     app.config['GA_REDIRECT_URI'] = environ.get('GA_REDIRECT_URI', 'http://127.0.0.1:5000/callback')
     app.config['WORK_PATH'] = environ.get('WORK_PATH', '.')
     app.config['REPO_PATH'] = environ.get('REPO_PATH', 'sample-site')
-    app.config['BROWSERID_URL'] = environ.get('BROWSERID_URL', 'http://127.0.0.1:5000')
+    app.config['BROWSERID_URL'] = environ['BROWSERID_URL']
     app.config['SINGLE_USER'] = bool(environ.get('SINGLE_USER', False))
     app.config['AUTH_DATA_HREF'] = environ.get('AUTH_DATA_HREF', 'data/authentication.csv')
     app.config['LIVE_SITE_URL'] = environ.get('LIVE_SITE_URL', 'http://127.0.0.1:5001/')
@@ -85,11 +95,15 @@ def create_app(environ):
 
     @app.before_first_request
     def before_first_request():
-        '''
-        '''
         if app.debug:
             logger.setLevel(DEBUG)
-    
+        else:
+            file_handler = handlers.RotatingFileHandler(log_file(app), 'a', 10000000,10)
+            file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+            logger.addHandler(file_handler)
+            logger.setLevel(logging.INFO)
+
+        logger.info("app config before_first_request: %s", app.config)
     return AppShim(app)
 
 from . import views
