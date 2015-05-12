@@ -80,8 +80,6 @@ def get_start_branch(clone, default_branch_name, branch_description, author_emai
         with the same name, use it instead of creating a fresh branch.
     '''
 
-    # :TODO: create .gitattributes file in the mater branch somewhere here??
-
     # make a branch name based on unique details
     new_branch_name = make_branch_name(branch_description, author_email)
 
@@ -99,16 +97,16 @@ def get_start_branch(clone, default_branch_name, branch_description, author_emai
     clone.git.checkout(new_branch_name)
     metadata_values = {"author_email": author_email, "task_description": branch_description}
     save_task_metadata_for_branch(clone, default_branch_name, metadata_values)
-    ignore_task_metadata_on_merge(clone, default_branch_name)
     clone.git.checkout(active_branch_name)
 
     return branch
 
-def ignore_task_metadata_on_merge(clone, default_branch_name):
-    ''' Do the setup necessary so that Git will ignore the task metadata file on merge
+def ignore_task_metadata_on_merge(clone):
+    ''' Tell this repo to ignore merge conflicts on the task metadata file
     '''
-    # create the .gitattributes file if it doesn't exist
-    attributes_path = join(clone.working_dir, '.gitattributes')
+
+    # create the .git/info/attributes file if it doesn't exist
+    attributes_path = join(clone.git_dir, 'info/attributes')
     if not exists(attributes_path):
         content = u'{} merge=ignored'.format(TASK_METADATA_FILENAME)
         with open(attributes_path, 'w') as file:
@@ -152,7 +150,7 @@ def save_task_metadata_for_branch(clone, default_branch_name, values={}):
         yaml.dump(task_metadata, file, **dump_kwargs)
 
     # add & commit the file to the branch
-    save_working_file(clone, TASK_METADATA_FILENAME, message, clone.commit().hexsha, default_branch_name)
+    return save_working_file(clone, TASK_METADATA_FILENAME, message, clone.commit().hexsha, default_branch_name)
 
 def delete_task_metadata_for_branch(clone, default_branch_name):
     ''' Delete the task metadata file and return its contents
@@ -253,8 +251,8 @@ def complete_branch(clone, default_branch_name, working_branch_name):
         Deletes the working branch in the clone and the origin, and leaves
         the working directory checked out to the merged default branch.
     '''
-    # get the task metadata and delete the task metadata file
-    task_metadata = delete_task_metadata_for_branch(clone, default_branch_name)
+    # get the task metadata
+    task_metadata = get_task_metadata_for_branch(clone)
 
     try:
         message = 'Merged work by {} for the task {} from branch {}'.format(task_metadata['author_email'], task_metadata['task_description'], working_branch_name)
@@ -263,27 +261,26 @@ def complete_branch(clone, default_branch_name, working_branch_name):
 
     clone.git.checkout(default_branch_name)
     clone.git.pull('origin', default_branch_name)
-    # :TODO: confirm/create and commit the .gitattributes file here??
 
     #
     # Merge the working branch back to the default branch.
     #
     try:
-        clone.git.merge(working_branch_name, '--no-ff', m=message) # <-- or --no-commit here (and no message)
+        clone.git.merge(working_branch_name, '--no-ff', m=message)
 
     except GitCommandError:
         # raise the two commits in conflict.
         remote_commit = clone.refs[_origin(default_branch_name)].commit
-
         clone.git.reset(default_branch_name, hard=True)
         clone.git.checkout(working_branch_name)
-        # re-create the task metadata file
-        save_task_metadata_for_branch(clone, default_branch_name, task_metadata)
         raise MergeConflict(remote_commit, clone.commit())
 
     else:
-        # kill task file here
-        # clone.git.commit('--amend', m=message) # <-- something like this
+        # remove the task metadata file
+        edit_functions.delete_file(clone, None, TASK_METADATA_FILENAME)
+        clone.index.remove([TASK_METADATA_FILENAME])
+        # amend the merge commit to include the deletion and push it
+        clone.git.commit('--amend', '--no-edit', '--reset-author')
         clone.git.push('origin', default_branch_name)
 
     #

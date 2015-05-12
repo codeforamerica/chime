@@ -68,7 +68,9 @@ class TestViewFunctions (TestCase):
         temp_repo_path = temp_repo_dir + '/test-app.git'
         copytree(repo_path, temp_repo_path)
         self.origin = Repo(temp_repo_path)
+        repo_functions.ignore_task_metadata_on_merge(self.origin)
         self.clone = self.origin.clone(mkdtemp(prefix='bizarro-'))
+        repo_functions.ignore_task_metadata_on_merge(self.clone)
 
         self.session = dict(email=str(uuid4()))
 
@@ -195,9 +197,12 @@ class TestRepo (TestCase):
         temp_repo_path = temp_repo_dir + '/test-app.git'
         copytree(repo_path, temp_repo_path)
         self.origin = Repo(temp_repo_path)
+        repo_functions.ignore_task_metadata_on_merge(self.origin)
 
         self.clone1 = self.origin.clone(mkdtemp(prefix='bizarro-'))
+        repo_functions.ignore_task_metadata_on_merge(self.clone1)
         self.clone2 = self.origin.clone(mkdtemp(prefix='bizarro-'))
+        repo_functions.ignore_task_metadata_on_merge(self.clone2)
 
         self.session = dict(email=str(uuid4()))
 
@@ -1351,7 +1356,9 @@ class TestApp (TestCase):
         temp_repo_path = temp_repo_dir + '/test-app.git'
         copytree(repo_path, temp_repo_path)
         self.origin = Repo(temp_repo_path)
+        repo_functions.ignore_task_metadata_on_merge(self.origin)
         self.clone1 = self.origin.clone(mkdtemp(prefix='bizarro-'))
+        repo_functions.ignore_task_metadata_on_merge(self.clone1)
 
         app_args = {}
 

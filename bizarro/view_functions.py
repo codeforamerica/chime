@@ -18,7 +18,7 @@ from dateutil.relativedelta import relativedelta
 from flask import request, session, current_app, redirect, flash
 from requests import get
 
-from .repo_functions import get_existing_branch
+from .repo_functions import get_existing_branch, ignore_task_metadata_on_merge
 from .href import needs_redirect, get_redirect
 
 from fcntl import flock, LOCK_EX, LOCK_UN, LOCK_SH
@@ -90,7 +90,8 @@ def get_repo(flask_app):
     else:
         user_repo = source_repo.clone(user_dir, bare=False)
 
-    # :TODO: write .git/info/attributes here?? && .git/config changes
+    # tell git to ignore merge conflicts on the task metadata file
+    ignore_task_metadata_on_merge(user_repo)
 
     return user_repo
 
