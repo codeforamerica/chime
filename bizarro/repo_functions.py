@@ -74,7 +74,7 @@ def get_existing_branch(clone, default_branch_name, new_branch_name):
 
     return None
 
-def get_start_branch(clone, default_branch_name, branch_description, author_email):
+def get_start_branch(clone, default_branch_name, task_description, task_beneficiary, author_email):
     ''' Start a new repository branch, push it to origin and return it.
 
         Don't touch the working directory. If an existing branch is found
@@ -82,7 +82,7 @@ def get_start_branch(clone, default_branch_name, branch_description, author_emai
     '''
 
     # make a branch name based on unique details
-    new_branch_name = make_branch_name(branch_description, author_email)
+    new_branch_name = make_branch_name(task_description, task_beneficiary, author_email)
 
     existing_branch = get_existing_branch(clone, default_branch_name, new_branch_name)
     if existing_branch:
@@ -96,7 +96,7 @@ def get_start_branch(clone, default_branch_name, branch_description, author_emai
     # create the task metadata file in the new branch
     active_branch_name = clone.active_branch.name
     clone.git.checkout(new_branch_name)
-    metadata_values = {"author_email": author_email, "task_description": branch_description}
+    metadata_values = {"author_email": author_email, "task_description": task_description, "task_beneficiary": task_beneficiary}
     save_task_metadata_for_branch(clone, default_branch_name, metadata_values)
     clone.git.checkout(active_branch_name)
 
@@ -204,7 +204,7 @@ def verify_file_exists_in_branch(clone, file_path, working_branch_name=None):
 
     return False
 
-def make_shortened_task_name(task_description):
+def make_shortened_task_description(task_description):
     ''' Shorten the passed description, cutting on a word boundary if possible
     '''
     if len(task_description) <= DESCRIPTION_MAX_LENGTH:
@@ -221,17 +221,17 @@ def make_shortened_task_name(task_description):
 
     return suggested
 
-def make_branch_sha(branch_description, author_email):
+def make_branch_sha(task_description, task_beneficiary, author_email):
     ''' use details about a branch to generate a 'unique' name
     '''
     # get epoch seconds as a string
-    seed = u'{}{}'.format(unicode(branch_description), unicode(author_email))
+    seed = u'{}{}{}'.format(unicode(task_description), unicode(task_beneficiary), unicode(author_email))
     return hashlib.sha1(seed.encode('utf-8')).hexdigest()
 
-def make_branch_name(branch_description, author_email):
+def make_branch_name(task_description, task_beneficiary, author_email):
     ''' Return a short, URL- and Git-compatible name for a branch
     '''
-    short_sha = make_branch_sha(branch_description, author_email)[0:BRANCH_NAME_LENGTH]
+    short_sha = make_branch_sha(task_description, task_beneficiary, author_email)[0:BRANCH_NAME_LENGTH]
     return short_sha
 
 def complete_branch(clone, default_branch_name, working_branch_name):
@@ -255,7 +255,9 @@ def complete_branch(clone, default_branch_name, working_branch_name):
     task_metadata = get_task_metadata_for_branch(clone)
 
     try:
-        message = 'Merged work by {} for the task {} from branch {}'.format(task_metadata['author_email'], task_metadata['task_description'], working_branch_name)
+        kwargs = dict(task_metadata)
+        kwargs.update({"working_branch_name": working_branch_name})
+        message = 'Merged work by {author_email} for the task {task_description} (for {task_beneficiary}) from branch {working_branch_name}'.format(**kwargs)
     except KeyError:
         message = 'Merged work from "{}"'.format(working_branch_name)
 
