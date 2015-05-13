@@ -31,38 +31,37 @@ _marker = "---\n"
 
 def load_languages(directory):
     ''' Load languages from site configuration.
-    
+
         Configuration language block will look like this:
-        
+
             languages:
             - iso: name
             - iso: name
-        
+
         The dashes tell YAML that it's ordered.
     '''
     config_path = join(directory, '_config.yml')
-    
+
     if exists(config_path):
         with open(config_path) as file:
             config = yaml.load(file).get('languages', [])
-        
+
         if type(config) is not list:
             raise ValueError()
     else:
         config = []
-    
+
     languages = OrderedDict()
-    
+
     for iso_name in config:
         for (iso, name) in iso_name.items():
             languages[iso] = name
-    
+
     # We want English always present.
     if 'en' not in languages:
         languages['en'] = 'English'
-    
-    return languages
 
+    return languages
 
 def load_yaml_and_body(file):
     for token in yaml.scan(file):
@@ -80,18 +79,19 @@ def load_yaml_and_body(file):
             content = chars[token.end_mark.index + len("\n" + _marker):]
 
             return front_matter, content
+
     raise Exception('Never found a yaml.DocumentStartToken')
 
 def load_jekyll_doc(file):
     ''' Load jekyll front matter and remaining content from a file.
-        
+
         Sample output:
-          
+
           {"title": "Greetings"}, "Hello world."
     '''
     # Check for presence of document separator.
     file.seek(0)
-    
+
     if file.read(len(_marker)) == _marker:
         file.seek(len(_marker))
         return load_yaml_and_body(file)
@@ -101,12 +101,12 @@ def load_jekyll_doc(file):
 
 def dump_jekyll_doc(front_matter, content, file):
     ''' Dump jekyll front matter and content to a file.
-    
-        To provide some guarantee ofile.seek(len(_marker))f human-editable output, front matter
+
+        To provide some guarantee of human-editable output, front matter
         is dumped using the newline-preserving block literal form.
-        
+
         Sample output:
-        
+
           ---
           "title": |-
             Greetings
@@ -118,7 +118,7 @@ def dump_jekyll_doc(front_matter, content, file):
     dump_kwargs = dict(Dumper=yaml.SafeDumper, default_flow_style=False,
                        canonical=False, default_style='|', indent=2,
                        allow_unicode=True)
-    
+
     # Write front matter to the start of the file.
     file.seek(0)
     file.truncate()
