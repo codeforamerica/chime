@@ -19,7 +19,8 @@ script:
 - fab test_chime:despawn_on_failure=t
 notifications:
   webhooks: http://project-monitor.codeforamerica.org/projects/1bf2f3b3-bed8-42bc-91e8-d47f873443de/status
-
+  slack:
+    secure: Xjg6TC3rHw8jX+ODmS32FOXKX95IgjgViQSC7E7VL3ZF+3C8IBVCipX70MRVfUb3pVa
 # AWS_ACCESS_KEY AWS_SECRET_KEY SSH_PRIVATE_KEY_PATH TESTING_EMAIL TESTING_PASSWORD
 env:
   global:

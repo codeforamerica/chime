@@ -50,11 +50,15 @@ class TestJekyll (TestCase):
         file.seek(0)
         file.read(4) == '---\n'
 
-    def test_bad_files(self):
-        file = StringIO('Missing front matter')
+    def test_missing_front_matter(self):
+        '''
+        Should read properly with valid, minimal front matter
+        '''
+        expected_body = 'Missing front matter'
+        actual_front, actual_body = jekyll_functions.load_jekyll_doc(StringIO(expected_body))
+        self.assertEqual({}, actual_front)
+        self.assertEqual(actual_body, expected_body)
 
-        with self.assertRaises(Exception):
-            jekyll_functions.load_jekyll_doc(file)
 
 class TestViewFunctions (TestCase):
 
@@ -78,7 +82,7 @@ class TestViewFunctions (TestCase):
         rmtree(self.clone.working_dir)
 
     def test_sorted_paths(self):
-        ''' Ensure files/directories are sorted in alphabetical order, and that
+        ''' Ensure files/directories are sorted in awhat we wantlphabetical order, and that
             we get the expected values back from the sorted_paths method
         '''
         sorted_list = view_functions.sorted_paths(self.clone, 'master')
