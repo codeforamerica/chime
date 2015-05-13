@@ -4,12 +4,14 @@ from __future__ import with_statement
 
 import boto.ec2
 import time
+import subprocess
 
 from fabric.context_managers import cd
 from fabric.operations import local
 from fabric.api import task, env, run, sudo
 from fabric.colors import green, yellow, red
 from fabric.exceptions import NetworkError
+from fabric.contrib.project import rsync_project
 
 @task
 def spawn_instance():
@@ -65,7 +67,7 @@ def boot_chime():
     _server_setup(public_dns)
 
 @task
-def test_chime(setup=True, despawn=True, branch=None):
+def test_chime(setup=True, despawn=True, despawn_on_failure=False):
     '''
     Create a chime instance and run selenium tests.
 
@@ -97,24 +99,28 @@ def test_chime(setup=True, despawn=True, branch=None):
         env.hosts = hosts
         public_dns = hosts[0]
 
-    if setup in [True, 'True', 'true', 't', 'y']:
+    if _looks_true(setup):
         _server_setup(public_dns)
-
-    if branch:
-        if env.host_string is None:
-            hosts = _read_hosts_from_file()
-            env.host_string = hosts[0]
-        print(green('Checking out to {branch}...'.format(branch=branch)))
-        with cd('ceviche-cms'):
-            run('git checkout -q {branch}'.format(branch=branch))
 
     print(green('Running tests...'))
     time.sleep(2)
-    local('python ' + fabconf.get('FAB_CONFIG_PATH') + '/../test/selenium/e2e.py')
+    try:
+        local('python ' + fabconf.get('FAB_CONFIG_PATH') + '/../test/selenium/e2e.py')
+        if _looks_true(despawn):
+            _despawn(public_dns)
+    except:
+        if _looks_true(despawn_on_failure):
+            _despawn(public_dns)
+        raise
 
-    if despawn in [True, 'True', 'true', 't', 'y']:
-        print(green('Despawning EC2 instance'))
-        _despawn_instance(public_dns)
+
+
+def _despawn(public_dns):
+    print(green('Despawning EC2 instance'))
+    _despawn_instance(public_dns)
+
+def _looks_true(argument):
+    return argument in [True, 'True', 'true', 't', 'y']
 
 def _read_hosts_from_file():
     from fabconf import fabconf
@@ -189,7 +195,7 @@ def _create_ec2_instance():
 
     return instance.public_dns_name
 
-def _despawn_instance(dns, terminate=False):
+def _despawn_instance(dns, terminate=True):
     conn = _connect_to_ec2()
 
     for res in conn.get_all_reservations():
@@ -238,11 +244,10 @@ def _server_setup(fqdn=None):
     sudo("echo '" + hostname + "' > " + '/etc/hostname')
     sudo('hostname -F /etc/hostname')
 
-    print(green('Installing git & chime'))
+    print(green('Installing chime'))
     time.sleep(2)
-    sudo('apt-get update && apt-get install -y git')
-    run('git clone https://github.com/codeforamerica/ceviche-cms.git')
-
+    sudo('apt-get update')
+    rsync_project(remote_dir='.', ssh_opts='-o CheckHostIP=no -o UserKnownHostsFile=/dev/null -o StrictHostkeyChecking=no')
     print(green('Running chef setup scripts...'))
     time.sleep(2)
     run('cd ceviche-cms && sudo chef/run.sh')

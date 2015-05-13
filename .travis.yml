@@ -15,7 +15,7 @@ install:
 - pip install -r fabfile/requirements.txt
 script:
 - python test/test.py
-- fab test_chime
+- fab test_chime:despawn_on_failure=t
 notifications:
   webhooks: http://project-monitor.codeforamerica.org/projects/1bf2f3b3-bed8-42bc-91e8-d47f873443de/status
 
