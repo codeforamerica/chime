@@ -63,7 +63,8 @@ class TestSelenium(TestCase):
         main_url = driver.current_url
 
         # start a new task
-        driver.find_element_by_xpath("//input[@type='text'][@name='branch']").send_keys('foobar')
+        driver.find_element_by_xpath("//input[@type='text'][@name='task_description']").send_keys('foobar')
+        driver.find_element_by_xpath("//input[@type='text'][@name='task_beneficiary']").send_keys('raboof')
         driver.find_element_by_xpath("//form[@action='/start']").find_element_by_tag_name('button').click()
 
         # create a new page
