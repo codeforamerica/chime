@@ -1133,8 +1133,7 @@ class TestRepo (TestCase):
             self.clone1.git.checkout(branch1_name)
             raise repo_functions.MergeConflict(remote_commit, self.clone1.commit())
 
-        else:
-            self.clone1.git.push('origin', 'master')
+        self.clone1.git.push('origin', 'master')
 
         # Delete the working branch.
         self.clone1.remotes.origin.push(':' + branch1_name)
