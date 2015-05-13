@@ -12,6 +12,7 @@ from selenium.webdriver.support import expected_conditions as EC
 class TestSelenium(TestCase):
     def setUp(self):
         self.driver = webdriver.Firefox()
+        self.driver.implicitly_wait(30)
         self.email = os.environ['TESTING_EMAIL']
         self.password = os.environ['TESTING_PASSWORD']
         with open(os.path.dirname(__file__) + '/../../fabfile/hosts.txt', 'rU') as f:
