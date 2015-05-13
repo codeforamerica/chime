@@ -1,3 +1,4 @@
+# -- coding: utf-8 --
 import os
 import logging
 from os import mkdir
@@ -104,7 +105,6 @@ def get_start_branch(clone, default_branch_name, branch_description, author_emai
 def ignore_task_metadata_on_merge(clone):
     ''' Tell this repo to ignore merge conflicts on the task metadata file
     '''
-
     # create the .git/info/attributes file if it doesn't exist
     attributes_path = join(clone.git_dir, 'info/attributes')
     if not exists(attributes_path):
