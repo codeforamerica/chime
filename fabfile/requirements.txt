@@ -1,0 +1,2 @@
+Fabric==1.10.1
+selenium==2.45.0

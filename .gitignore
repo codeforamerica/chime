@@ -10,3 +10,5 @@ ga_config.json
 .idea
 *.iml
 apache
+
+hosts.txt
