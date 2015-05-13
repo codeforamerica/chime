@@ -47,7 +47,7 @@
                  <!-- Reviewer options -->
                 <form action="/review" method="POST">
                     <input name="branch" value="{{branch}}" type="hidden" />
-                    <label>Does this change achieve <span class="sketchy">Adding school closures</span> for <span class="sketchy">people who need to make other arrangements</span></label>
+                    <label>Does this change achieve <b>{{task_description}}</b> for <span class="sketchy">people who need to make other arrangements</span></label>
                     <a class="button-alternative" href="/tree/{{safe_branch}}/review">Not quite</a>
                     <button name="action" value="approve" type="submit" class="button-alternative">Yes</button>
                 </form>    
