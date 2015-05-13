@@ -1133,8 +1133,7 @@ class TestRepo (TestCase):
             self.clone1.git.checkout(branch1_name)
             raise repo_functions.MergeConflict(remote_commit, self.clone1.commit())
 
-        else:
-            self.clone1.git.push('origin', 'master')
+        self.clone1.git.push('origin', 'master')
 
         # Delete the working branch.
         self.clone1.remotes.origin.push(':' + branch1_name)
@@ -1765,6 +1764,31 @@ class TestApp (TestCase):
             self.assertTrue(EDIT_LISTDIR_TASK_NAME_PATTERN.format(check_task_name) in response.data)
             # the branch name should now be in the original repo's branches list
             self.assertTrue(check_branch.name in new_clone.branches)
+
+    def test_git_merge_strategy_implemented(self):
+        ''' Verify that the Git merge strategy has been implmemented for a new clone.
+        '''
+        fake_author_email = u'erica@example.com'
+        with HTTMock(self.mock_persona_verify):
+            self.test_client.post('/sign-in', data={'email': fake_author_email})
+
+        with HTTMock(self.auth_csv_example_allowed):
+            # create a new clone via get_repo
+            with self.app.app_context():
+                with self.app.test_request_context():
+                    from flask import session
+                    session['email'] = fake_author_email
+                    new_clone = view_functions.get_repo(self.app)
+
+            # check for the config setting
+            self.assertEqual(new_clone.config_reader().get_value('merge "ignored"', 'driver'), True)
+
+            # check for the attributes setting
+            attributes_path = join(new_clone.git_dir, 'info/attributes')
+            self.assertTrue(exists(attributes_path))
+            with open(attributes_path, 'r') as file:
+                content = file.read().decode("utf-8")
+            self.assertEqual(content, u'{} merge=ignored'.format(repo_functions.TASK_METADATA_FILENAME))
 
     def test_task_metadata_should_exist(self):
         ''' Task metadata file should exist but doesn't
