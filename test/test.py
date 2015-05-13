@@ -37,7 +37,8 @@ import logging
 logging.disable(logging.CRITICAL)
 
 # these patterns help us search the HTML of a response to determine if the expected page loaded
-EDIT_LISTDIR_TASK_DESCRIPTION_PATTERN = '<h3>Current task: <strong>{}</strong></h3>'
+EDIT_LISTDIR_TASK_DESCRIPTION_PATTERN = '<h3>Current task: <strong>{}</strong>'
+EDIT_LISTDIR_TASK_DESCRIPTION_AND_BENEFICIARY_PATTERN = '<h3>Current task: <strong>{}</strong> for <strong>{}</strong></h3>'
 EDIT_LISTDIR_AUTHOR_EMAIL_PATTERN = '<li>Started by: {}</li>'
 EDIT_LISTDIR_BRANCH_NAME_PATTERN = '<li class="active-task"><a href="./">{}</a></li>'
 
@@ -1561,7 +1562,7 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # create a new branch
             response = self.test_client.post('/start', data={'task_description': fake_task_description, 'task_beneficiary': fake_task_beneficiary}, follow_redirects=True)
-            self.assertTrue(EDIT_LISTDIR_TASK_DESCRIPTION_PATTERN.format(fake_task_description) in response.data)
+            self.assertTrue(EDIT_LISTDIR_TASK_DESCRIPTION_AND_BENEFICIARY_PATTERN.format(fake_task_description, fake_task_beneficiary) in response.data)
             self.assertTrue(EDIT_LISTDIR_AUTHOR_EMAIL_PATTERN.format(fake_author_email) in response.data)
 
             # extract the generated branch name from the returned HTML
@@ -1708,7 +1709,7 @@ class TestApp (TestCase):
             #
             response = self.test_client.post('/start', data={'task_description': fake_task_description, 'task_beneficiary': fake_task_beneficiary}, follow_redirects=True)
             # we should be on the new task's edit page
-            self.assertTrue(EDIT_LISTDIR_TASK_DESCRIPTION_PATTERN.format(fake_task_description) in response.data)
+            self.assertTrue(EDIT_LISTDIR_TASK_DESCRIPTION_AND_BENEFICIARY_PATTERN.format(fake_task_description, fake_task_beneficiary) in response.data)
 
             # extract the generated branch name from the returned HTML
             generated_branch_search = search(r'\/tree\/(.{7})\/edit', response.data)
@@ -1758,7 +1759,7 @@ class TestApp (TestCase):
             disposable_task_beneficiary = u'unimportant person'
             response = self.test_client.post('/start', data={'task_description': disposable_task_description, 'task_beneficiary': disposable_task_beneficiary}, follow_redirects=True)
             self.assertEquals(response.status_code, 200)
-            self.assertTrue(EDIT_LISTDIR_TASK_DESCRIPTION_PATTERN.format(disposable_task_description) in response.data)
+            self.assertTrue(EDIT_LISTDIR_TASK_DESCRIPTION_AND_BENEFICIARY_PATTERN.format(disposable_task_description, disposable_task_beneficiary) in response.data)
 
             # create a branch programmatically on our pre-made clone
             check_task_description = u'the branch we are checking for'
@@ -1778,7 +1779,7 @@ class TestApp (TestCase):
             response = self.test_client.get('/tree/{}/edit/'.format(check_branch.name), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # the task description should be in the returned HTML
-            self.assertTrue(EDIT_LISTDIR_TASK_DESCRIPTION_PATTERN.format(check_task_description) in response.data)
+            self.assertTrue(EDIT_LISTDIR_TASK_DESCRIPTION_AND_BENEFICIARY_PATTERN.format(check_task_description, check_task_beneficiary) in response.data)
             # the branch name should now be in the original repo's branches list
             self.assertTrue(check_branch.name in new_clone.branches)
 
