@@ -246,7 +246,7 @@ def _server_setup(fqdn=None):
 
     print(green('Installing chime'))
     time.sleep(2)
-    sudo('apt-get update')
+    sudo('apt-get -qq update')
     rsync_project(remote_dir='.', ssh_opts='-o CheckHostIP=no -o UserKnownHostsFile=/dev/null -o StrictHostkeyChecking=no')
     print(green('Running chef setup scripts...'))
     time.sleep(2)
