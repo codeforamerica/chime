@@ -21,20 +21,28 @@ class TestSelenium(TestCase):
             raise Exception('Please insert a test host')
         self.live_site = 'http://' + hosts[0]
 
+    def switch_to_other_window(self, in_handle):
+        ''' Switch to the first window found with a handle that's not in_handle
+        '''
+        def predicate(driver):
+            for check_handle in driver.window_handles:
+                if check_handle != in_handle:
+                    driver.switch_to_window(check_handle)
+                    return True
+
+            return False
+
+        return predicate
+
     def test_create_page_and_preview(self):
         driver = self.driver
         driver.get(self.live_site)
         main_window = driver.current_window_handle
         driver.find_element_by_id('signin').click()
 
-        # have to loop because the persona link doesn't have a target
-        for window in driver.window_handles:
-            if window == main_window:
-                pass
-            else:
-                persona_window = window
+        # wait until the persona window's available and switch to it
+        WebDriverWait(driver, timeout=20).until(self.switch_to_other_window(main_window))
 
-        driver.switch_to_window(persona_window)
         email = driver.find_element_by_id('authentication_email')
         email.send_keys(self.email)
 
@@ -87,15 +95,9 @@ class TestSelenium(TestCase):
         preview = driver.find_element_by_xpath("//div[@class='button-group']/a[@target='_blank']")
         preview.click()
 
-        # switch to and close the preview window
-        # have to loop because new window doesn't have a target
-        for window in driver.window_handles:
-            if window == main_window:
-                pass
-            else:
-                preview_window = window
+        # wait until the preview window's available and switch to it
+        WebDriverWait(driver, timeout=20).until(self.switch_to_other_window(main_window))
 
-        driver.switch_to_window(preview_window)
         WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.TAG_NAME, 'body'))
         )
