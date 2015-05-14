@@ -35,82 +35,65 @@ class TestSelenium(TestCase):
         return predicate
 
     def test_create_page_and_preview(self):
-        driver = self.driver
-        driver.get(self.live_site)
-        main_window = driver.current_window_handle
-        driver.find_element_by_id('signin').click()
+        self.driver.get(self.live_site)
+        main_window = self.driver.current_window_handle
+        self.driver.find_element_by_id('signin').click()
 
         # wait until the persona window's available and switch to it
         self.waiter.until(self.switch_to_other_window(main_window))
 
-        email = driver.find_element_by_id('authentication_email')
-        email.send_keys(self.email)
+        self.waiter.until(EC.visibility_of_element_located((By.ID, 'authentication_email'))).send_keys(self.email)
 
         # there are many possible submit buttons on this page
         # so grab the whole row and then click the first button
-        submit_row = driver.find_element_by_css_selector('.submit.cf.buttonrow')
+        submit_row = self.driver.find_element_by_css_selector('.submit.cf.buttonrow')
         submit_row.find_element_by_css_selector('.isStart.isAddressInfo').click()
 
         # ajax, wait until the element is visible
-        password = self.waiter.until(
-            EC.visibility_of_element_located((By.ID, 'authentication_password'))
-        )
+        password = self.waiter.until(EC.visibility_of_element_located((By.ID, 'authentication_password')))
         password.send_keys(self.password)
 
         submit_row.find_element_by_css_selector('.isReturning.isTransitionToSecondary').click()
 
-        driver.switch_to_window(main_window)
         # switch back to the main window
-
-        # give the server a few seconds to respond
-        self.waiter.until(
-            EC.visibility_of_element_located((By.NAME, 'task_description'))
-        )
+        self.driver.switch_to_window(main_window)
 
         # make sure we're back to Chime
-        self.assertEquals(driver.title, 'Tasks | Chime')
+        self.assertEquals(self.driver.title, 'Tasks | Chime')
 
-        main_url = driver.current_url
+        main_url = self.driver.current_url
 
         # start a new task
-        driver.find_element_by_name('task_description').send_keys('foobar')
-        driver.find_element_by_name('task_beneficiary').send_keys('raboof')
-        driver.find_element_by_class_name('create').click()
+        self.waiter.until(EC.visibility_of_element_located((By.NAME, 'task_description'))).send_keys('foobar')
+        self.driver.find_element_by_name('task_beneficiary').send_keys('raboof')
+        self.driver.find_element_by_class_name('create').click()
 
         # create a new page
-        driver.find_element_by_xpath("//form[@action='.']/input[@type='text']").send_keys('foobar')
-        driver.find_element_by_xpath("//form[@action='.']/input[@type='submit']").click()
+        self.driver.find_element_by_xpath("//form[@action='.']/input[@type='text']").send_keys('foobar')
+        self.driver.find_element_by_xpath("//form[@action='.']/input[@type='submit']").click()
 
         # add some content to that page
-        driver.find_element_by_name('en-title').send_keys('foo')
-        driver.find_element_by_id('en-body markItUp').send_keys(
-            'This is some test content.',
-            Keys.RETURN, Keys.RETURN,
-            '# This is a test h1',
-            Keys.RETURN, Keys.RETURN,
-            '> This is a test pull-quote'
-        )
+        self.driver.find_element_by_name('en-title').send_keys('foo')
+        test_page_content = 'This is some test content.', Keys.RETURN, Keys.RETURN, '# This is a test h1', Keys.RETURN, Keys.RETURN, '> This is a test pull-quote'
+        self.driver.find_element_by_id('en-body markItUp').send_keys(*test_page_content)
 
         # save the page
-        driver.find_element_by_xpath("//div[@class='button-group']/input[@value='Save']").click()
+        self.driver.find_element_by_xpath("//div[@class='button-group']/input[@value='Save']").click()
 
         # preview the page
-        preview = driver.find_element_by_xpath("//div[@class='button-group']/a[@target='_blank']")
-        preview.click()
+        self.driver.find_element_by_xpath("//div[@class='button-group']/a[@target='_blank']").click()
 
         # wait until the preview window's available and switch to it
         self.waiter.until(self.switch_to_other_window(main_window))
 
-        self.waiter.until(
-            EC.presence_of_element_located((By.TAG_NAME, 'body'))
-        )
-        driver.close()
-        driver.switch_to_window(main_window)
+        self.waiter.until(EC.presence_of_element_located((By.TAG_NAME, 'body')))
+        self.driver.close()
+        self.driver.switch_to_window(main_window)
 
         # go back to the main page
-        driver.get(main_url)
+        self.driver.get(main_url)
         # delete our branch
-        driver.find_element_by_xpath("//form[@action='/merge']/button[@value='abandon']").click()
+        self.driver.find_element_by_xpath("//form[@action='/merge']/button[@value='abandon']").click()
 
     def tearDown(self):
         self.driver.close()
