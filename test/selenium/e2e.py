@@ -50,8 +50,7 @@ class TestSelenium(TestCase):
         submit_row.find_element_by_css_selector('.isStart.isAddressInfo').click()
 
         # ajax, wait until the element is visible
-        password = self.waiter.until(EC.visibility_of_element_located((By.ID, 'authentication_password')))
-        password.send_keys(self.password)
+        self.waiter.until(EC.visibility_of_element_located((By.ID, 'authentication_password'))).send_keys(self.password)
 
         submit_row.find_element_by_css_selector('.isReturning.isTransitionToSecondary').click()
 
