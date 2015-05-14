@@ -41,7 +41,7 @@ class TestSelenium(TestCase):
         driver.find_element_by_id('signin').click()
 
         # wait until the persona window's available and switch to it
-        WebDriverWait(driver, timeout=20).until(self.switch_to_other_window(main_window))
+        WebDriverWait(driver, timeout=60).until(self.switch_to_other_window(main_window))
 
         email = driver.find_element_by_id('authentication_email')
         email.send_keys(self.email)
@@ -97,7 +97,7 @@ class TestSelenium(TestCase):
         preview.click()
 
         # wait until the preview window's available and switch to it
-        WebDriverWait(driver, timeout=20).until(self.switch_to_other_window(main_window))
+        WebDriverWait(driver, timeout=60).until(self.switch_to_other_window(main_window))
 
         WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.TAG_NAME, 'body'))
