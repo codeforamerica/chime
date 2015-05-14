@@ -184,6 +184,7 @@ def _create_ec2_instance():
     # we are going to tag the new instance with our conf name tag
     instance = reservation.instances[0]
     conn.create_tags([instance.id], {'Name': fabconf.get('INSTANCE_NAME_TAG')})
+    conn.create_tags([instance.id], {'CreatedBy': fabconf.get('INSTANCE_CREATED_BY')})
 
     while instance.state == 'pending':
         print(yellow('Instance state: {state}'.format(state=instance.state)))
@@ -246,8 +247,10 @@ def _server_setup(fqdn=None):
 
     print(green('Installing chime'))
     time.sleep(2)
-    sudo('apt-get update')
-    rsync_project(remote_dir='.', ssh_opts='-o CheckHostIP=no -o UserKnownHostsFile=/dev/null -o StrictHostkeyChecking=no')
+    sudo('apt-get -qq update')
+    # rsync quietly and don't bother with host keys
+    rsync_project(remote_dir='.', default_opts='-pthrz',
+                  ssh_opts='-o CheckHostIP=no -o UserKnownHostsFile=/dev/null -o StrictHostkeyChecking=no')
     print(green('Running chef setup scripts...'))
     time.sleep(2)
     run('cd ceviche-cms && sudo chef/run.sh')
