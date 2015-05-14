@@ -15,10 +15,10 @@ It goes something like this:
 * activate rbenv temporarily or permanently
   + temporary: `eval "$(rbenv init -)"`
   + permanent: `echo 'eval "$(rbenv init -)"' >> ~/.bash_profile` (restart shell after)
-* Install ruby-build
-  + `git clone https://github.com/sstephenson/ruby-build.git ~/.rbenv/plugins/ruby-build`
+* Install rvm-download
+  + `git clone https://github.com/garnieretienne/rvm-download.git ~/.rbenv/plugins/rvm-download`
 * Install and use the right ruby
-  + `rbenv install 2.2.0`
+  + `rbenv download 2.2.0`
   + `rbenv shell 2.2.0`
 * Install bundler
   + `gem install bundler`

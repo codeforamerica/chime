@@ -2,19 +2,19 @@
 eval "$(rbenv init -)"
 export PATH="$HOME/.rbenv/bin:$PATH"
 
-if [ ! -d $HOME/.rbenv/plugins/ruby-build ]; then
-    git clone https://github.com/sstephenson/ruby-build.git ~/.rbenv/plugins/ruby-build
+# get a modern ruby
+if [ ! -d ~/.rbenv/plugins/rvm-download ]; then
+    git clone https://github.com/garnieretienne/rvm-download.git ~/.rbenv/plugins/rvm-download
 fi
+rbenv download 2.2.0
 
-rbenv install -s 2.2.0
-
+# use it
 RBENV_VERSION=2.2.0; export RBENV_VERSION
 
+# install bundler and needed gems
 rbenv rehash
-if [ ! `gem query -i -n bundler` == 'true' ]; then
-    gem install bundler
-    rbenv rehash
-fi
+gem install bundler
+rbenv rehash
 
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 BUNDLE_GEMFILE="${DIR}/Gemfile"; export BUNDLE_GEMFILE
