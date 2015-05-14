@@ -10,7 +10,7 @@
                 {% set itemvalues = branch.split('/') %}
                 {% set name = itemvalues[0] %}
                 {% set task = itemvalues[1] %}
-                <h3>Current task: <strong>{% if task_description %}{{task_description}}{% elif task %}{{task}}{% else %}{{name}}{% endif %}</strong></h3>
+                <h3>Current task: <strong>{% if task_description %}{{task_description}}{% elif task %}{{task}}{% else %}{{name}}{% endif %}</strong>{% if task_beneficiary %} for <strong>{{task_beneficiary}}</strong>{% endif %}</h3>
                 <ul>
                     <li>Started by: {% if author_email %}{{author_email}}{% elif name and task %}{{name}}{% else %}Unknown{% endif %}</li>
                     <li>Created on: <span class="sketchy">02-02-2015</span></li>
@@ -47,9 +47,9 @@
                  <!-- Reviewer options -->
                 <form action="/review" method="POST">
                     <input name="branch" value="{{branch}}" type="hidden" />
-                    <label>Review options</label>
-                    <a class="button-alternative" href="/tree/{{safe_branch}}/review">Suggest changes</a>
-                    <button name="action" value="approve" type="submit" class="button-alternative">Approved</button>
+                    <label>Does this change achieve <strong>{{task_description}}</strong>{% if task_beneficiary %} for <strong>{{task_beneficiary}}</strong>{% endif %}?</label>
+                    <a class="button-alternative" href="/tree/{{safe_branch}}/review">Not quite</a>
+                    <button name="action" value="approve" type="submit" class="button-alternative">Yes</button>
                 </form>    
                 
                 {% else %}

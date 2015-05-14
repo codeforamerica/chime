@@ -65,10 +65,11 @@ def index():
         review_subject = 'Plz review this thing'
         review_body = '%s/tree/%s/edit' % (request.url, path)
 
-        # contains 'author_email', 'task_description'
+        # contains 'author_email', 'task_description', 'task_beneficiary'
         task_metadata = repo_functions.get_task_metadata_for_branch(repo, name)
         author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
         task_description = task_metadata['task_description'] if 'task_description' in task_metadata else name
+        task_beneficiary = task_metadata['task_beneficiary'] if 'task_beneficiary' in task_metadata else u''
 
         list_items.append(dict(name=name, path=path, behind=behind, ahead=ahead,
                                needs_peer_review=needs_peer_review,
@@ -76,7 +77,8 @@ def index():
                                is_peer_rejected=is_peer_rejected,
                                review_subject=review_subject,
                                review_body=review_body,
-                               author_email=author_email, task_description=task_description))
+                               author_email=author_email, task_description=task_description,
+                               task_beneficiary=task_beneficiary))
 
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(items=list_items)
@@ -225,9 +227,10 @@ def authorization_failed():
 @synch_required
 def start_branch():
     repo = get_repo(current_app)
-    branch_desc = request.form.get('branch')
+    task_description = request.form.get('task_description')
+    task_beneficiary = request.form.get('task_beneficiary')
     master_name = current_app.config['default_branch']
-    branch = repo_functions.get_start_branch(repo, master_name, branch_desc, session['email'])
+    branch = repo_functions.get_start_branch(repo, master_name, task_description, task_beneficiary, session['email'])
 
     safe_branch = branch_name2path(branch.name)
     return redirect('/tree/{}/edit/'.format(safe_branch), code=303)
@@ -240,10 +243,11 @@ def merge_branch():
     branch_name = request.form.get('branch')
     master_name = current_app.config['default_branch']
 
-    # contains 'author_email', 'task_description'
+    # contains 'author_email', 'task_description', 'task_beneficiary'
     task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch_name)
     author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
     task_description = task_metadata['task_description'] if 'task_description' in task_metadata else u''
+    task_beneficiary = task_metadata['task_beneficiary'] if 'task_beneficiary' in task_metadata else u''
 
     try:
         action = request.form.get('action', '').lower()
@@ -270,7 +274,8 @@ def merge_branch():
         kwargs = common_template_args(current_app.config, session)
         kwargs.update(branch=branch_name, new_files=new_files,
                       gone_files=gone_files, changed_files=changed_files,
-                      author_email=author_email, task_description=task_description)
+                      author_email=author_email, task_description=task_description,
+                      task_beneficiary=task_beneficiary)
 
         return render_template('merge-conflict.html', **kwargs)
 
@@ -285,10 +290,11 @@ def review_branch():
     branch = repo.branches[branch_name]
     branch.checkout()
 
-    # contains 'author_email', 'task_description'
+    # contains 'author_email', 'task_description', 'task_beneficiary'
     task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch_name)
     author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
     task_description = task_metadata['task_description'] if 'task_description' in task_metadata else u''
+    task_beneficiary = task_metadata['task_beneficiary'] if 'task_beneficiary' in task_metadata else u''
 
     try:
         action = request.form.get('action', '').lower()
@@ -307,7 +313,8 @@ def review_branch():
         kwargs = common_template_args(current_app.config, session)
         kwargs.update(branch=branch_name, new_files=new_files,
                       gone_files=gone_files, changed_files=changed_files,
-                      author_email=author_email, task_description=task_description)
+                      author_email=author_email, task_description=task_description,
+                      task_beneficiary=task_beneficiary)
 
         return render_template('merge-conflict.html', **kwargs)
 
@@ -361,12 +368,14 @@ def render_list_dir(repo, branch, path):
     task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch)
     author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
     task_description = task_metadata['task_description'] if 'task_description' in task_metadata else u''
+    task_beneficiary = task_metadata['task_beneficiary'] if 'task_beneficiary' in task_metadata else u''
 
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(branch=branch, safe_branch=branch_name2path(branch),
                   dirs_and_paths=directory_paths(branch, path),
                   list_paths=sorted_paths(repo, branch, path, showallfiles),
-                  author_email=author_email, task_description=task_description)
+                  author_email=author_email, task_description=task_description,
+                  task_beneficiary=task_beneficiary)
     master_name = current_app.config['default_branch']
     kwargs['rejection_messages'] = list(repo_functions.get_rejection_messages(repo, master_name, branch))
     # TODO: the above might throw a GitCommandError if branch is an orphan.
@@ -399,10 +408,11 @@ def render_edit_view(repo, branch, path, file):
         analytics_dict = fetch_google_analytics_for_page(current_app.config, path, ga_config.get('access_token'))
     commit = repo.commit()
 
-    # get the task metadata; contains 'author_email', 'task_description'
+    # get the task metadata; contains 'author_email', 'task_description', 'task_beneficiary'
     task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch)
     author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
     task_description = task_metadata['task_description'] if 'task_description' in task_metadata else u''
+    task_beneficiary = task_metadata['task_beneficiary'] if 'task_beneficiary' in task_metadata else u''
 
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(branch=branch, safe_branch=branch_name2path(branch),
@@ -410,7 +420,8 @@ def render_edit_view(repo, branch, path, file):
                   front=front, view_path=view_path, edit_path=path,
                   history_path=history_path, languages=languages,
                   app_authorized=app_authorized,
-                  author_email=author_email, task_description=task_description)
+                  author_email=author_email, task_description=task_description,
+                  task_beneficiary=task_beneficiary)
     kwargs.update(analytics_dict)
     return render_template('tree-branch-edit-file.html', **kwargs)
 
@@ -485,10 +496,11 @@ def branch_history(branch, path=None):
 
     safe_branch = branch_name2path(branch)
 
-    # contains 'author_email', 'task_description'
+    # contains 'author_email', 'task_description', 'task_beneficiary'
     task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch)
     author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
     task_description = task_metadata['task_description'] if 'task_description' in task_metadata else u''
+    task_beneficiary = task_metadata['task_beneficiary'] if 'task_beneficiary' in task_metadata else u''
 
     view_path = join('/tree/%s/view' % branch_name2path(branch), path)
     edit_path = join('/tree/%s/edit' % branch_name2path(branch), path)
@@ -514,7 +526,8 @@ def branch_history(branch, path=None):
     kwargs.update(branch=branch, safe_branch=safe_branch,
                   history=history, view_path=view_path, edit_path=edit_path,
                   path=path, languages=languages, app_authorized=app_authorized,
-                  author_email=author_email, task_description=task_description)
+                  author_email=author_email, task_description=task_description,
+                  task_beneficiary=task_beneficiary)
 
     return render_template('tree-branch-history.html', **kwargs)
 
@@ -527,14 +540,16 @@ def branch_review(branch):
     repo = get_repo(current_app)
     c = repo.commit()
 
-    # contains 'author_email', 'task_description'
+    # contains 'author_email', 'task_description', 'task_beneficiary'
     task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch)
     author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
     task_description = task_metadata['task_description'] if 'task_description' in task_metadata else u''
+    task_beneficiary = task_metadata['task_beneficiary'] if 'task_beneficiary' in task_metadata else u''
 
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(branch=branch, safe_branch=branch_name2path(branch),
-                  hexsha=c.hexsha, author_email=author_email, task_description=task_description)
+                  hexsha=c.hexsha, author_email=author_email, task_description=task_description,
+                  task_beneficiary=task_beneficiary)
 
     return render_template('tree-branch-review.html', **kwargs)
 

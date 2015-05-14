@@ -37,8 +37,10 @@ import logging
 logging.disable(logging.CRITICAL)
 
 # these patterns help us search the HTML of a response to determine if the expected page loaded
-EDIT_LISTDIR_TASK_NAME_PATTERN = "<h3>Current task: <strong>{}</strong></h3>"
-EDIT_LISTDIR_AUTHOR_EMAIL_PATTERN = "<li>Started by: {}</li>"
+EDIT_LISTDIR_TASK_DESCRIPTION_PATTERN = '<h3>Current task: <strong>{}</strong>'
+EDIT_LISTDIR_TASK_DESCRIPTION_AND_BENEFICIARY_PATTERN = '<h3>Current task: <strong>{}</strong> for <strong>{}</strong></h3>'
+EDIT_LISTDIR_AUTHOR_EMAIL_PATTERN = '<li>Started by: {}</li>'
+EDIT_LISTDIR_BRANCH_NAME_PATTERN = '<li class="active-task"><a href="./">{}</a></li>'
 
 class TestJekyll (TestCase):
 
@@ -230,8 +232,8 @@ class TestRepo (TestCase):
     def test_get_start_branch(self):
         ''' Make a simple edit in a clone, verify that it appears in the other.
         '''
-        name = str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', name, u'erica@example.com')
+        task_description, task_beneficiary = str(uuid4()), str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, u'erica@example.com')
 
         self.assertTrue(branch1.name in self.clone1.branches)
         self.assertTrue(branch1.name in self.origin.branches)
@@ -251,7 +253,7 @@ class TestRepo (TestCase):
         #
         # See if the branch made it to clone 2
         #
-        branch2 = repo_functions.get_start_branch(self.clone2, 'master', name, u'erica@example.com')
+        branch2 = repo_functions.get_existing_branch(self.clone2, 'master', branch1.name)
 
         self.assertTrue(branch2.name in self.clone2.branches)
         self.assertEquals(branch2.commit.hexsha, branch1.commit.hexsha)
@@ -260,7 +262,7 @@ class TestRepo (TestCase):
     def test_get_start_branch_2(self):
         ''' Make a simple edit in a clone, verify that it appears in the other.
         '''
-        name = str(uuid4())
+        task_description, task_beneficiary = str(uuid4()), str(uuid4())
 
         #
         # Check out both clones.
@@ -290,7 +292,7 @@ class TestRepo (TestCase):
         #
         # Now start a new branch from the second clone, and look for the new master commit.
         #
-        branch2 = repo_functions.get_start_branch(self.clone2, 'master', name, self.session['email'])
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_description, task_beneficiary, self.session['email'])
 
         self.assertTrue(branch2.name in self.clone2.branches)
         # compare the second-to-last commit on branch2 (by adding ".parents[0]", as
@@ -300,25 +302,28 @@ class TestRepo (TestCase):
     def test_delete_missing_branch(self):
         ''' Delete a branch in a clone that's still in origin, see if it can be deleted anyway.
         '''
-        name = str(uuid4())
+        task_description, task_beneficiary = str(uuid4()), str(uuid4())
 
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', name, u'erica@example.com')
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, u'erica@example.com')
 
         self.assertTrue(branch1.name in self.origin.branches)
 
-        self.clone2.git.fetch()
+        self.clone2.git.fetch('origin')
 
-        repo_functions.abandon_branch(self.clone2, 'master', name)
+        self.assertTrue(branch1.name in self.origin.branches)
+        self.assertTrue('origin/' + branch1.name in self.clone2.refs)
 
-        self.assertFalse(name in self.origin.branches)
-        self.assertFalse(name in self.clone2.branches)
-        self.assertFalse('origin/' + name in self.clone2.refs)
+        repo_functions.abandon_branch(self.clone2, 'master', branch1.name)
+
+        self.assertFalse(branch1.name in self.origin.branches)
+        self.assertFalse('origin/' + branch1.name in self.clone2.refs)
+        self.assertFalse(branch1.name in self.clone2.branches)
 
     def test_new_file(self):
         ''' Make a new file and delete an old file in a clone, verify that the changes appear in the other.
         '''
-        name = str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', name, self.session['email'])
+        task_description, task_beneficiary = str(uuid4()), str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, self.session['email'])
 
         self.assertTrue(branch1.name in self.clone1.branches)
         self.assertTrue(branch1.name in self.origin.branches)
@@ -347,7 +352,7 @@ class TestRepo (TestCase):
         #
         # See if the changes made it to clone 2
         #
-        branch2 = repo_functions.get_start_branch(self.clone2, 'master', name, self.session['email'])
+        branch2 = repo_functions.get_existing_branch(self.clone2, 'master', branch1.name)
 
         self.assertTrue(branch2.name in self.clone2.branches)
         self.assertEquals(branch2.commit.hexsha, branch1.commit.hexsha)
@@ -368,8 +373,8 @@ class TestRepo (TestCase):
     def test_delete_directory(self):
         ''' Make a new file and directory and delete them.
         '''
-        name = str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', name, u'erica@example.com')
+        task_description, task_beneficiary = str(uuid4()), str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, u'erica@example.com')
 
         self.assertTrue(branch1.name in self.clone1.branches)
         self.assertTrue(branch1.name in self.origin.branches)
@@ -404,8 +409,8 @@ class TestRepo (TestCase):
     def test_move_file(self):
         ''' Change the path of a file.
         '''
-        name = str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', name, u'erica@example.com')
+        task_description, task_beneficiary = str(uuid4()), str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, u'erica@example.com')
 
         self.assertTrue(branch1.name in self.clone1.branches)
         self.assertTrue(branch1.name in self.origin.branches)
@@ -421,7 +426,7 @@ class TestRepo (TestCase):
         #
         # See if the new file made it to clone 2
         #
-        branch2 = repo_functions.get_start_branch(self.clone2, 'master', name, u'erica@example.com')
+        branch2 = repo_functions.get_existing_branch(self.clone2, 'master', branch1.name)
         branch2.checkout()
 
         self.assertTrue(exists(join(self.clone2.working_dir, 'hello/world.md')))
@@ -520,9 +525,9 @@ class TestRepo (TestCase):
         ''' Test that two non-conflicting new files merge cleanly.
         '''
         fake_author_email = u'erica@example.com'
-        task_name = str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_name, fake_author_email)
-        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_name, fake_author_email)
+        task_description, task_beneficiary = str(uuid4()), str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_description, task_beneficiary, fake_author_email)
         branch1_name, branch2_name = branch1.name, branch2.name
 
         #
@@ -562,7 +567,7 @@ class TestRepo (TestCase):
         #
         # Show that the merge from the second branch made it back to the first.
         #
-        branch1b = repo_functions.get_start_branch(self.clone1, 'master', task_name, fake_author_email)
+        branch1b = repo_functions.get_existing_branch(self.clone1, 'master', branch2.name)
 
         self.assertEquals(branch1b.commit, branch2.commit)
         self.assertEquals(branch1b.commit.author.email, self.session['email'])
@@ -572,9 +577,9 @@ class TestRepo (TestCase):
         ''' Test that a conflict in two branches appears at the right spot.
         '''
         fake_author_email = u'erica@example.com'
-        task_name = str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_name, fake_author_email)
-        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_name, fake_author_email)
+        task_description, task_beneficiary = str(uuid4()), str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_description, task_beneficiary, fake_author_email)
         branch1_name = branch1.name
 
         #
@@ -617,9 +622,10 @@ class TestRepo (TestCase):
         ''' Test that a conflict in two branches appears at the right spot.
         '''
         fake_author_email = u'erica@example.com'
-        task_name1, task_name2 = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_name1, fake_author_email)
-        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_name2, fake_author_email)
+        task_description1, task_description2 = str(uuid4()), str(uuid4())
+        task_beneficiary1, task_beneficiary2 = str(uuid4()), str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description1, task_beneficiary1, fake_author_email)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_description2, task_beneficiary2, fake_author_email)
         branch1_name = branch1.name
 
         #
@@ -672,9 +678,10 @@ class TestRepo (TestCase):
         ''' Test that a conflict in two branches appears at the right spot.
         '''
         fake_author_email = u'erica@example.com'
-        task_name1, task_name2 = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_name1, fake_author_email)
-        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_name2, fake_author_email)
+        task_description1, task_description2 = str(uuid4()), str(uuid4())
+        task_beneficiary1, task_beneficiary2 = str(uuid4()), str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description1, task_beneficiary1, fake_author_email)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_description2, task_beneficiary2, fake_author_email)
         branch1_name, branch2_name = branch1.name, branch2.name
 
         #
@@ -721,10 +728,10 @@ class TestRepo (TestCase):
         ''' Test that a conflict in two branches can be clobbered.
         '''
         fake_author_email = u'erica@example.com'
-        task_name2 = str(uuid4())
+        task_description, task_beneficiary = str(uuid4()), str(uuid4())
         title_branch = repo_functions.get_existing_branch(self.clone1, 'master', 'title')
-        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_name2, fake_author_email)
-        title_branch_name, branch2_name = title_branch.name, branch2.name
+        compare_branch = repo_functions.get_start_branch(self.clone2, 'master', task_description, task_beneficiary, fake_author_email)
+        title_branch_name, compare_branch_name = title_branch.name, compare_branch.name
 
         #
         # Add goner.md in title_branch.
@@ -732,20 +739,20 @@ class TestRepo (TestCase):
         title_branch.checkout()
 
         edit_functions.create_new_page(self.clone1, '', 'goner.md',
-                                       dict(title=task_name2), 'Woooo woooo.')
+                                       dict(title=task_description), 'Woooo woooo.')
 
         args = self.clone1, 'goner.md', '...', title_branch.commit.hexsha, 'master'
         commit = repo_functions.save_working_file(*args)
 
         #
-        # Change index.md in branch2 so it conflicts with the title branch.
+        # Change index.md in compare_branch so it conflicts with the title branch.
         #
-        branch2.checkout()
+        compare_branch.checkout()
 
         edit_functions.update_page(self.clone2, 'index.md',
-                                   dict(title=task_name2), 'Hello hello.')
+                                   dict(title=task_description), 'Hello hello.')
 
-        args = self.clone2, 'index.md', '...', branch2.commit.hexsha, 'master'
+        args = self.clone2, 'index.md', '...', compare_branch.commit.hexsha, 'master'
         commit = repo_functions.save_working_file(*args)
 
         #
@@ -754,7 +761,7 @@ class TestRepo (TestCase):
         repo_functions.complete_branch(self.clone1, 'master', title_branch_name)
 
         with self.assertRaises(repo_functions.MergeConflict) as conflict:
-            repo_functions.complete_branch(self.clone2, 'master', branch2_name)
+            repo_functions.complete_branch(self.clone2, 'master', compare_branch_name)
 
         self.assertEqual(conflict.exception.local_commit, commit)
 
@@ -768,13 +775,13 @@ class TestRepo (TestCase):
         #
         # Merge our conflicting branch and clobber the default branch.
         #
-        repo_functions.clobber_default_branch(self.clone2, 'master', branch2_name)
+        repo_functions.clobber_default_branch(self.clone2, 'master', compare_branch_name)
 
         with open(join(self.clone2.working_dir, 'index.md')) as file:
             front, body = jekyll_functions.load_jekyll_doc(file)
 
-        self.assertEqual(front['title'], task_name2)
-        self.assertFalse(branch2_name in self.origin.branches)
+        self.assertEqual(front['title'], task_description)
+        self.assertFalse(compare_branch_name in self.origin.branches)
 
         # If goner.md is still around, then master wasn't fully clobbered.
         self.clone1.branches['master'].checkout()
@@ -786,28 +793,28 @@ class TestRepo (TestCase):
         ''' Test that a conflict in two branches can be abandoned.
         '''
         fake_author_email = u'erica@example.com'
-        task_name = str(uuid4())
+        task_description, task_beneficiary = str(uuid4()), str(uuid4())
         title_branch_name = 'title'
         repo_functions.get_existing_branch(self.clone1, 'master', title_branch_name)
-        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_name, fake_author_email)
-        branch2_name = branch2.name
+        compare_branch = repo_functions.get_start_branch(self.clone2, 'master', task_description, task_beneficiary, fake_author_email)
+        compare_branch_name = compare_branch.name
 
         #
-        # Change index.md in branch2 so it conflicts with title branch.
+        # Change index.md in compare_branch so it conflicts with title branch.
         # Also add goner.md, which we'll later want to disappear.
         #
-        branch2.checkout()
+        compare_branch.checkout()
 
         edit_functions.update_page(self.clone2, 'index.md',
-                                   dict(title=task_name), 'Hello hello.')
+                                   dict(title=task_description), 'Hello hello.')
 
         edit_functions.create_new_page(self.clone2, '', 'goner.md',
-                                       dict(title=task_name), 'Woooo woooo.')
+                                       dict(title=task_description), 'Woooo woooo.')
 
-        args = self.clone2, 'index.md', '...', branch2.commit.hexsha, 'master'
+        args = self.clone2, 'index.md', '...', compare_branch.commit.hexsha, 'master'
         commit = repo_functions.save_working_file(*args)
 
-        args = self.clone2, 'goner.md', '...', branch2.commit.hexsha, 'master'
+        args = self.clone2, 'goner.md', '...', compare_branch.commit.hexsha, 'master'
         commit = repo_functions.save_working_file(*args)
 
         #
@@ -816,7 +823,7 @@ class TestRepo (TestCase):
         repo_functions.complete_branch(self.clone1, 'master', title_branch_name)
 
         with self.assertRaises(repo_functions.MergeConflict) as conflict:
-            repo_functions.complete_branch(self.clone2, 'master', branch2_name)
+            repo_functions.complete_branch(self.clone2, 'master', compare_branch_name)
 
         self.assertEqual(conflict.exception.local_commit, commit)
 
@@ -830,13 +837,13 @@ class TestRepo (TestCase):
         #
         # Merge our conflicting branch and abandon it to the default branch.
         #
-        repo_functions.abandon_branch(self.clone2, 'master', branch2_name)
+        repo_functions.abandon_branch(self.clone2, 'master', compare_branch_name)
 
         with open(join(self.clone2.working_dir, 'index.md')) as file:
             front, body = jekyll_functions.load_jekyll_doc(file)
 
-        self.assertNotEqual(front['title'], task_name)
-        self.assertFalse(branch2_name in self.origin.branches)
+        self.assertNotEqual(front['title'], task_description)
+        self.assertFalse(compare_branch_name in self.origin.branches)
 
         # If goner.md is still around, then the branch wasn't fully abandoned.
         self.assertFalse(exists(join(self.clone2.working_dir, 'goner.md')))
@@ -845,8 +852,8 @@ class TestRepo (TestCase):
     def test_peer_review(self):
         ''' Change the path of a file.
         '''
-        task_name = str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_name, u'erica@example.com')
+        task_description, task_beneficiary = str(uuid4()), str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, u'erica@example.com')
         branch1_name = branch1.name
 
         #
@@ -862,7 +869,7 @@ class TestRepo (TestCase):
         self.assertFalse(repo_functions.is_peer_approved(self.clone1, 'master', branch1_name))
 
         edit_functions.update_page(self.clone1, 'index.md',
-                                   dict(title=task_name), 'Hello you-all.')
+                                   dict(title=task_description), 'Hello you-all.')
 
         repo_functions.save_working_file(self.clone1, 'index.md', 'I made a change',
                                          self.clone1.commit().hexsha, 'master')
@@ -889,7 +896,7 @@ class TestRepo (TestCase):
         # Make another commit.
         #
         edit_functions.update_page(self.clone1, 'index.md',
-                                   dict(title=task_name), 'Hello you there.')
+                                   dict(title=task_description), 'Hello you there.')
 
         repo_functions.save_working_file(self.clone1, 'index.md', 'I made a change',
                                          self.clone1.commit().hexsha, 'master')
@@ -916,8 +923,8 @@ class TestRepo (TestCase):
         ''' Feedback and edits by peers are handled as expected.
         '''
         fake_author_email = u'erica@example.com'
-        task_name = str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_name, fake_author_email)
+        task_description, task_beneficiary = str(uuid4()), str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
         branch1_name = branch1.name
 
         #
@@ -933,7 +940,7 @@ class TestRepo (TestCase):
         self.assertFalse(repo_functions.is_peer_approved(self.clone1, 'master', branch1_name))
 
         edit_functions.update_page(self.clone1, 'index.md',
-                                   dict(title=task_name), 'Hello you-all.')
+                                   dict(title=task_description), 'Hello you-all.')
 
         repo_functions.save_working_file(self.clone1, 'index.md', 'I made a change',
                                          self.clone1.commit().hexsha, 'master')
@@ -962,7 +969,7 @@ class TestRepo (TestCase):
         # Make another commit as the reviewer.
         #
         edit_functions.update_page(self.clone1, 'index.md',
-                                   dict(title=task_name), 'Hello you there.')
+                                   dict(title=task_description), 'Hello you there.')
 
         repo_functions.save_working_file(self.clone1, 'index.md', 'I made a change',
                                          self.clone1.commit().hexsha, 'master')
@@ -998,8 +1005,8 @@ class TestRepo (TestCase):
         ''' The task metadata file is created when a branch is started, and contains the expected information.
         '''
         fake_author_email = u'erica@example.com'
-        task_name = str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_name, fake_author_email)
+        task_description, task_beneficiary = str(uuid4()), str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
         branch1_name = branch1.name
         branch1.checkout()
 
@@ -1014,14 +1021,16 @@ class TestRepo (TestCase):
 
         # validate the contents of the task metadata file
         self.assertEqual(task_metadata['author_email'], fake_author_email)
-        self.assertEqual(task_metadata['task_description'], task_name)
+        self.assertEqual(task_metadata['task_description'], task_description)
+        self.assertEqual(task_metadata['task_beneficiary'], task_beneficiary)
 
     def test_task_metadata_creation_with_unicode(self):
         ''' The task metadata file is created when a branch is started, and contains the expected information.
         '''
         fake_author_email = u'¯\_(ツ)_/¯@快速狐狸.com'
-        task_name = u'(╯°□°）╯︵ ┻━┻'
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_name, fake_author_email)
+        task_description = u'(╯°□°）╯︵ ┻━┻'
+        task_beneficiary = u'૮(꒦ິ ˙̫̮ ꒦ິ)ა'
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
         branch1_name = branch1.name
         branch1.checkout()
 
@@ -1036,14 +1045,15 @@ class TestRepo (TestCase):
 
         # validate the contents of the task metadata file
         self.assertEqual(task_metadata['author_email'], fake_author_email)
-        self.assertEqual(task_metadata['task_description'], task_name)
+        self.assertEqual(task_metadata['task_description'], task_description)
+        self.assertEqual(task_metadata['task_beneficiary'], task_beneficiary)
 
     def test_task_metadata_update(self):
         ''' The task metadata file can be updated
         '''
         fake_author_email = u'erica@example.com'
-        task_name = str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_name, fake_author_email)
+        task_description, task_beneficiary = str(uuid4()), str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
         branch1_name = branch1.name
         branch1.checkout()
 
@@ -1058,7 +1068,8 @@ class TestRepo (TestCase):
 
         # validate the contents of the task metadata file
         self.assertEqual(task_metadata['author_email'], fake_author_email)
-        self.assertEqual(task_metadata['task_description'], task_name)
+        self.assertEqual(task_metadata['task_description'], task_description)
+        self.assertEqual(task_metadata['task_beneficiary'], task_beneficiary)
 
         # write a new task name and some other arbitrary data
         metadata_update = {'task_description': u'Changed my mind', 'lead_singer': u'Johnny Rotten'}
@@ -1075,8 +1086,8 @@ class TestRepo (TestCase):
         ''' The task metadata file is deleted when a branch is completed, and isn't merged.
         '''
         fake_author_email = u'erica@example.com'
-        task_name = str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_name, fake_author_email)
+        task_description, task_beneficiary = str(uuid4()), str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
         branch1_name = branch1.name
         branch1.checkout()
 
@@ -1103,9 +1114,10 @@ class TestRepo (TestCase):
         '''
         fake_author_email1 = u'erica@example.com'
         fake_author_email2 = u'nobody@example.com'
-        task_name1, task_name2 = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_name1, fake_author_email1)
-        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_name2, fake_author_email2)
+        task_description1, task_description2 = str(uuid4()), str(uuid4())
+        task_beneficiary1, task_beneficiary2 = str(uuid4()), str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description1, task_beneficiary1, fake_author_email1)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_description2, task_beneficiary2, fake_author_email2)
         branch1_name = branch1.name
 
         # Check out the branches
@@ -1513,13 +1525,13 @@ class TestApp (TestCase):
 
         with HTTMock(self.auth_csv_example_disallowed):
             response = self.test_client.get('/')
-            self.assertFalse('Create task' in response.data)
+            self.assertFalse('Create' in response.data)
 
     def test_login(self):
         ''' Check basic log in / log out flow without talking to Persona.
         '''
         response = self.test_client.get('/')
-        self.assertFalse('Create task' in response.data)
+        self.assertFalse('Create' in response.data)
 
         with HTTMock(self.mock_persona_verify):
             response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
@@ -1527,18 +1539,19 @@ class TestApp (TestCase):
 
         with HTTMock(self.auth_csv_example_allowed):
             response = self.test_client.get('/')
-            self.assertTrue('Create task' in response.data)
+            self.assertTrue('Create' in response.data)
 
             response = self.test_client.post('/sign-out')
             self.assertEquals(response.status_code, 200)
 
             response = self.test_client.get('/')
-            self.assertFalse('Create task' in response.data)
+            self.assertFalse('Create' in response.data)
 
     def test_branches(self):
         ''' Check basic branching functionality.
         '''
-        fake_branch_name = u'do things'
+        fake_task_description = u'do things'
+        fake_task_beneficiary = u'somebody else'
         fake_author_email = u'erica@example.com'
         fake_page_slug = u'hello'
         fake_page_name = u'{}.html'.format(fake_page_slug)
@@ -1548,8 +1561,8 @@ class TestApp (TestCase):
 
         with HTTMock(self.auth_csv_example_allowed):
             # create a new branch
-            response = self.test_client.post('/start', data={'branch': fake_branch_name}, follow_redirects=True)
-            self.assertTrue(EDIT_LISTDIR_TASK_NAME_PATTERN.format(fake_branch_name) in response.data)
+            response = self.test_client.post('/start', data={'task_description': fake_task_description, 'task_beneficiary': fake_task_beneficiary}, follow_redirects=True)
+            self.assertTrue(EDIT_LISTDIR_TASK_DESCRIPTION_AND_BENEFICIARY_PATTERN.format(fake_task_description, fake_task_beneficiary) in response.data)
             self.assertTrue(EDIT_LISTDIR_AUTHOR_EMAIL_PATTERN.format(fake_author_email) in response.data)
 
             # extract the generated branch name from the returned HTML
@@ -1620,7 +1633,7 @@ class TestApp (TestCase):
             response = self.test_client.post(form['action'], data=data, follow_redirects=True)
             self.assertEquals(response.status_code, 200)
             self.assertFalse('Not Allowed' in response.data)
-            self.assertFalse(fake_branch_name in response.data)
+            self.assertFalse(fake_task_description in response.data)
 
     def test_get_request_does_not_create_branch(self):
         ''' Navigating to a made-up URL should not create a branch
@@ -1636,7 +1649,7 @@ class TestApp (TestCase):
             response = self.test_client.get('/tree/{}/edit/'.format(fake_branch_name), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # the branch path should not be in the returned HTML
-            self.assertFalse(EDIT_LISTDIR_TASK_NAME_PATTERN.format(fake_branch_name) in response.data)
+            self.assertFalse(EDIT_LISTDIR_TASK_DESCRIPTION_PATTERN.format(fake_branch_name) in response.data)
             # the branch name should not be in the origin's branches list
             self.assertFalse(fake_branch_name in self.origin.branches)
 
@@ -1646,7 +1659,7 @@ class TestApp (TestCase):
             response = self.test_client.get('/tree/{}/history/'.format(fake_branch_name), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # the branch path should not be in the returned HTML
-            self.assertFalse(EDIT_LISTDIR_TASK_NAME_PATTERN.format(fake_branch_name) in response.data)
+            self.assertFalse(EDIT_LISTDIR_TASK_DESCRIPTION_PATTERN.format(fake_branch_name) in response.data)
             # the branch name should not be in the origin's branches list
             self.assertFalse(fake_branch_name in self.origin.branches)
 
@@ -1656,7 +1669,7 @@ class TestApp (TestCase):
             response = self.test_client.get('/tree/{}/review/'.format(fake_branch_name), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # the branch path should not be in the returned HTML
-            self.assertFalse(EDIT_LISTDIR_TASK_NAME_PATTERN.format(fake_branch_name) in response.data)
+            self.assertFalse(EDIT_LISTDIR_TASK_DESCRIPTION_PATTERN.format(fake_branch_name) in response.data)
             # the branch name should not be in the origin's branches list
             self.assertFalse(fake_branch_name in self.origin.branches)
 
@@ -1666,7 +1679,7 @@ class TestApp (TestCase):
             response = self.test_client.get('/tree/{}/view/'.format(fake_branch_name), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # the branch path should not be in the returned HTML
-            self.assertFalse(EDIT_LISTDIR_TASK_NAME_PATTERN.format(fake_branch_name) in response.data)
+            self.assertFalse(EDIT_LISTDIR_TASK_DESCRIPTION_PATTERN.format(fake_branch_name) in response.data)
             # the branch name should not be in the origin's branches list
             self.assertFalse(fake_branch_name in self.origin.branches)
 
@@ -1680,20 +1693,23 @@ class TestApp (TestCase):
             #
             # try adding a new file
             #
-            fake_branch_name = 'this-should-not-create-a-branch'
+            fake_task_description = u'This should not create a branch'
+            fake_task_beneficiary = u'Nobody'
+            fake_author_email = u'erica@example.com'
+            fake_branch_name = repo_functions.make_branch_name(fake_task_description, fake_task_beneficiary, fake_author_email)
             response = self.test_client.post('/tree/{}/edit/'.format(fake_branch_name), data={'action': 'add', 'path': 'hello.html'}, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
-            # the branch path should not be in the returned HTML
-            self.assertFalse(EDIT_LISTDIR_TASK_NAME_PATTERN.format(fake_branch_name) in response.data)
+            # the branch name should not be in the returned HTML
+            self.assertFalse(EDIT_LISTDIR_BRANCH_NAME_PATTERN.format(fake_branch_name) in response.data)
             # the branch name should not be in the origin's branches list
             self.assertFalse(fake_branch_name in self.origin.branches)
 
             #
             # create a branch then delete it right before a POSTing a save command
             #
-            response = self.test_client.post('/start', data={'branch': fake_branch_name}, follow_redirects=True)
+            response = self.test_client.post('/start', data={'task_description': fake_task_description, 'task_beneficiary': fake_task_beneficiary}, follow_redirects=True)
             # we should be on the new task's edit page
-            self.assertTrue(EDIT_LISTDIR_TASK_NAME_PATTERN.format(fake_branch_name) in response.data)
+            self.assertTrue(EDIT_LISTDIR_TASK_DESCRIPTION_AND_BENEFICIARY_PATTERN.format(fake_task_description, fake_task_beneficiary) in response.data)
 
             # extract the generated branch name from the returned HTML
             generated_branch_search = search(r'\/tree\/(.{7})\/edit', response.data)
@@ -1722,7 +1738,7 @@ class TestApp (TestCase):
             response = self.test_client.post('/tree/{}/save/hello.html'.format(generated_branch_name), data={'layout': 'multi', 'hexsha': hexsha, 'en-title': 'Greetings', 'en-body': 'Hello world.\n', 'fr-title': '', 'fr-body': '', 'url-slug': 'hello'}, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # the task name should not be in the returned HTML
-            self.assertFalse(fake_branch_name in response.data)
+            self.assertFalse(EDIT_LISTDIR_TASK_DESCRIPTION_PATTERN.format(fake_task_description) in response.data)
             # 'content tips', which is in the tree-branch-edit template, shouldn't be in the returned HTML either
             self.assertFalse('Content tips' in response.data)
             # the branch name should not be in the origin's branches list
@@ -1739,14 +1755,16 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            disposable_branch_name = u'unimportant-branch'
-            response = self.test_client.post('/start', data={'branch': disposable_branch_name}, follow_redirects=True)
+            disposable_task_description = u'unimportant task'
+            disposable_task_beneficiary = u'unimportant person'
+            response = self.test_client.post('/start', data={'task_description': disposable_task_description, 'task_beneficiary': disposable_task_beneficiary}, follow_redirects=True)
             self.assertEquals(response.status_code, 200)
-            self.assertTrue(EDIT_LISTDIR_TASK_NAME_PATTERN.format(disposable_branch_name) in response.data)
+            self.assertTrue(EDIT_LISTDIR_TASK_DESCRIPTION_AND_BENEFICIARY_PATTERN.format(disposable_task_description, disposable_task_beneficiary) in response.data)
 
             # create a branch programmatically on our pre-made clone
-            check_task_name = u'the branch we are checking for'
-            check_branch = repo_functions.get_start_branch(self.clone1, 'master', check_task_name, fake_author_email)
+            check_task_description = u'the branch we are checking for'
+            check_task_beneficiary = u'just me'
+            check_branch = repo_functions.get_start_branch(self.clone1, 'master', check_task_description, check_task_beneficiary, fake_author_email)
             self.assertTrue(check_branch.name in self.clone1.branches)
             self.assertTrue(check_branch.name in self.origin.branches)
             # verify that the branch doesn't exist in our new clone
@@ -1760,8 +1778,8 @@ class TestApp (TestCase):
             # request an edit page for the check branch through the http interface
             response = self.test_client.get('/tree/{}/edit/'.format(check_branch.name), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
-            # the branch path should be in the returned HTML
-            self.assertTrue(EDIT_LISTDIR_TASK_NAME_PATTERN.format(check_task_name) in response.data)
+            # the task description should be in the returned HTML
+            self.assertTrue(EDIT_LISTDIR_TASK_DESCRIPTION_AND_BENEFICIARY_PATTERN.format(check_task_description, check_task_beneficiary) in response.data)
             # the branch name should now be in the original repo's branches list
             self.assertTrue(check_branch.name in new_clone.branches)
 
@@ -1797,8 +1815,8 @@ class TestApp (TestCase):
         with HTTMock(self.mock_persona_verify):
             self.test_client.post('/sign-in', data={'email': fake_author_email})
 
-        task_name = str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_name, fake_author_email)
+        task_description, task_beneficiary = str(uuid4()), str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
         branch1_name = branch1.name
         branch1.checkout()
 
@@ -1820,7 +1838,7 @@ class TestApp (TestCase):
             # it's a good response
             self.assertEqual(response.status_code, 200)
             # the branch name should be in the returned HTML
-            self.assertTrue(EDIT_LISTDIR_TASK_NAME_PATTERN.format(branch1_name) in response.data)
+            self.assertTrue(EDIT_LISTDIR_TASK_DESCRIPTION_PATTERN.format(branch1_name) in response.data)
             # the 'Started by' should be 'Unknown' for now
             self.assertTrue(EDIT_LISTDIR_AUTHOR_EMAIL_PATTERN.format(u'Unknown') in response.data)
 
