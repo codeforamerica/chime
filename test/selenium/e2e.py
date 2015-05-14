@@ -68,11 +68,11 @@ class TestSelenium(TestCase):
         self.driver.find_element_by_class_name('create').click()
 
         # create a new page
-        self.driver.find_element_by_xpath("//form[@action='.']/input[@type='text']").send_keys('foobar')
+        self.waiter.until(EC.visibility_of_element_located((By.XPATH, "//form[@action='.']/input[@type='text']"))).send_keys('foobar')
         self.driver.find_element_by_xpath("//form[@action='.']/input[@type='submit']").click()
 
         # add some content to that page
-        self.driver.find_element_by_name('en-title').send_keys('foo')
+        self.waiter.until(EC.visibility_of_element_located((By.NAME, 'en-title'))).send_keys('foo')
         test_page_content = 'This is some test content.', Keys.RETURN, Keys.RETURN, '# This is a test h1', Keys.RETURN, Keys.RETURN, '> This is a test pull-quote'
         self.driver.find_element_by_id('en-body markItUp').send_keys(*test_page_content)
 
@@ -80,7 +80,7 @@ class TestSelenium(TestCase):
         self.driver.find_element_by_xpath("//div[@class='button-group']/input[@value='Save']").click()
 
         # preview the page
-        self.driver.find_element_by_xpath("//div[@class='button-group']/a[@target='_blank']").click()
+        self.waiter.until(EC.presence_of_element_located((By.XPATH, "//div[@class='button-group']/a[@target='_blank']"))).click()
 
         # wait until the preview window's available and switch to it
         self.waiter.until(self.switch_to_other_window(main_window))
