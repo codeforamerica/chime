@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/wpietri/govspeak.git
-  revision: 1fa46c1e1a1cd73ea888bb875c0b8b7810045fa3
+  revision: b870f5c7306a9632b03a3058ec3eb33a0c40d15f
   branch: throwaway-chimespeak-for-user-test
   specs:
     govspeak (3.3.0)
@@ -51,7 +51,7 @@ GEM
       sass (~> 3.2)
     jekyll-watch (1.2.1)
       listen (~> 2.7)
-    kramdown (1.6.0)
+    kramdown (1.7.0)
     libv8 (3.16.14.7)
     liquid (2.6.2)
     listen (2.10.0)
