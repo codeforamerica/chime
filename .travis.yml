@@ -8,9 +8,8 @@ before_install:
 - sudo apt-get update -y
 - sudo apt-get install git
 - sudo apt-get install apache2
-- "export DISPLAY=:99.0"
-- "sh -e /etc/init.d/xvfb start"
-
+- export DISPLAY=:99.0
+- sh -e /etc/init.d/xvfb start
 install:
 - pip install -r requirements.txt
 - pip install -r fabfile/requirements.txt
@@ -20,8 +19,7 @@ script:
 notifications:
   webhooks: http://project-monitor.codeforamerica.org/projects/1bf2f3b3-bed8-42bc-91e8-d47f873443de/status
   slack:
-    secure: Xjg6TC3rHw8jX+ODmS32FOXKX95IgjgViQSC7E7VL3ZF+3C8IBVCipX70MRVfUb3pVa
-# AWS_ACCESS_KEY AWS_SECRET_KEY SSH_PRIVATE_KEY_PATH TESTING_EMAIL TESTING_PASSWORD
+    secure: jayLiI1FjF5/M4WtL5mjO+2NOnCJZI+7IhMvZPSUiikutZSrxCvggf2C/YtlAD2NaxZXrCpnVgdB4XjQTnmRdo8U/M7pLbAF2JVgphSizrRhEY15tIPuyRRKqCQMZo5fz3+Tb6wvgLEGHxVhJv8COfe9zuwlVTcK9XmXrJkPYBE=
 env:
   global:
   - secure: M+PrGzEfHRj+mPn7d1vHC0n/IQN6fNGER2dhG8qBE8wfC3tfaB3F50R8YSR9R5SdkdapxtgEjPgGvR3agum999qYXo839nra0zq2l3DeQYvwM0IXX0JlscwUkBrMtqMFW9iIIyxB6dgdksUJ5Zz7qcYudm+Msr15iob3DfIxZqs=
