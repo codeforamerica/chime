@@ -1,5 +1,5 @@
 # -- coding: utf-8 --
-import time
+
 import os
 from unittest import main, TestCase
 from selenium import webdriver
@@ -12,7 +12,7 @@ from selenium.webdriver.support import expected_conditions as EC
 class TestSelenium(TestCase):
     def setUp(self):
         self.driver = webdriver.Firefox()
-        self.driver.implicitly_wait(30)
+        self.waiter = WebDriverWait(self.driver, timeout=60)
         self.email = os.environ['TESTING_EMAIL']
         self.password = os.environ['TESTING_PASSWORD']
         with open(os.path.dirname(__file__) + '/../../fabfile/hosts.txt', 'rU') as f:
@@ -41,7 +41,7 @@ class TestSelenium(TestCase):
         driver.find_element_by_id('signin').click()
 
         # wait until the persona window's available and switch to it
-        WebDriverWait(driver, timeout=60).until(self.switch_to_other_window(main_window))
+        self.waiter.until(self.switch_to_other_window(main_window))
 
         email = driver.find_element_by_id('authentication_email')
         email.send_keys(self.email)
@@ -52,7 +52,7 @@ class TestSelenium(TestCase):
         submit_row.find_element_by_css_selector('.isStart.isAddressInfo').click()
 
         # ajax, wait until the element is visible
-        password = WebDriverWait(driver, 10).until(
+        password = self.waiter.until(
             EC.visibility_of_element_located((By.ID, 'authentication_password'))
         )
         password.send_keys(self.password)
@@ -63,7 +63,7 @@ class TestSelenium(TestCase):
         # switch back to the main window
 
         # give the server a few seconds to respond
-        WebDriverWait(driver, 10).until(
+        self.waiter.until(
             EC.visibility_of_element_located((By.NAME, 'task_description'))
         )
 
@@ -99,9 +99,9 @@ class TestSelenium(TestCase):
         preview.click()
 
         # wait until the preview window's available and switch to it
-        WebDriverWait(driver, timeout=60).until(self.switch_to_other_window(main_window))
+        self.waiter.until(self.switch_to_other_window(main_window))
 
-        WebDriverWait(driver, 10).until(
+        self.waiter.until(
             EC.presence_of_element_located((By.TAG_NAME, 'body'))
         )
         driver.close()

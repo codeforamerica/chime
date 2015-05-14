@@ -20,6 +20,7 @@ notifications:
   webhooks: http://project-monitor.codeforamerica.org/projects/1bf2f3b3-bed8-42bc-91e8-d47f873443de/status
   slack:
     secure: jayLiI1FjF5/M4WtL5mjO+2NOnCJZI+7IhMvZPSUiikutZSrxCvggf2C/YtlAD2NaxZXrCpnVgdB4XjQTnmRdo8U/M7pLbAF2JVgphSizrRhEY15tIPuyRRKqCQMZo5fz3+Tb6wvgLEGHxVhJv8COfe9zuwlVTcK9XmXrJkPYBE=
+# AWS_ACCESS_KEY AWS_SECRET_KEY SSH_PRIVATE_KEY_PATH TESTING_EMAIL TESTING_PASSWORD
 env:
   global:
   - secure: M+PrGzEfHRj+mPn7d1vHC0n/IQN6fNGER2dhG8qBE8wfC3tfaB3F50R8YSR9R5SdkdapxtgEjPgGvR3agum999qYXo839nra0zq2l3DeQYvwM0IXX0JlscwUkBrMtqMFW9iIIyxB6dgdksUJ5Zz7qcYudm+Msr15iob3DfIxZqs=
