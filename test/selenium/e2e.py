@@ -59,11 +59,13 @@ class TestSelenium(TestCase):
 
         submit_row.find_element_by_css_selector('.isReturning.isTransitionToSecondary').click()
 
-        # give the server a few seconds to respond
-        time.sleep(5)
-
-        # switch back to the main window
         driver.switch_to_window(main_window)
+        # switch back to the main window
+
+        # give the server a few seconds to respond
+        WebDriverWait(driver, 10).until(
+            EC.visibility_of_element_located((By.NAME, 'task_description'))
+        )
 
         # make sure we're back to Chime
         self.assertEquals(driver.title, 'Tasks | Chime')
