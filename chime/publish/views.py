@@ -1,5 +1,5 @@
 from logging import getLogger
-logger = getLogger('bizarro.publish.views')
+logger = getLogger('chime.publish.views')
 
 from flask import request, Response
 from . import publish as app

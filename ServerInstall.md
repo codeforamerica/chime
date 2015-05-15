@@ -7,5 +7,5 @@ To set up a functioning Chime server:
 2. Set hostname: `sudo vi /etc/hostname; sudo hostname -F /etc/hostname`
     * Should be the box's public name. E.g., "test.chimecms.org" 
 2. Install git: `sudo apt-get update && sudo apt-get install -y git`
-3. get chime: `git clone https://github.com/codeforamerica/ceviche-cms.git`
-4. run chef: `cd ceviche-cms; sudo chef/run.sh`
+3. get chime: `git clone https://github.com/chimecms/chime.git`
+4. run chef: `cd chime; sudo chef/run.sh`

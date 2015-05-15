@@ -15,7 +15,7 @@ execute 'a2enmod vhost_alias'
 #
 # Create server configuration.
 #
-file '/etc/apache2/sites-available/bizarro-cms-vhost.conf' do
+file '/etc/apache2/sites-available/chime-vhost.conf' do
   owner 'root'
   group 'root'
   mode  '0644'
@@ -33,7 +33,7 @@ VHOST
 end
 
 execute 'a2dissite 000-default'
-execute 'a2ensite bizarro-cms-vhost.conf'
+execute 'a2ensite chime-vhost.conf'
 
 #
 # Make it go.

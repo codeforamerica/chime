@@ -10,8 +10,7 @@ from shutil import rmtree, copytree
 from uuid import uuid4
 from re import search
 import random
-from datetime import date, timedelta, datetime
-from dateutil import parser, tz
+from datetime import date, timedelta
 
 import sys
 import os
@@ -25,7 +24,7 @@ from httmock import response, HTTMock
 from bs4 import BeautifulSoup
 from mock import MagicMock
 
-from bizarro import (
+from chime import (
     create_app, jekyll_functions, repo_functions, edit_functions,
     google_api_functions, view_functions, publish
 )
@@ -39,7 +38,7 @@ logging.disable(logging.CRITICAL)
 # these patterns help us search the HTML of a response to determine if the expected page loaded
 EDIT_LISTDIR_TASK_DESCRIPTION_PATTERN = '<h3>Current task: <strong>{}</strong>'
 EDIT_LISTDIR_TASK_DESCRIPTION_AND_BENEFICIARY_PATTERN = '<h3>Current task: <strong>{}</strong> for <strong>{}</strong></h3>'
-EDIT_LISTDIR_AUTHOR_EMAIL_PATTERN = '<li>Started by: {}</li>'
+EDIT_LISTDIR_AUTHOR_EMAIL_PATTERN = '<li>Started by: <strong>{}</strong></li>'
 EDIT_LISTDIR_BRANCH_NAME_PATTERN = '<li class="active-task"><a href="./">{}</a></li>'
 
 class TestJekyll (TestCase):
@@ -71,12 +70,12 @@ class TestViewFunctions (TestCase):
 
     def setUp(self):
         repo_path = os.path.dirname(os.path.abspath(__file__)) + '/test-app.git'
-        temp_repo_dir = mkdtemp(prefix='bizarro-root')
+        temp_repo_dir = mkdtemp(prefix='chime-root')
         temp_repo_path = temp_repo_dir + '/test-app.git'
         copytree(repo_path, temp_repo_path)
         self.origin = Repo(temp_repo_path)
         repo_functions.ignore_task_metadata_on_merge(self.origin)
-        self.clone = self.origin.clone(mkdtemp(prefix='bizarro-'))
+        self.clone = self.origin.clone(mkdtemp(prefix='chime-'))
         repo_functions.ignore_task_metadata_on_merge(self.clone)
 
         self.session = dict(email=str(uuid4()))
@@ -96,22 +95,10 @@ class TestViewFunctions (TestCase):
         '''
         sorted_list = view_functions.sorted_paths(self.clone, 'master')
 
-        now_utc = datetime.utcnow()
-        now_utc = now_utc.replace(tzinfo=tz.tzutc())
-
-        expected_dates = [
-            'Sat Mar 15 00:55:52 2014 -0700',
-            'Fri Aug 29 17:58:25 2014 -0700',
-            'Fri Aug 29 17:58:25 2014 -0700',
-            'Sat Mar 15 00:55:52 2014 -0700'
-        ]
-        expected_datetimes = [parser.parse(item) for item in expected_dates]
-        expected_relative_dates = [view_functions.get_relative_date_string(item, now_utc) for item in expected_datetimes]
-
-        expected_list = [('index.md', '/tree/master/view/index.md', 'file', True, expected_relative_dates[0]),
-                         ('other', '/tree/master/view/other', 'folder', False, expected_relative_dates[1]),
-                         ('other.md', '/tree/master/view/other.md', 'file', True, expected_relative_dates[2]),
-                         ('sub', '/tree/master/view/sub', 'folder', False, expected_relative_dates[3])]
+        expected_list = [('index.md', '/tree/master/view/index.md', 'file', True, view_functions.get_relative_date(self.clone, 'index.md')),
+                         ('other', '/tree/master/view/other', 'folder', False, view_functions.get_relative_date(self.clone, 'other')),
+                         ('other.md', '/tree/master/view/other.md', 'file', True, view_functions.get_relative_date(self.clone, 'other.md')),
+                         ('sub', '/tree/master/view/sub', 'folder', False, view_functions.get_relative_date(self.clone, 'sub'))]
         self.assertEqual(sorted_list, expected_list)
 
     def test_directory_paths_with_no_relative_path(self):
@@ -200,15 +187,15 @@ class TestRepo (TestCase):
 
     def setUp(self):
         repo_path = os.path.dirname(os.path.abspath(__file__)) + '/test-app.git'
-        temp_repo_dir = mkdtemp(prefix='bizarro-root')
+        temp_repo_dir = mkdtemp(prefix='chime-root')
         temp_repo_path = temp_repo_dir + '/test-app.git'
         copytree(repo_path, temp_repo_path)
         self.origin = Repo(temp_repo_path)
         repo_functions.ignore_task_metadata_on_merge(self.origin)
 
-        self.clone1 = self.origin.clone(mkdtemp(prefix='bizarro-'))
+        self.clone1 = self.origin.clone(mkdtemp(prefix='chime-'))
         repo_functions.ignore_task_metadata_on_merge(self.clone1)
-        self.clone2 = self.origin.clone(mkdtemp(prefix='bizarro-'))
+        self.clone2 = self.origin.clone(mkdtemp(prefix='chime-'))
         repo_functions.ignore_task_metadata_on_merge(self.clone2)
 
         self.session = dict(email=str(uuid4()))
@@ -1172,7 +1159,7 @@ class TestGoogleApiFunctions (TestCase):
         app_args['GA_CLIENT_ID'] = 'client_id'
         app_args['GA_CLIENT_SECRET'] = 'meow_secret'
 
-        self.ga_config_dir = mkdtemp(prefix='bizarro-config-')
+        self.ga_config_dir = mkdtemp(prefix='chime-config-')
         app_args['RUNNING_STATE_DIR'] = self.ga_config_dir
 
         self.app = create_app(app_args)
@@ -1391,15 +1378,15 @@ class TestAppConfig (TestCase):
 class TestApp (TestCase):
 
     def setUp(self):
-        self.work_path = mkdtemp(prefix='bizarro-repo-clones-')
+        self.work_path = mkdtemp(prefix='chime-repo-clones-')
 
         repo_path = os.path.dirname(os.path.abspath(__file__)) + '/test-app.git'
-        temp_repo_dir = mkdtemp(prefix='bizarro-root')
+        temp_repo_dir = mkdtemp(prefix='chime-root')
         temp_repo_path = temp_repo_dir + '/test-app.git'
         copytree(repo_path, temp_repo_path)
         self.origin = Repo(temp_repo_path)
         repo_functions.ignore_task_metadata_on_merge(self.origin)
-        self.clone1 = self.origin.clone(mkdtemp(prefix='bizarro-'))
+        self.clone1 = self.origin.clone(mkdtemp(prefix='chime-'))
         repo_functions.ignore_task_metadata_on_merge(self.clone1)
 
         app_args = {}
@@ -1408,7 +1395,7 @@ class TestApp (TestCase):
         app_args['GA_CLIENT_ID'] = 'client_id'
         app_args['GA_CLIENT_SECRET'] = 'meow_secret'
 
-        self.ga_config_dir = mkdtemp(prefix='bizarro-config-')
+        self.ga_config_dir = mkdtemp(prefix='chime-config-')
         app_args['RUNNING_STATE_DIR'] = self.ga_config_dir
         app_args['WORK_PATH'] = self.work_path
         app_args['REPO_PATH'] = temp_repo_path
@@ -1948,7 +1935,7 @@ class TestApp (TestCase):
 class TestPublishApp (TestCase):
 
     def setUp(self):
-        self.work_path = mkdtemp(prefix='bizarro-publish-app-')
+        self.work_path = mkdtemp(prefix='chime-publish-app-')
 
         app_args = {}
 
@@ -1963,10 +1950,10 @@ class TestPublishApp (TestCase):
         '''
         _, host, path, _, _, _ = urlparse(url.geturl())
 
-        if (host, path) == ('github.com', '/codeforamerica/ceviche-starter/archive/93250f1308daef66c5809fe87fc242d092e61db7.zip'):
-            return response(302, '', headers={'Location': 'https://codeload.github.com/codeforamerica/ceviche-starter/tar.gz/93250f1308daef66c5809fe87fc242d092e61db7'})
+        if (host, path) == ('github.com', '/chimecms/chime-starter/archive/93250f1308daef66c5809fe87fc242d092e61db7.zip'):
+            return response(302, '', headers={'Location': 'https://codeload.github.com/chimecms/chime-starter/tar.gz/93250f1308daef66c5809fe87fc242d092e61db7'})
 
-        if (host, path) == ('codeload.github.com', '/codeforamerica/ceviche-starter/tar.gz/93250f1308daef66c5809fe87fc242d092e61db7'):
+        if (host, path) == ('codeload.github.com', '/chimecms/chime-starter/tar.gz/93250f1308daef66c5809fe87fc242d092e61db7'):
             with open(join(dirname(__file__), '93250f1308daef66c5809fe87fc242d092e61db7.zip')) as file:
                 return response(200, file.read(), headers={'Content-Type': 'application/zip'})
 
@@ -1988,7 +1975,7 @@ class TestPublishApp (TestCase):
                     "name": "Frances Berriman",
                     "email": "phae@example.com"
                   },
-                  "url": "https://github.com/codeforamerica/ceviche-starter/commit/93250f1308daef66c5809fe87fc242d092e61db7",
+                  "url": "https://github.com/chimecms/chime-starter/commit/93250f1308daef66c5809fe87fc242d092e61db7",
                   "distinct": true
                 }
               ]

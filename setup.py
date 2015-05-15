@@ -6,14 +6,14 @@ import sys
 #    version = file.read().strip()
 
 setup(
-    name = 'Ceviche-CMS',
+    name = 'Chime',
     version = '0.0.0',
-    url = 'https://github.com/codeforamerica/ceviche-cms',
+    url = 'https://github.com/chimecms/chime',
     author = 'Code for America',
     description = 'Hashing out some ideas about Git, Jekyll, language, and content management',
-    packages = ['bizarro'],
+    packages = ['chime'],
     package_data = {
-        'bizarro': []
+        'chime': []
     },
     install_requires = [],
     entry_points = dict(

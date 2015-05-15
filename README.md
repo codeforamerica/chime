@@ -3,11 +3,11 @@
 This is part of the Digital Front Door inititive.  You can read more about it here: https://github.com/codeforamerica/digitalfrontdoor
 
 ## Logging issues / ideas 
-Make an issue: https://github.com/codeforamerica/ceviche-cms/issues/new
+Make an issue: https://github.com/chimecms/chime/issues/new
 
 # Install
 
-1. Ceviche CMS is a Python Flask web application. Follow the instructions on
+1. Chime CMS is a Python Flask web application. Follow the instructions on
    [Python Virtual Environments](https://github.com/codeforamerica/howto/blob/master/Python-Virtualenv.md)
    to prepare your Python development space. Make sure to use Python 2.7. Your commands may look something like:
  + sudo pip install virtualenv
@@ -35,5 +35,5 @@ Make an issue: https://github.com/codeforamerica/ceviche-cms/issues/new
 
 You can read a bit more about what we're up to over here http://digifrodo.tumblr.com
 
-[![Stories in Ready](https://badge.waffle.io/codeforamerica/ceviche-cms.svg?label=ready&title=Ready)](http://waffle.io/codeforamerica/ceviche-cms)
-[![Build Status](https://travis-ci.org/codeforamerica/ceviche-cms.svg?branch=master)](https://travis-ci.org/codeforamerica/ceviche-cms)
+[![Stories in Ready](https://badge.waffle.io/chimecms/chime.svg?label=ready&title=Ready)](http://waffle.io/chimecms/chime)
+[![Build Status](https://travis-ci.org/chimecms/chime.svg?branch=master)](https://travis-ci.org/chimecms/chime)

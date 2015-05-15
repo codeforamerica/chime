@@ -1,5 +1,5 @@
 from logging import getLogger
-Logger = getLogger('bizarro.google_api_functions')
+Logger = getLogger('chime.google_api_functions')
 
 from flask import current_app, redirect, session
 from requests import post, get
