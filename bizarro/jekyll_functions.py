@@ -145,7 +145,7 @@ def build_jekyll_site(dirname):
         build = Popen(call, cwd=dirname)
         build.wait()
     except:
-        logger = logging.getLogger('bizarro.jekyll')
+        logger = logging.getLogger('chime.jekyll')
         logger.error("Unexpected failure running %s in %s", call, dirname)
         raise
 

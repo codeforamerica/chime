@@ -28,12 +28,12 @@ end
 #
 # Populate working directories.
 #
-directory "/var/opt/bizarro-work" do
+directory "/var/opt/chime-work" do
   action :delete
   recursive true
 end
 
-directory "/var/opt/bizarro-work" do
+directory "/var/opt/chime-work" do
   owner username
   group username
   mode "0775"
@@ -47,8 +47,8 @@ env_file = '/etc/ceviche.conf'
 file env_file do
   content <<-CONF
 RUNNING_STATE_DIR=/var/run/#{username}
-REPO_PATH=/var/opt/bizarro-site
-WORK_PATH=/var/opt/bizarro-work
+REPO_PATH=/var/opt/chime-site
+WORK_PATH=/var/opt/chime-work
 BROWSERID_URL=http://#{hostname}/
 
 GA_CLIENT_ID="#{ga_client_id}"
@@ -60,16 +60,16 @@ CONF
 end
 
 execute "honcho export upstart /etc/init" do
-  command "honcho -e #{env_file} export -u #{username} -a bizarro-cms upstart /etc/init"
+  command "honcho -e #{env_file} export -u #{username} -a chime-cms upstart /etc/init"
   cwd repo_dir
 end
 
 #
 # Make it go.
 #
-execute "stop bizarro-cms" do
+execute "stop chime-cms" do
   returns [0, 1]
 end
 
-execute "start bizarro-cms"
+execute "start chime-cms"
 execute "apache2ctl restart"

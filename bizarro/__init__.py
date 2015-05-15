@@ -1,5 +1,5 @@
 from logging import getLogger, DEBUG
-logger = getLogger('bizarro')
+logger = getLogger('chime')
 
 import os
 from os import mkdir
@@ -12,7 +12,7 @@ from logging import handlers
 
 from .httpd import run_apache_forever
 
-bizarro = Blueprint('bizarro', __name__, template_folder='templates')
+chime = Blueprint('chime', __name__, template_folder='templates')
 
 class AppShim:
 
@@ -65,7 +65,7 @@ def run_apache(running_dir):
     return run_apache_forever(doc_root, root, port, False)
 
 def log_file(app):
-    log_dir = '/var/log/bizarro-cms'
+    log_dir = '/var/log/chime-cms'
     if not os.access(log_dir,os.W_OK | os.X_OK):
         log_dir = app.config['WORK_PATH']
     return join(realpath(log_dir), 'app.log')
@@ -91,7 +91,7 @@ def create_app(environ):
         run_apache(app.config['RUNNING_STATE_DIR'])
 
     # attach routes and custom error pages here
-    app.register_blueprint(bizarro)
+    app.register_blueprint(chime)
 
     @app.before_first_request
     def before_first_request():

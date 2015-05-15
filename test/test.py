@@ -24,7 +24,7 @@ from httmock import response, HTTMock
 from bs4 import BeautifulSoup
 from mock import MagicMock
 
-from bizarro import (
+from chime import (
     create_app, jekyll_functions, repo_functions, edit_functions,
     google_api_functions, view_functions, publish
 )
@@ -70,12 +70,12 @@ class TestViewFunctions (TestCase):
 
     def setUp(self):
         repo_path = os.path.dirname(os.path.abspath(__file__)) + '/test-app.git'
-        temp_repo_dir = mkdtemp(prefix='bizarro-root')
+        temp_repo_dir = mkdtemp(prefix='chime-root')
         temp_repo_path = temp_repo_dir + '/test-app.git'
         copytree(repo_path, temp_repo_path)
         self.origin = Repo(temp_repo_path)
         repo_functions.ignore_task_metadata_on_merge(self.origin)
-        self.clone = self.origin.clone(mkdtemp(prefix='bizarro-'))
+        self.clone = self.origin.clone(mkdtemp(prefix='chime-'))
         repo_functions.ignore_task_metadata_on_merge(self.clone)
 
         self.session = dict(email=str(uuid4()))
@@ -187,15 +187,15 @@ class TestRepo (TestCase):
 
     def setUp(self):
         repo_path = os.path.dirname(os.path.abspath(__file__)) + '/test-app.git'
-        temp_repo_dir = mkdtemp(prefix='bizarro-root')
+        temp_repo_dir = mkdtemp(prefix='chime-root')
         temp_repo_path = temp_repo_dir + '/test-app.git'
         copytree(repo_path, temp_repo_path)
         self.origin = Repo(temp_repo_path)
         repo_functions.ignore_task_metadata_on_merge(self.origin)
 
-        self.clone1 = self.origin.clone(mkdtemp(prefix='bizarro-'))
+        self.clone1 = self.origin.clone(mkdtemp(prefix='chime-'))
         repo_functions.ignore_task_metadata_on_merge(self.clone1)
-        self.clone2 = self.origin.clone(mkdtemp(prefix='bizarro-'))
+        self.clone2 = self.origin.clone(mkdtemp(prefix='chime-'))
         repo_functions.ignore_task_metadata_on_merge(self.clone2)
 
         self.session = dict(email=str(uuid4()))
@@ -1159,7 +1159,7 @@ class TestGoogleApiFunctions (TestCase):
         app_args['GA_CLIENT_ID'] = 'client_id'
         app_args['GA_CLIENT_SECRET'] = 'meow_secret'
 
-        self.ga_config_dir = mkdtemp(prefix='bizarro-config-')
+        self.ga_config_dir = mkdtemp(prefix='chime-config-')
         app_args['RUNNING_STATE_DIR'] = self.ga_config_dir
 
         self.app = create_app(app_args)
@@ -1378,15 +1378,15 @@ class TestAppConfig (TestCase):
 class TestApp (TestCase):
 
     def setUp(self):
-        self.work_path = mkdtemp(prefix='bizarro-repo-clones-')
+        self.work_path = mkdtemp(prefix='chime-repo-clones-')
 
         repo_path = os.path.dirname(os.path.abspath(__file__)) + '/test-app.git'
-        temp_repo_dir = mkdtemp(prefix='bizarro-root')
+        temp_repo_dir = mkdtemp(prefix='chime-root')
         temp_repo_path = temp_repo_dir + '/test-app.git'
         copytree(repo_path, temp_repo_path)
         self.origin = Repo(temp_repo_path)
         repo_functions.ignore_task_metadata_on_merge(self.origin)
-        self.clone1 = self.origin.clone(mkdtemp(prefix='bizarro-'))
+        self.clone1 = self.origin.clone(mkdtemp(prefix='chime-'))
         repo_functions.ignore_task_metadata_on_merge(self.clone1)
 
         app_args = {}
@@ -1395,7 +1395,7 @@ class TestApp (TestCase):
         app_args['GA_CLIENT_ID'] = 'client_id'
         app_args['GA_CLIENT_SECRET'] = 'meow_secret'
 
-        self.ga_config_dir = mkdtemp(prefix='bizarro-config-')
+        self.ga_config_dir = mkdtemp(prefix='chime-config-')
         app_args['RUNNING_STATE_DIR'] = self.ga_config_dir
         app_args['WORK_PATH'] = self.work_path
         app_args['REPO_PATH'] = temp_repo_path
@@ -1935,7 +1935,7 @@ class TestApp (TestCase):
 class TestPublishApp (TestCase):
 
     def setUp(self):
-        self.work_path = mkdtemp(prefix='bizarro-publish-app-')
+        self.work_path = mkdtemp(prefix='chime-publish-app-')
 
         app_args = {}
 

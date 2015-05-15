@@ -1,5 +1,5 @@
 from logging import getLogger
-Logger = getLogger('bizarro.views')
+Logger = getLogger('chime.views')
 
 from os.path import join, isdir, splitext
 from re import compile, MULTILINE, sub
@@ -11,7 +11,7 @@ from git.cmd import GitCommandError
 from requests import post
 from flask import current_app, flash, render_template, redirect, request, Response, session
 
-from . import bizarro as app
+from . import chime as app
 from . import repo_functions, edit_functions
 from . import publish
 from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
@@ -621,7 +621,7 @@ def deploy_key():
     ''' Return contents of public deploy key file.
     '''
     try:
-        with open('/var/run/bizarro/deploy-key.txt') as file:
+        with open('/var/run/chime/deploy-key.txt') as file:
             return Response(file.read(), 200, content_type='text/plain')
     except IOError:
         return Response('Not found.', 404, content_type='text/plain')

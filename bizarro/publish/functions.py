@@ -1,5 +1,5 @@
 from logging import getLogger
-logger = getLogger('bizarro.publish.functions')
+logger = getLogger('chime.publish.functions')
 
 from urlparse import urlparse
 from zipfile import ZipFile, ZIP_DEFLATED

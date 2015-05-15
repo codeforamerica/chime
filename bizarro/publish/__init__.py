@@ -1,5 +1,5 @@
 from logging import getLogger
-logger = getLogger('bizarro.publish')
+logger = getLogger('chime.publish')
 
 from os import mkdir
 from os.path import join
@@ -74,7 +74,7 @@ def release_commit(running_dir, repo, commit_ref):
     finally:
         rmtree(working_dir)
 
-publish = Blueprint('bizarro.publish', __name__, template_folder='templates')
+publish = Blueprint('chime.publish', __name__, template_folder='templates')
 
 def create_app(environ):
     app = Flask(__name__, static_folder='static')
@@ -88,7 +88,7 @@ def create_app(environ):
         '''
         '''
         if app.debug:
-            getLogger('bizarro.publish').setLevel(DEBUG)
+            getLogger('chime.publish').setLevel(DEBUG)
 
     return app
 

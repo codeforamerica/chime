@@ -10,26 +10,26 @@ github_org = node[:github_org]
 github_repo = ENV['GITHUB_REPO']
 github_temporary_token = ENV['GITHUB_TEMPORARY_TOKEN']
 
-bash "init bare /var/opt/bizarro-site" do
+bash "init bare /var/opt/chime-site" do
   user 'root'
   flags '-e'
   code <<-GIT
-DIR=`mktemp -d /tmp/bizarro-site-XXXXXX`
+DIR=`mktemp -d /tmp/chime-site-XXXXXX`
 git init --shared=group --bare $DIR
 
 chown -R #{name}:#{name} $DIR
 chmod -R ug+rwX $DIR
 chmod -R o+rX $DIR
 
-rm -rf /var/opt/bizarro-site
-mv $DIR /var/opt/bizarro-site
+rm -rf /var/opt/chime-site
+mv $DIR /var/opt/chime-site
 GIT
 end
 
 bash "clone from starter repo" do
   user name
   flags '-e'
-  cwd '/var/opt/bizarro-site'
+  cwd '/var/opt/chime-site'
   code <<-GIT
 git fetch #{starter_repo}
 git branch master FETCH_HEAD
@@ -87,7 +87,7 @@ end
 bash "push to Github origin remote" do
   user name
   flags '-e'
-  cwd '/var/opt/bizarro-site'
+  cwd '/var/opt/chime-site'
   code <<-GIT
 git remote add origin git@github.com:#{github_org}/#{github_repo}.git
 git push -u origin master

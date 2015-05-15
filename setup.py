@@ -11,9 +11,9 @@ setup(
     url = 'https://github.com/codeforamerica/ceviche-cms',
     author = 'Code for America',
     description = 'Hashing out some ideas about Git, Jekyll, language, and content management',
-    packages = ['bizarro'],
+    packages = ['chime'],
     package_data = {
-        'bizarro': []
+        'chime': []
     },
     install_requires = [],
     entry_points = dict(
