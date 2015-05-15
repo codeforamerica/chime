@@ -19,7 +19,7 @@ from .view_functions import (
     branch_name2path, branch_var2name, get_repo, dos2unix,
     login_required, browserid_hostname_required, synch_required, synched_checkout_required, sorted_paths,
     directory_paths, should_redirect, make_redirect, get_auth_data_file,
-    is_allowed_email, relative_datetime_string, common_template_args)
+    is_allowed_email, common_template_args)
 from .google_api_functions import (
     read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens,
     authorize_google, get_google_personal_info, get_google_analytics_properties,
@@ -370,12 +370,17 @@ def render_list_dir(repo, branch, path):
     task_description = task_metadata['task_description'] if 'task_description' in task_metadata else u''
     task_beneficiary = task_metadata['task_beneficiary'] if 'task_beneficiary' in task_metadata else u''
 
+    # get created and modified dates via git logs (relative dates for now)
+    task_date_created = repo.git.log('--format=%ad', '--date=relative', '--', repo_functions.TASK_METADATA_FILENAME).split('\n')[-1]
+    task_date_updated = repo.git.log('--format=%ad', '--date=relative').split('\n')[0]
+
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(branch=branch, safe_branch=branch_name2path(branch),
                   dirs_and_paths=directory_paths(branch, path),
                   list_paths=sorted_paths(repo, branch, path, showallfiles),
                   author_email=author_email, task_description=task_description,
-                  task_beneficiary=task_beneficiary)
+                  task_beneficiary=task_beneficiary, task_date_created=task_date_created,
+                  task_date_updated=task_date_updated)
     master_name = current_app.config['default_branch']
     kwargs['rejection_messages'] = list(repo_functions.get_rejection_messages(repo, master_name, branch))
     # TODO: the above might throw a GitCommandError if branch is an orphan.
@@ -512,14 +517,13 @@ def branch_history(branch, path=None):
     if ga_config.get('access_token'):
         app_authorized = True
 
-    format = '%x00Name: %an\tEmail: %ae\tTime: %aD\tSubject: %s'
-    pattern = compile(r'^\x00Name: (.*?)\tEmail: (.*?)\tTime: (.*?)\tSubject: (.*?)$', MULTILINE)
-    log = repo.git.log('-30', '--format=' + format, path)
+    log_format = '%x00Name: %an\tEmail: %ae\tDate: %ad\tSubject: %s'
+    pattern = compile(r'^\x00Name: (.*?)\tEmail: (.*?)\tDate: (.*?)\tSubject: (.*?)$', MULTILINE)
+    log = repo.git.log('-30', '--format={}'.format(log_format), '--date=relative', path)
 
     history = []
 
-    for (name, email, time, subject) in pattern.findall(log):
-        date = relative_datetime_string(time)
+    for (name, email, date, subject) in pattern.findall(log):
         history.append(dict(name=name, email=email, date=date, subject=subject))
 
     kwargs = common_template_args(current_app.config, session)
