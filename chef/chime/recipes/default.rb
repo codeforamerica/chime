@@ -42,7 +42,7 @@ end
 #
 # Ensure upstart job exists.
 #
-env_file = '/etc/ceviche.conf'
+env_file = '/etc/chime.conf'
 
 file env_file do
   content <<-CONF
@@ -60,16 +60,16 @@ CONF
 end
 
 execute "honcho export upstart /etc/init" do
-  command "honcho -e #{env_file} export -u #{username} -a chime-cms upstart /etc/init"
+  command "honcho -e #{env_file} export -u #{username} -a chime upstart /etc/init"
   cwd repo_dir
 end
 
 #
 # Make it go.
 #
-execute "stop chime-cms" do
+execute "stop chime" do
   returns [0, 1]
 end
 
-execute "start chime-cms"
+execute "start chime"
 execute "apache2ctl restart"

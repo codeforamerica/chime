@@ -63,8 +63,8 @@ def extract_github_commit(work_dir, commit_url, commit_sha):
     '''
     #
     # Convert commit URL to downloadable archive URL.
-    # Old: https://github.com/codeforamerica/ceviche-starter/commit/93250f1308daef66c5809fe87fc242d092e61db7
-    # New: https://github.com/codeforamerica/ceviche-starter/archive/93250f1308daef66c5809fe87fc242d092e61db7.zip
+    # Old: https://github.com/chimecms/chime-starter/commit/93250f1308daef66c5809fe87fc242d092e61db7
+    # New: https://github.com/chimecms/chime-starter/archive/93250f1308daef66c5809fe87fc242d092e61db7.zip
     #
     _, _, path, _, _, _ = urlparse(commit_url)
     parts = dict(repo=dirname(dirname(path)), sha=commit_sha)
@@ -76,7 +76,7 @@ def extract_github_commit(work_dir, commit_url, commit_sha):
     
     #
     # Check for a specially-named subdirectory made by Github.
-    # ceviche-starter-93250f1308daef66c5809fe87fc242d092e61db7
+    # chime-starter-93250f1308daef66c5809fe87fc242d092e61db7
     #
     subdirectory = '{}-{}'.format(basename(parts['repo']), commit_sha)
     checkout_dir = join(work_dir, subdirectory)

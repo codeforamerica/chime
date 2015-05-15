@@ -1,6 +1,6 @@
 {
     "user": "chime",
-    "starter_repo": "https://github.com/codeforamerica/ceviche-starter.git",
+    "starter_repo": "https://github.com/chimecms/chime-starter.git",
     "github_org": "chimecms",
     "run_list":
     [

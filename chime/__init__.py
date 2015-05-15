@@ -65,7 +65,7 @@ def run_apache(running_dir):
     return run_apache_forever(doc_root, root, port, False)
 
 def log_file(app):
-    log_dir = '/var/log/chime-cms'
+    log_dir = '/var/log/chime'
     if not os.access(log_dir,os.W_OK | os.X_OK):
         log_dir = app.config['WORK_PATH']
     return join(realpath(log_dir), 'app.log')
