@@ -253,4 +253,4 @@ def _server_setup(fqdn=None):
                   ssh_opts='-o CheckHostIP=no -o UserKnownHostsFile=/dev/null -o StrictHostkeyChecking=no')
     print(green('Running chef setup scripts...'))
     time.sleep(2)
-    run('cd ceviche-cms && sudo chef/run.sh')
+    run('cd chime && sudo chef/run.sh')

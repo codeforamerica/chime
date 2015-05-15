@@ -1,5 +1,5 @@
 from logging import getLogger
-Logger = getLogger('bizarro.google_access_token_update')
+Logger = getLogger('chime.google_access_token_update')
 
 from .google_api_functions import request_new_google_access_token, read_ga_config
 import argparse

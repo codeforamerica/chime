@@ -20,7 +20,7 @@ GITHUB_API_BASE = 'https://api.github.com/'
 GDOCS_API_BASE = 'https://www.googleapis.com/drive/v2/files/'
 CHIME_LOGIN_MASTER = '1P_X4B9aX7MTCln5ossJNNVkjxp4prnU5ny3SPeKg2qI'
 CHIME_INSTANCES_LIST = '1ODc62B7clyNMzwRtpOeqDupsDdaomtfZK-Z_GX0CM90'
-WEBHOOK_URL = 'https://ceviche-webhook.herokuapp.com'
+WEBHOOK_URL = 'https://chime-webhook.herokuapp.com'
 
 def check_status(resp, task):
     ''' Raise a RuntimeError if response is not HTTP 2XX.
@@ -282,7 +282,7 @@ def delete_temporary_github_authorization(github_auth_id, auth):
 def create_cname_record(route53, reponame, cname_value):
     ''' Write domain name to Route 53.
     '''
-    cname = '{reponame}.ceviche.chimecms.org'.format(**locals())
+    cname = '{reponame}.chimecms.org'.format(**locals())
 
     zone = route53.get_zone('chimecms.org')
     zone.add_record('CNAME', cname, cname_value, 60)

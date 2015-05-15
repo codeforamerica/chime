@@ -1,5 +1,5 @@
 from logging import getLogger
-logger = getLogger('bizarro.httpd')
+logger = getLogger('chime.httpd')
 
 from os.path import join, exists
 from subprocess import Popen, PIPE, check_output

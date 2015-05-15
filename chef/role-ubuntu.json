@@ -1,11 +1,11 @@
 {
-    "user": "bizarro",
-    "starter_repo": "https://github.com/codeforamerica/ceviche-starter.git",
+    "user": "chime",
+    "starter_repo": "https://github.com/chimecms/chime-starter.git",
     "github_org": "chimecms",
     "run_list":
     [
         "apache",
         "jekyll",
-        "bizarro"
+        "chime"
     ]
 }

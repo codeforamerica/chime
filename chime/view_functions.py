@@ -1,5 +1,5 @@
 from logging import getLogger
-Logger = getLogger('bizarro.view_functions')
+Logger = getLogger('chime.view_functions')
 
 from os.path import join, isdir, realpath, basename
 from datetime import datetime

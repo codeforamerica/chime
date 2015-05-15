@@ -8,12 +8,12 @@ Requires four environment variables:
 - AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY for Amazon EC2 setup.
 
 Follows the process described here:
-  https://github.com/codeforamerica/ceviche-cms/issues/39#issuecomment-72957188
+  https://github.com/chimecms/chime/issues/39#issuecomment-72957188
 
 '''
 from os import environ
 from time import sleep
-from bizarro.setup import functions as F
+from chime.setup import functions as F
 
 # Establish some baseline details.
 gh_client_id, gh_client_secret, gdocs_client_id, gdocs_client_secret, \
