@@ -32,6 +32,7 @@ FILE_FILTERS = [
     r'LICENSE'
 ]
 FILE_FILTERS_COMPILED = re.compile('(' + '|'.join(FILE_FILTERS) + ')')
+CONTENT_FILE_EXTENSION = u'markdown'
 
 class WriteLocked:
     ''' Context manager for a locked file open in a+ mode, seek(0).
