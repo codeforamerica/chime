@@ -10,8 +10,7 @@ from shutil import rmtree, copytree
 from uuid import uuid4
 from re import search
 import random
-from datetime import date, timedelta, datetime
-from dateutil import parser, tz
+from datetime import date, timedelta
 
 import sys
 import os
@@ -39,7 +38,7 @@ logging.disable(logging.CRITICAL)
 # these patterns help us search the HTML of a response to determine if the expected page loaded
 EDIT_LISTDIR_TASK_DESCRIPTION_PATTERN = '<h3>Current task: <strong>{}</strong>'
 EDIT_LISTDIR_TASK_DESCRIPTION_AND_BENEFICIARY_PATTERN = '<h3>Current task: <strong>{}</strong> for <strong>{}</strong></h3>'
-EDIT_LISTDIR_AUTHOR_EMAIL_PATTERN = '<li>Started by: {}</li>'
+EDIT_LISTDIR_AUTHOR_EMAIL_PATTERN = '<li>Started by: <strong>{}</strong></li>'
 EDIT_LISTDIR_BRANCH_NAME_PATTERN = '<li class="active-task"><a href="./">{}</a></li>'
 
 class TestJekyll (TestCase):
