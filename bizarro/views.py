@@ -512,14 +512,13 @@ def branch_history(branch, path=None):
     if ga_config.get('access_token'):
         app_authorized = True
 
-    format = '%x00Name: %an\tEmail: %ae\tTime: %aD\tSubject: %s'
-    pattern = compile(r'^\x00Name: (.*?)\tEmail: (.*?)\tTime: (.*?)\tSubject: (.*?)$', MULTILINE)
-    log = repo.git.log('-30', '--format=' + format, path)
+    log_format = '%x00Name: %an\tEmail: %ae\tDate: %ad\tSubject: %s'
+    pattern = compile(r'^\x00Name: (.*?)\tEmail: (.*?)\tDate: (.*?)\tSubject: (.*?)$', MULTILINE)
+    log = repo.git.log('-30', '--format={}'.format(log_format), '--date=relative', path)
 
     history = []
 
-    for (name, email, time, subject) in pattern.findall(log):
-        date = relative_datetime_string(time)
+    for (name, email, date, subject) in pattern.findall(log):
         history.append(dict(name=name, email=email, date=date, subject=subject))
 
     kwargs = common_template_args(current_app.config, session)
