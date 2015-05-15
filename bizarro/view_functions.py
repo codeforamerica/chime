@@ -12,7 +12,7 @@ from io import BytesIO
 import csv
 import re
 
-from git import Repo, Git
+from git import Repo
 from dateutil import parser, tz
 from dateutil.relativedelta import relativedelta
 from flask import request, session, current_app, redirect, flash
