@@ -147,14 +147,6 @@ def is_editable(file_path):
 
     return False
 
-def relative_date(git_binary, file_path, now_utc):
-    ''' Get the date a file was last modified.
-    '''
-    file_date = git_binary.log('-1', '--format="%ad"', '--', file_path)
-    file_datetime = parser.parse(re.sub(r'(^"|"$)', '', file_date)) if file_date else None
-
-    return get_relative_date_string(file_datetime, now_utc)
-
 def relative_datetime_string(datetime_string):
     ''' Get a relative date for a string.
     '''
@@ -417,6 +409,11 @@ def synched_checkout_required(route_function):
 
     return decorated_function
 
+def get_relative_date(repo, file_path):
+    ''' Return the relative modified date for the passed path in the passed repo
+    '''
+    return repo.git.log('-1', '--format=%ad', '--date=relative', '--', file_path)
+
 def sorted_paths(repo, branch, path=None, showallfiles=False):
     full_path = join(repo.working_dir, path or '.').rstrip('/')
     all_sorted_files_dirs = sorted(listdir(full_path))
@@ -431,13 +428,8 @@ def sorted_paths(repo, branch, path=None, showallfiles=False):
     full_paths = [join(full_path, name) for name in file_names]
     path_pairs = zip(full_paths, view_paths)
 
-    git_binary = Git(full_path)
-    now_utc = datetime.utcnow()
-    # the date is naive by default; explicitly set the timezone as UTC
-    now_utc = now_utc.replace(tzinfo=tz.tzutc())
-
     # filename, path, type, editable, modified date
-    list_paths = [(basename(fp), vp, path_type(fp), is_editable(fp), relative_date(git_binary, fp, now_utc))
+    list_paths = [(basename(fp), vp, path_type(fp), is_editable(fp), get_relative_date(repo, fp))
                   for (fp, vp) in path_pairs if realpath(fp) != repo.git_dir]
 
     return list_paths
