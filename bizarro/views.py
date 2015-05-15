@@ -462,7 +462,7 @@ def branch_edit_file(branch, path=None):
 
     elif action == 'add' and 'path' in request.form:
         front, body = dict(title='', layout='default'), ''
-        name = splitext(request.form['path'])[0] + '.html'
+        name = '{0}.markdown'.format(*splitext(request.form['path']))
 
         file_path = edit_functions.create_new_page(r, path, name, front, body)
         message = 'Created new file "%s"' % file_path
