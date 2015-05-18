@@ -35,5 +35,5 @@ Make an issue: https://github.com/chimecms/chime/issues/new
 
 You can read a bit more about what we're up to over here http://digifrodo.tumblr.com
 
-[![Stories in Ready](https://badge.waffle.io/chimecms/chime.svg?label=ready&title=Ready)](http://waffle.io/chimecms/chime)
+[![Stories in Ready](https://badge.waffle.io/chimecms/chime.svg?label=current-sprint&title=WorkingOn)](http://waffle.io/chimecms/chime)
 [![Build Status](https://travis-ci.org/chimecms/chime.svg?branch=master)](https://travis-ci.org/chimecms/chime)
