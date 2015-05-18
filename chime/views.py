@@ -466,9 +466,9 @@ def branch_edit_file(branch, path=None):
         path_303 = path or ''
 
     elif action == 'add' and 'path' in request.form:
-        front, body = dict(title='', layout='default'), ''
-        name = u'{}.{}'.format(splitext(request.form['path'])[0], CONTENT_FILE_EXTENSION)
+        name = u'{}/index.{}'.format(splitext(request.form['path'])[0], CONTENT_FILE_EXTENSION)
 
+        front, body = dict(title=u'', layout='default'), u''
         file_path = edit_functions.create_new_page(r, path, name, front, body)
         message = 'Created new file "%s"' % file_path
         path_303 = file_path
