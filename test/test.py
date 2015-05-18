@@ -1553,7 +1553,7 @@ class TestApp (TestCase):
             self.assertTrue(EDIT_LISTDIR_AUTHOR_EMAIL_PATTERN.format(fake_author_email) in response.data)
 
             # extract the generated branch name from the returned HTML
-            generated_branch_search = search(r'\/tree\/(.{7})\/edit', response.data)
+            generated_branch_search = search(r'\/tree\/(.{{{}}})\/edit'.format(repo_functions.BRANCH_NAME_LENGTH), response.data)
             self.assertIsNotNone(generated_branch_search)
             try:
                 generated_branch_name = generated_branch_search.group(1)
@@ -1702,7 +1702,7 @@ class TestApp (TestCase):
             self.assertTrue(EDIT_LISTDIR_TASK_DESCRIPTION_AND_BENEFICIARY_PATTERN.format(fake_task_description, fake_task_beneficiary) in response.data)
 
             # extract the generated branch name from the returned HTML
-            generated_branch_search = search(r'\/tree\/(.{7})\/edit', response.data)
+            generated_branch_search = search(r'\/tree\/(.{{{}}})\/edit'.format(repo_functions.BRANCH_NAME_LENGTH), response.data)
             self.assertIsNotNone(generated_branch_search)
             try:
                 generated_branch_name = generated_branch_search.group(1)
