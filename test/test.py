@@ -40,6 +40,7 @@ EDIT_LISTDIR_TASK_DESCRIPTION_PATTERN = '<h3>Current task: <strong>{}</strong>'
 EDIT_LISTDIR_TASK_DESCRIPTION_AND_BENEFICIARY_PATTERN = '<h3>Current task: <strong>{}</strong> for <strong>{}</strong></h3>'
 EDIT_LISTDIR_AUTHOR_EMAIL_PATTERN = '<li>Started by: <strong>{}</strong></li>'
 EDIT_LISTDIR_BRANCH_NAME_PATTERN = '<li class="active-task"><a href="./">{}</a></li>'
+EDIT_LISTDIR_FOLDER_NAME_PATTERN = '<a class="folder" href="{folder_name}">{folder_name}</a>'
 
 class TestJekyll (TestCase):
 
@@ -1541,7 +1542,7 @@ class TestApp (TestCase):
         fake_task_beneficiary = u'somebody else'
         fake_author_email = u'erica@example.com'
         fake_page_slug = u'hello'
-        fake_page_name = u'{}.{}'.format(fake_page_slug, view_functions.CONTENT_FILE_EXTENSION)
+        fake_page_path = u'{}/index.{}'.format(fake_page_slug, view_functions.CONTENT_FILE_EXTENSION)
         fake_page_content = u'Hello world.'
         with HTTMock(self.mock_persona_verify):
             self.test_client.post('/sign-in', data={'email': fake_author_email})
@@ -1563,32 +1564,32 @@ class TestApp (TestCase):
         with HTTMock(self.mock_google_analytics):
             # create a new file
             response = self.test_client.post('/tree/{}/edit/'.format(generated_branch_name),
-                                             data={'action': 'add', 'path': fake_page_name},
+                                             data={'action': 'add', 'path': fake_page_slug},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
-            self.assertTrue(fake_page_name in response.data)
+            self.assertTrue(fake_page_path in response.data)
 
             # get the index page for the branch and verify that the new file is listed
             response = self.test_client.get('/tree/{}/edit/'.format(generated_branch_name), follow_redirects=True)
             self.assertEquals(response.status_code, 200)
-            self.assertTrue(fake_page_name in response.data)
+            self.assertTrue(EDIT_LISTDIR_FOLDER_NAME_PATTERN.format(**{"folder_name": fake_page_slug}) in response.data)
 
             # get the edit page for the new file and extract the hexsha value
-            response = self.test_client.get('/tree/{}/edit/{}'.format(generated_branch_name, fake_page_name))
+            response = self.test_client.get('/tree/{}/edit/{}'.format(generated_branch_name, fake_page_path))
             self.assertEquals(response.status_code, 200)
-            self.assertTrue(fake_page_name in response.data)
+            self.assertTrue(fake_page_path in response.data)
             hexsha = search(r'<input name="hexsha" value="(\w+)"', response.data).group(1)
             # now save the file with new content
-            response = self.test_client.post('/tree/{}/save/{}'.format(generated_branch_name, fake_page_name),
+            response = self.test_client.post('/tree/{}/save/{}'.format(generated_branch_name, fake_page_path),
                                              data={'layout': 'multi', 'hexsha': hexsha,
                                                    'en-title': 'Greetings',
                                                    'en-body': u'{}\n'.format(fake_page_content),
                                                    'fr-title': '', 'fr-body': '',
-                                                   'url-slug': fake_page_slug},
+                                                   'url-slug': u'{}/index'.format(fake_page_slug)},
                                              follow_redirects=True)
 
             self.assertEquals(response.status_code, 200)
-            self.assertTrue(fake_page_name in response.data)
+            self.assertTrue(fake_page_path in response.data)
             self.assertTrue(fake_page_content in response.data)
 
         # Check that English and French forms are both present.
@@ -1674,7 +1675,7 @@ class TestApp (TestCase):
         ''' Certain POSTs to a made-up URL should not create a branch
         '''
         fake_page_slug = u'hello'
-        fake_page_name = u'{}.{}'.format(fake_page_slug, view_functions.CONTENT_FILE_EXTENSION)
+        fake_page_path = u'{}/index.{}'.format(fake_page_slug, view_functions.CONTENT_FILE_EXTENSION)
 
         with HTTMock(self.mock_persona_verify):
             self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
@@ -1687,7 +1688,7 @@ class TestApp (TestCase):
             fake_task_beneficiary = u'Nobody'
             fake_author_email = u'erica@example.com'
             fake_branch_name = repo_functions.make_branch_name(fake_task_description, fake_task_beneficiary, fake_author_email)
-            response = self.test_client.post('/tree/{}/edit/'.format(fake_branch_name), data={'action': 'add', 'path': fake_page_name}, follow_redirects=True)
+            response = self.test_client.post('/tree/{}/edit/'.format(fake_branch_name), data={'action': 'add', 'path': fake_page_slug}, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # the branch name should not be in the returned HTML
             self.assertFalse(EDIT_LISTDIR_BRANCH_NAME_PATTERN.format(fake_branch_name) in response.data)
@@ -1709,14 +1710,14 @@ class TestApp (TestCase):
             except AttributeError:
                 raise Exception('No match for generated branch name.')
 
-            response = self.test_client.post('/tree/{}/edit/'.format(generated_branch_name), data={'action': 'add', 'path': fake_page_name}, follow_redirects=True)
+            response = self.test_client.post('/tree/{}/edit/'.format(generated_branch_name), data={'action': 'add', 'path': fake_page_slug}, follow_redirects=True)
             self.assertEquals(response.status_code, 200)
 
             response = self.test_client.get('/tree/{}/edit/'.format(generated_branch_name), follow_redirects=True)
             self.assertEquals(response.status_code, 200)
-            self.assertTrue(fake_page_name in response.data)
+            self.assertTrue(EDIT_LISTDIR_FOLDER_NAME_PATTERN.format(**{"folder_name": fake_page_slug}) in response.data)
 
-            response = self.test_client.get('/tree/{}/edit/{}'.format(generated_branch_name, fake_page_name))
+            response = self.test_client.get('/tree/{}/edit/{}'.format(generated_branch_name, fake_page_path))
             self.assertEquals(response.status_code, 200)
             hexsha = search(r'<input name="hexsha" value="(\w+)"', response.data).group(1)
 
@@ -1725,7 +1726,7 @@ class TestApp (TestCase):
             self.assertEquals(response.status_code, 200)
             self.assertFalse(generated_branch_name in response.data)
 
-            response = self.test_client.post('/tree/{}/save/{}'.format(generated_branch_name, fake_page_name), data={'layout': 'multi', 'hexsha': hexsha, 'en-title': 'Greetings', 'en-body': 'Hello world.\n', 'fr-title': '', 'fr-body': '', 'url-slug': 'hello'}, follow_redirects=True)
+            response = self.test_client.post('/tree/{}/save/{}'.format(generated_branch_name, fake_page_path), data={'layout': 'multi', 'hexsha': hexsha, 'en-title': 'Greetings', 'en-body': 'Hello world.\n', 'fr-title': '', 'fr-body': '', 'url-slug': 'hello'}, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # the task name should not be in the returned HTML
             self.assertFalse(EDIT_LISTDIR_TASK_DESCRIPTION_PATTERN.format(fake_task_description) in response.data)
