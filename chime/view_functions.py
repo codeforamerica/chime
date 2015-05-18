@@ -24,15 +24,16 @@ from .href import needs_redirect, get_redirect
 from fcntl import flock, LOCK_EX, LOCK_UN, LOCK_SH
 
 # files that match these regex patterns will not be shown in the file explorer
+CONTENT_FILE_EXTENSION = u'markdown'
 FILE_FILTERS = [
     r'^\.',
     r'^_',
     r'\.lock$',
     r'Gemfile',
-    r'LICENSE'
+    r'LICENSE',
+    r'index\.{}'.format(CONTENT_FILE_EXTENSION)
 ]
 FILE_FILTERS_COMPILED = re.compile('(' + '|'.join(FILE_FILTERS) + ')')
-CONTENT_FILE_EXTENSION = u'markdown'
 
 class WriteLocked:
     ''' Context manager for a locked file open in a+ mode, seek(0).

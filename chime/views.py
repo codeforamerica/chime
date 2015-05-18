@@ -1,7 +1,7 @@
 from logging import getLogger
 Logger = getLogger('chime.views')
 
-from os.path import join, isdir, splitext
+from os.path import join, isdir, splitext, exists
 from re import compile, MULTILINE, sub
 from mimetypes import guess_type
 from glob import glob
@@ -364,6 +364,9 @@ def render_list_dir(repo, branch, path):
     # :NOTE: temporarily turning off filtering if 'showallfiles=true' is in the request
     showallfiles = request.args.get('showallfiles') == u'true'
 
+    # make the task root path
+    task_root_path = u'/tree/{}/edit/'.format(branch_name2path(branch))
+
     # get the task metadata; contains 'author_email', 'task_description'
     task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch)
     author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
@@ -380,7 +383,7 @@ def render_list_dir(repo, branch, path):
                   list_paths=sorted_paths(repo, branch, path, showallfiles),
                   author_email=author_email, task_description=task_description,
                   task_beneficiary=task_beneficiary, task_date_created=task_date_created,
-                  task_date_updated=task_date_updated)
+                  task_date_updated=task_date_updated, task_root_path=task_root_path)
     master_name = current_app.config['default_branch']
     kwargs['rejection_messages'] = list(repo_functions.get_rejection_messages(repo, master_name, branch))
     # TODO: the above might throw a GitCommandError if branch is an orphan.
@@ -398,13 +401,15 @@ def render_list_dir(repo, branch, path):
         kwargs['rejecting_peer'], kwargs['rejection_message'] = kwargs['rejection_messages'].pop(0)
     return render_template('tree-branch-edit-listdir.html', **kwargs)
 
-
 def render_edit_view(repo, branch, path, file):
+    ''' Render the page that lets you edit a file
+    '''
     front, body = load_jekyll_doc(file)
     languages = load_languages(repo.working_dir)
     url_slug, _ = splitext(path)
-    view_path = join('/tree/%s/view' % branch_name2path(branch), path)
-    history_path = join('/tree/%s/history' % branch_name2path(branch), path)
+    view_path = join('/tree/{}/view'.format(branch_name2path(branch)), path)
+    history_path = join('/tree/{}/history'.format(branch_name2path(branch)), path)
+    task_root_path = u'/tree/{}/edit/'.format(branch_name2path(branch))
     app_authorized = False
     ga_config = read_ga_config(current_app.config['RUNNING_STATE_DIR'])
     analytics_dict = {}
@@ -424,7 +429,7 @@ def render_edit_view(repo, branch, path, file):
                   body=body, hexsha=commit.hexsha, url_slug=url_slug,
                   front=front, view_path=view_path, edit_path=path,
                   history_path=history_path, languages=languages,
-                  app_authorized=app_authorized,
+                  task_root_path=task_root_path, app_authorized=app_authorized,
                   author_email=author_email, task_description=task_description,
                   task_beneficiary=task_beneficiary)
     kwargs.update(analytics_dict)
@@ -442,11 +447,22 @@ def branch_edit(branch, path=None):
     full_path = join(repo.working_dir, path or '.').rstrip('/')
 
     if isdir(full_path):
-        if path and not path.endswith('/'):
-            return redirect('/tree/%s/edit/%s' % (branch_name2path(branch), path + '/'), code=302)
+        # this is a directory
+        # if there's only an index file in the directory, edit it
+        index_path = join(path or u'', u'index.{}'.format(CONTENT_FILE_EXTENSION))
+        index_full_path = join(repo.working_dir, index_path)
+        visible_file_count = len(sorted_paths(repo, branch, path))
+        if exists(index_full_path) and visible_file_count == 0:
+            return redirect('/tree/{}/edit/{}'.format(branch_name2path(branch), index_path))
 
+        # if the directory path didn't end with a slash, add it
+        if path and not path.endswith('/'):
+            return redirect('/tree/{}/edit/{}/'.format(branch_name2path(branch), path), code=302)
+
+        # render the directory contents
         return render_list_dir(repo, branch, path)
 
+    # it's a file, edit it
     return render_edit_view(repo, branch, path, open(full_path, 'r'))
 
 @app.route('/tree/<branch>/edit/', methods=['POST'])
