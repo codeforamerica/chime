@@ -19,7 +19,7 @@ from .view_functions import (
     branch_name2path, branch_var2name, get_repo, dos2unix,
     login_required, browserid_hostname_required, synch_required, synched_checkout_required, sorted_paths,
     directory_paths, should_redirect, make_redirect, get_auth_data_file,
-    is_allowed_email, common_template_args)
+    is_allowed_email, common_template_args, CONTENT_FILE_EXTENSION)
 from .google_api_functions import (
     read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens,
     authorize_google, get_google_personal_info, get_google_analytics_properties,
@@ -467,7 +467,7 @@ def branch_edit_file(branch, path=None):
 
     elif action == 'add' and 'path' in request.form:
         front, body = dict(title='', layout='default'), ''
-        name = splitext(request.form['path'])[0] + '.html'
+        name = u'{}.{}'.format(splitext(request.form['path'])[0], CONTENT_FILE_EXTENSION)
 
         file_path = edit_functions.create_new_page(r, path, name, front, body)
         message = 'Created new file "%s"' % file_path
