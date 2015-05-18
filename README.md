@@ -18,7 +18,7 @@ Make an issue: https://github.com/chimecms/chime/issues/new
 
 3. You will need a bare Github repository in the directory `sample-site` with an initial empty commit
    (this will become configurable in the future):
-
+ + `mkdir sample-site`
  + `cd sample-site`
  + `git init`
  + `git commit --allow-empty -m "First commit"`
