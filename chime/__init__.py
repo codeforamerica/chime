@@ -1,6 +1,7 @@
-from logging import getLogger, DEBUG
+from logging import getLogger, DEBUG, ERROR
 import logging
 from util.ChimeFileLogger import ChimeFileLogger
+from util.SnsHandler import SnsHandler
 
 logger = getLogger('chime')
 
@@ -94,7 +95,10 @@ def create_app(environ):
         else:
             logger.addHandler(ChimeFileLogger(app.config))
             logger.setLevel(logging.INFO)
-
+        if app.config.has_key('SNS_ALERTS_TOPIC'):
+            sns_handler = SnsHandler(app.config['SNS_ALERTS_TOPIC'])
+            sns_handler.setLevel(logger.ERROR)
+            logger.addHandler(sns_handler)
         logger.info("app config before_first_request: %s", app.config)
     return AppShim(app)
 

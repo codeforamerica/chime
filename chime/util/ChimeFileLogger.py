@@ -7,7 +7,8 @@ from logging import handlers
 
 class ChimeFileLogger(handlers.RotatingFileHandler):
     """Logs to /var/log if available; otherwise to the work dir. """
-    def log_file(self, config):
+    @staticmethod
+    def log_file(config):
         log_dir = '/var/log/chime'
         if not os.access(log_dir,os.W_OK | os.X_OK):
             log_dir = config['WORK_PATH']
