@@ -437,7 +437,7 @@ def sorted_paths(repo, branch, path=None, showallfiles=False):
     return list_paths
 
 def directory_paths(branch, path=None):
-    root_dir_with_path = [('root', '/tree/%s/edit' % branch_name2path(branch))]
+    root_dir_with_path = [('root', '/tree/{}/edit'.format(branch_name2path(branch)))]
     if path is None:
         return root_dir_with_path
     directory_list = [dir_name for dir_name in path.split('/')

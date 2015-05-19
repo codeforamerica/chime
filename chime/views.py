@@ -2,7 +2,7 @@ from logging import getLogger
 Logger = getLogger('chime.views')
 
 from os.path import join, isdir, splitext, exists
-from re import compile, MULTILINE, sub
+from re import compile, MULTILINE, sub, search
 from mimetypes import guess_type
 from glob import glob
 
@@ -407,9 +407,13 @@ def render_edit_view(repo, branch, path, file):
     front, body = load_jekyll_doc(file)
     languages = load_languages(repo.working_dir)
     url_slug, _ = splitext(path)
+    # strip 'index' from the slug if appropriate
+    if search(r'\/index.{}$'.format(CONTENT_FILE_EXTENSION), path):
+        url_slug = sub(ur'index$', u'', url_slug)
     view_path = join('/tree/{}/view'.format(branch_name2path(branch)), path)
     history_path = join('/tree/{}/history'.format(branch_name2path(branch)), path)
     task_root_path = u'/tree/{}/edit/'.format(branch_name2path(branch))
+    folder_root_slug = u'/'.join(url_slug.split('/')[:-2]) + u'/'
     app_authorized = False
     ga_config = read_ga_config(current_app.config['RUNNING_STATE_DIR'])
     analytics_dict = {}
@@ -429,9 +433,10 @@ def render_edit_view(repo, branch, path, file):
                   body=body, hexsha=commit.hexsha, url_slug=url_slug,
                   front=front, view_path=view_path, edit_path=path,
                   history_path=history_path, languages=languages,
-                  task_root_path=task_root_path, app_authorized=app_authorized,
-                  author_email=author_email, task_description=task_description,
-                  task_beneficiary=task_beneficiary)
+                  task_root_path=task_root_path,
+                  dirs_and_paths=directory_paths(branch, folder_root_slug),
+                  app_authorized=app_authorized, author_email=author_email,
+                  task_description=task_description, task_beneficiary=task_beneficiary)
     kwargs.update(analytics_dict)
     return render_template('tree-branch-edit-file.html', **kwargs)
 
