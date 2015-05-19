@@ -1,4 +1,7 @@
 from logging import getLogger, DEBUG
+import logging
+from util.ChimeFileLogger import ChimeFileLogger
+
 logger = getLogger('chime')
 
 import os
@@ -6,9 +9,6 @@ from os import mkdir
 from os.path import realpath, join
 
 from flask import Blueprint, Flask
-
-import logging
-from logging import handlers
 
 from .httpd import run_apache_forever
 
@@ -64,12 +64,6 @@ def run_apache(running_dir):
     
     return run_apache_forever(doc_root, root, port, False)
 
-def log_file(app):
-    log_dir = '/var/log/chime'
-    if not os.access(log_dir,os.W_OK | os.X_OK):
-        log_dir = app.config['WORK_PATH']
-    return join(realpath(log_dir), 'app.log')
-
 def create_app(environ):
     app = Flask(__name__, static_folder='static')
     app.secret_key = 'boop'
@@ -98,12 +92,11 @@ def create_app(environ):
         if app.debug:
             logger.setLevel(DEBUG)
         else:
-            file_handler = handlers.RotatingFileHandler(log_file(app), 'a', 10000000,10)
-            file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-            logger.addHandler(file_handler)
+            logger.addHandler(ChimeFileLogger(app.config))
             logger.setLevel(logging.INFO)
 
         logger.info("app config before_first_request: %s", app.config)
     return AppShim(app)
 
+# noinspection PyUnresolvedReferences
 from . import views
