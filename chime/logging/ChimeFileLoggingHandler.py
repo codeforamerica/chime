@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import os
 from os.path import join, realpath
 
@@ -5,7 +6,7 @@ import logging
 from logging import handlers
 
 
-class ChimeFileLogger(handlers.RotatingFileHandler):
+class ChimeFileLoggingHandler(handlers.RotatingFileHandler):
     """Logs to /var/log if available; otherwise to the work dir. """
     @staticmethod
     def log_file(config):
@@ -15,6 +16,6 @@ class ChimeFileLogger(handlers.RotatingFileHandler):
         return join(realpath(log_dir), 'app.log')
 
     def __init__(self, config):
-        super(ChimeFileLogger, self).__init__(self.log_file(config), 'a', 10000000, 10)
+        super(ChimeFileLoggingHandler, self).__init__(self.log_file(config), 'a', 10000000, 10)
         self.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 

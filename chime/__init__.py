@@ -1,7 +1,7 @@
-from logging import getLogger, DEBUG, ERROR
-import logging
-from util.ChimeFileLogger import ChimeFileLogger
-from util.SnsHandler import SnsHandler
+from __future__ import absolute_import
+from logging import getLogger, INFO, DEBUG
+from .logging.ChimeFileLoggingHandler import ChimeFileLoggingHandler
+from .logging.SnsHandler import SnsHandler
 
 logger = getLogger('chime')
 
@@ -90,16 +90,14 @@ def create_app(environ):
 
     @app.before_first_request
     def before_first_request():
-        if app.debug:
-            logger.setLevel(DEBUG)
-        else:
-            logger.addHandler(ChimeFileLogger(app.config))
-            logger.setLevel(logging.INFO)
+        logger.addHandler(ChimeFileLoggingHandler(app.config))
+        logger.setLevel(DEBUG if app.debug else INFO)
+
         if app.config.has_key('SNS_ALERTS_TOPIC'):
             sns_handler = SnsHandler(app.config['SNS_ALERTS_TOPIC'])
             sns_handler.setLevel(logger.ERROR)
             logger.addHandler(sns_handler)
-        logger.info("app config before_first_request: %s", app.config)
+        logger.info("app config before_first_request: %s" % app.config)
     return AppShim(app)
 
 # noinspection PyUnresolvedReferences

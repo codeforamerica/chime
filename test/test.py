@@ -26,8 +26,8 @@ from mock import MagicMock
 
 from chime import (
     create_app, jekyll_functions, repo_functions, edit_functions,
-    google_api_functions, view_functions, publish
-)
+    google_api_functions, view_functions, publish,
+    google_access_token_update)
 
 import codecs
 codecs.register(RotUnicode.search_function)
@@ -1361,6 +1361,11 @@ class TestGoogleApiFunctions (TestCase):
             self.assertEqual(analytics_dict['page_views'], u'24')
             self.assertEqual(analytics_dict['average_time_page'], u'67')
 
+    def test_google_access_token_functions(self):
+        ''' makes sure that the file loads properly
+        '''
+        self.assertIsNotNone(google_access_token_update.parser)
+
 class TestAppConfig (TestCase):
 
     def test_missing_values(self):
@@ -1986,6 +1991,21 @@ class TestPublishApp (TestCase):
             response = self.client.post('/', data=payload)
 
         self.assertTrue(response.status_code in range(200, 299))
+
+    def test_load(self):
+        from chime import publish
+        ''' makes sure that the file loads properly
+        '''
+        self.assertIsNotNone(publish.logger)
+
+
+class TestHttpdStuff (TestCase):
+    def test_load(self):
+        from chime import httpd
+        ''' makes sure that the file loads properly
+        '''
+        self.assertIsNotNone(httpd.config)
+
 
 if __name__ == '__main__':
     main()

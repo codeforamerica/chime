@@ -1,6 +1,7 @@
-import logging
-import boto.sns
+from __future__ import absolute_import
 
+import boto.sns
+import logging
 
 class SnsHandler(logging.Handler):
     """Logs to the given Amazon SNS topic; meant for errors."""
@@ -11,7 +12,10 @@ class SnsHandler(logging.Handler):
 
         self.topic_arn = arn
         region_name = arn.split(':')[3]
-        self.sns_connection = boto.sns.connect_to_region(region_name)
+        self.sns_connection = self.make_connection(region_name)
+
+    def make_connection(self, region_name):
+        return boto.sns.connect_to_region(region_name)
 
     def emit(self, record):
         subject = u'Production alert: {}: {}'.format(record.levelname, record.name)
@@ -21,3 +25,4 @@ class SnsHandler(logging.Handler):
             self.format(record),
             subject=subject
         )
+

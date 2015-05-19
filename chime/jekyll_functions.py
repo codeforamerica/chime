@@ -22,6 +22,8 @@ Jekyll likes to have the "---" document separator at the top:
     >>> file.read(4) == _marker
     True
 '''
+from __future__ import absolute_import
+
 from os.path import join, exists
 from collections import OrderedDict
 import yaml
