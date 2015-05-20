@@ -2,7 +2,7 @@ from logging import getLogger
 Logger = getLogger('chime.views')
 
 from os.path import join, isdir, splitext
-from re import compile, MULTILINE, sub
+from re import compile, MULTILINE, sub, search
 from mimetypes import guess_type
 from glob import glob
 
@@ -19,7 +19,7 @@ from .view_functions import (
     branch_name2path, branch_var2name, get_repo, dos2unix,
     login_required, browserid_hostname_required, synch_required, synched_checkout_required, sorted_paths,
     directory_paths, should_redirect, make_redirect, get_auth_data_file,
-    is_allowed_email, common_template_args, CONTENT_FILE_EXTENSION)
+    is_allowed_email, common_template_args, is_editable_dir, CONTENT_FILE_EXTENSION)
 from .google_api_functions import (
     read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens,
     authorize_google, get_google_personal_info, get_google_analytics_properties,
@@ -364,6 +364,9 @@ def render_list_dir(repo, branch, path):
     # :NOTE: temporarily turning off filtering if 'showallfiles=true' is in the request
     showallfiles = request.args.get('showallfiles') == u'true'
 
+    # make the task root path
+    task_root_path = u'/tree/{}/edit/'.format(branch_name2path(branch))
+
     # get the task metadata; contains 'author_email', 'task_description'
     task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch)
     author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
@@ -380,7 +383,7 @@ def render_list_dir(repo, branch, path):
                   list_paths=sorted_paths(repo, branch, path, showallfiles),
                   author_email=author_email, task_description=task_description,
                   task_beneficiary=task_beneficiary, task_date_created=task_date_created,
-                  task_date_updated=task_date_updated)
+                  task_date_updated=task_date_updated, task_root_path=task_root_path)
     master_name = current_app.config['default_branch']
     kwargs['rejection_messages'] = list(repo_functions.get_rejection_messages(repo, master_name, branch))
     # TODO: the above might throw a GitCommandError if branch is an orphan.
@@ -398,13 +401,19 @@ def render_list_dir(repo, branch, path):
         kwargs['rejecting_peer'], kwargs['rejection_message'] = kwargs['rejection_messages'].pop(0)
     return render_template('tree-branch-edit-listdir.html', **kwargs)
 
-
 def render_edit_view(repo, branch, path, file):
+    ''' Render the page that lets you edit a file
+    '''
     front, body = load_jekyll_doc(file)
     languages = load_languages(repo.working_dir)
     url_slug, _ = splitext(path)
-    view_path = join('/tree/%s/view' % branch_name2path(branch), path)
-    history_path = join('/tree/%s/history' % branch_name2path(branch), path)
+    # strip 'index' from the slug if appropriate
+    if search(r'\/index.{}$'.format(CONTENT_FILE_EXTENSION), path):
+        url_slug = sub(ur'index$', u'', url_slug)
+    view_path = join('/tree/{}/view'.format(branch_name2path(branch)), path)
+    history_path = join('/tree/{}/history'.format(branch_name2path(branch)), path)
+    task_root_path = u'/tree/{}/edit/'.format(branch_name2path(branch))
+    folder_root_slug = u'/'.join(url_slug.split('/')[:-2]) + u'/'
     app_authorized = False
     ga_config = read_ga_config(current_app.config['RUNNING_STATE_DIR'])
     analytics_dict = {}
@@ -424,9 +433,10 @@ def render_edit_view(repo, branch, path, file):
                   body=body, hexsha=commit.hexsha, url_slug=url_slug,
                   front=front, view_path=view_path, edit_path=path,
                   history_path=history_path, languages=languages,
-                  app_authorized=app_authorized,
-                  author_email=author_email, task_description=task_description,
-                  task_beneficiary=task_beneficiary)
+                  task_root_path=task_root_path,
+                  dirs_and_paths=directory_paths(branch, folder_root_slug),
+                  app_authorized=app_authorized, author_email=author_email,
+                  task_description=task_description, task_beneficiary=task_beneficiary)
     kwargs.update(analytics_dict)
     return render_template('tree-branch-edit-file.html', **kwargs)
 
@@ -442,11 +452,19 @@ def branch_edit(branch, path=None):
     full_path = join(repo.working_dir, path or '.').rstrip('/')
 
     if isdir(full_path):
-        if path and not path.endswith('/'):
-            return redirect('/tree/%s/edit/%s' % (branch_name2path(branch), path + '/'), code=302)
+        # if this is an editable directory (contains only an editable index file), redirect
+        if is_editable_dir(full_path):
+            index_path = join(path or u'', u'index.{}'.format(CONTENT_FILE_EXTENSION))
+            return redirect('/tree/{}/edit/{}'.format(branch_name2path(branch), index_path))
 
+        # if the directory path didn't end with a slash, add it
+        if path and not path.endswith('/'):
+            return redirect('/tree/{}/edit/{}/'.format(branch_name2path(branch), path), code=302)
+
+        # render the directory contents
         return render_list_dir(repo, branch, path)
 
+    # it's a file, edit it
     return render_edit_view(repo, branch, path, open(full_path, 'r'))
 
 @app.route('/tree/<branch>/edit/', methods=['POST'])
@@ -466,9 +484,9 @@ def branch_edit_file(branch, path=None):
         path_303 = path or ''
 
     elif action == 'add' and 'path' in request.form:
-        front, body = dict(title='', layout='default'), ''
-        name = u'{}.{}'.format(splitext(request.form['path'])[0], CONTENT_FILE_EXTENSION)
+        name = u'{}/index.{}'.format(splitext(request.form['path'])[0], CONTENT_FILE_EXTENSION)
 
+        front, body = dict(title=u'', layout='default'), u''
         file_path = edit_functions.create_new_page(r, path, name, front, body)
         message = 'Created new file "%s"' % file_path
         path_303 = file_path
@@ -562,6 +580,7 @@ def branch_review(branch):
 @synch_required
 def branch_save(branch, path):
     branch = branch_var2name(branch)
+    safe_branch = branch_name2path(branch)
     master_name = current_app.config['default_branch']
 
     repo = get_repo(current_app)
@@ -595,13 +614,31 @@ def branch_save(branch, path):
     # Try to merge from the master to the current branch.
     #
     try:
-        message = 'Saved file "%s"' % path
+        message = 'Saved file "{}"'.format(path)
         c2 = repo_functions.save_working_file(repo, path, message, c.hexsha, master_name)
-        new_path = request.form.get('url-slug') + splitext(path)[1]
+        # they may've renamed the page by editing the URL slug
+        original_slug = path
+        if search(r'\/index.{}$'.format(CONTENT_FILE_EXTENSION), path):
+            original_slug = sub(ur'index.{}$'.format(CONTENT_FILE_EXTENSION), u'', path)
 
-        if new_path != path:
-            repo_functions.move_existing_file(repo, path, new_path, c2.hexsha, master_name)
-            path = new_path
+        # do some simple input cleaning
+        new_slug = request.form.get('url-slug')
+        new_slug = sub(r'\/+', '/', new_slug)
+
+        if new_slug != original_slug:
+            try:
+                repo_functions.move_existing_file(repo, original_slug, new_slug, c2.hexsha, master_name)
+            except Exception as e:
+                error_message = e.args[0]
+                error_type = e.args[1] if len(e.args) > 1 else None
+                # let unexpected errors raise normally
+                if error_type:
+                    flash(error_message, error_type)
+                    return redirect('/tree/{}/edit/{}'.format(safe_branch, path), code=303)
+                else:
+                    raise
+
+            path = join(new_slug, u'index.{}'.format(CONTENT_FILE_EXTENSION))
 
     except repo_functions.MergeConflict as conflict:
         repo.git.reset(c.hexsha, hard=True)
@@ -612,9 +649,7 @@ def branch_save(branch, path):
         Logger.debug('  {}'.format(repr(conflict.local_commit.tree[path].data_stream.read())))
         raise
 
-    safe_branch = branch_name2path(branch)
-
-    return redirect('/tree/%s/edit/%s' % (safe_branch, path), code=303)
+    return redirect('/tree/{}/edit/{}'.format(safe_branch, path), code=303)
 
 @app.route('/.well-known/deploy-key.txt')
 def deploy_key():

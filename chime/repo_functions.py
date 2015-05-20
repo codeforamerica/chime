@@ -8,6 +8,7 @@ from git.cmd import GitCommandError
 import hashlib
 import yaml
 import edit_functions
+from re import match
 
 TASK_METADATA_FILENAME = u'_task.yml'
 BRANCH_NAME_LENGTH = 7
@@ -469,10 +470,26 @@ def move_existing_file(clone, old_path, new_path, base_sha, default_branch_name)
     if clone.active_branch.commit.hexsha != base_sha:
         raise Exception('Out of date SHA: %s' % base_sha)
 
-    new_repo_path, new_real_path = make_working_file(clone, '', new_path)
+    # check whether we're being asked to move a dir
+    if not isdir(join(clone.working_dir, old_path)):
+        make_working_file(clone, '', new_path)
+    else:
+        # send make_working_file a path without the last directory,
+        # which will be created by git mv
+        old_dirs = [item for item in old_path.split('/') if item]
+        new_dirs = [item for item in new_path.split('/') if item]
+        # make sure we're not trying to move a directory inside itself
+        if match(u'/'.join(old_dirs), u'/'.join(new_dirs)):
+            raise Exception(u'I cannot move a directory inside itself!', u'warning')
+
+        if len(new_dirs) > 1:
+            new_dirs = new_dirs[:-1]
+            short_new_path = u'{}/'.format(u'/'.join(new_dirs))
+            make_working_file(clone, '', short_new_path)
+
     clone.git.mv(old_path, new_path, f=True)
 
-    clone.index.commit('Renamed "%s" to "%s"' % (old_path, new_path))
+    clone.index.commit('Renamed "{}" to "{}"'.format(old_path, new_path))
     active_branch_name = clone.active_branch.name
 
     #

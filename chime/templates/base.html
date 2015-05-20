@@ -27,11 +27,8 @@
           <ul class="nav">
             <li><a href="/">Activity</a></li>
             <li><a href="{{ live_site_url }}">Visit site</a></li>
-
-            {% if author_email and task_description %}
-            <li class="active-task"><a href="./">{{author_email}}/<strong>{{task_description}}</strong></a></li>
-            {% elif branch %}
-            <li class="active-task"><a href="./">{{branch}}</a></li>
+            {% if (author_email and task_description) or branch %}
+            <li class="active-task"><a href="{% if task_root_path %}{{task_root_path}}{% else %}./{% endif %}">{% if author_email and task_description %}{{author_email}}/<strong>{{task_description}}</strong>{% elif branch %}{{branch}}{% endif %}</a></li>
             {% endif %}
           </ul>
       </header>

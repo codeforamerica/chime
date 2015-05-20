@@ -3,7 +3,7 @@ from unittest import main, TestCase
 
 from tempfile import mkdtemp
 from StringIO import StringIO
-from os.path import join, exists, dirname
+from os.path import join, exists, dirname, isdir
 from urlparse import urlparse, urljoin
 from os import environ
 from shutil import rmtree, copytree
@@ -40,6 +40,8 @@ EDIT_LISTDIR_TASK_DESCRIPTION_PATTERN = '<h3>Current task: <strong>{}</strong>'
 EDIT_LISTDIR_TASK_DESCRIPTION_AND_BENEFICIARY_PATTERN = '<h3>Current task: <strong>{}</strong> for <strong>{}</strong></h3>'
 EDIT_LISTDIR_AUTHOR_EMAIL_PATTERN = '<li>Started by: <strong>{}</strong></li>'
 EDIT_LISTDIR_BRANCH_NAME_PATTERN = '<li class="active-task"><a href="./">{}</a></li>'
+EDIT_LISTDIR_FILE_NAME_PATTERN = '<a class="file" href="{file_name}">{file_name}</a>'
+EDIT_LISTDIR_FOLDER_NAME_PATTERN = '<a class="folder" href="{folder_name}">{folder_name}</a>'
 
 class TestJekyll (TestCase):
 
@@ -1541,7 +1543,7 @@ class TestApp (TestCase):
         fake_task_beneficiary = u'somebody else'
         fake_author_email = u'erica@example.com'
         fake_page_slug = u'hello'
-        fake_page_name = u'{}.{}'.format(fake_page_slug, view_functions.CONTENT_FILE_EXTENSION)
+        fake_page_path = u'{}/index.{}'.format(fake_page_slug, view_functions.CONTENT_FILE_EXTENSION)
         fake_page_content = u'Hello world.'
         with HTTMock(self.mock_persona_verify):
             self.test_client.post('/sign-in', data={'email': fake_author_email})
@@ -1553,7 +1555,7 @@ class TestApp (TestCase):
             self.assertTrue(EDIT_LISTDIR_AUTHOR_EMAIL_PATTERN.format(fake_author_email) in response.data)
 
             # extract the generated branch name from the returned HTML
-            generated_branch_search = search(r'\/tree\/(.{7})\/edit', response.data)
+            generated_branch_search = search(r'\/tree\/(.{{{}}})\/edit'.format(repo_functions.BRANCH_NAME_LENGTH), response.data)
             self.assertIsNotNone(generated_branch_search)
             try:
                 generated_branch_name = generated_branch_search.group(1)
@@ -1563,32 +1565,32 @@ class TestApp (TestCase):
         with HTTMock(self.mock_google_analytics):
             # create a new file
             response = self.test_client.post('/tree/{}/edit/'.format(generated_branch_name),
-                                             data={'action': 'add', 'path': fake_page_name},
+                                             data={'action': 'add', 'path': fake_page_slug},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
-            self.assertTrue(fake_page_name in response.data)
+            self.assertTrue(fake_page_path in response.data)
 
             # get the index page for the branch and verify that the new file is listed
             response = self.test_client.get('/tree/{}/edit/'.format(generated_branch_name), follow_redirects=True)
             self.assertEquals(response.status_code, 200)
-            self.assertTrue(fake_page_name in response.data)
+            self.assertTrue(EDIT_LISTDIR_FILE_NAME_PATTERN.format(**{"file_name": fake_page_slug}) in response.data)
 
             # get the edit page for the new file and extract the hexsha value
-            response = self.test_client.get('/tree/{}/edit/{}'.format(generated_branch_name, fake_page_name))
+            response = self.test_client.get('/tree/{}/edit/{}'.format(generated_branch_name, fake_page_path))
             self.assertEquals(response.status_code, 200)
-            self.assertTrue(fake_page_name in response.data)
+            self.assertTrue(fake_page_path in response.data)
             hexsha = search(r'<input name="hexsha" value="(\w+)"', response.data).group(1)
             # now save the file with new content
-            response = self.test_client.post('/tree/{}/save/{}'.format(generated_branch_name, fake_page_name),
+            response = self.test_client.post('/tree/{}/save/{}'.format(generated_branch_name, fake_page_path),
                                              data={'layout': 'multi', 'hexsha': hexsha,
                                                    'en-title': 'Greetings',
                                                    'en-body': u'{}\n'.format(fake_page_content),
                                                    'fr-title': '', 'fr-body': '',
-                                                   'url-slug': fake_page_slug},
+                                                   'url-slug': u'{}/index'.format(fake_page_slug)},
                                              follow_redirects=True)
 
             self.assertEquals(response.status_code, 200)
-            self.assertTrue(fake_page_name in response.data)
+            self.assertTrue(fake_page_path in response.data)
             self.assertTrue(fake_page_content in response.data)
 
         # Check that English and French forms are both present.
@@ -1674,7 +1676,7 @@ class TestApp (TestCase):
         ''' Certain POSTs to a made-up URL should not create a branch
         '''
         fake_page_slug = u'hello'
-        fake_page_name = u'{}.{}'.format(fake_page_slug, view_functions.CONTENT_FILE_EXTENSION)
+        fake_page_path = u'{}/index.{}'.format(fake_page_slug, view_functions.CONTENT_FILE_EXTENSION)
 
         with HTTMock(self.mock_persona_verify):
             self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
@@ -1687,7 +1689,7 @@ class TestApp (TestCase):
             fake_task_beneficiary = u'Nobody'
             fake_author_email = u'erica@example.com'
             fake_branch_name = repo_functions.make_branch_name(fake_task_description, fake_task_beneficiary, fake_author_email)
-            response = self.test_client.post('/tree/{}/edit/'.format(fake_branch_name), data={'action': 'add', 'path': fake_page_name}, follow_redirects=True)
+            response = self.test_client.post('/tree/{}/edit/'.format(fake_branch_name), data={'action': 'add', 'path': fake_page_slug}, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # the branch name should not be in the returned HTML
             self.assertFalse(EDIT_LISTDIR_BRANCH_NAME_PATTERN.format(fake_branch_name) in response.data)
@@ -1702,21 +1704,21 @@ class TestApp (TestCase):
             self.assertTrue(EDIT_LISTDIR_TASK_DESCRIPTION_AND_BENEFICIARY_PATTERN.format(fake_task_description, fake_task_beneficiary) in response.data)
 
             # extract the generated branch name from the returned HTML
-            generated_branch_search = search(r'\/tree\/(.{7})\/edit', response.data)
+            generated_branch_search = search(r'\/tree\/(.{{{}}})\/edit'.format(repo_functions.BRANCH_NAME_LENGTH), response.data)
             self.assertIsNotNone(generated_branch_search)
             try:
                 generated_branch_name = generated_branch_search.group(1)
             except AttributeError:
                 raise Exception('No match for generated branch name.')
 
-            response = self.test_client.post('/tree/{}/edit/'.format(generated_branch_name), data={'action': 'add', 'path': fake_page_name}, follow_redirects=True)
+            response = self.test_client.post('/tree/{}/edit/'.format(generated_branch_name), data={'action': 'add', 'path': fake_page_slug}, follow_redirects=True)
             self.assertEquals(response.status_code, 200)
 
             response = self.test_client.get('/tree/{}/edit/'.format(generated_branch_name), follow_redirects=True)
             self.assertEquals(response.status_code, 200)
-            self.assertTrue(fake_page_name in response.data)
+            self.assertTrue(EDIT_LISTDIR_FILE_NAME_PATTERN.format(**{"file_name": fake_page_slug}) in response.data)
 
-            response = self.test_client.get('/tree/{}/edit/{}'.format(generated_branch_name, fake_page_name))
+            response = self.test_client.get('/tree/{}/edit/{}'.format(generated_branch_name, fake_page_path))
             self.assertEquals(response.status_code, 200)
             hexsha = search(r'<input name="hexsha" value="(\w+)"', response.data).group(1)
 
@@ -1725,7 +1727,7 @@ class TestApp (TestCase):
             self.assertEquals(response.status_code, 200)
             self.assertFalse(generated_branch_name in response.data)
 
-            response = self.test_client.post('/tree/{}/save/{}'.format(generated_branch_name, fake_page_name), data={'layout': 'multi', 'hexsha': hexsha, 'en-title': 'Greetings', 'en-body': 'Hello world.\n', 'fr-title': '', 'fr-body': '', 'url-slug': 'hello'}, follow_redirects=True)
+            response = self.test_client.post('/tree/{}/save/{}'.format(generated_branch_name, fake_page_path), data={'layout': 'multi', 'hexsha': hexsha, 'en-title': 'Greetings', 'en-body': 'Hello world.\n', 'fr-title': '', 'fr-body': '', 'url-slug': 'hello'}, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # the task name should not be in the returned HTML
             self.assertFalse(EDIT_LISTDIR_TASK_DESCRIPTION_PATTERN.format(fake_task_description) in response.data)
@@ -1774,7 +1776,7 @@ class TestApp (TestCase):
             self.assertTrue(check_branch.name in new_clone.branches)
 
     def test_git_merge_strategy_implemented(self):
-        ''' Verify that the Git merge strategy has been implmemented for a new clone.
+        ''' The Git merge strategy has been implmemented for a new clone.
         '''
         fake_author_email = u'erica@example.com'
         with HTTMock(self.mock_persona_verify):
@@ -1934,6 +1936,196 @@ class TestApp (TestCase):
 
         self.assertEquals(response.status_code, 302)
         self.assertEquals(response.headers['Location'], expected_url)
+
+    def test_create_page_creates_directory_containing_index(self):
+        ''' Creating a new page creates a directory with an editable index file inside.
+        '''
+        fake_author_email = u'erica@example.com'
+        with HTTMock(self.mock_persona_verify):
+            self.test_client.post('/sign-in', data={'email': fake_author_email})
+
+        with HTTMock(self.auth_csv_example_allowed):
+            # start a new branch via the http interface
+            # invokes view_functions/get_repo which creates a clone
+            task_description = u'filter plankton from sea water'
+            task_beneficiary = u'humpback whales'
+
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            self.assertTrue(working_branch.name in self.clone1.branches)
+            self.assertTrue(working_branch.name in self.origin.branches)
+            working_branch_name = working_branch.name
+            working_branch.checkout()
+
+            # create a new page
+            page_slug = u'hello'
+            page_path = u'{}/index.{}'.format(page_slug, view_functions.CONTENT_FILE_EXTENSION)
+            response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
+                                             data={'action': 'add', 'path': page_slug},
+                                             follow_redirects=True)
+            self.assertEquals(response.status_code, 200)
+            self.assertTrue(page_path in response.data)
+
+            # pull the changes
+            self.clone1.git.pull('origin', working_branch_name)
+
+            # a directory was created
+            dir_location = join(self.clone1.working_dir, page_slug)
+            idx_location = u'{}/index.{}'.format(dir_location, view_functions.CONTENT_FILE_EXTENSION)
+            self.assertTrue(exists(dir_location) and isdir(dir_location))
+            # an index page was created inside
+            self.assertTrue(exists(idx_location))
+            # the directory and index page pass the editable test
+            self.assertTrue(view_functions.is_editable_dir(dir_location))
+
+    def test_can_rename_editable_directories(self):
+        ''' Can rename an editable directory.
+        '''
+        fake_author_email = u'erica@example.com'
+        with HTTMock(self.mock_persona_verify):
+            self.test_client.post('/sign-in', data={'email': fake_author_email})
+
+        with HTTMock(self.auth_csv_example_allowed):
+            # start a new branch via the http interface
+            # invokes view_functions/get_repo which creates a clone
+            task_description = u'filter plankton from sea water'
+            task_beneficiary = u'humpback whales'
+
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            self.assertTrue(working_branch.name in self.clone1.branches)
+            self.assertTrue(working_branch.name in self.origin.branches)
+            working_branch_name = working_branch.name
+            working_branch.checkout()
+
+            # create a new page
+            page_slug = u'hello'
+            page_path = u'{}/index.{}'.format(page_slug, view_functions.CONTENT_FILE_EXTENSION)
+            response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
+                                             data={'action': 'add', 'path': page_slug},
+                                             follow_redirects=True)
+            self.assertEquals(response.status_code, 200)
+            self.assertTrue(page_path in response.data)
+            hexsha = search(r'<input name="hexsha" value="(\w+)"', response.data).group(1)
+
+            # now save the file with new content
+            new_page_slug = u'goodbye'
+            new_page_path = u'{}/index.{}'.format(new_page_slug, view_functions.CONTENT_FILE_EXTENSION)
+            response = self.test_client.post('/tree/{}/save/{}'.format(working_branch_name, page_path),
+                                             data={'layout': 'multi', 'hexsha': hexsha,
+                                                   'en-title': u'',
+                                                   'en-body': u'',
+                                                   'fr-title': u'', 'fr-body': u'',
+                                                   'url-slug': u'{}'.format(new_page_slug)},
+                                             follow_redirects=True)
+
+            self.assertEquals(response.status_code, 200)
+            self.assertTrue(new_page_path in response.data)
+
+            # pull the changes
+            self.clone1.git.pull('origin', working_branch_name)
+
+            # the old directory is gone
+            old_dir_location = join(self.clone1.working_dir, page_slug)
+            self.assertFalse(exists(old_dir_location))
+
+            # the new directory exists and is properly structured
+            new_dir_location = join(self.clone1.working_dir, new_page_slug)
+            self.assertTrue(exists(new_dir_location) and isdir(new_dir_location))
+            # an index page is inside
+            idx_location = u'{}/index.{}'.format(new_dir_location, view_functions.CONTENT_FILE_EXTENSION)
+            self.assertTrue(exists(idx_location))
+            # the directory and index page pass the editable test
+            self.assertTrue(view_functions.is_editable_dir(new_dir_location))
+
+    def test_cannot_move_a_directory_inside_iteslf(self):
+        ''' Can't rename an editable directory in a way which moves it inside itself
+        '''
+        fake_author_email = u'erica@example.com'
+        with HTTMock(self.mock_persona_verify):
+            self.test_client.post('/sign-in', data={'email': fake_author_email})
+
+        with HTTMock(self.auth_csv_example_allowed):
+            # start a new branch via the http interface
+            # invokes view_functions/get_repo which creates a clone
+            task_description = u'filter plankton from sea water'
+            task_beneficiary = u'humpback whales'
+
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            self.assertTrue(working_branch.name in self.clone1.branches)
+            self.assertTrue(working_branch.name in self.origin.branches)
+            working_branch_name = working_branch.name
+            working_branch.checkout()
+
+            # create a new page
+            page_slug = u'hello'
+            page_path = u'{}/index.{}'.format(page_slug, view_functions.CONTENT_FILE_EXTENSION)
+            response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
+                                             data={'action': 'add', 'path': page_slug},
+                                             follow_redirects=True)
+            self.assertEquals(response.status_code, 200)
+            self.assertTrue(page_path in response.data)
+            hexsha = search(r'<input name="hexsha" value="(\w+)"', response.data).group(1)
+
+            # now save the file with new content
+            new_page_slug = u'hello/is/better/than/goodbye'
+            new_page_path = u'{}/index.{}'.format(new_page_slug, view_functions.CONTENT_FILE_EXTENSION)
+            response = self.test_client.post('/tree/{}/save/{}'.format(working_branch_name, page_path),
+                                             data={'layout': 'multi', 'hexsha': hexsha,
+                                                   'en-title': u'',
+                                                   'en-body': u'',
+                                                   'fr-title': u'', 'fr-body': u'',
+                                                   'url-slug': u'{}'.format(new_page_slug)},
+                                             follow_redirects=True)
+
+            self.assertEquals(response.status_code, 200)
+            # the new page shouldn't have been created
+            self.assertFalse(new_page_path in response.data)
+            # there shoudld be a flashed error message
+            self.assertTrue(u'I cannot move a directory inside itself!' in response.data)
+
+            # pull the changes
+            self.clone1.git.pull('origin', working_branch_name)
+
+            # the old directory is not gone
+            old_dir_location = join(self.clone1.working_dir, page_slug)
+            self.assertTrue(exists(old_dir_location))
+
+            # the new directory doesn't exist
+            new_dir_location = join(self.clone1.working_dir, new_page_slug)
+            self.assertFalse(exists(new_dir_location) and isdir(new_dir_location))
+
+    def test_editable_directories_are_shown_as_files(self):
+        ''' Editable directories (directories containing only an editable index file) are displayed as files.
+        '''
+        fake_author_email = u'erica@example.com'
+        with HTTMock(self.mock_persona_verify):
+            self.test_client.post('/sign-in', data={'email': fake_author_email})
+
+        with HTTMock(self.auth_csv_example_allowed):
+            # start a new branch via the http interface
+            # invokes view_functions/get_repo which creates a clone
+            task_description = u'filter plankton from sea water'
+            task_beneficiary = u'humpback whales'
+
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            self.assertTrue(working_branch.name in self.clone1.branches)
+            self.assertTrue(working_branch.name in self.origin.branches)
+            working_branch_name = working_branch.name
+            working_branch.checkout()
+
+            # create a new page
+            page_slug = u'hello'
+            page_path = u'{}/index.{}'.format(page_slug, view_functions.CONTENT_FILE_EXTENSION)
+            response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
+                                             data={'action': 'add', 'path': page_slug},
+                                             follow_redirects=True)
+            self.assertEquals(response.status_code, 200)
+            self.assertTrue(page_path in response.data)
+
+            # load the index page
+            response = self.test_client.get('/tree/{}/edit/'.format(working_branch_name), follow_redirects=True)
+            self.assertEquals(response.status_code, 200)
+            # verify that the new folder is represented as a file in the HTML
+            self.assertTrue(EDIT_LISTDIR_FILE_NAME_PATTERN.format(**{"file_name": page_slug}) in response.data)
 
 class TestPublishApp (TestCase):
 
