@@ -83,7 +83,7 @@ def index():
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(items=list_items)
 
-    return render_template('index.html', **kwargs)
+    return render_template('activities-list.html', **kwargs)
 
 @app.route('/not-allowed')
 @browserid_hostname_required
