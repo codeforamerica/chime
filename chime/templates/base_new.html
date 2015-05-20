@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<!--[if lte IE 10]><html lang="en-us" class="lt-ie10"><![endif]-->
+<!--[if gt IE 9]><!--><html lang="en-us"><!--<![endif]-->
+<head>
+        <meta charset="utf-8">
+        <link rel="stylesheet" type="text/css" media="screen" href="/static/javascript/toopaymarkdown/css/bootstrap-markdown.min.css">
+        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+        <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+        <script src="https://login.persona.org/include.js"></script>
+        <script type="text/javascript">
+          var currentUser = {{email|tojson|safe}};
+        </script>
+        <script src="{{ url_for('static', filename='script.js') }}"></script>
+        <link href="/static/stylesheets/main.css" rel="stylesheet" />
+        <title>{% block title %}{% endblock %} | Chime</title>
+        <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    </head>
+    <body class="{% block body_class %}{% endblock %}">
+      
+    <div class="wrapper  col">
+      <div class="global-header  row">
+        <a href="/" class="global-header--title  row__left">Chime</a>
+        <nav>
+          <nav class="global-header--nav  row__right  toolbar--right">
+            <a class="toolbar__item" href="/">Activity</a></li>
+            <a class="toolbar__item" href="{{ live_site_url }}">Visit site</a></li>
+            {% if author_email and task_description %}
+            <a class="toolbar__item" href="./">{{author_email}}/<strong>{{task_description}}</strong></a></li>
+            {% elif branch %}
+            <a class="toolbar__item" href="./">{{branch}}</a></li>
+            {% endif %}
+          </nav>
+      </div>
+
+
+
+
+      <!-- feedback messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-holder">
+              <ul class="flashes">
+              {% for category, message in messages %}
+                <li class="{{ category }}">{{ message }}</li>
+              {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
+        {% endwith %}
+     <!-- end feedback messages -->
+
+     <!-- content -->
+        {% block content %}{% endblock %}
+     <!-- end content -->
+
+     <!-- footer block -->
+<!--         <footer class="product-info">
+            <p class="cfa">Created by <span><img src="/static/images/logo-black.png" alt="Code for America" height="40px" /></span></p>
+            <div class="signout">
+                  {% if email %}
+                    <input type="button" id="signout" value="Sign out">
+                  {% else %}
+                 
+                  {% endif %}
+            </div>
+        </footer> -->
+      <!-- end footer block -->
+      </div>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+        <script src="/static/javascript/toopaymarkdown/js//bootstrap-markdown.js"></script>
+
+    </body>
+
+    <script type="text/javascript">
+      var signinLink = document.getElementById('signin');
+      if (signinLink) {
+        var opts = {'siteName': 'Chime CMS', 'siteLogo': 'https://avatars3.githubusercontent.com/u/11183400?v=3&s=200', 'backgroundColor': '#EFE9D8'};
+        signinLink.onclick = function() { navigator.id.request(opts); return false };
+      }
+
+      var signoutLink = document.getElementById('signout');
+      if (signoutLink) {
+        signoutLink.onclick = function() { navigator.id.logout(); return false };
+      }
+    </script>
+</html>
