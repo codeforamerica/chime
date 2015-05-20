@@ -551,7 +551,7 @@ def branch_history(branch, path=None):
                   author_email=author_email, task_description=task_description,
                   task_beneficiary=task_beneficiary)
 
-    return render_template('tree-branch-history.html', **kwargs)
+    return render_template('article-history.html', **kwargs)
 
 @app.route('/tree/<branch>/review/', methods=['GET'])
 @login_required

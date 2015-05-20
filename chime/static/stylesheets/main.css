@@ -982,6 +982,107 @@ input[type="submit"]:disabled:hover {
 /*------------------------------------*\
     # Templates
 \*------------------------------------*/
+/* line 1, ../sass/templates/_activities-list.scss */
+.activities-list__main {
+  display: -webkit-box;
+  display: -moz-box;
+  display: box;
+  display: -webkit-flex;
+  display: -moz-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: stretch;
+  -moz-box-align: stretch;
+  box-align: stretch;
+  -webkit-align-items: stretch;
+  -moz-align-items: stretch;
+  -ms-align-items: stretch;
+  -o-align-items: stretch;
+  align-items: stretch;
+  -ms-flex-align: stretch;
+  background-color: #fafafa;
+}
+/* line 5, ../sass/core/_layout.scss */
+.lt-ie10 .activities-list__main {
+  display: block;
+}
+
+/* line 6, ../sass/templates/_activities-list.scss */
+.current-tasks {
+  overflow: auto;
+  margin-left: -3px;
+  padding-left: 3px;
+  padding-right: 3px;
+}
+
+/* line 15, ../sass/templates/_activities-list.scss */
+.current-tasks__list {
+  margin: 2em 0;
+}
+
+/* line 19, ../sass/templates/_activities-list.scss */
+.current-task {
+  -webkit-transition: box-shadow ease-out 0.2s;
+  -moz-transition: box-shadow ease-out 0.2s;
+  transition: box-shadow ease-out 0.2s;
+  display: block;
+  padding: .5em 1em;
+  background-color: #fff;
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.15);
+  margin-bottom: 1em;
+  border-radius: 3px;
+}
+/* line 27, ../sass/templates/_activities-list.scss */
+.lt-ie10 .current-task {
+  border: 1px solid #eeeeee;
+}
+
+/* line 32, ../sass/templates/_activities-list.scss */
+.current-task__title {
+  font-size: 1.75rem;
+  border-bottom: 1px solid #f5f5f5;
+  margin-top: .5em;
+  margin-bottom: .5em;
+  padding-bottom: .5em;
+}
+/* line 38, ../sass/templates/_activities-list.scss */
+.current-task__title a {
+  color: #212121;
+}
+/* line 40, ../sass/templates/_activities-list.scss */
+.current-task__title a:hover {
+  color: #336f87;
+}
+
+/* line 46, ../sass/templates/_activities-list.scss */
+.current-task__author {
+  margin-top: 0;
+}
+
+/* line 50, ../sass/templates/_activities-list.scss */
+.current-task__details {
+  padding: 0;
+}
+
+/* line 54, ../sass/templates/_activities-list.scss */
+.new-task {
+  padding: 0 20px;
+  border-left: 1px solid #eeeeee;
+}
+/* line 57, ../sass/templates/_activities-list.scss */
+.new-task input {
+  margin: .5em 0;
+}
+
+/* line 62, ../sass/templates/_activities-list.scss */
+.new-task__form {
+  margin-top: 2em;
+  background-color: #eeeeee;
+  border: 1px solid #e0e0e0;
+  border-radius: 3px;
+  padding: 1em;
+}
+
 /* line 1, ../sass/templates/_article-edit.scss */
 .edit-article__form {
   padding: 0;
@@ -1116,103 +1217,35 @@ input[type="submit"]:disabled:hover {
   border-top: 1px solid #e0e0e0;
 }
 
-/* line 1, ../sass/templates/_activities-list.scss */
-.activities-list__main {
-  display: -webkit-box;
-  display: -moz-box;
-  display: box;
-  display: -webkit-flex;
-  display: -moz-flex;
-  display: -ms-flexbox;
-  display: flex;
-  -webkit-box-align: stretch;
-  -moz-box-align: stretch;
-  box-align: stretch;
-  -webkit-align-items: stretch;
-  -moz-align-items: stretch;
-  -ms-align-items: stretch;
-  -o-align-items: stretch;
-  align-items: stretch;
-  -ms-flex-align: stretch;
+/* line 1, ../sass/templates/_article-history.scss */
+.article-history__main {
   background-color: #fafafa;
 }
-/* line 5, ../sass/core/_layout.scss */
-.lt-ie10 .activities-list__main {
-  display: block;
+
+/* line 5, ../sass/templates/_article-history.scss */
+.history-table {
+  width: 100%;
+  max-width: 800px;
+}
+/* line 8, ../sass/templates/_article-history.scss */
+.history-table th, .history-table td {
+  vertical-align: top;
+  text-align: left;
+  padding: 1em .5em;
+}
+/* line 13, ../sass/templates/_article-history.scss */
+.history-table th {
+  border-bottom: 1px solid #757575;
+  color: #000;
+}
+/* line 17, ../sass/templates/_article-history.scss */
+.history-table tr {
+  border-bottom: 1px solid #e0e0e0;
+  color: #616161;
 }
 
-/* line 6, ../sass/templates/_activities-list.scss */
-.current-tasks {
-  overflow: auto;
-  margin-left: -3px;
-  padding-left: 3px;
-  padding-right: 3px;
-}
-
-/* line 15, ../sass/templates/_activities-list.scss */
-.current-tasks__list {
-  margin: 2em 0;
-}
-
-/* line 19, ../sass/templates/_activities-list.scss */
-.current-task {
-  -webkit-transition: box-shadow ease-out 0.2s;
-  -moz-transition: box-shadow ease-out 0.2s;
-  transition: box-shadow ease-out 0.2s;
-  display: block;
-  padding: .5em 1em;
-  background-color: #fff;
-  box-shadow: 0 0 3px rgba(0, 0, 0, 0.15);
-  margin-bottom: 1em;
-  border-radius: 3px;
-}
-/* line 27, ../sass/templates/_activities-list.scss */
-.lt-ie10 .current-task {
-  border: 1px solid #eeeeee;
-}
-
-/* line 32, ../sass/templates/_activities-list.scss */
-.current-task__title {
-  font-size: 1.75rem;
-  border-bottom: 1px solid #f5f5f5;
-  margin-top: .5em;
-  margin-bottom: .5em;
-  padding-bottom: .5em;
-}
-/* line 38, ../sass/templates/_activities-list.scss */
-.current-task__title a {
-  color: #212121;
-}
-/* line 40, ../sass/templates/_activities-list.scss */
-.current-task__title a:hover {
-  color: #336f87;
-}
-
-/* line 46, ../sass/templates/_activities-list.scss */
-.current-task__author {
-  margin-top: 0;
-}
-
-/* line 50, ../sass/templates/_activities-list.scss */
-.current-task__details {
-  padding: 0;
-}
-
-/* line 54, ../sass/templates/_activities-list.scss */
-.new-task {
-  padding: 0 20px;
-  border-left: 1px solid #eeeeee;
-}
-/* line 57, ../sass/templates/_activities-list.scss */
-.new-task input {
-  margin: .5em 0;
-}
-
-/* line 62, ../sass/templates/_activities-list.scss */
-.new-task__form {
-  margin-top: 2em;
-  background-color: #eeeeee;
-  border: 1px solid #e0e0e0;
-  border-radius: 3px;
-  padding: 1em;
+/* line 23, ../sass/templates/_article-history.scss */
+.history-table__subject {
+  font-weight: 700;
+  color: #003c54;
 }

@@ -1,0 +1,32 @@
+{% extends "base_new.html" %}
+{% block title %}History{% endblock %}
+{% block body_class %}article-history{% endblock %}
+{% block content %}
+<!-- sub nav -->
+     
+<div class="article-history__main row col__flex">
+    <a href="{{edit_path}}" class="button">Back to edit</a>
+    <h2>History of changes to <i>{{path}}</i></h2>
+    <table class="history-table">
+        <thead>
+            <tr>
+                <th>Activity</th>
+                <th>Editor</th>
+                <th>Date</th>
+                <th>&nbsp;</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for commit in history %}
+        <tr class="history-table__item">
+            <td class="history-table__subject">{{ commit.subject }}</td>
+            <td class="history-table__author">{{ commit.name or commit.email }}</td>
+            <td class="history-table__date">{{ commit.date }}</td>
+            <td class="history-table__actions"><a href="#" class="button">Revert to this version</a></td>
+        </tr>
+        {% endfor %}  
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
