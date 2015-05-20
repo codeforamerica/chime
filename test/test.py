@@ -1520,7 +1520,7 @@ class TestApp (TestCase):
         ''' Check basic log in / log out flow without talking to Persona.
         '''
         response = self.test_client.get('/')
-        self.assertFalse('Create' in response.data)
+        self.assertFalse('Start' in response.data)
 
         with HTTMock(self.mock_persona_verify):
             response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
@@ -1528,13 +1528,13 @@ class TestApp (TestCase):
 
         with HTTMock(self.auth_csv_example_allowed):
             response = self.test_client.get('/')
-            self.assertTrue('Create' in response.data)
+            self.assertTrue('Start' in response.data)
 
             response = self.test_client.post('/sign-out')
             self.assertEquals(response.status_code, 200)
 
             response = self.test_client.get('/')
-            self.assertFalse('Create' in response.data)
+            self.assertFalse('Start' in response.data)
 
     def test_branches(self):
         ''' Check basic branching functionality.
