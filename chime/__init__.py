@@ -1,11 +1,9 @@
 from __future__ import absolute_import
 from logging import getLogger, INFO, DEBUG
-from .logging.ChimeFileLoggingHandler import ChimeFileLoggingHandler
-from .logging.SnsHandler import SnsHandler
+from .chimelog import SnsHandler, ChimeFileLoggingHandler
 
 logger = getLogger('chime')
 
-import os
 from os import mkdir
 from os.path import realpath, join
 
