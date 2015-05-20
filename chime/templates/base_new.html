@@ -10,8 +10,9 @@
         <script type="text/javascript">
           var currentUser = {{email|tojson|safe}};
         </script>
-        <script src="{{ url_for('static', filename='script.js') }}"></script>
+        <link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700,300italic,400italic,700italic' rel='stylesheet' type='text/css'>
         <link href="/static/stylesheets/main.css" rel="stylesheet" />
+        <script src="{{ url_for('static', filename='script.js') }}"></script>
         <title>{% block title %}{% endblock %} | Chime</title>
         <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     </head>
