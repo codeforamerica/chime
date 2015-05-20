@@ -480,7 +480,7 @@ def move_existing_file(clone, old_path, new_path, base_sha, default_branch_name)
         new_dirs = [item for item in new_path.split('/') if item]
         # make sure we're not trying to move a directory inside itself
         if match(u'/'.join(old_dirs), u'/'.join(new_dirs)):
-            raise Exception('I can\'t move a directory inside itself!', u'warning')
+            raise Exception(u'I cannot move a directory inside itself!', u'warning')
 
         if len(new_dirs) > 1:
             new_dirs = new_dirs[:-1]
