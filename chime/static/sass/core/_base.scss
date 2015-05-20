@@ -3,14 +3,13 @@
 }
 
 html {
+	height: 100%;
 	font-family: $font-sans;
 	font-size: $base-font-size;
-	min-width: 800px;
 	font-weight: 300;
-
 }
 
-.wrapper {
+body {
 	position: absolute;
 	top: 0px;
 	bottom: 0;
@@ -19,7 +18,12 @@ html {
 	min-width: $site-min-width;
 }
 
+
 ul, ol {
 	list-style-type: none;
 	padding: 0;
+}
+
+a {
+	text-decoration: none;
 }

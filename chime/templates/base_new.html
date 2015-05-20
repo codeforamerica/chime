@@ -15,21 +15,25 @@
         <title>{% block title %}{% endblock %} | Chime</title>
         <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     </head>
-    <body class="{% block body_class %}{% endblock %}">
-      
-    <div class="wrapper  col">
+    <body class="{% block body_class %}{% endblock %} col">
       <div class="global-header  row">
-        <a href="/" class="global-header--title  row__left">Chime</a>
-        <nav>
-          <nav class="global-header--nav  row__right  toolbar--right">
-            <a class="toolbar__item" href="/">Activity</a></li>
-            <a class="toolbar__item" href="{{ live_site_url }}">Visit site</a></li>
-            {% if author_email and task_description %}
-            <a class="toolbar__item" href="./">{{author_email}}/<strong>{{task_description}}</strong></a></li>
-            {% elif branch %}
-            <a class="toolbar__item" href="./">{{branch}}</a></li>
-            {% endif %}
-          </nav>
+        <div class="row__left">
+          <a href="/" class="global-header--title">Chime</a>
+
+        </div>
+        
+        <nav class="global-header--nav  row__right  toolbar--right">
+          {% if author_email and task_description %}
+          <a class="toolbar__item" href="./">Current Activity: <strong>{{task_description}}</strong></a>
+          {% elif branch %}
+          <a class="toolbar__item" href="./">{{branch}}</a>
+          {% endif %}
+          <a class="toolbar__item" href="/">All Activities</a>
+          <a class="toolbar__item" href="{{ live_site_url }}">Visit site</a>
+          {% if email %}
+            <a class="toolbar__item  button  button--red" href="#" id="signout">Sign Out</a>
+          {% endif %}
+        </nav>
       </div>
 
 
@@ -53,19 +57,6 @@
         {% block content %}{% endblock %}
      <!-- end content -->
 
-     <!-- footer block -->
-<!--         <footer class="product-info">
-            <p class="cfa">Created by <span><img src="/static/images/logo-black.png" alt="Code for America" height="40px" /></span></p>
-            <div class="signout">
-                  {% if email %}
-                    <input type="button" id="signout" value="Sign out">
-                  {% else %}
-                 
-                  {% endif %}
-            </div>
-        </footer> -->
-      <!-- end footer block -->
-      </div>
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script src="/static/javascript/toopaymarkdown/js//bootstrap-markdown.js"></script>
 

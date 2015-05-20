@@ -1,3 +1,4 @@
+// This mixin stretches content to fill col__flew containers
 @mixin stretch-content() {
 	@include display(flex);
 	@include align-items(stretch);

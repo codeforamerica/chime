@@ -55,18 +55,18 @@
     </div>
     <footer class="edit-article__footer row">
             <div class="translations row__left toolbar--left">
-                <span class="label toolbar__item">Translations: </span>
+                
             {% if languages|length > 1 %}
-
-                    {% for iso in languages %}
-                        {% set lang = languages[iso] %}
-                        {% if iso == 'en' %}
-                            {% set class = 'button state-active' %}
-                        {% else %}
-                            {% set class = 'button' %}
-                        {% endif %}
-                        <a href="#" id="{{iso}}-nav" class="{{class}}" onclick="return show{{lang}}Form()">{{lang}}</a>
-                    {% endfor %}
+                    <span class="label toolbar__item">Translations: </span>
+                {% for iso in languages %}
+                    {% set lang = languages[iso] %}
+                    {% if iso == 'en' %}
+                        {% set class = 'button state-active' %}
+                    {% else %}
+                        {% set class = 'button' %}
+                    {% endif %}
+                    <a href="#" id="{{iso}}-nav" class="{{class}}" onclick="return show{{lang}}Form()">{{lang}}</a>
+                {% endfor %}
             {% endif %}
             </div>
             <div class="statistics row__right toolbar--right">
