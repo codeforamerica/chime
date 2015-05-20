@@ -79,8 +79,7 @@ def create_app(environ):
     app.config['AUTH_DATA_HREF'] = environ.get('AUTH_DATA_HREF', 'data/authentication.csv')
     app.config['LIVE_SITE_URL'] = environ.get('LIVE_SITE_URL', 'http://127.0.0.1:5001/')
     app.config['PUBLISH_SERVICE_URL'] = environ.get('PUBLISH_SERVICE_URL', False)
-    if 'SNS_ALERTS_TOPIC' in environ:
-        app.config['SNS_ALERTS_TOPIC'] = environ['SNS_ALERTS_TOPIC']
+    app.config['SNS_ALERTS_TOPIC'] = environ.get('SNS_ALERTS_TOPIC')
     app.config['default_branch'] = 'master'
     
     # If no live site URL was provided, we'll use Apache to make our own.
@@ -95,7 +94,7 @@ def create_app(environ):
         logger.addHandler(ChimeFileLoggingHandler(app.config))
         logger.setLevel(DEBUG if app.debug else INFO)
 
-        if app.config.has_key('SNS_ALERTS_TOPIC'):
+        if app.config.get('SNS_ALERTS_TOPIC'):
             sns_handler = SnsHandler(app.config['SNS_ALERTS_TOPIC'])
             sns_handler.setLevel(logging.ERROR)
             logger.addHandler(sns_handler)
