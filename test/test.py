@@ -3,7 +3,7 @@ from unittest import main, TestCase
 
 from tempfile import mkdtemp
 from StringIO import StringIO
-from os.path import join, exists, dirname
+from os.path import join, exists, dirname, isdir
 from urlparse import urlparse, urljoin
 from os import environ
 from shutil import rmtree, copytree
@@ -1937,7 +1937,6 @@ class TestApp (TestCase):
         self.assertEquals(response.status_code, 302)
         self.assertEquals(response.headers['Location'], expected_url)
 
-    # ;;;
     def test_create_page_creates_directory_containing_index(self):
         ''' Creating a new page creates a directory with an editable index file inside.
         '''
@@ -1950,36 +1949,35 @@ class TestApp (TestCase):
             # invokes view_functions/get_repo which creates a clone
             task_description = u'filter plankton from sea water'
             task_beneficiary = u'humpback whales'
-            response = self.test_client.post('/start', data={'task_description': task_description, 'task_beneficiary': task_beneficiary}, follow_redirects=True)
-            self.assertEquals(response.status_code, 200)
-            self.assertTrue(EDIT_LISTDIR_TASK_DESCRIPTION_AND_BENEFICIARY_PATTERN.format(task_description, task_beneficiary) in response.data)
 
-            # extract the generated branch name from the returned HTML
-            generated_branch_search = search(r'\/tree\/(.{{{}}})\/edit'.format(repo_functions.BRANCH_NAME_LENGTH), response.data)
-            self.assertIsNotNone(generated_branch_search)
-            try:
-                generated_branch_name = generated_branch_search.group(1)
-            except AttributeError:
-                raise Exception('No match for generated branch name.')
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            self.assertTrue(working_branch.name in self.clone1.branches)
+            self.assertTrue(working_branch.name in self.origin.branches)
+            working_branch_name = working_branch.name
+            working_branch.checkout()
 
             # create a new page
             page_slug = u'hello'
             page_path = u'{}/index.{}'.format(page_slug, view_functions.CONTENT_FILE_EXTENSION)
-            response = self.test_client.post('/tree/{}/edit/'.format(generated_branch_name),
+            response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
                                              data={'action': 'add', 'path': page_slug},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
             self.assertTrue(page_path in response.data)
 
-            # a directory called page_slug was created
-            # self.assertFalse(exists(join(self.clone2.working_dir, 'index.md')))
-            import pdb; pdb.set_trace()
-            # self.assertTrue(exists(join()))
+            # pull the changes
+            self.clone1.git.pull('origin', working_branch_name)
 
-    def test_index_file_is_hidden(self):
-        ''' The index file in a directory is hidden from view.
-        '''
+            # a directory was created
+            dir_location = join(self.clone1.working_dir, page_slug)
+            idx_location = u'{}/index.{}'.format(dir_location, view_functions.CONTENT_FILE_EXTENSION)
+            self.assertTrue(exists(dir_location) and isdir(dir_location))
+            # an index page was created inside
+            self.assertTrue(exists(idx_location))
+            # the directory and index page pass the editable test
+            self.assertTrue(view_functions.is_editable_dir(dir_location))
 
+    # ;;;
     def test_can_rename_editable_directories(self):
         ''' Can rename an editable directory.
         '''

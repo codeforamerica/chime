@@ -1,7 +1,7 @@
 from logging import getLogger
 Logger = getLogger('chime.views')
 
-from os.path import join, isdir, splitext, exists
+from os.path import join, isdir, splitext
 from re import compile, MULTILINE, sub, search
 from mimetypes import guess_type
 from glob import glob
