@@ -583,6 +583,7 @@ def branch_review(branch):
 @synch_required
 def branch_save(branch, path):
     branch = branch_var2name(branch)
+    safe_branch = branch_name2path(branch)
     master_name = current_app.config['default_branch']
 
     repo = get_repo(current_app)
@@ -628,7 +629,18 @@ def branch_save(branch, path):
         new_slug = sub(r'\/+', '/', new_slug)
 
         if new_slug != original_slug:
-            repo_functions.move_existing_file(repo, original_slug, new_slug, c2.hexsha, master_name)
+            try:
+                repo_functions.move_existing_file(repo, original_slug, new_slug, c2.hexsha, master_name)
+            except Exception as e:
+                error_message = e.args[0]
+                error_type = e.args[1] if len(e.args) > 1 else None
+                # let unexpected errors raise normally
+                if error_type:
+                    flash(error_message, error_type)
+                    return redirect('/tree/{}/edit/{}'.format(safe_branch, path), code=303)
+                else:
+                    raise
+
             path = join(new_slug, u'index.{}'.format(CONTENT_FILE_EXTENSION))
 
     except repo_functions.MergeConflict as conflict:
@@ -639,8 +651,6 @@ def branch_save(branch, path):
         Logger.debug('2 {}'.format(conflict.local_commit))
         Logger.debug('  {}'.format(repr(conflict.local_commit.tree[path].data_stream.read())))
         raise
-
-    safe_branch = branch_name2path(branch)
 
     return redirect('/tree/{}/edit/{}'.format(safe_branch, path), code=303)
 

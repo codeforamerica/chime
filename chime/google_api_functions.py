@@ -171,7 +171,7 @@ def get_google_personal_info(access_token):
         if error_message:
             error_message = ' ({})'.format(error_message)
 
-        raise Exception('Unable to retrieve personal info from the Google+ API{}'.format(error_message), 'warning')
+        raise Exception('Unable to retrieve personal info from the Google+ API{}'.format(error_message), u'warning')
 
     if 'emails' in whoami:
         emails = dict([(e['type'], e['value']) for e in whoami['emails']])
