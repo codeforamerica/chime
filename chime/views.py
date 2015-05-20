@@ -616,13 +616,20 @@ def branch_save(branch, path):
     # Try to merge from the master to the current branch.
     #
     try:
-        message = 'Saved file "%s"' % path
+        message = 'Saved file "{}"'.format(path)
         c2 = repo_functions.save_working_file(repo, path, message, c.hexsha, master_name)
-        new_path = request.form.get('url-slug') + splitext(path)[1]
+        # they may've renamed the page by editing the URL slug
+        original_slug = path
+        if search(r'\/index.{}$'.format(CONTENT_FILE_EXTENSION), path):
+            original_slug = sub(ur'index.{}$'.format(CONTENT_FILE_EXTENSION), u'', path)
 
-        if new_path != path:
-            repo_functions.move_existing_file(repo, path, new_path, c2.hexsha, master_name)
-            path = new_path
+        # do some simple input cleaning
+        new_slug = request.form.get('url-slug')
+        new_slug = sub(r'\/+', '/', new_slug)
+
+        if new_slug != original_slug:
+            repo_functions.move_existing_file(repo, original_slug, new_slug, c2.hexsha, master_name)
+            path = join(new_slug, u'index.{}'.format(CONTENT_FILE_EXTENSION))
 
     except repo_functions.MergeConflict as conflict:
         repo.git.reset(c.hexsha, hard=True)
@@ -635,7 +642,7 @@ def branch_save(branch, path):
 
     safe_branch = branch_name2path(branch)
 
-    return redirect('/tree/%s/edit/%s' % (safe_branch, path), code=303)
+    return redirect('/tree/{}/edit/{}'.format(safe_branch, path), code=303)
 
 @app.route('/.well-known/deploy-key.txt')
 def deploy_key():
