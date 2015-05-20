@@ -1134,10 +1134,18 @@ input[type="submit"]:disabled:hover {
 .edit-article__editor {
   width: 100%;
   max-width: 800px;
+  background-color: #fafafa;
   border-right: 1px solid #e0e0e0;
 }
-/* line 29, ../sass/templates/_article-edit.scss */
+/* line 30, ../sass/templates/_article-edit.scss */
 .edit-article__editor textarea {
+  -webkit-box-flex: 1;
+  -moz-box-flex: 1;
+  box-flex: 1;
+  -webkit-flex: 1;
+  -moz-flex: 1;
+  -ms-flex: 1;
+  flex: 1;
   margin: 0;
   font-family: "Source Code Pro", "Monaco", "Courier New", mono;
   font-weight: 400;
@@ -1154,8 +1162,12 @@ input[type="submit"]:disabled:hover {
   padding: 2em;
   max-height: 700px;
 }
+/* line 47, ../sass/templates/_article-edit.scss */
+.lt-ie10 .edit-article__editor textarea {
+  min-height: 300px;
+}
 
-/* line 48, ../sass/templates/_article-edit.scss */
+/* line 53, ../sass/templates/_article-edit.scss */
 .md-editor {
   display: -webkit-box;
   display: -moz-box;
@@ -1174,26 +1186,33 @@ input[type="submit"]:disabled:hover {
   -moz-flex-direction: column;
   flex-direction: column;
   -ms-flex-direction: column;
+  -webkit-box-flex: 1;
+  -moz-box-flex: 1;
+  box-flex: 1;
+  -webkit-flex: 1;
+  -moz-flex: 1;
+  -ms-flex: 1;
+  flex: 1;
   border: 0;
   box-shadow: none;
 }
-/* line 53, ../sass/templates/_article-edit.scss */
+/* line 59, ../sass/templates/_article-edit.scss */
 .md-editor.active {
   border: 0;
   box-shadow: none;
 }
-/* line 57, ../sass/templates/_article-edit.scss */
+/* line 63, ../sass/templates/_article-edit.scss */
 .md-editor .md-header {
   background-color: #f5f5f5;
   border-bottom: 1px solid #e0e0e0;
   padding: 0.5em 40px;
 }
-/* line 61, ../sass/templates/_article-edit.scss */
+/* line 67, ../sass/templates/_article-edit.scss */
 .md-editor .md-header .btn {
   border-radius: 3px;
   margin-right: .5em;
 }
-/* line 67, ../sass/templates/_article-edit.scss */
+/* line 73, ../sass/templates/_article-edit.scss */
 .md-editor textarea {
   -webkit-box-flex: 1;
   -moz-box-flex: 1;
@@ -1204,12 +1223,12 @@ input[type="submit"]:disabled:hover {
   flex: 1;
 }
 
-/* line 72, ../sass/templates/_article-edit.scss */
+/* line 78, ../sass/templates/_article-edit.scss */
 .edit-article__previewer {
   display: none;
 }
 
-/* line 76, ../sass/templates/_article-edit.scss */
+/* line 82, ../sass/templates/_article-edit.scss */
 .edit-article__footer {
   padding-top: .5em;
   padding-bottom: .5em;
