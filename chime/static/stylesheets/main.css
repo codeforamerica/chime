@@ -1011,16 +1011,17 @@ input[type="submit"]:disabled:hover {
 .current-tasks {
   overflow: auto;
   margin-left: -3px;
+  margin-right: -3px;
   padding-left: 3px;
   padding-right: 3px;
 }
 
-/* line 15, ../sass/templates/_activities-list.scss */
+/* line 16, ../sass/templates/_activities-list.scss */
 .current-tasks__list {
   margin: 2em 0;
 }
 
-/* line 19, ../sass/templates/_activities-list.scss */
+/* line 20, ../sass/templates/_activities-list.scss */
 .current-task {
   -webkit-transition: box-shadow ease-out 0.2s;
   -moz-transition: box-shadow ease-out 0.2s;
@@ -1032,12 +1033,12 @@ input[type="submit"]:disabled:hover {
   margin-bottom: 1em;
   border-radius: 3px;
 }
-/* line 27, ../sass/templates/_activities-list.scss */
+/* line 28, ../sass/templates/_activities-list.scss */
 .lt-ie10 .current-task {
   border: 1px solid #eeeeee;
 }
 
-/* line 32, ../sass/templates/_activities-list.scss */
+/* line 33, ../sass/templates/_activities-list.scss */
 .current-task__title {
   font-size: 1.75rem;
   border-bottom: 1px solid #f5f5f5;
@@ -1045,36 +1046,36 @@ input[type="submit"]:disabled:hover {
   margin-bottom: .5em;
   padding-bottom: .5em;
 }
-/* line 38, ../sass/templates/_activities-list.scss */
+/* line 39, ../sass/templates/_activities-list.scss */
 .current-task__title a {
   color: #212121;
 }
-/* line 40, ../sass/templates/_activities-list.scss */
+/* line 41, ../sass/templates/_activities-list.scss */
 .current-task__title a:hover {
   color: #336f87;
 }
 
-/* line 46, ../sass/templates/_activities-list.scss */
+/* line 47, ../sass/templates/_activities-list.scss */
 .current-task__author {
   margin-top: 0;
 }
 
-/* line 50, ../sass/templates/_activities-list.scss */
+/* line 51, ../sass/templates/_activities-list.scss */
 .current-task__details {
   padding: 0;
 }
 
-/* line 54, ../sass/templates/_activities-list.scss */
+/* line 55, ../sass/templates/_activities-list.scss */
 .new-task {
   padding: 0 20px;
   border-left: 1px solid #eeeeee;
 }
-/* line 57, ../sass/templates/_activities-list.scss */
+/* line 58, ../sass/templates/_activities-list.scss */
 .new-task input {
   margin: .5em 0;
 }
 
-/* line 62, ../sass/templates/_activities-list.scss */
+/* line 63, ../sass/templates/_activities-list.scss */
 .new-task__form {
   margin-top: 2em;
   background-color: #eeeeee;

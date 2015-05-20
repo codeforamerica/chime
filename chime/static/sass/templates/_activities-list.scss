@@ -6,9 +6,10 @@
 .current-tasks {
 	overflow: auto;
 	margin-left: -3px; // so box-shadow doesn't cut off on tasks
+	margin-right: -3px;
 	padding: {
-		left: 3px;	// so box-shadow doesn't cut off on tasks
-		right: 3px; // so box-shadow doesn't cut off on tasks
+		left: 3px;
+		right: 3px;
 	}
 }
 
