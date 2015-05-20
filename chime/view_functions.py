@@ -1,7 +1,7 @@
 from logging import getLogger
 Logger = getLogger('chime.view_functions')
 
-from os.path import join, isdir, realpath, basename
+from os.path import join, isdir, realpath, basename, exists
 from datetime import datetime
 from os import listdir, environ
 from urllib import quote, unquote
@@ -124,7 +124,7 @@ def branch_var2name(branch_path):
     return unquote(branch_path)
 
 def path_type(file_path):
-    '''
+    ''' Returns the type of file at the passed path
     '''
     if isdir(file_path):
         return 'folder'
@@ -133,6 +133,39 @@ def path_type(file_path):
         return 'image'
 
     return 'file'
+
+def path_display_type(file_path):
+    ''' Returns a type matching how the file at the passed path should be displayed
+    '''
+    # ;;;
+    if is_editable_dir(file_path):
+        return 'file'
+
+    return path_type(file_path)
+
+def is_editable_dir(file_path):
+    ''' Returns true if the file at the passed path is a directory containing only an editable index file.
+    '''
+    if isdir(file_path):
+        # it's a directory
+        index_path = join(file_path or u'', u'index.{}'.format(CONTENT_FILE_EXTENSION))
+        if not exists(index_path) or not is_editable(index_path):
+            # there's no index file in the directory or it's not editable
+            return False
+
+        visible_file_count = len([name for name in listdir(file_path) if not FILE_FILTERS_COMPILED.search(name)])
+        if visible_file_count == 0:
+            # there's only an index file in the directory
+            return True
+
+    # it's not a directory
+    return False
+
+def is_display_editable(file_path):
+    ''' Returns true if the file at the passed path is either an editable file,
+        or a directory containing only an editable index file.
+    '''
+    return (is_editable(file_path) or is_editable_dir(file_path))
 
 def is_editable(file_path):
     '''
@@ -431,8 +464,8 @@ def sorted_paths(repo, branch, path=None, showallfiles=False):
     path_pairs = zip(full_paths, view_paths)
 
     # filename, path, type, editable, modified date
-    list_paths = [(basename(fp), vp, path_type(fp), is_editable(fp), get_relative_date(repo, fp))
-                  for (fp, vp) in path_pairs if realpath(fp) != repo.git_dir]
+    list_paths = [(basename(edit_path), view_path, path_display_type(edit_path), is_display_editable(edit_path), get_relative_date(repo, edit_path))
+                  for (edit_path, view_path) in path_pairs if realpath(edit_path) != repo.git_dir]
 
     return list_paths
 
