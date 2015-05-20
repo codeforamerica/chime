@@ -137,7 +137,6 @@ def path_type(file_path):
 def path_display_type(file_path):
     ''' Returns a type matching how the file at the passed path should be displayed
     '''
-    # ;;;
     if is_editable_dir(file_path):
         return 'file'
 
