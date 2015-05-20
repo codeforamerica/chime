@@ -9,11 +9,15 @@
 		text-decoration: none;
 		margin-right: 2em;
 	}
-	.toolbar__item {
-		color: $color-grey-50;
-		text-decoration: none;
-		&:hover {
-			text-decoration: underline;
+	.toolbar--right {
+		.toolbar__item {
+			color: $color-grey-50;
+			text-decoration: none;
+			margin-left: 2em;
+			&:hover {
+				text-decoration: underline;
+			}
 		}
 	}
+
 }

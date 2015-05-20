@@ -26,6 +26,17 @@ textarea  {
 	height: 2em;
 }
 
+select {
+	color: #000; // standardize on firefox
+	box-sizing: border-box;
+	font-size: $base-font-size;
+	padding: 0 .7em;
+	height: 2em;	
+	width: 100%;
+	border: 1px solid $color-grey-300;
+	border-radius: $border-radius;
+}
+
 textarea {
 	height: auto;
 }
@@ -62,6 +73,7 @@ input[type="submit"]:disabled {
 
 .selection-box {
 	text-align: left;
+	margin-right: 1em;
 	label {
 		font-size: $small-font-size;
 		font-weight: 600;

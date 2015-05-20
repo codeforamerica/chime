@@ -15,9 +15,15 @@
 	@include stretch-content();
 }
 
+.edit-article__title {
+	font-weight: 700;
+	min-width: 400px;
+	box-sizing: border-box;
+}
+
 .edit-article__editor {
 	width: 100%;
-	max-width: 600px;
+	max-width: 800px;
 	border-right: 1px solid $color-grey-300;
 
 	textarea {
@@ -35,6 +41,7 @@
 		height: auto;
 		overflow: auto;
 		padding: 2em;
+		max-height: 700px;
 	}
 }
 

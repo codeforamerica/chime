@@ -1,10 +1,8 @@
-.grid-container {
+.grid {
 	@include outer-container();
 	max-width: $site-max-width;
+	padding: 1em $site-margins;
 	width: 100%;
-	.grid-item {
-		border: 1px solid #eee;
-	}
 
 	@include media($tablet-up) {
 		.width-one-whole {

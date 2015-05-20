@@ -1,4 +1,5 @@
 .button {
+	@include transition(all ease-out .1s);
 	display: inline-block;
 	text-decoration: none;
 	background-color: $color-grey-300;
@@ -64,6 +65,7 @@
 }
 
 .button--outline {
+	@include transition(all ease-out .2s);
 	background: transparent;
 	border: 1px solid $color-grey-300;
 	color: $color-grey-700;

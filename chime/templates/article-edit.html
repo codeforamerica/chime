@@ -1,6 +1,6 @@
 {% extends "base_new.html" %}
 {% block title %}Edit Article{% endblock %}
-{% block body_class %}t-article-edit{% endblock %}
+{% block body_class %}article-edit{% endblock %}
 {% block content %}
 
 <form action="/tree/{{safe_branch}}/save/{{edit_path}}" method="POST" class="row col__flex col edit-article__form">
@@ -21,7 +21,7 @@
         <div class="row__left">
             <div class="selection-box">
                 <label>Article Title</label>
-                <input name="{{iso}}-title" value="{{form_title}}" type="text">
+                <input name="{{iso}}-title" value="{{form_title}}" type="text" class="edit-article__title">
             </div>
         </div>
         <div class="row__right toolbar--right">
@@ -53,7 +53,7 @@
             <textarea id="{{iso}}-body markItUp" class="col__flex" name="{{iso}}-body" type="text" data-provide="markdown" data-iconlibrary="fa" data-hidden-buttons="cmdPreview">{{form_body}}</textarea>
         </div>
     </div>
-    <footer class="edit-article__footer row">
+    <div class="edit-article__footer row">
             <div class="translations row__left toolbar--left">
                 
             {% if languages|length > 1 %}
@@ -74,7 +74,7 @@
                 <span class="toolbar__item">Wordcount: <b>205</b></span>
                 <span class="toolbar__item">Pageviews: <b>168</b></span>
             </div>
-        </footer>
+        </div>
         {% endfor %}
 </form>
 <script type="text/javascript">

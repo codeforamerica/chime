@@ -1,7 +1,7 @@
 //Magic Numbers
 $site-min-width: 1000px;
 $site-max-width: none;
-$site-margins: 20px;
+$site-margins: 40px;
 $border-radius: 3px;
 
 // Mobile First Breakpoints
@@ -15,6 +15,14 @@ $font-mono: "Source Code Pro", "Monaco", "Courier New", mono;
 
 $base-font-size:		14px;
 $small-font-size:		12px;
+$h1-font-size:			rem(36px) !default;
+$h2-font-size:			rem(28px) !default;
+$h3-font-size:			rem(24px) !default;
+$h4-font-size:			rem(18px) !default;
+$h5-font-size:			rem(16px) !default;
+$h6-font-size:			rem(14px) !default;
+$base-line-height:		1.5em !default;
+$heading-line-height:	1.3em !default;
 
 // Colors
 $color-grey-50:			#fafafa;

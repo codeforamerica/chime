@@ -15,8 +15,10 @@
 @import 'core/variables';
 @import 'core/normalize';
 @import 'core/utilities';
-@import 'core/base';
 @import 'core/layout';
+@import 'core/grid';
+@import 'core/base';
+
 
 
 
@@ -39,4 +41,4 @@
 \*------------------------------------*/
 
 @import 'templates/article-edit';
-@import 'templates/article-list';
+@import 'templates/activities-list';
