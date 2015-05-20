@@ -95,10 +95,10 @@ def not_allowed():
     kwargs.update(auth_url=auth_data_href)
 
     if not email:
-        return render_template('not-allowed.html', **kwargs)
+        return render_template('signin.html', **kwargs)
 
     if not is_allowed_email(get_auth_data_file(auth_data_href), email):
-        return render_template('not-allowed.html', **kwargs)
+        return render_template('signin.html', **kwargs)
 
     Logger.info("Redirecting from /not-allowed to /")
     return redirect('/')

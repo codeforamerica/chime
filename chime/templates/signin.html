@@ -1,0 +1,29 @@
+{% extends "base_new.html" %}
+{% block title %}Sign In{% endblock %}
+{% block body_class %}sign-in{% endblock %}
+
+{% block content %}
+<div class="grid col__flex">
+    <div class="signin  grid__item  width-one-half">
+        {% if email %}
+            <h2>Not Allowed</h2>
+            <p><strong>{{email}}</strong> doesn't appear to be an approved editor.</p>
+            <p>Sign in to a different account or request permission.</p>
+            <input type="button" id="signout" value="Sign out" class="button button--red">
+        {% else %}
+            <h2>Sign in</h2>
+            <p>To access the website editor, you need to be signed in.</p>
+            <input type="button" id="signin" value="Sign in" class="button button--green">
+        {% endif %}
+    </div>
+    <div class="email-admin  grid__item  width-one-half end-row">
+        <h2>Don't have permission yet?</h2>
+        <p>Contact your website lead to add your email address to <a href="{{auth_url}}">the list of editors</a>.</p>
+        <p><a href="mailto:poc" class="button sketchy">Email admin</a></p>
+    </div>
+</div>
+<div class="row">
+    <p class="clue">Looking for the Chime homepage? <a href="https://chimecms.org">It's over here</a></p>    
+</div>
+{% endblock %}
+
