@@ -4,7 +4,9 @@
 {% block content %}
 
 <form action="/tree/{{safe_branch}}/save/{{edit_path}}" method="POST" class="row col__flex col edit-article__form">
-
+    <input name="layout" value="{{front['layout']}}" type="hidden" />
+    <input name="hexsha" value="{{hexsha}}" type="hidden" />
+    <input name="url-slug" type="hidden" value="{{url_slug}}" />  
 {% for iso in languages %}
     {% if iso == 'en' %}
         {% set form_title = front['title'] %}
@@ -15,8 +17,6 @@
         {% set form_body = front['body-'+iso] %}
         {% set display_class = 'is-hidden' %}
     {% endif %}
-    <input name="layout" value="{{front['layout']}}" type="hidden" />
-    <input name="hexsha" value="{{hexsha}}" type="hidden" />
     <div class="edit-article__header row">
         <div class="row__left">
             <div class="selection-box">
@@ -52,9 +52,6 @@
         <div class="edit-article__editor row__left col">
             <textarea id="{{iso}}-body markItUp" class="col__flex" name="{{iso}}-body" type="text" data-provide="markdown" data-iconlibrary="fa" data-hidden-buttons="cmdPreview">{{form_body}}</textarea>
         </div>
-        <div class="edit-article__previewer row__left col">
-            Previewer
-        </div>
     </div>
     <footer class="edit-article__footer row">
             <div class="translations row__left toolbar--left">
@@ -80,6 +77,27 @@
         </footer>
         {% endfor %}
 </form>
+<script type="text/javascript">
+
+    {% for iso in languages %}
+        {% set lang = languages[iso] %}
+    
+        function show{{lang}}Form()
+        {
+            {% for other_iso in languages %}
+                {% set other_lang = languages[other_iso] %}
+                document.getElementById('{{other_lang}}-form').style.display = 'none';
+                document.getElementById("{{other_iso}}-nav").className = "nav-tab";
+            {% endfor %}
+
+            document.getElementById('{{lang}}-form').style.display = 'block';
+            var d = document.getElementById("{{iso}}-nav");
+            d.className = d.className + " state-active";
+            return false;
+        }
+    {% endfor %}
+
+</script>
 {% endblock %}
     <!-- <div id="statistics">
         <h2>How is this content performing?</h2>
