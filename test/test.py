@@ -2093,11 +2093,39 @@ class TestApp (TestCase):
             new_dir_location = join(self.clone1.working_dir, new_page_slug)
             self.assertFalse(exists(new_dir_location) and isdir(new_dir_location))
 
-    # ;;;
     def test_editable_directories_are_shown_as_files(self):
         ''' Editable directories (directories containing only an editable index file) are displayed as files.
         '''
+        fake_author_email = u'erica@example.com'
+        with HTTMock(self.mock_persona_verify):
+            self.test_client.post('/sign-in', data={'email': fake_author_email})
 
+        with HTTMock(self.auth_csv_example_allowed):
+            # start a new branch via the http interface
+            # invokes view_functions/get_repo which creates a clone
+            task_description = u'filter plankton from sea water'
+            task_beneficiary = u'humpback whales'
+
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            self.assertTrue(working_branch.name in self.clone1.branches)
+            self.assertTrue(working_branch.name in self.origin.branches)
+            working_branch_name = working_branch.name
+            working_branch.checkout()
+
+            # create a new page
+            page_slug = u'hello'
+            page_path = u'{}/index.{}'.format(page_slug, view_functions.CONTENT_FILE_EXTENSION)
+            response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
+                                             data={'action': 'add', 'path': page_slug},
+                                             follow_redirects=True)
+            self.assertEquals(response.status_code, 200)
+            self.assertTrue(page_path in response.data)
+
+            # load the index page
+            response = self.test_client.get('/tree/{}/edit/'.format(working_branch_name), follow_redirects=True)
+            self.assertEquals(response.status_code, 200)
+            # verify that the new folder is represented as a file in the HTML
+            self.assertTrue(EDIT_LISTDIR_FILE_NAME_PATTERN.format(**{"file_name": page_slug}) in response.data)
 
 class TestPublishApp (TestCase):
 
