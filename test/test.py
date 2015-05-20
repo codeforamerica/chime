@@ -1594,10 +1594,8 @@ class TestApp (TestCase):
             self.assertTrue(fake_page_content in response.data)
 
         # Check that English and French forms are both present.
-        self.assertTrue('id="fr-nav" class="nav-tab"' in response.data)
-        self.assertTrue('id="en-nav" class="nav-tab state-active"' in response.data)
-        self.assertTrue('id="French-form" style="display: none"' in response.data)
-        self.assertTrue('id="English-form" style="display: block"' in response.data)
+        self.assertTrue('name="fr-title"' in response.data)
+        self.assertTrue('name="en-title"' in response.data)
 
         # Verify that navigation tabs are in the correct order.
         self.assertTrue(response.data.index('id="fr-nav"') < response.data.index('id="en-nav"'))
