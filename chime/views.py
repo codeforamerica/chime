@@ -438,7 +438,7 @@ def render_edit_view(repo, branch, path, file):
                   app_authorized=app_authorized, author_email=author_email,
                   task_description=task_description, task_beneficiary=task_beneficiary)
     kwargs.update(analytics_dict)
-    return render_template('tree-branch-edit-file.html', **kwargs)
+    return render_template('article-edit.html', **kwargs)
 
 
 @app.route('/tree/<branch>/edit/', methods=['GET'])

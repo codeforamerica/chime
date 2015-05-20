@@ -1,0 +1,105 @@
+{% extends "base_new.html" %}
+{% block title %}Edit Article{% endblock %}
+{% block body_class %}t-article-edit{% endblock %}
+{% block content %}
+
+<form action="/tree/{{safe_branch}}/save/{{edit_path}}" method="POST" class="row col__flex col edit-article__form">
+
+{% for iso in languages %}
+    {% if iso == 'en' %}
+        {% set form_title = front['title'] %}
+        {% set form_body = body %}
+        {% set display_class = '' %}
+    {% else %}
+        {% set form_title = front['title-'+iso] %}
+        {% set form_body = front['body-'+iso] %}
+        {% set display_class = 'is-hidden' %}
+    {% endif %}
+    <input name="layout" value="{{front['layout']}}" type="hidden" />
+    <input name="hexsha" value="{{hexsha}}" type="hidden" />
+    <div class="edit-article__header row">
+        <div class="row__left">
+            <div class="selection-box">
+                <label>Article Title</label>
+                <input name="{{iso}}-title" value="{{form_title}}" type="text">
+            </div>
+        </div>
+        <div class="row__right toolbar--right">
+            <div class="selection-box toolbar__item">
+                <label>Category</label>
+                <select>
+                    <option value="public-safety">Public Safety</option>
+                    <option value="parks">Parks and Recreation</option>
+                </select>   
+            </div>
+            <div class="selection-box toolbar__item">
+                <label>Subcategory</label>
+                <select>
+                    <option value="public-safety">Crime Reporting and Statistics</option>
+                    <option value="parks">Emergency Services</option>
+                </select>   
+            </div>
+            <a href="{{history_path}}" class="button button--green toolbar__item">History</a>
+            <a href="{{view_path}}" target="_blank" class="button button--green toolbar__item">Preview</a>
+            <input type="submit" class="button button--green toolbar__item" value="Save"/>
+        </div>
+    </div>    
+    
+    
+
+    <div class="edit-article__main row col__flex">
+    
+        <div class="edit-article__editor row__left col">
+            <textarea id="{{iso}}-body markItUp" class="col__flex" name="{{iso}}-body" type="text" data-provide="markdown" data-iconlibrary="fa" data-hidden-buttons="cmdPreview">{{form_body}}</textarea>
+        </div>
+        <div class="edit-article__previewer row__left col">
+            Previewer
+        </div>
+    </div>
+    <footer class="edit-article__footer row">
+            <div class="translations row__left toolbar--left">
+                <span class="label toolbar__item">Translations: </span>
+            {% if languages|length > 1 %}
+
+                    {% for iso in languages %}
+                        {% set lang = languages[iso] %}
+                        {% if iso == 'en' %}
+                            {% set class = 'button state-active' %}
+                        {% else %}
+                            {% set class = 'button' %}
+                        {% endif %}
+                        <a href="#" id="{{iso}}-nav" class="{{class}}" onclick="return show{{lang}}Form()">{{lang}}</a>
+                    {% endfor %}
+            {% endif %}
+            </div>
+            <div class="statistics row__right toolbar--right">
+
+                <span class="toolbar__item">Wordcount: <b>205</b></span>
+                <span class="toolbar__item">Pageviews: <b>168</b></span>
+            </div>
+        </footer>
+        {% endfor %}
+</form>
+{% endblock %}
+    <!-- <div id="statistics">
+        <h2>How is this content performing?</h2>
+        <div class="copy-quality">
+            <p><span>Wordcount: <span class="sketchy" id="wordCount">120</span></span></p> 
+            <p><span>Grade level: <span class="sketchy">8</span></span></p>
+            <p><span>Buzzwords: <span class="sketchy">12</span></span></p>    
+        </div>
+        {% if app_authorized %}
+        <div class="analytics-overview">
+            <p><span class="big-number sketchy">{{page_views}}</span> <span>Views this week</span></p>
+            <p><span class="big-number sketchy">{{average_time_page}}</span> <span>Average visit time</span></p>
+            <p><a href="" class="sketchy">More usage statistics</a></p>
+        </div>
+        {% else %}
+        <form method="POST" action="/authorize">
+            <p>To view statistics for this content, connect to Google via the button below (using the email address associated with your Google Analytics account).</p>
+            <button id="authorize-button">Connect to Google</button>
+        </form>
+        {% endif %}
+        
+    </div> -->
+
