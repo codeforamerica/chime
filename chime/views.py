@@ -19,7 +19,7 @@ from .view_functions import (
     branch_name2path, branch_var2name, get_repo, dos2unix,
     login_required, browserid_hostname_required, synch_required, synched_checkout_required, sorted_paths,
     directory_paths, should_redirect, make_redirect, get_auth_data_file,
-    is_allowed_email, common_template_args, CONTENT_FILE_EXTENSION)
+    is_allowed_email, common_template_args, is_editable_dir, CONTENT_FILE_EXTENSION)
 from .google_api_functions import (
     read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens,
     authorize_google, get_google_personal_info, get_google_analytics_properties,
@@ -452,12 +452,9 @@ def branch_edit(branch, path=None):
     full_path = join(repo.working_dir, path or '.').rstrip('/')
 
     if isdir(full_path):
-        # this is a directory
-        # if there's only an index file in the directory, edit it
-        index_path = join(path or u'', u'index.{}'.format(CONTENT_FILE_EXTENSION))
-        index_full_path = join(repo.working_dir, index_path)
-        visible_file_count = len(sorted_paths(repo, branch, path))
-        if exists(index_full_path) and visible_file_count == 0:
+        # if this is an editable directory (contains only an editable index file), redirect
+        if is_editable_dir(full_path):
+            index_path = join(path or u'', u'index.{}'.format(CONTENT_FILE_EXTENSION))
             return redirect('/tree/{}/edit/{}'.format(branch_name2path(branch), index_path))
 
         # if the directory path didn't end with a slash, add it
