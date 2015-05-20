@@ -5,8 +5,9 @@
     <div class="activities-list__main grid col__flex">
       <div class="current-tasks grid__item width-two-thirds">
         <h2 class="current-tasks__title">Current Activities</h2>
-        {% if items.index is undefined %}
-          <p class="current-tasks__description">Doesn't look like anyone's working on anything yet. You should hop to it!</p>
+        {% if items | length == 0 %}
+
+          <p class="current-tasks__empty-description">Doesn't look like anyone's working on anything at the moment. You should hop to it!</p>
         {% else %}
           <p class="current-tasks__description">Work that's already underway by you and your colleagues.</p>
           <ul class="current-tasks__list">

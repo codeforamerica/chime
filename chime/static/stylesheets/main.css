@@ -677,6 +677,7 @@ ul, ol {
 /* line 27, ../sass/core/_base.scss */
 a {
   text-decoration: none;
+  color: #6693a5;
 }
 
 /*------------------------------------*\
@@ -925,6 +926,11 @@ input[type="submit"]:disabled:hover {
   background-color: #9e9e9e;
 }
 
+/* line 83, ../sass/components/_buttons.scss */
+.button--large {
+  font-size: 1.125rem;
+}
+
 /* line 2, ../sass/components/_panes.scss */
 .pane {
   display: -webkit-box;
@@ -982,6 +988,11 @@ input[type="submit"]:disabled:hover {
 /*------------------------------------*\
     # Templates
 \*------------------------------------*/
+/* line 1, ../sass/templates/_signin.scss */
+.signin {
+  margin-top: 4em;
+}
+
 /* line 1, ../sass/templates/_activities-list.scss */
 .activities-list__main {
   display: -webkit-box;
@@ -1001,27 +1012,27 @@ input[type="submit"]:disabled:hover {
   align-items: stretch;
   -ms-flex-align: stretch;
   background-color: #fafafa;
+  overflow: auto;
 }
 /* line 5, ../sass/core/_layout.scss */
 .lt-ie10 .activities-list__main {
   display: block;
 }
 
-/* line 6, ../sass/templates/_activities-list.scss */
-.current-tasks {
-  overflow: auto;
-  margin-left: -3px;
-  margin-right: -3px;
-  padding-left: 3px;
-  padding-right: 3px;
+/* line 7, ../sass/templates/_activities-list.scss */
+.current-tasks__empty-description {
+  font-size: 1.75rem;
+  font-weight: 300;
+  max-width: 500px;
+  margin-top: 4em;
 }
 
-/* line 16, ../sass/templates/_activities-list.scss */
+/* line 14, ../sass/templates/_activities-list.scss */
 .current-tasks__list {
   margin: 2em 0;
 }
 
-/* line 20, ../sass/templates/_activities-list.scss */
+/* line 18, ../sass/templates/_activities-list.scss */
 .current-task {
   -webkit-transition: box-shadow ease-out 0.2s;
   -moz-transition: box-shadow ease-out 0.2s;
@@ -1033,12 +1044,12 @@ input[type="submit"]:disabled:hover {
   margin-bottom: 1em;
   border-radius: 3px;
 }
-/* line 28, ../sass/templates/_activities-list.scss */
+/* line 26, ../sass/templates/_activities-list.scss */
 .lt-ie10 .current-task {
   border: 1px solid #eeeeee;
 }
 
-/* line 33, ../sass/templates/_activities-list.scss */
+/* line 31, ../sass/templates/_activities-list.scss */
 .current-task__title {
   font-size: 1.75rem;
   border-bottom: 1px solid #f5f5f5;
@@ -1046,36 +1057,36 @@ input[type="submit"]:disabled:hover {
   margin-bottom: .5em;
   padding-bottom: .5em;
 }
-/* line 39, ../sass/templates/_activities-list.scss */
+/* line 37, ../sass/templates/_activities-list.scss */
 .current-task__title a {
   color: #212121;
 }
-/* line 41, ../sass/templates/_activities-list.scss */
+/* line 39, ../sass/templates/_activities-list.scss */
 .current-task__title a:hover {
   color: #336f87;
 }
 
-/* line 47, ../sass/templates/_activities-list.scss */
+/* line 45, ../sass/templates/_activities-list.scss */
 .current-task__author {
   margin-top: 0;
 }
 
-/* line 51, ../sass/templates/_activities-list.scss */
+/* line 49, ../sass/templates/_activities-list.scss */
 .current-task__details {
   padding: 0;
 }
 
-/* line 55, ../sass/templates/_activities-list.scss */
+/* line 53, ../sass/templates/_activities-list.scss */
 .new-task {
   padding: 0 20px;
   border-left: 1px solid #eeeeee;
 }
-/* line 58, ../sass/templates/_activities-list.scss */
+/* line 56, ../sass/templates/_activities-list.scss */
 .new-task input {
   margin: .5em 0;
 }
 
-/* line 63, ../sass/templates/_activities-list.scss */
+/* line 61, ../sass/templates/_activities-list.scss */
 .new-task__form {
   margin-top: 2em;
   background-color: #eeeeee;
@@ -1243,29 +1254,33 @@ input[type="submit"]:disabled:hover {
 }
 
 /* line 5, ../sass/templates/_article-history.scss */
+.article-history__header {
+  margin-top: 3em;
+}
+
+/* line 9, ../sass/templates/_article-history.scss */
 .history-table {
   width: 100%;
   max-width: 800px;
 }
-/* line 8, ../sass/templates/_article-history.scss */
+/* line 12, ../sass/templates/_article-history.scss */
 .history-table th, .history-table td {
   vertical-align: top;
   text-align: left;
   padding: 1em .5em;
 }
-/* line 13, ../sass/templates/_article-history.scss */
+/* line 17, ../sass/templates/_article-history.scss */
 .history-table th {
   border-bottom: 1px solid #757575;
   color: #000;
 }
-/* line 17, ../sass/templates/_article-history.scss */
+/* line 21, ../sass/templates/_article-history.scss */
 .history-table tr {
   border-bottom: 1px solid #e0e0e0;
-  color: #616161;
+  color: #424242;
 }
 
-/* line 23, ../sass/templates/_article-history.scss */
+/* line 27, ../sass/templates/_article-history.scss */
 .history-table__subject {
   font-weight: 700;
-  color: #003c54;
 }

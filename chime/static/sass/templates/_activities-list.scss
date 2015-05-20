@@ -1,16 +1,14 @@
 .activities-list__main {
 	@include stretch-content();
 	background-color: $color-grey-50;
+	overflow: auto;
 }
 
-.current-tasks {
-	overflow: auto;
-	margin-left: -3px; // so box-shadow doesn't cut off on tasks
-	margin-right: -3px;
-	padding: {
-		left: 3px;
-		right: 3px;
-	}
+.current-tasks__empty-description {
+	font-size: $h2-font-size;
+	font-weight: 300;
+	max-width: 500px;
+	margin-top: 4em;
 }
 
 .current-tasks__list {

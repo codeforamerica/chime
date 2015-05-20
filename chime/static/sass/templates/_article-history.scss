@@ -2,6 +2,10 @@
 	background-color: $color-grey-50;
 }
 
+.article-history__header {
+	margin-top: 3em;
+}
+
 .history-table {
 	width: 100%;
 	max-width: 800px;
@@ -16,11 +20,10 @@
 	}
 	tr {
 		border-bottom: 1px solid $color-grey-300;
-		color: $color-grey-700;
+		color: $color-grey-800;
 	}
 }
 
 .history-table__subject {
 	font-weight: 700;
-	color: $color-blue-600;
 }

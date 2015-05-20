@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="grid col__flex">
-    <div class="signin  grid__item  width-one-half">
+    <div class="signin  grid__item  width-one-whole">
         {% if email %}
             <h2>Not Allowed</h2>
             <p><strong>{{email}}</strong> doesn't appear to be an approved editor.</p>
@@ -13,13 +13,8 @@
         {% else %}
             <h2>Sign in</h2>
             <p>To access the website editor, you need to be signed in.</p>
-            <input type="button" id="signin" value="Sign in" class="button button--green">
+            <input type="button" id="signin" value="Sign in with Persona" class="button button--green button--large">
         {% endif %}
-    </div>
-    <div class="email-admin  grid__item  width-one-half end-row">
-        <h2>Don't have permission yet?</h2>
-        <p>Contact your website lead to add your email address to <a href="{{auth_url}}">the list of editors</a>.</p>
-        <p><a href="mailto:poc" class="button sketchy">Email admin</a></p>
     </div>
 </div>
 <div class="row">
