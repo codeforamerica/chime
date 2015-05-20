@@ -1776,7 +1776,7 @@ class TestApp (TestCase):
             self.assertTrue(check_branch.name in new_clone.branches)
 
     def test_git_merge_strategy_implemented(self):
-        ''' Verify that the Git merge strategy has been implmemented for a new clone.
+        ''' The Git merge strategy has been implmemented for a new clone.
         '''
         fake_author_email = u'erica@example.com'
         with HTTMock(self.mock_persona_verify):
@@ -1936,6 +1936,62 @@ class TestApp (TestCase):
 
         self.assertEquals(response.status_code, 302)
         self.assertEquals(response.headers['Location'], expected_url)
+
+    # ;;;
+    def test_create_page_creates_directory_containing_index(self):
+        ''' Creating a new page creates a directory with an editable index file inside.
+        '''
+        fake_author_email = u'erica@example.com'
+        with HTTMock(self.mock_persona_verify):
+            self.test_client.post('/sign-in', data={'email': fake_author_email})
+
+        with HTTMock(self.auth_csv_example_allowed):
+            # start a new branch via the http interface
+            # invokes view_functions/get_repo which creates a clone
+            task_description = u'filter plankton from sea water'
+            task_beneficiary = u'humpback whales'
+            response = self.test_client.post('/start', data={'task_description': task_description, 'task_beneficiary': task_beneficiary}, follow_redirects=True)
+            self.assertEquals(response.status_code, 200)
+            self.assertTrue(EDIT_LISTDIR_TASK_DESCRIPTION_AND_BENEFICIARY_PATTERN.format(task_description, task_beneficiary) in response.data)
+
+            # extract the generated branch name from the returned HTML
+            generated_branch_search = search(r'\/tree\/(.{{{}}})\/edit'.format(repo_functions.BRANCH_NAME_LENGTH), response.data)
+            self.assertIsNotNone(generated_branch_search)
+            try:
+                generated_branch_name = generated_branch_search.group(1)
+            except AttributeError:
+                raise Exception('No match for generated branch name.')
+
+            # create a new page
+            page_slug = u'hello'
+            page_path = u'{}/index.{}'.format(page_slug, view_functions.CONTENT_FILE_EXTENSION)
+            response = self.test_client.post('/tree/{}/edit/'.format(generated_branch_name),
+                                             data={'action': 'add', 'path': page_slug},
+                                             follow_redirects=True)
+            self.assertEquals(response.status_code, 200)
+            self.assertTrue(page_path in response.data)
+
+            # a directory called page_slug was created
+            # self.assertFalse(exists(join(self.clone2.working_dir, 'index.md')))
+            import pdb; pdb.set_trace()
+            # self.assertTrue(exists(join()))
+
+    def test_index_file_is_hidden(self):
+        ''' The index file in a directory is hidden from view.
+        '''
+
+    def test_can_rename_editable_directories(self):
+        ''' Can rename an editable directory.
+        '''
+
+    def test_cannot_move_a_directory_inside_iteslf(self):
+        ''' Can't rename an editable directory in a way which moves it inside itself
+        '''
+
+    def test_editable_directories_are_shown_as_files(self):
+        ''' Editable directories (directories containing only an editable index file) are displayed as files.
+        '''
+
 
 class TestPublishApp (TestCase):
 
