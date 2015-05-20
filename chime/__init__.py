@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 from logging import getLogger, INFO, DEBUG
+import logging
+from sys import stderr, stdout
 from .chimelog import SnsHandler, ChimeFileLoggingHandler
 
 logger = getLogger('chime')
@@ -77,6 +79,8 @@ def create_app(environ):
     app.config['AUTH_DATA_HREF'] = environ.get('AUTH_DATA_HREF', 'data/authentication.csv')
     app.config['LIVE_SITE_URL'] = environ.get('LIVE_SITE_URL', 'http://127.0.0.1:5001/')
     app.config['PUBLISH_SERVICE_URL'] = environ.get('PUBLISH_SERVICE_URL', False)
+    if 'SNS_ALERTS_TOPIC' in environ:
+        app.config['SNS_ALERTS_TOPIC'] = environ['SNS_ALERTS_TOPIC']
     app.config['default_branch'] = 'master'
     
     # If no live site URL was provided, we'll use Apache to make our own.
@@ -93,9 +97,9 @@ def create_app(environ):
 
         if app.config.has_key('SNS_ALERTS_TOPIC'):
             sns_handler = SnsHandler(app.config['SNS_ALERTS_TOPIC'])
-            sns_handler.setLevel(logger.ERROR)
+            sns_handler.setLevel(logging.ERROR)
             logger.addHandler(sns_handler)
-        logger.info("app config before_first_request: %s" % app.config)
+            logger.info("app config before_first_request: %s" % app.config)
     return AppShim(app)
 
 # noinspection PyUnresolvedReferences
