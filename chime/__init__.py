@@ -99,7 +99,8 @@ def create_app(environ):
             sns_handler = SnsHandler(app.config['SNS_ALERTS_TOPIC'])
             sns_handler.setLevel(logging.ERROR)
             logger.addHandler(sns_handler)
-            logger.info("app config before_first_request: %s" % app.config)
+
+        logger.info("app config before_first_request: %s" % app.config)
     return AppShim(app)
 
 # noinspection PyUnresolvedReferences
