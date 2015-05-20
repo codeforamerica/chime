@@ -1,0 +1,49 @@
+.pane__category, .pane__subcategory, .pane__articles {
+	border-left: 1px solid $color-grey-300;
+	padding: $site-margins/2;
+	h2 {
+		font-size: 24px;
+		font-weight: bold;
+	}
+	ul {
+		list-style-type: none;
+		padding-left: 0;
+		li {
+			padding: 1em $site-margins/2;
+			border-bottom: 1px solid $color-grey-200;
+			&.is-selected {
+				background-color: $color-grey-200;
+				font-weight: bold;
+			}
+		}
+	}
+}
+
+.pane__category, .pane__subcategory {
+	width: 250px;
+	background-color: $color-grey-100;
+	color: $color-grey-900;
+	&.is-selected {
+
+	}
+}
+
+.pane__articles {
+	@include flex(1);
+	.article-list {
+		.article {
+			@include display(flex);
+			@include align-items(center);
+			font-size: 20px;
+			.article-title {
+				@include flex(1);
+				font-weight: bold;
+				color: $color-blue-500;
+			}
+			.article-modified {
+				font-size: 16px;
+				margin-right: 20px;
+			}
+		}
+	}
+}

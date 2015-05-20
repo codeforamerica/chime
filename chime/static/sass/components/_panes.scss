@@ -1,0 +1,28 @@
+
+.pane {
+	@include display(flex);
+	@include flex-direction(column);
+	background-color: $color-grey-50;
+	.pane--content {
+		@include flex(1);
+		width: 100%;
+		position: relative;
+	}
+	.pane--nav {
+		width: 100%;
+		background-color: $color-grey-200;
+		border-bottom: 1px solid #ddd;
+		padding: 0 $site-margins;
+		.tab {
+			border-right: 1px solid #ddd;
+			text-decoration: none;
+			color: #555;
+			display: inline-block;
+			padding: .5em .7em;
+			&.is-selected {
+				background-color: #555;
+				color: #eee;
+			}
+		}
+	}
+}

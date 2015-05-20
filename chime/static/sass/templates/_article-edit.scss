@@ -1,0 +1,78 @@
+.edit-article__form {
+	padding: 0;
+}
+
+.edit-article__header {
+	background-color: #fff;
+	border-bottom: 1px solid #ddd;
+	.button {
+		margin-top: 1.6em;
+	}
+}
+
+.edit-article__main {
+	padding: 0;
+	@include stretch-content();
+}
+
+.edit-article__editor {
+	@include flex(1);
+	border-right: 1px solid $color-grey-300;
+
+	.lt-ie10 & {
+		width: 100%;
+	}
+	textarea {
+		margin: 0;
+		font-family: $font-mono;
+		font-weight: 400;
+		line-height: 1.5em;
+		background-color: transparent;
+		color: $color-grey-900;
+		width: 100%;
+		-webkit-appearance: none;
+		border: 0;
+		outline: none;
+		resize: none;
+		height: auto;
+		overflow: auto;
+		padding: 2em;
+	}
+}
+
+.md-editor {
+	@include display(flex);
+	@include flex-direction(column);
+	border: 0;
+	box-shadow: none;
+	&.active {
+		border: 0;
+		box-shadow: none;
+	}
+	.md-header {
+		background-color: $color-grey-100;
+		border-bottom: $color-grey-300;
+		padding: .5em $site-margins;
+		.btn {
+			@extend .button--outline;
+			border-radius: $border-radius;
+			margin-right: .5em;
+		}
+	}
+	textarea {
+		@include flex(1);
+	}
+}
+
+.edit-article__previewer {
+	display: none;
+}
+
+.edit-article__footer {
+	padding: {
+		top: .5em;
+		bottom: .5em;
+	}
+	background-color: $color-grey-200;
+	border-top: 1px solid $color-grey-300;
+}
