@@ -1977,11 +1977,66 @@ class TestApp (TestCase):
             # the directory and index page pass the editable test
             self.assertTrue(view_functions.is_editable_dir(dir_location))
 
-    # ;;;
     def test_can_rename_editable_directories(self):
         ''' Can rename an editable directory.
         '''
+        fake_author_email = u'erica@example.com'
+        with HTTMock(self.mock_persona_verify):
+            self.test_client.post('/sign-in', data={'email': fake_author_email})
 
+        with HTTMock(self.auth_csv_example_allowed):
+            # start a new branch via the http interface
+            # invokes view_functions/get_repo which creates a clone
+            task_description = u'filter plankton from sea water'
+            task_beneficiary = u'humpback whales'
+
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            self.assertTrue(working_branch.name in self.clone1.branches)
+            self.assertTrue(working_branch.name in self.origin.branches)
+            working_branch_name = working_branch.name
+            working_branch.checkout()
+
+            # create a new page
+            page_slug = u'hello'
+            page_path = u'{}/index.{}'.format(page_slug, view_functions.CONTENT_FILE_EXTENSION)
+            response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
+                                             data={'action': 'add', 'path': page_slug},
+                                             follow_redirects=True)
+            self.assertEquals(response.status_code, 200)
+            self.assertTrue(page_path in response.data)
+            hexsha = search(r'<input name="hexsha" value="(\w+)"', response.data).group(1)
+
+            # now save the file with new content
+            new_page_slug = u'goodbye'
+            new_page_path = u'{}/index.{}'.format(new_page_slug, view_functions.CONTENT_FILE_EXTENSION)
+            response = self.test_client.post('/tree/{}/save/{}'.format(working_branch_name, page_path),
+                                             data={'layout': 'multi', 'hexsha': hexsha,
+                                                   'en-title': u'',
+                                                   'en-body': u'',
+                                                   'fr-title': u'', 'fr-body': u'',
+                                                   'url-slug': u'{}'.format(new_page_slug)},
+                                             follow_redirects=True)
+
+            self.assertEquals(response.status_code, 200)
+            self.assertTrue(new_page_path in response.data)
+
+            # pull the changes
+            self.clone1.git.pull('origin', working_branch_name)
+
+            # the old directory is gone
+            old_dir_location = join(self.clone1.working_dir, page_slug)
+            self.assertFalse(exists(old_dir_location))
+
+            # the new directory exists and is properly structured
+            new_dir_location = join(self.clone1.working_dir, new_page_slug)
+            self.assertTrue(exists(new_dir_location) and isdir(new_dir_location))
+            # an index page is inside
+            idx_location = u'{}/index.{}'.format(new_dir_location, view_functions.CONTENT_FILE_EXTENSION)
+            self.assertTrue(exists(idx_location))
+            # the directory and index page pass the editable test
+            self.assertTrue(view_functions.is_editable_dir(new_dir_location))
+
+    # ;;;
     def test_cannot_move_a_directory_inside_iteslf(self):
         ''' Can't rename an editable directory in a way which moves it inside itself
         '''
