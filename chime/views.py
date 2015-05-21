@@ -19,7 +19,7 @@ from .view_functions import (
     branch_name2path, branch_var2name, get_repo, dos2unix,
     login_required, browserid_hostname_required, synch_required, synched_checkout_required, sorted_paths,
     directory_paths, should_redirect, make_redirect, get_auth_data_file,
-    is_allowed_email, common_template_args, is_editable_dir, CONTENT_FILE_EXTENSION)
+    is_allowed_email, common_template_args, is_editable_dir, CONTENT_FILE_EXTENSION, ARTICLE_LAYOUT)
 from .google_api_functions import (
     read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens,
     authorize_google, get_google_personal_info, get_google_analytics_properties,
@@ -453,7 +453,7 @@ def branch_edit(branch, path=None):
 
     if isdir(full_path):
         # if this is an editable directory (contains only an editable index file), redirect
-        if is_editable_dir(full_path):
+        if is_editable_dir(full_path, ARTICLE_LAYOUT):
             index_path = join(path or u'', u'index.{}'.format(CONTENT_FILE_EXTENSION))
             return redirect('/tree/{}/edit/{}'.format(branch_name2path(branch), index_path))
 
@@ -486,7 +486,7 @@ def branch_edit_file(branch, path=None):
     elif action == 'add' and 'path' in request.form:
         name = u'{}/index.{}'.format(splitext(request.form['path'])[0], CONTENT_FILE_EXTENSION)
 
-        front, body = dict(title=u'', layout='default'), u''
+        front, body = dict(title=u'', layout=ARTICLE_LAYOUT), u''
         file_path = edit_functions.create_new_page(r, path, name, front, body)
         message = 'Created new file "%s"' % file_path
         path_303 = file_path
@@ -640,7 +640,7 @@ def branch_save(branch, path):
 
             path = new_slug
             # append the index file if it's an editable directory
-            if is_editable_dir(join(repo.working_dir, new_slug)):
+            if is_editable_dir(join(repo.working_dir, new_slug), ARTICLE_LAYOUT):
                 path = join(new_slug, u'index.{}'.format(CONTENT_FILE_EXTENSION))
 
     except repo_functions.MergeConflict as conflict:

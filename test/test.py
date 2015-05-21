@@ -1582,7 +1582,7 @@ class TestApp (TestCase):
             hexsha = search(r'<input name="hexsha" value="(\w+)"', response.data).group(1)
             # now save the file with new content
             response = self.test_client.post('/tree/{}/save/{}'.format(generated_branch_name, fake_page_path),
-                                             data={'layout': 'multi', 'hexsha': hexsha,
+                                             data={'layout': view_functions.ARTICLE_LAYOUT, 'hexsha': hexsha,
                                                    'en-title': 'Greetings',
                                                    'en-body': u'{}\n'.format(fake_page_content),
                                                    'fr-title': '', 'fr-body': '',
@@ -1727,7 +1727,7 @@ class TestApp (TestCase):
             self.assertEquals(response.status_code, 200)
             self.assertFalse(generated_branch_name in response.data)
 
-            response = self.test_client.post('/tree/{}/save/{}'.format(generated_branch_name, fake_page_path), data={'layout': 'multi', 'hexsha': hexsha, 'en-title': 'Greetings', 'en-body': 'Hello world.\n', 'fr-title': '', 'fr-body': '', 'url-slug': 'hello'}, follow_redirects=True)
+            response = self.test_client.post('/tree/{}/save/{}'.format(generated_branch_name, fake_page_path), data={'layout': view_functions.ARTICLE_LAYOUT, 'hexsha': hexsha, 'en-title': 'Greetings', 'en-body': 'Hello world.\n', 'fr-title': '', 'fr-body': '', 'url-slug': 'hello'}, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # the task name should not be in the returned HTML
             self.assertFalse(EDIT_LISTDIR_TASK_DESCRIPTION_PATTERN.format(fake_task_description) in response.data)
@@ -1975,7 +1975,7 @@ class TestApp (TestCase):
             # an index page was created inside
             self.assertTrue(exists(idx_location))
             # the directory and index page pass the editable test
-            self.assertTrue(view_functions.is_editable_dir(dir_location))
+            self.assertTrue(view_functions.is_editable_dir(dir_location), view_functions.ARTICLE_LAYOUT)
 
     def test_can_rename_editable_directories(self):
         ''' Can rename an editable directory.
@@ -2010,7 +2010,7 @@ class TestApp (TestCase):
             new_page_slug = u'goodbye'
             new_page_path = u'{}/index.{}'.format(new_page_slug, view_functions.CONTENT_FILE_EXTENSION)
             response = self.test_client.post('/tree/{}/save/{}'.format(working_branch_name, page_path),
-                                             data={'layout': 'multi', 'hexsha': hexsha,
+                                             data={'layout': view_functions.ARTICLE_LAYOUT, 'hexsha': hexsha,
                                                    'en-title': u'',
                                                    'en-body': u'',
                                                    'fr-title': u'', 'fr-body': u'',
@@ -2034,7 +2034,7 @@ class TestApp (TestCase):
             idx_location = u'{}/index.{}'.format(new_dir_location, view_functions.CONTENT_FILE_EXTENSION)
             self.assertTrue(exists(idx_location))
             # the directory and index page pass the editable test
-            self.assertTrue(view_functions.is_editable_dir(new_dir_location))
+            self.assertTrue(view_functions.is_editable_dir(new_dir_location, view_functions.ARTICLE_LAYOUT))
 
     def test_cannot_move_a_directory_inside_iteslf(self):
         ''' Can't rename an editable directory in a way which moves it inside itself
@@ -2069,7 +2069,7 @@ class TestApp (TestCase):
             new_page_slug = u'hello/is/better/than/goodbye'
             new_page_path = u'{}/index.{}'.format(new_page_slug, view_functions.CONTENT_FILE_EXTENSION)
             response = self.test_client.post('/tree/{}/save/{}'.format(working_branch_name, page_path),
-                                             data={'layout': 'multi', 'hexsha': hexsha,
+                                             data={'layout': view_functions.ARTICLE_LAYOUT, 'hexsha': hexsha,
                                                    'en-title': u'',
                                                    'en-body': u'',
                                                    'fr-title': u'', 'fr-body': u'',
