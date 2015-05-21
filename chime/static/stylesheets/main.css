@@ -668,18 +668,23 @@ body {
   min-width: 1000px;
 }
 
-/* line 22, ../sass/core/_base.scss */
+/* line 21, ../sass/core/_base.scss */
+p {
+  font-size: 16px;
+}
+
+/* line 26, ../sass/core/_base.scss */
 ul, ol {
   list-style-type: none;
   padding: 0;
 }
 
-/* line 27, ../sass/core/_base.scss */
+/* line 31, ../sass/core/_base.scss */
 a {
   text-decoration: none;
   color: #6693a5;
 }
-/* line 30, ../sass/core/_base.scss */
+/* line 34, ../sass/core/_base.scss */
 a:hover {
   text-decoration: underline;
 }
@@ -760,7 +765,7 @@ textarea {
   display: block;
   width: 100%;
   outline: none;
-  font-size: 14px;
+  font-size: 16px;
   padding: 0 .7em;
   height: 2em;
 }
@@ -958,60 +963,46 @@ input[type="submit"]:disabled:hover {
 /* line 84, ../sass/components/_buttons.scss */
 .button--large {
   font-size: 1.125rem;
+  padding: .5em 1em;
 }
 
-/* line 2, ../sass/components/_panes.scss */
-.pane {
-  display: -webkit-box;
-  display: -moz-box;
-  display: box;
-  display: -webkit-flex;
-  display: -moz-flex;
-  display: -ms-flexbox;
-  display: flex;
-  -webkit-box-orient: vertical;
-  -moz-box-orient: vertical;
-  box-orient: vertical;
-  -webkit-box-direction: normal;
-  -moz-box-direction: normal;
-  box-direction: normal;
-  -webkit-flex-direction: column;
-  -moz-flex-direction: column;
-  flex-direction: column;
-  -ms-flex-direction: column;
-  background-color: #fafafa;
-}
-/* line 6, ../sass/components/_panes.scss */
-.pane .pane--content {
-  -webkit-box-flex: 1;
-  -moz-box-flex: 1;
-  box-flex: 1;
-  -webkit-flex: 1;
-  -moz-flex: 1;
-  -ms-flex: 1;
-  flex: 1;
-  width: 100%;
-  position: relative;
-}
-/* line 11, ../sass/components/_panes.scss */
-.pane .pane--nav {
-  width: 100%;
+/* line 1, ../sass/components/_alerts.scss */
+.alert {
   background-color: #eeeeee;
-  border-bottom: 1px solid #ddd;
-  padding: 0 40px;
+  border: 1px solid #e0e0e0;
+  border-radius: 3px;
+  padding: .5em 1em;
+  margin: 1em 0;
 }
-/* line 16, ../sass/components/_panes.scss */
-.pane .pane--nav .tab {
-  border-right: 1px solid #ddd;
-  text-decoration: none;
-  color: #555;
-  display: inline-block;
-  padding: .5em .7em;
+/* line 7, ../sass/core/_utilities.scss */
+.alert:before, .alert:after {
+  content: " ";
+  display: table;
 }
-/* line 22, ../sass/components/_panes.scss */
-.pane .pane--nav .tab.is-selected {
-  background-color: #555;
-  color: #eee;
+/* line 11, ../sass/core/_utilities.scss */
+.alert:after {
+  clear: both;
+}
+
+/* line 10, ../sass/components/_alerts.scss */
+.alert--info {
+  background-color: #eeeeee;
+  border: 1px solid #e0e0e0;
+  color: #616161;
+}
+
+/* line 16, ../sass/components/_alerts.scss */
+.alert--success {
+  background-color: #ccece3;
+  border-color: #99d9c7;
+  color: #006046;
+}
+
+/* line 22, ../sass/components/_alerts.scss */
+.alert--error {
+  background-color: #eed1d7;
+  border-color: #dda4b0;
+  color: #661022;
 }
 
 /*------------------------------------*\
@@ -1093,29 +1084,30 @@ input[type="submit"]:disabled:hover {
 /* line 39, ../sass/templates/_activities-list.scss */
 .current-task__title a:hover {
   color: #336f87;
+  text-decoration: none;
 }
 
-/* line 45, ../sass/templates/_activities-list.scss */
+/* line 46, ../sass/templates/_activities-list.scss */
 .current-task__author {
   margin-top: 0;
 }
 
-/* line 49, ../sass/templates/_activities-list.scss */
+/* line 50, ../sass/templates/_activities-list.scss */
 .current-task__details {
   padding: 0;
 }
 
-/* line 53, ../sass/templates/_activities-list.scss */
+/* line 54, ../sass/templates/_activities-list.scss */
 .new-task {
   padding: 0 20px;
   border-left: 1px solid #eeeeee;
 }
-/* line 56, ../sass/templates/_activities-list.scss */
+/* line 57, ../sass/templates/_activities-list.scss */
 .new-task input {
   margin: .5em 0;
 }
 
-/* line 61, ../sass/templates/_activities-list.scss */
+/* line 62, ../sass/templates/_activities-list.scss */
 .new-task__form {
   margin-top: 2em;
   background-color: #eeeeee;
@@ -1287,6 +1279,11 @@ input[type="submit"]:disabled:hover {
   padding-bottom: .5em;
   background-color: #eeeeee;
   border-top: 1px solid #e0e0e0;
+}
+
+/* line 94, ../sass/templates/_article-edit.scss */
+.statistics {
+  color: #616161;
 }
 
 /* line 1, ../sass/templates/_article-history.scss */

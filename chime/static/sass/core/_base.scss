@@ -18,6 +18,10 @@ body {
 	min-width: $site-min-width;
 }
 
+p {
+	font-size: $text-font-size;
+}
+
 
 ul, ol {
 	list-style-type: none;
