@@ -13,6 +13,7 @@
 	&:hover {
 		border-color: $color-grey-400;
 		background-color: $color-grey-400;
+		text-decoration: none;
 	}
 
 	&:active, &.is-selected {

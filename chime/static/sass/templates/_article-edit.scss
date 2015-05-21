@@ -3,6 +3,7 @@
 }
 
 .edit-article__header {
+	@include flex-shrink(0);
 	background-color: #fff;
 	border-bottom: 1px solid #ddd;
 	.button {
@@ -61,6 +62,7 @@
 		box-shadow: none;
 	}
 	.md-header {
+		@include flex-shrink(0);
 		background-color: $color-grey-100;
 		border-bottom: 1px solid $color-grey-300;
 		padding: .5em $site-margins;
@@ -80,6 +82,7 @@
 }
 
 .edit-article__footer {
+	@include flex-shrink(0);
 	padding: {
 		top: .5em;
 		bottom: .5em;

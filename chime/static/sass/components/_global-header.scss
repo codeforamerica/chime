@@ -1,4 +1,5 @@
 .global-header {
+	@include flex-shrink(0);
 	background-color: $color-blue-600;
 	color: $color-blue-100;
 	.global-header--title {
