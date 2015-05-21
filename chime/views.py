@@ -399,7 +399,7 @@ def render_list_dir(repo, branch, path):
         kwargs['is_peer_rejected'] = repo_functions.is_peer_rejected(repo, master_name, branch)
     if kwargs['is_peer_rejected']:
         kwargs['rejecting_peer'], kwargs['rejection_message'] = kwargs['rejection_messages'].pop(0)
-    return render_template('tree-branch-edit-listdir.html', **kwargs)
+    return render_template('articles-list.html', **kwargs)
 
 def render_edit_view(repo, branch, path, file):
     ''' Render the page that lets you edit a file
