@@ -406,14 +406,14 @@ def render_edit_view(repo, branch, path, file):
     '''
     front, body = load_jekyll_doc(file)
     languages = load_languages(repo.working_dir)
-    url_slug, _ = splitext(path)
-    # strip 'index' from the slug if appropriate
+    url_slug = path
+    # strip the index file from the slug if appropriate
     if search(r'\/index.{}$'.format(CONTENT_FILE_EXTENSION), path):
-        url_slug = sub(ur'index$', u'', url_slug)
+        url_slug = sub(ur'index.{}$'.format(CONTENT_FILE_EXTENSION), u'', url_slug)
     view_path = join('/tree/{}/view'.format(branch_name2path(branch)), path)
     history_path = join('/tree/{}/history'.format(branch_name2path(branch)), path)
     task_root_path = u'/tree/{}/edit/'.format(branch_name2path(branch))
-    folder_root_slug = u'/'.join(url_slug.split('/')[:-2]) + u'/'
+    folder_root_slug = u'/'.join([item for item in url_slug.split('/') if item][:-1]) + u'/'
     app_authorized = False
     ga_config = read_ga_config(current_app.config['RUNNING_STATE_DIR'])
     analytics_dict = {}
@@ -638,7 +638,10 @@ def branch_save(branch, path):
                 else:
                     raise
 
-            path = join(new_slug, u'index.{}'.format(CONTENT_FILE_EXTENSION))
+            path = new_slug
+            # append the index file if it's an editable directory
+            if is_editable_dir(join(repo.working_dir, new_slug)):
+                path = join(new_slug, u'index.{}'.format(CONTENT_FILE_EXTENSION))
 
     except repo_functions.MergeConflict as conflict:
         repo.git.reset(c.hexsha, hard=True)
