@@ -18,7 +18,7 @@
                     {% if task_date_created %}<li>Created: <strong>{{task_date_created}}</strong></li>{% endif %}
                 </ul>
                 <!-- testing to get some buttons... this next line should be  if needs_peer_review and not eligible_peer -->
-                 {% if needs_peer_review or eligible_peer %}
+                 {% if needs_peer_review and not eligible_peer %}
                 <form action="/merge" method="POST">
                     <input name="branch" value="{{branch}}" type="hidden" />
                     <label>Task complete?</label>
