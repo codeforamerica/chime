@@ -5,7 +5,7 @@ from unittest import main, TestCase
 
 from tempfile import mkdtemp
 from StringIO import StringIO
-from os.path import join, exists, dirname
+from os.path import join, exists, dirname, abspath
 from urlparse import urlparse, urljoin
 from os import environ
 from shutil import rmtree, copytree
@@ -13,11 +13,10 @@ from uuid import uuid4
 from re import search
 import random
 from datetime import date, timedelta
-
 import sys
-import os
-here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, here)
+
+repo_root = abspath(join(dirname(__file__), '..'))
+sys.path.insert(0, repo_root)
 
 from git import Repo
 from git.cmd import GitCommandError
@@ -71,7 +70,7 @@ class TestJekyll (TestCase):
 class TestViewFunctions (TestCase):
 
     def setUp(self):
-        repo_path = os.path.dirname(os.path.abspath(__file__)) + '/test-app.git'
+        repo_path = dirname(abspath(__file__)) + '/test-app.git'
         temp_repo_dir = mkdtemp(prefix='chime-root')
         temp_repo_path = temp_repo_dir + '/test-app.git'
         copytree(repo_path, temp_repo_path)
@@ -188,7 +187,7 @@ mike@teczno.com,Code for America,Mike Migurski
 class TestRepo (TestCase):
 
     def setUp(self):
-        repo_path = os.path.dirname(os.path.abspath(__file__)) + '/test-app.git'
+        repo_path = dirname(abspath(__file__)) + '/test-app.git'
         temp_repo_dir = mkdtemp(prefix='chime-root')
         temp_repo_path = temp_repo_dir + '/test-app.git'
         copytree(repo_path, temp_repo_path)
@@ -1387,7 +1386,7 @@ class TestApp (TestCase):
     def setUp(self):
         self.work_path = mkdtemp(prefix='chime-repo-clones-')
 
-        repo_path = os.path.dirname(os.path.abspath(__file__)) + '/test-app.git'
+        repo_path = dirname(abspath(__file__)) + '/test-app.git'
         temp_repo_dir = mkdtemp(prefix='chime-root')
         temp_repo_path = temp_repo_dir + '/test-app.git'
         copytree(repo_path, temp_repo_path)
