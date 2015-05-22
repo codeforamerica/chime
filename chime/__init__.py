@@ -68,6 +68,7 @@ def run_apache(running_dir):
 def create_app(environ):
     app = Flask(__name__, static_folder='static')
     app.secret_key = 'boop'
+    app.logger_name = 'chime-flask'
     app.config['RUNNING_STATE_DIR'] = environ['RUNNING_STATE_DIR']
     app.config['GA_CLIENT_ID'] = environ['GA_CLIENT_ID']
     app.config['GA_CLIENT_SECRET'] = environ['GA_CLIENT_SECRET']
@@ -88,7 +89,7 @@ def create_app(environ):
 
     # attach routes and custom error pages here
     app.register_blueprint(chime)
-
+    
     @app.before_first_request
     def before_first_request():
         logger.addHandler(ChimeFileLoggingHandler(app.config))
