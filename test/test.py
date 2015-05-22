@@ -1,21 +1,22 @@
 # -- coding: utf-8 --
+from __future__ import absolute_import
+
 from unittest import main, TestCase
 
 from tempfile import mkdtemp
 from StringIO import StringIO
-from os.path import join, exists, dirname, isdir
+from os.path import join, exists, dirname, isdir, abspath, isfile
 from urlparse import urlparse, urljoin
-from os import environ
+from os import environ, remove
 from shutil import rmtree, copytree
 from uuid import uuid4
 from re import search
 import random
 from datetime import date, timedelta
-
 import sys
-import os
-here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(here)
+
+repo_root = abspath(join(dirname(__file__), '..'))
+sys.path.insert(0, repo_root)
 
 from git import Repo
 from git.cmd import GitCommandError
@@ -26,8 +27,8 @@ from mock import MagicMock
 
 from chime import (
     create_app, jekyll_functions, repo_functions, edit_functions,
-    google_api_functions, view_functions, publish
-)
+    google_api_functions, view_functions, publish,
+    google_access_token_update)
 
 import codecs
 codecs.register(RotUnicode.search_function)
@@ -71,7 +72,7 @@ class TestJekyll (TestCase):
 class TestViewFunctions (TestCase):
 
     def setUp(self):
-        repo_path = os.path.dirname(os.path.abspath(__file__)) + '/test-app.git'
+        repo_path = dirname(abspath(__file__)) + '/test-app.git'
         temp_repo_dir = mkdtemp(prefix='chime-root')
         temp_repo_path = temp_repo_dir + '/test-app.git'
         copytree(repo_path, temp_repo_path)
@@ -188,7 +189,7 @@ mike@teczno.com,Code for America,Mike Migurski
 class TestRepo (TestCase):
 
     def setUp(self):
-        repo_path = os.path.dirname(os.path.abspath(__file__)) + '/test-app.git'
+        repo_path = dirname(abspath(__file__)) + '/test-app.git'
         temp_repo_dir = mkdtemp(prefix='chime-root')
         temp_repo_path = temp_repo_dir + '/test-app.git'
         copytree(repo_path, temp_repo_path)
@@ -1214,13 +1215,13 @@ class TestGoogleApiFunctions (TestCase):
         ''' Make sure that reading from a missing google analytics config file doesn't raise errors.
         '''
         with self.app.app_context():
-            ga_config_path = os.path.join(self.app.config['RUNNING_STATE_DIR'], google_api_functions.GA_CONFIG_FILENAME)
+            ga_config_path = join(self.app.config['RUNNING_STATE_DIR'], google_api_functions.GA_CONFIG_FILENAME)
             # verify that the file exists
-            self.assertTrue(os.path.isfile(ga_config_path))
+            self.assertTrue(isfile(ga_config_path))
             # remove the file
-            os.remove(ga_config_path)
+            remove(ga_config_path)
             # verify that the file's gone
-            self.assertFalse(os.path.isfile(ga_config_path))
+            self.assertFalse(isfile(ga_config_path))
             # ask for the config contents
             ga_config = google_api_functions.read_ga_config(self.app.config['RUNNING_STATE_DIR'])
             # there are four values
@@ -1240,13 +1241,13 @@ class TestGoogleApiFunctions (TestCase):
         ''' Make sure that writing to a missing google analytics config file doesn't raise errors.
         '''
         with self.app.app_context():
-            ga_config_path = os.path.join(self.app.config['RUNNING_STATE_DIR'], google_api_functions.GA_CONFIG_FILENAME)
+            ga_config_path = join(self.app.config['RUNNING_STATE_DIR'], google_api_functions.GA_CONFIG_FILENAME)
             # verify that the file exists
-            self.assertTrue(os.path.isfile(ga_config_path))
+            self.assertTrue(isfile(ga_config_path))
             # remove the file
-            os.remove(ga_config_path)
+            remove(ga_config_path)
             # verify that the file's gone
-            self.assertFalse(os.path.isfile(ga_config_path))
+            self.assertFalse(isfile(ga_config_path))
             # try to write some dummy config values
             write_config = {
                 "access_token": "meowser_token",
@@ -1257,7 +1258,7 @@ class TestGoogleApiFunctions (TestCase):
             # write the config contents
             google_api_functions.write_ga_config(write_config, self.app.config['RUNNING_STATE_DIR'])
             # verify that the file exists
-            self.assertTrue(os.path.isfile(ga_config_path))
+            self.assertTrue(isfile(ga_config_path))
             # ask for the config contents
             ga_config = google_api_functions.read_ga_config(self.app.config['RUNNING_STATE_DIR'])
             # there are four values
@@ -1277,20 +1278,20 @@ class TestGoogleApiFunctions (TestCase):
         ''' Make sure that a malformed google analytics config file doesn't raise errors.
         '''
         with self.app.app_context():
-            ga_config_path = os.path.join(self.app.config['RUNNING_STATE_DIR'], google_api_functions.GA_CONFIG_FILENAME)
+            ga_config_path = join(self.app.config['RUNNING_STATE_DIR'], google_api_functions.GA_CONFIG_FILENAME)
             # verify that the file exists
-            self.assertTrue(os.path.isfile(ga_config_path))
+            self.assertTrue(isfile(ga_config_path))
             # remove the file
-            os.remove(ga_config_path)
+            remove(ga_config_path)
             # verify that the file's gone
-            self.assertFalse(os.path.isfile(ga_config_path))
+            self.assertFalse(isfile(ga_config_path))
             # write some garbage to the file
             with view_functions.WriteLocked(ga_config_path) as iofile:
                 iofile.seek(0)
                 iofile.truncate(0)
                 iofile.write('{"access_token": "meowser_access_token", "refresh_token": "meowser_refre')
             # verify that the file exists
-            self.assertTrue(os.path.isfile(ga_config_path))
+            self.assertTrue(isfile(ga_config_path))
             # ask for the config contents
             ga_config = google_api_functions.read_ga_config(self.app.config['RUNNING_STATE_DIR'])
             # there are four values
@@ -1306,7 +1307,7 @@ class TestGoogleApiFunctions (TestCase):
             self.assertEqual(ga_config['profile_id'], u'')
             self.assertEqual(ga_config['project_domain'], u'')
             # verify that the file exists again
-            self.assertTrue(os.path.isfile(ga_config_path))
+            self.assertTrue(isfile(ga_config_path))
 
     def test_write_unexpected_values_to_config(self):
         ''' Make sure that we can't write unexpected values to the google analytics config file.
@@ -1363,6 +1364,11 @@ class TestGoogleApiFunctions (TestCase):
             self.assertEqual(analytics_dict['page_views'], u'24')
             self.assertEqual(analytics_dict['average_time_page'], u'67')
 
+    def test_google_access_token_functions(self):
+        ''' makes sure that the file loads properly
+        '''
+        self.assertIsNotNone(google_access_token_update.parser)
+
 class TestAppConfig (TestCase):
 
     def test_missing_values(self):
@@ -1382,7 +1388,7 @@ class TestApp (TestCase):
     def setUp(self):
         self.work_path = mkdtemp(prefix='chime-repo-clones-')
 
-        repo_path = os.path.dirname(os.path.abspath(__file__)) + '/test-app.git'
+        repo_path = dirname(abspath(__file__)) + '/test-app.git'
         temp_repo_dir = mkdtemp(prefix='chime-root')
         temp_repo_path = temp_repo_dir + '/test-app.git'
         copytree(repo_path, temp_repo_path)
@@ -1520,7 +1526,7 @@ class TestApp (TestCase):
         ''' Check basic log in / log out flow without talking to Persona.
         '''
         response = self.test_client.get('/')
-        self.assertFalse('Create' in response.data)
+        self.assertFalse('Start' in response.data)
 
         with HTTMock(self.mock_persona_verify):
             response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
@@ -1528,13 +1534,13 @@ class TestApp (TestCase):
 
         with HTTMock(self.auth_csv_example_allowed):
             response = self.test_client.get('/')
-            self.assertTrue('Create' in response.data)
+            self.assertTrue('Start' in response.data)
 
             response = self.test_client.post('/sign-out')
             self.assertEquals(response.status_code, 200)
 
             response = self.test_client.get('/')
-            self.assertFalse('Create' in response.data)
+            self.assertFalse('Start' in response.data)
 
     def test_branches(self):
         ''' Check basic branching functionality.
@@ -1594,10 +1600,8 @@ class TestApp (TestCase):
             self.assertTrue(fake_page_content in response.data)
 
         # Check that English and French forms are both present.
-        self.assertTrue('id="fr-nav" class="nav-tab"' in response.data)
-        self.assertTrue('id="en-nav" class="nav-tab state-active"' in response.data)
-        self.assertTrue('id="French-form" style="display: none"' in response.data)
-        self.assertTrue('id="English-form" style="display: block"' in response.data)
+        self.assertTrue('name="fr-title"' in response.data)
+        self.assertTrue('name="en-title"' in response.data)
 
         # Verify that navigation tabs are in the correct order.
         self.assertTrue(response.data.index('id="fr-nav"') < response.data.index('id="en-nav"'))
@@ -2181,6 +2185,21 @@ class TestPublishApp (TestCase):
             response = self.client.post('/', data=payload)
 
         self.assertTrue(response.status_code in range(200, 299))
+
+    def test_load(self):
+        from chime import publish
+        ''' makes sure that the file loads properly
+        '''
+        self.assertIsNotNone(publish.logger)
+
+
+class TestHttpdStuff (TestCase):
+    def test_load(self):
+        from chime import httpd
+        ''' makes sure that the file loads properly
+        '''
+        self.assertIsNotNone(httpd.config)
+
 
 if __name__ == '__main__':
     main()

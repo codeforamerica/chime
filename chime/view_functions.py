@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from logging import getLogger
 Logger = getLogger('chime.view_functions')
 
@@ -312,6 +313,21 @@ def common_template_args(app_config, session):
         'email': session.get('email', None),
         'live_site_url': app_config['LIVE_SITE_URL']
     }
+
+def log_application_errors(route_function):
+    ''' Error-logging decorator for route functions.
+    
+        Don't do much, but get an error out to the logger.
+    '''
+    @wraps(route_function)
+    def decorated_function(*args, **kwargs):
+        try:
+            return route_function(*args, **kwargs)
+        except Exception as e:
+            Logger.error(e, exc_info=True)
+            raise
+
+    return decorated_function
 
 def login_required(route_function):
     ''' Login decorator for route functions.

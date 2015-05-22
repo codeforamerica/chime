@@ -12,3 +12,5 @@ ga_config.json
 apache
 
 hosts.txt
+.sass-cache
+app.log

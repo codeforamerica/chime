@@ -1,0 +1,102 @@
+{% extends "base_new.html" %}
+{% block title %}Edit Article{% endblock %}
+{% block body_class %}article-edit{% endblock %}
+{% block content %}
+
+<form action="/tree/{{safe_branch}}/save/{{edit_path}}" method="POST" class="row col__flex col edit-article__form">
+    <input name="layout" value="{{front['layout']}}" type="hidden" />
+    <input name="hexsha" value="{{hexsha}}" type="hidden" />
+    <input name="url-slug" type="hidden" value="{{url_slug}}" />  
+{% for iso in languages %}
+    {% if iso == 'en' %}
+        {% set form_title = front['title'] %}
+        {% set form_body = body %}
+        {% set display_class = '' %}
+    {% else %}
+        {% set form_title = front['title-'+iso] %}
+        {% set form_body = front['body-'+iso] %}
+        {% set display_class = 'is-hidden' %}
+    {% endif %}
+    <div class="edit-article__header row">
+        <div class="row__left">
+            <div class="selection-box">
+                <label>Article Title</label>
+                <input name="{{iso}}-title" value="{{form_title}}" type="text" class="edit-article__title">
+            </div>
+        </div>
+        <div class="row__right toolbar--right">
+            <div class="selection-box toolbar__item">
+                <label>Category</label>
+                <select>
+                    <option value="public-safety">Public Safety</option>
+                    <option value="parks">Parks and Recreation</option>
+                </select>   
+            </div>
+            <div class="selection-box toolbar__item">
+                <label>Subcategory</label>
+                <select>
+                    <option value="public-safety">Crime Reporting and Statistics</option>
+                    <option value="parks">Emergency Services</option>
+                </select>   
+            </div>
+            <a href="{{history_path}}" class="button button--green toolbar__item">History</a>
+            <a href="{{view_path}}" target="_blank" class="button button--green toolbar__item">Preview</a>
+            <input type="submit" class="button button--green toolbar__item" value="Save"/>
+        </div>
+    </div>    
+    
+    
+
+    <div class="edit-article__main row col__flex">
+        <div class="edit-article__editor row__left col">
+            <textarea id="{{iso}}-body markItUp" class="col__flex" name="{{iso}}-body" type="text" data-provide="markdown" data-iconlibrary="fa" data-hidden-buttons="cmdPreview">{{form_body}}</textarea>
+        </div>
+    </div>
+    <div class="edit-article__footer row">
+            <div class="translations row__left toolbar--left">
+            {% if languages|length > 1 %}
+                    <span class="label toolbar__item">Translations: </span>
+                {% for iso in languages %}
+                    {% set lang = languages[iso] %}
+                    {% if iso == 'en' %}
+                        {% set class = 'button state-active' %}
+                    {% else %}
+                        {% set class = 'button' %}
+                    {% endif %}
+                    <a href="#" id="{{iso}}-nav" class="{{class}}" onclick="return show{{lang}}Form()">{{lang}}</a>
+                {% endfor %}
+            {% endif %}
+            </div>
+            <div class="statistics row__right toolbar--right">
+                {% if app_authorized %}
+                <span class="toolbar__item">This week, <b>{{page_views}} people</b> spent an average of <b>{{average_time_page}} secs</b> on this page.</span>
+                {% else %}
+                <form method="POST" action="/authorize">
+                    <button id="authorize-button" class="toolbar__item button button--outline">Connect to Google Analytics</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+</form>
+<script type="text/javascript">
+    {% for iso in languages %}
+        {% set lang = languages[iso] %}
+    
+        function show{{lang}}Form()
+        {
+            {% for other_iso in languages %}
+                {% set other_lang = languages[other_iso] %}
+                document.getElementById('{{other_lang}}-form').style.display = 'none';
+                document.getElementById("{{other_iso}}-nav").className = "nav-tab";
+            {% endfor %}
+
+            document.getElementById('{{lang}}-form').style.display = 'block';
+            var d = document.getElementById("{{iso}}-nav");
+            d.className = d.className + " state-active";
+            return false;
+        }
+    {% endfor %}
+
+</script>
+{% endblock %}

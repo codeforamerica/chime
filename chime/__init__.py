@@ -1,14 +1,15 @@
-from logging import getLogger, DEBUG
+from __future__ import absolute_import
+from logging import getLogger, INFO, DEBUG
+import logging
+from sys import stderr, stdout
+from .chimelog import SnsHandler, get_filehandler
+
 logger = getLogger('chime')
 
-import os
 from os import mkdir
 from os.path import realpath, join
 
 from flask import Blueprint, Flask
-
-import logging
-from logging import handlers
 
 from .httpd import run_apache_forever
 
@@ -64,15 +65,10 @@ def run_apache(running_dir):
     
     return run_apache_forever(doc_root, root, port, False)
 
-def log_file(app):
-    log_dir = '/var/log/chime'
-    if not os.access(log_dir,os.W_OK | os.X_OK):
-        log_dir = app.config['WORK_PATH']
-    return join(realpath(log_dir), 'app.log')
-
 def create_app(environ):
     app = Flask(__name__, static_folder='static')
     app.secret_key = 'boop'
+    app.logger_name = 'chime-flask'
     app.config['RUNNING_STATE_DIR'] = environ['RUNNING_STATE_DIR']
     app.config['GA_CLIENT_ID'] = environ['GA_CLIENT_ID']
     app.config['GA_CLIENT_SECRET'] = environ['GA_CLIENT_SECRET']
@@ -84,6 +80,7 @@ def create_app(environ):
     app.config['AUTH_DATA_HREF'] = environ.get('AUTH_DATA_HREF', 'data/authentication.csv')
     app.config['LIVE_SITE_URL'] = environ.get('LIVE_SITE_URL', 'http://127.0.0.1:5001/')
     app.config['PUBLISH_SERVICE_URL'] = environ.get('PUBLISH_SERVICE_URL', False)
+    app.config['SNS_ALERTS_TOPIC'] = environ.get('SNS_ALERTS_TOPIC')
     app.config['default_branch'] = 'master'
     
     # If no live site URL was provided, we'll use Apache to make our own.
@@ -92,18 +89,21 @@ def create_app(environ):
 
     # attach routes and custom error pages here
     app.register_blueprint(chime)
-
+    
     @app.before_first_request
     def before_first_request():
-        if app.debug:
-            logger.setLevel(DEBUG)
-        else:
-            file_handler = handlers.RotatingFileHandler(log_file(app), 'a', 10000000,10)
-            file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-            logger.addHandler(file_handler)
-            logger.setLevel(logging.INFO)
+        directories = '/var/log/chime', app.config['WORK_PATH']
+        logger.addHandler(get_filehandler(directories))
+        logger.setLevel(DEBUG if app.debug else INFO)
 
-        logger.info("app config before_first_request: %s", app.config)
+        if app.config.get('SNS_ALERTS_TOPIC'):
+            sns_handler = SnsHandler(app.config['SNS_ALERTS_TOPIC'])
+            sns_handler.setLevel(logging.ERROR)
+            logger.addHandler(sns_handler)
+
+        logger.info("app config before_first_request: %s" % app.config)
+
     return AppShim(app)
 
+# noinspection PyUnresolvedReferences
 from . import views

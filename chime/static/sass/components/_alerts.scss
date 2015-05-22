@@ -1,0 +1,26 @@
+.alert {
+	@include clearfix();
+	background-color: $color-grey-200;
+	border: 1px solid $color-grey-300;
+	border-radius: $border-radius;
+	padding: .5em 1em;
+	margin: 1em 0;
+}
+
+.alert--info {
+	background-color: $color-grey-200;
+	border: 1px solid $color-grey-300;
+	color: $color-grey-700;
+}
+
+.alert--success {
+	background-color: $color-green-100;
+	border-color: $color-green-200;
+	color: $color-green-700;
+}
+
+.alert--error {
+	background-color: $color-red-100;
+	border-color: $color-red-200;
+	color: $color-red-700;
+}

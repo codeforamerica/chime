@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from logging import getLogger
 logger = getLogger('chime.httpd')
 
@@ -37,6 +38,9 @@ Listen 0.0.0.0:{Port}
 PidFile "{ServerRoot}/httpd.pid"
 DocumentRoot "{DocumentRoot}"
 TypesConfig {MimeTypes}
+
+ErrorLog "{ServerRoot}/logs/error_log"
+CustomLog "{ServerRoot}/logs/access_log" combined
 
 <Directory "/">
     Options +FollowSymLinks +MultiViews

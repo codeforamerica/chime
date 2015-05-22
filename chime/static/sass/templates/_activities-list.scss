@@ -1,0 +1,69 @@
+.activities-list__main {
+	@include stretch-content();
+	background-color: $color-grey-50;
+	overflow: auto;
+}
+
+.current-tasks__empty-description {
+	font-size: $h2-font-size;
+	font-weight: 300;
+	max-width: 500px;
+	margin-top: 4em;
+}
+
+.current-tasks__list {
+	margin: 2em 0;
+}
+
+.current-task {
+	@include transition(box-shadow ease-out .2s);
+	display: block;
+	padding: .5em 1em;
+	background-color: #fff;
+	box-shadow: 0 0 3px rgba(#000, .15);
+	margin-bottom: 1em;
+	border-radius: $border-radius;
+	.lt-ie10 & {
+		border: 1px solid $color-grey-200;
+	}
+}
+
+.current-task__title {
+	font-size: $h2-font-size;
+	border-bottom: 1px solid $color-grey-100;
+	margin-top: .5em;
+	margin-bottom: .5em;
+	padding-bottom: .5em;
+	a {
+		color: $color-grey-900;
+		&:hover {
+			color: $color-blue-400;
+			text-decoration: none;
+		}
+	}	
+}
+
+.current-task__author {
+	margin-top: 0;
+}
+
+.current-task__details {
+	padding: 0;
+}
+
+.new-task {
+	padding: 0 $site-margins/2;
+	border-left: 1px solid $color-grey-200;
+	input {
+		margin: .5em 0;
+	}
+}
+
+.new-task__form {
+	margin-top: 2em;
+	background-color: $color-grey-200;
+	border: 1px solid $color-grey-300;
+	border-radius: $border-radius;
+	padding: 1em;
+}
+
