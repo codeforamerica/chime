@@ -1,4 +1,5 @@
 import unittest
+from unittest import TestCase
 import sys
 from chime import SnsHandler
 from mock import patch, Mock
@@ -8,7 +9,7 @@ FAKE_ZONE = "us-east-1"
 FAKE_ARN = "arn:aws:sns:%s:123456789012:prod-alerts" % FAKE_ZONE
 
 
-class TestSnsHandler(unittest.TestCase):
+class TestSnsHandler(TestCase):
     def exc_info_for(self, exception):
         if exception is None:
             return None

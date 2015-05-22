@@ -102,6 +102,7 @@ def create_app(environ):
             logger.addHandler(sns_handler)
 
         logger.info("app config before_first_request: %s" % app.config)
+
     return AppShim(app)
 
 # noinspection PyUnresolvedReferences
