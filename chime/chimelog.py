@@ -7,21 +7,22 @@ from logging import handlers
 from os.path import join, realpath
 from boto import sns
 
-class ChimeFileLoggingHandler(handlers.RotatingFileHandler):
-    ''' Logs to app.log in a directory.
+def get_filehandler(dirnames):
+    ''' Make a new RotatingFileHandler.
+    
+        Choose a logfile path based on priority-ordered list of directories.
     '''
-    def __init__(self, dirnames):
-        ''' Choose a logfile path based on priority-ordered list of directories.
-        '''
-        writeable_dirs = [d for d in dirnames if os.access(d, os.W_OK | os.X_OK)]
-        
-        if not writeable_dirs:
-            raise RuntimeError('Unable to pick a writeable directory name')
-        
-        logfile_path = join(realpath(writeable_dirs[0]), 'app.log')
-        super(ChimeFileLoggingHandler, self).__init__(logfile_path, 'a', 10000000, 10)
-        self.setFormatter(Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-
+    writeable_dirs = [d for d in dirnames if os.access(d, os.W_OK | os.X_OK)]
+    
+    if not writeable_dirs:
+        raise RuntimeError('Unable to pick a writeable directory name')
+    
+    logfile_path = join(realpath(writeable_dirs[0]), 'app.log')
+    handler = handlers.RotatingFileHandler(logfile_path, 'a', 10000000, 10)
+    formatter = Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    
+    return handler
 
 class SnsHandler(Handler):
     """Logs to the given Amazon SNS topic; meant for errors."""

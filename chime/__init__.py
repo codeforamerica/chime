@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from logging import getLogger, INFO, DEBUG
 import logging
 from sys import stderr, stdout
-from .chimelog import SnsHandler, ChimeFileLoggingHandler
+from .chimelog import SnsHandler, get_filehandler
 
 logger = getLogger('chime')
 
@@ -93,7 +93,7 @@ def create_app(environ):
     @app.before_first_request
     def before_first_request():
         directories = '/var/log/chime', app.config['WORK_PATH']
-        logger.addHandler(ChimeFileLoggingHandler(directories))
+        logger.addHandler(get_filehandler(directories))
         logger.setLevel(DEBUG if app.debug else INFO)
 
         if app.config.get('SNS_ALERTS_TOPIC'):
