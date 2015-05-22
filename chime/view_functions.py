@@ -76,7 +76,7 @@ class ReadLocked:
 def dos2unix(string):
     ''' Returns a copy of the strings with line-endings corrected.
     '''
-    return string.replace('\r\n', '\n').replace('\r', '\n')
+    return string.replace('\r\n', '\n').replace('\r', '\n') if string else string
 
 def get_repo(flask_app):
     ''' Gets repository for the current user, cloned from the origin.

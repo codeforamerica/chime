@@ -128,6 +128,7 @@ def dump_jekyll_doc(front_matter, content, file):
     yaml.dump(front_matter, file, **dump_kwargs)
 
     # Write content to the end of the file.
+    content = content or u''
     file.write(_marker)
     file.write(content.encode('utf8'))
 
