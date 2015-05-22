@@ -28,7 +28,6 @@ from fcntl import flock, LOCK_EX, LOCK_UN, LOCK_SH
 # files that match these regex patterns will not be shown in the file explorer
 CONTENT_FILE_EXTENSION = u'markdown'
 CATEGORY_LAYOUT = 'category'
-SUBCATEGORY_LAYOUT = 'subcategory'
 ARTICLE_LAYOUT = 'article'
 FILE_FILTERS = [
     r'^\.',
@@ -147,6 +146,14 @@ def path_display_type(file_path):
 
     return path_type(file_path)
 
+# ONLY CALLED FROM sorted_paths()
+def is_display_editable(file_path, layout=None):
+    ''' Returns True if the file at the passed path is either an editable file,
+        or a directory containing only an editable index file.
+    '''
+    # :NOTE: not sending the layout to is_editable keeps legacy files editable
+    return (is_editable(file_path) or is_editable_dir(file_path, layout))
+
 def is_editable_dir(file_path, layout=None):
     ''' Returns true if the file at the passed path is a directory containing only an editable index file with the passed jekyll layout.
     '''
@@ -165,13 +172,7 @@ def is_editable_dir(file_path, layout=None):
     # it's not a directory
     return False
 
-def is_display_editable(file_path, layout=None):
-    ''' Returns True if the file at the passed path is either an editable file,
-        or a directory containing only an editable index file.
-    '''
-    # not sending the layout to is_editable keeps legacy files editable
-    return (is_editable(file_path) or is_editable_dir(file_path, layout))
-
+# ONLY CALLED FROM THE TWO FUNCTIONS ABOVE
 def is_editable(file_path, layout=None):
     ''' Returns True if the file at the passed path is not a directory, and has jekyll
         front matter with the passed layout.
