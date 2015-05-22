@@ -1,0 +1,15 @@
+table {
+	width: 100%;
+	th, td {
+		text-align: left;
+		padding: .5em;
+	}
+	th {
+		font-weight: bold;
+		border-bottom: 1px solid $color-grey-800;
+	}
+	td {
+		color: $color-grey-800;
+		border-bottom: 1px solid $color-grey-300;
+	}
+}

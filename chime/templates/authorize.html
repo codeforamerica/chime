@@ -1,48 +1,45 @@
-{% extends "base.html" %}
+{% extends "base_new.html" %}
 {% block title %}Setup{% endblock %}
 {% block content %}
 
 
-<div class="main-content">
-    <div class="analytics-setup">
-        <h2>Connect your Google Analytics account</h2>
+<div class="analytics-setup grid col__flex">
+    <div class="analytics-setup__content grid__item width-one-half">
+        <h1>Connect your Google Analytics account</h1>
         <p>Connecting your Google Analytics account to Chime will enable your editors to see how their content is performing.</p>
         <p>To enable this feature, you simply need access to the <a href="https://www.google.com/analytics/">Google Analytics</a> account for your site and then click through these steps:</p>
         </ul>
-
-        <h3>1. Connect To Google</h3>
+        <h2>1. Connect To Google</h2>
         {% if properties %}
-        <div class="alert-success">
+        <div class="alert">
             <p>You are connected to Google{% if name or google_email %} as <b>{{ name }}{% if google_email %} ({{ google_email }}){% endif %}</b>{% endif %}.</p>
-        </div>
-        <div class="alert-info">
             <form method="POST" action="/authorize">
                 <p>To use a different account:</p>
-                <button id="authorize-button">Connect to Google</button>
+                <p><button id="authorize-button" class="button button--blue button--large">Switch Google Accounts</button></p>
             </form>
         </div>
+
+
 
         {% else %}
-        <div class="alert-info">
+        <div class="alert">
             <form method="POST" action="/authorize">
                 <p>If you have more than one Google account, make sure to pick the one you have associated with your site's Analytics account</p>
-                <button id="authorize-button">Connect to Google</button>
+                <p><button id="authorize-button" class="button button--blue button--large">Connect to Google</button></p>
             </form>
         </div>
-        {% endif %}
 
+        {% endif %}
 
         {% if properties %}
         <form action="/authorization-complete" method="POST">
-            <h3>2. Pick a property</h3>
-            <div class="alert-info">
-                <p style="overflow:hidden">
-                    <select name="property">
-                        {% for (id, name, url) in properties %}
-                        <option value="{{ id }}">{{ name }} ({{ url }})</option>
-                        {% endfor %}
-                    </select>
-                </p>
+            <h2>2. Pick a property</h2>
+            <div class="alert">
+                <p><select name="property">
+                    {% for (id, name, url) in properties %}
+                    <option value="{{ id }}">{{ name }} ({{ url }})</option>
+                    {% endfor %}
+                </select></p>
                 <p class="note">If you have more than one property associated with your account, select the one that corresponds to your site.</p>
                 <p><strong>Finish linking to Google Analytics</strong></p>
                 <input type="hidden" name="name" value="{{ name }}">
@@ -51,10 +48,21 @@
                 <input type="hidden" name="{{ id }}-domain" value="{{ url }}">
                 <input type="hidden" name="{{ id }}-name" value="{{ name }}">
                 {% endfor %}
-                <p><button>Finish Setup</button></p>
+                <p><button class="button button--green button--large">Finish Setup</button></p>
             </div>
         </form>
         {% endif %}
     </div>
+    <div class="analytics-setup__signin grid__item width-one-half">
+       
+    </div>
+    
+
+
+    
+    <div class="analytics-setup__properties grid__item width-one-half end-row">
+        
+    </div>
+    
 </div>
 {% endblock %}

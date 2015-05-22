@@ -1,0 +1,14 @@
+@mixin allcaps() {
+	text-transform: uppercase;
+	letter-spacing: .1em;
+}
+
+@mixin clearfix() {
+	&:before, &:after {
+		content: " ";
+		display: table;
+	}
+	&:after {
+		clear: both;
+	}
+}

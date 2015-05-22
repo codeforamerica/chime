@@ -1,0 +1,29 @@
+.article-history__main {
+	background-color: $color-grey-50;
+}
+
+.article-history__header {
+	margin-top: 3em;
+}
+
+.history-table {
+	width: 100%;
+	max-width: 800px;
+	th, td {
+		vertical-align: top;
+		text-align: left;
+		padding: 1em .5em;
+	}
+	th {
+		border-bottom: 1px solid $color-grey-600;
+		color: #000;
+	}
+	tr {
+		border-bottom: 1px solid $color-grey-300;
+		color: $color-grey-800;
+	}
+}
+
+.history-table__subject {
+	font-weight: 700;
+}

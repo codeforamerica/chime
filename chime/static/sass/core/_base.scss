@@ -1,0 +1,37 @@
+* {
+	box-sizing: border-box;
+}
+
+html {
+	height: 100%;
+	font-family: $font-sans;
+	font-size: $base-font-size;
+	font-weight: 300;
+}
+
+body {
+	position: absolute;
+	top: 0px;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	min-width: $site-min-width;
+}
+
+p {
+	font-size: $text-font-size;
+}
+
+
+ul, ol {
+	list-style-type: none;
+	padding: 0;
+}
+
+a {
+	text-decoration: none;
+	color: $color-blue-300;
+	&:hover {
+		text-decoration: underline;
+	}
+}

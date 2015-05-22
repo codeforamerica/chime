@@ -1,0 +1,145 @@
+{% extends "base_new.html" %}
+{% block title %}Tasks{% endblock %}
+{% block content %}
+
+<div class="main-content grid col__flex">
+    <div class="grid__item width-one-third">
+        <h2>Articles</h2>
+        <p>Navigate to the article you wish to edit.</p>
+        <div class="task-status">
+                {% set itemvalues = branch.split('/') %}
+                {% set name = itemvalues[0] %}
+                {% set task = itemvalues[1] %}
+
+                <h3>Current task: <strong>{% if task_description %}{{task_description}}{% elif task %}{{task}}{% else %}{{name}}{% endif %}</strong>{% if task_beneficiary %} for <strong>{{task_beneficiary}}</strong>{% endif %}</h3>
+                <ul>
+                    <li>Started by: <strong>{% if author_email %}{{author_email}}{% elif name and task %}{{name}}{% else %}Unknown{% endif %}</strong></li>
+                    {% if task_date_updated %}<li>Updated: <strong>{{task_date_updated}}</strong></li>{% endif %}
+                    {% if task_date_created %}<li>Created: <strong>{{task_date_created}}</strong></li>{% endif %}
+                </ul>
+                <!-- testing to get some buttons... this next line should be  if needs_peer_review and not eligible_peer -->
+                 {% if needs_peer_review or eligible_peer %}
+                <form action="/merge" method="POST">
+                    <input name="branch" value="{{branch}}" type="hidden" />
+                    <label>Task complete?</label>
+                    <a href="mailto:?to=&amp;subject={{review_subject|urlencode}}&amp;body={{review_body|urlencode}}" class="button button-alternative">Submit for review</a>
+                    <!--button name="action" value="merge" type="submit" class="button-alternative" disabled>Publish (awaiting review)</button-->
+                </form>    
+
+                {% elif is_peer_approved and eligible_peer %}
+                <form action="/merge" method="POST">
+                    <input name="branch" value="{{branch}}" type="hidden" />
+                    <label>Ready to go live?</label>
+                    <button name="action" value="merge" type="submit" class="button-alternative">Publish</button>
+                </form>    
+            
+                {% elif is_peer_rejected and eligible_peer %}
+                 
+                <h5>Current feedback</h5>
+                <p>{{rejection_message}}<br>— {{rejecting_peer}}</p>
+                            <!--
+                            <form action="/merge" method="POST">
+                                <input name="branch" value="{{branch}}" type="hidden" />
+                                <button name="action" value="merge" type="submit" class="button-alternative">Publish</button>
+                            </form>    
+                            -->
+                
+                {% elif needs_peer_review and eligible_peer %}
+                 <!-- Reviewer options -->
+                <form action="/review" method="POST">
+                    <input name="branch" value="{{branch}}" type="hidden" />
+                    <label>Does this change achieve <strong>{{task_description}}</strong>{% if task_beneficiary %} for <strong>{{task_beneficiary}}</strong>{% endif %}?</label>
+                    <a class="button-alternative" href="/tree/{{safe_branch}}/review">Not quite</a>
+                    <button name="action" value="approve" type="submit" class="button-alternative">Yes</button>
+                </form>    
+                
+                {% else %}
+                
+                            Needs review? {{ needs_peer_review }}.
+                            Is approved? {{ is_peer_approved }}.
+                            Is rejected? {{ is_peer_rejected }}.
+                            Eligible peer? {{ eligible_peer }}.
+                
+                {% endif %}
+                
+                {% if rejection_messages %}
+                   
+                <h5>All feedback</h5>
+                <ul>
+                    {% for (email, message) in rejection_messages %}
+                    <li>{{message}}<br>— {{email}}</li>
+                    {% endfor %}
+                </ul>
+
+                {% endif %}
+            </div>
+    </div>
+    <div class="grid__item width-two-thirds end-row">
+        <table class="files">
+            <thead>
+                <tr>
+                    <th colspan="4">
+                        
+                        {% for (dir_name, dir_path) in dirs_and_paths %}
+                            / <a href="{{dir_path}}">{{dir_name}}</a>
+                        {% endfor %}
+                    </th>
+                </tr>
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Modified</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>        
+                {% for (edit_path, view_path, item_type, is_editable, modified_date) in list_paths %}
+                <form action="." method="POST">
+                <tr>
+                    <td><a class="{{ item_type }}" href="{{edit_path}}">{{edit_path}}</a>
+                        
+                    </td>
+                    <td>
+                        {%if item_type == "folder" %}folder{% endif %}
+                        {%if item_type == "file" and is_editable %}file{% endif %}
+                        {%if item_type == "image" %}image{% endif %}
+                    </td>
+                    <td>
+                        {%if item_type == "file" or item_type == "image" %}<span>{{modified_date}}</span>{% endif %}
+                    </td>
+                    <td>
+                        {%if item_type == "file" and is_editable %}<a href="{{edit_path}}" class="button" ><img src="/static/images/icons/ionicons/png/512/edit.png" height="20px" alt="Edit" title="Edit" /></a>{% endif %}
+                        {%if item_type == "file" or item_type == "image" %}<a href="{{view_path}}" class="button" target="_blank"><img src="/static/images/icons/ionicons/png/512/eye.png" height="20px" alt="Preview" title="Preview" /></a>{% endif %}
+                        
+                        <button name="action" type="submit" value="Delete" class="button button--red"><img src="/static/images/icons/ionicons/png/512/trash-a.png" alt="Archive" title="Archive" height="20px" style="color:red;" /></button>
+                    </td>
+                </tr>
+                <input name="path" value="{{edit_path}}" type="hidden">
+                </form>
+                {% endfor %}  
+                    
+                    <tr>
+                        <td><b>Create new page<b></td>
+                        <td colspan="3">
+                            <form action="." method="POST">
+                                <input name="path" placeholder="filename.html" type="text" />
+                                <input name="action" type="submit" value="Add" />
+                            </form>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><b>Add a new file<b></td>
+                        <td colspan="2">
+                            <form action="." method="POST" enctype="multipart/form-data" />
+                                <input name="file" type="file" />
+                                <input name="action" type="submit" value="Upload" />
+                            </form>
+                        </td>
+                        <td>&nbsp;</td>
+                    </tr>  
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+

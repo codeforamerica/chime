@@ -1,13 +1,17 @@
+import sys
+from os.path import abspath, join, dirname
+
+repo_root = abspath(join(dirname(__file__), '..'))
+sys.path.insert(0, repo_root)
+
 import unittest
 from unittest import TestCase
-import sys
 from chime import SnsHandler
 from mock import patch, Mock
 from logging import LogRecord, ERROR, exception
 
 FAKE_ZONE = "us-east-1"
 FAKE_ARN = "arn:aws:sns:%s:123456789012:prod-alerts" % FAKE_ZONE
-
 
 class TestSnsHandler(TestCase):
     def exc_info_for(self, exception):
