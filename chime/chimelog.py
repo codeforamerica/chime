@@ -1,31 +1,34 @@
-import logging
-from logging import handlers
+from __future__ import absolute_import
+from logging import getLogger, Handler, Formatter
+Logger = getLogger('chime.chimelog')
+
 import os
+from logging import handlers
 from os.path import join, realpath
-import boto
 from boto import sns
 
-
 class ChimeFileLoggingHandler(handlers.RotatingFileHandler):
-    """Logs to /var/log if available; otherwise to the work dir. """
-    @staticmethod
-    def log_file(config):
-        log_dir = '/var/log/chime'
-        if not os.access(log_dir,os.W_OK | os.X_OK):
-            log_dir = config['WORK_PATH']
-        return join(realpath(log_dir), 'app.log')
+    ''' Logs to app.log in a directory.
+    '''
+    def __init__(self, dirnames):
+        ''' Choose a logfile path based on priority-ordered list of directories.
+        '''
+        writeable_dirs = [d for d in dirnames if os.access(d, os.W_OK | os.X_OK)]
+        
+        if not writeable_dirs:
+            raise RuntimeError('Unable to pick a writeable directory name')
+        
+        logfile_path = join(realpath(writeable_dirs[0]), 'app.log')
+        super(ChimeFileLoggingHandler, self).__init__(logfile_path, 'a', 10000000, 10)
+        self.setFormatter(Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 
-    def __init__(self, config):
-        super(ChimeFileLoggingHandler, self).__init__(self.log_file(config), 'a', 10000000, 10)
-        self.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 
-
-class SnsHandler(logging.Handler):
+class SnsHandler(Handler):
     """Logs to the given Amazon SNS topic; meant for errors."""
 
     def __init__(self, arn, *args, **kwargs):
         super(SnsHandler, self).__init__(*args, **kwargs)
-        self.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+        self.setFormatter(Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 
         self.topic_arn = arn
         region_name = arn.split(':')[3]

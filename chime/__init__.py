@@ -92,7 +92,8 @@ def create_app(environ):
     
     @app.before_first_request
     def before_first_request():
-        logger.addHandler(ChimeFileLoggingHandler(app.config))
+        directories = '/var/log/chime', app.config['WORK_PATH']
+        logger.addHandler(ChimeFileLoggingHandler(directories))
         logger.setLevel(DEBUG if app.debug else INFO)
 
         if app.config.get('SNS_ALERTS_TOPIC'):
