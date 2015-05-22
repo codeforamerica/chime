@@ -1,0 +1,17 @@
+.toolbar--left {
+	text-align: left;
+	.toolbar__item {
+		margin-right: .5em;
+	}
+}
+
+.toolbar--right {
+	text-align: right;
+	.toolbar__item {
+		margin-left: .5em;
+	}
+}
+
+.toolbar__item {
+	display: inline-block;
+}

@@ -1520,7 +1520,7 @@ class TestApp (TestCase):
         ''' Check basic log in / log out flow without talking to Persona.
         '''
         response = self.test_client.get('/')
-        self.assertFalse('Create' in response.data)
+        self.assertFalse('Start' in response.data)
 
         with HTTMock(self.mock_persona_verify):
             response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
@@ -1528,13 +1528,13 @@ class TestApp (TestCase):
 
         with HTTMock(self.auth_csv_example_allowed):
             response = self.test_client.get('/')
-            self.assertTrue('Create' in response.data)
+            self.assertTrue('Start' in response.data)
 
             response = self.test_client.post('/sign-out')
             self.assertEquals(response.status_code, 200)
 
             response = self.test_client.get('/')
-            self.assertFalse('Create' in response.data)
+            self.assertFalse('Start' in response.data)
 
     def test_branches(self):
         ''' Check basic branching functionality.
@@ -1594,10 +1594,8 @@ class TestApp (TestCase):
             self.assertTrue(fake_page_content in response.data)
 
         # Check that English and French forms are both present.
-        self.assertTrue('id="fr-nav" class="nav-tab"' in response.data)
-        self.assertTrue('id="en-nav" class="nav-tab state-active"' in response.data)
-        self.assertTrue('id="French-form" style="display: none"' in response.data)
-        self.assertTrue('id="English-form" style="display: block"' in response.data)
+        self.assertTrue('name="fr-title"' in response.data)
+        self.assertTrue('name="en-title"' in response.data)
 
         # Verify that navigation tabs are in the correct order.
         self.assertTrue(response.data.index('id="fr-nav"') < response.data.index('id="en-nav"'))

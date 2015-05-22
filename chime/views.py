@@ -83,7 +83,7 @@ def index():
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(items=list_items)
 
-    return render_template('index.html', **kwargs)
+    return render_template('activities-list.html', **kwargs)
 
 @app.route('/not-allowed')
 @browserid_hostname_required
@@ -95,10 +95,10 @@ def not_allowed():
     kwargs.update(auth_url=auth_data_href)
 
     if not email:
-        return render_template('not-allowed.html', **kwargs)
+        return render_template('signin.html', **kwargs)
 
     if not is_allowed_email(get_auth_data_file(auth_data_href), email):
-        return render_template('not-allowed.html', **kwargs)
+        return render_template('signin.html', **kwargs)
 
     Logger.info("Redirecting from /not-allowed to /")
     return redirect('/')
@@ -399,7 +399,7 @@ def render_list_dir(repo, branch, path):
         kwargs['is_peer_rejected'] = repo_functions.is_peer_rejected(repo, master_name, branch)
     if kwargs['is_peer_rejected']:
         kwargs['rejecting_peer'], kwargs['rejection_message'] = kwargs['rejection_messages'].pop(0)
-    return render_template('tree-branch-edit-listdir.html', **kwargs)
+    return render_template('articles-list.html', **kwargs)
 
 def render_edit_view(repo, branch, path, file):
     ''' Render the page that lets you edit a file
@@ -438,7 +438,7 @@ def render_edit_view(repo, branch, path, file):
                   app_authorized=app_authorized, author_email=author_email,
                   task_description=task_description, task_beneficiary=task_beneficiary)
     kwargs.update(analytics_dict)
-    return render_template('tree-branch-edit-file.html', **kwargs)
+    return render_template('article-edit.html', **kwargs)
 
 
 @app.route('/tree/<branch>/edit/', methods=['GET'])
@@ -551,7 +551,7 @@ def branch_history(branch, path=None):
                   author_email=author_email, task_description=task_description,
                   task_beneficiary=task_beneficiary)
 
-    return render_template('tree-branch-history.html', **kwargs)
+    return render_template('article-history.html', **kwargs)
 
 @app.route('/tree/<branch>/review/', methods=['GET'])
 @login_required
