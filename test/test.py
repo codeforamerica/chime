@@ -5,9 +5,9 @@ from unittest import main, TestCase
 
 from tempfile import mkdtemp
 from StringIO import StringIO
-from os.path import join, exists, dirname, abspath
+from os.path import join, exists, dirname, abspath, isfile
 from urlparse import urlparse, urljoin
-from os import environ
+from os import environ, remove
 from shutil import rmtree, copytree
 from uuid import uuid4
 from re import search
@@ -1213,13 +1213,13 @@ class TestGoogleApiFunctions (TestCase):
         ''' Make sure that reading from a missing google analytics config file doesn't raise errors.
         '''
         with self.app.app_context():
-            ga_config_path = os.path.join(self.app.config['RUNNING_STATE_DIR'], google_api_functions.GA_CONFIG_FILENAME)
+            ga_config_path = join(self.app.config['RUNNING_STATE_DIR'], google_api_functions.GA_CONFIG_FILENAME)
             # verify that the file exists
-            self.assertTrue(os.path.isfile(ga_config_path))
+            self.assertTrue(isfile(ga_config_path))
             # remove the file
-            os.remove(ga_config_path)
+            remove(ga_config_path)
             # verify that the file's gone
-            self.assertFalse(os.path.isfile(ga_config_path))
+            self.assertFalse(isfile(ga_config_path))
             # ask for the config contents
             ga_config = google_api_functions.read_ga_config(self.app.config['RUNNING_STATE_DIR'])
             # there are four values
@@ -1239,13 +1239,13 @@ class TestGoogleApiFunctions (TestCase):
         ''' Make sure that writing to a missing google analytics config file doesn't raise errors.
         '''
         with self.app.app_context():
-            ga_config_path = os.path.join(self.app.config['RUNNING_STATE_DIR'], google_api_functions.GA_CONFIG_FILENAME)
+            ga_config_path = join(self.app.config['RUNNING_STATE_DIR'], google_api_functions.GA_CONFIG_FILENAME)
             # verify that the file exists
-            self.assertTrue(os.path.isfile(ga_config_path))
+            self.assertTrue(isfile(ga_config_path))
             # remove the file
-            os.remove(ga_config_path)
+            remove(ga_config_path)
             # verify that the file's gone
-            self.assertFalse(os.path.isfile(ga_config_path))
+            self.assertFalse(isfile(ga_config_path))
             # try to write some dummy config values
             write_config = {
                 "access_token": "meowser_token",
@@ -1256,7 +1256,7 @@ class TestGoogleApiFunctions (TestCase):
             # write the config contents
             google_api_functions.write_ga_config(write_config, self.app.config['RUNNING_STATE_DIR'])
             # verify that the file exists
-            self.assertTrue(os.path.isfile(ga_config_path))
+            self.assertTrue(isfile(ga_config_path))
             # ask for the config contents
             ga_config = google_api_functions.read_ga_config(self.app.config['RUNNING_STATE_DIR'])
             # there are four values
@@ -1276,20 +1276,20 @@ class TestGoogleApiFunctions (TestCase):
         ''' Make sure that a malformed google analytics config file doesn't raise errors.
         '''
         with self.app.app_context():
-            ga_config_path = os.path.join(self.app.config['RUNNING_STATE_DIR'], google_api_functions.GA_CONFIG_FILENAME)
+            ga_config_path = join(self.app.config['RUNNING_STATE_DIR'], google_api_functions.GA_CONFIG_FILENAME)
             # verify that the file exists
-            self.assertTrue(os.path.isfile(ga_config_path))
+            self.assertTrue(isfile(ga_config_path))
             # remove the file
-            os.remove(ga_config_path)
+            remove(ga_config_path)
             # verify that the file's gone
-            self.assertFalse(os.path.isfile(ga_config_path))
+            self.assertFalse(isfile(ga_config_path))
             # write some garbage to the file
             with view_functions.WriteLocked(ga_config_path) as iofile:
                 iofile.seek(0)
                 iofile.truncate(0)
                 iofile.write('{"access_token": "meowser_access_token", "refresh_token": "meowser_refre')
             # verify that the file exists
-            self.assertTrue(os.path.isfile(ga_config_path))
+            self.assertTrue(isfile(ga_config_path))
             # ask for the config contents
             ga_config = google_api_functions.read_ga_config(self.app.config['RUNNING_STATE_DIR'])
             # there are four values
@@ -1305,7 +1305,7 @@ class TestGoogleApiFunctions (TestCase):
             self.assertEqual(ga_config['profile_id'], u'')
             self.assertEqual(ga_config['project_domain'], u'')
             # verify that the file exists again
-            self.assertTrue(os.path.isfile(ga_config_path))
+            self.assertTrue(isfile(ga_config_path))
 
     def test_write_unexpected_values_to_config(self):
         ''' Make sure that we can't write unexpected values to the google analytics config file.
