@@ -41,8 +41,7 @@ EDIT_LISTDIR_TASK_DESCRIPTION_PATTERN = '<h3>Current task: <strong>{}</strong>'
 EDIT_LISTDIR_TASK_DESCRIPTION_AND_BENEFICIARY_PATTERN = '<h3>Current task: <strong>{}</strong> for <strong>{}</strong></h3>'
 EDIT_LISTDIR_AUTHOR_EMAIL_PATTERN = '<li>Started by: <strong>{}</strong></li>'
 EDIT_LISTDIR_BRANCH_NAME_PATTERN = '<li class="active-task"><a href="./">{}</a></li>'
-EDIT_LISTDIR_FILE_NAME_PATTERN = '<a class="file" href="{file_name}">{file_name}</a>'
-EDIT_LISTDIR_FOLDER_NAME_PATTERN = '<a class="folder" href="{folder_name}">{folder_name}</a>'
+EDIT_LISTDIR_FILE_NAME_PATTERN = '<a class="{file_type}" href="{file_name}">{file_name}</a>'
 
 class TestJekyll (TestCase):
 
@@ -1579,7 +1578,7 @@ class TestApp (TestCase):
             # get the index page for the branch and verify that the new file is listed
             response = self.test_client.get('/tree/{}/edit/'.format(generated_branch_name), follow_redirects=True)
             self.assertEquals(response.status_code, 200)
-            self.assertTrue(EDIT_LISTDIR_FILE_NAME_PATTERN.format(**{"file_name": fake_page_slug}) in response.data)
+            self.assertTrue(EDIT_LISTDIR_FILE_NAME_PATTERN.format(**{"file_name": fake_page_slug, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data)
 
             # get the edit page for the new file and extract the hexsha value
             response = self.test_client.get('/tree/{}/edit/{}'.format(generated_branch_name, fake_page_path))
@@ -1720,7 +1719,7 @@ class TestApp (TestCase):
 
             response = self.test_client.get('/tree/{}/edit/'.format(generated_branch_name), follow_redirects=True)
             self.assertEquals(response.status_code, 200)
-            self.assertTrue(EDIT_LISTDIR_FILE_NAME_PATTERN.format(**{"file_name": fake_page_slug}) in response.data)
+            self.assertTrue(EDIT_LISTDIR_FILE_NAME_PATTERN.format(**{"file_name": fake_page_slug, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data)
 
             response = self.test_client.get('/tree/{}/edit/{}'.format(generated_branch_name, fake_page_path))
             self.assertEquals(response.status_code, 200)
@@ -1979,7 +1978,7 @@ class TestApp (TestCase):
             # an index page was created inside
             self.assertTrue(exists(idx_location))
             # the directory and index page pass the editable test
-            self.assertTrue(view_functions.is_editable_dir(dir_location), view_functions.ARTICLE_LAYOUT)
+            self.assertTrue(view_functions.is_article_dir(dir_location))
 
     def test_can_rename_editable_directories(self):
         ''' Can rename an editable directory.
@@ -2038,7 +2037,7 @@ class TestApp (TestCase):
             idx_location = u'{}/index.{}'.format(new_dir_location, view_functions.CONTENT_FILE_EXTENSION)
             self.assertTrue(exists(idx_location))
             # the directory and index page pass the editable test
-            self.assertTrue(view_functions.is_editable_dir(new_dir_location, view_functions.ARTICLE_LAYOUT))
+            self.assertTrue(view_functions.is_article_dir(new_dir_location))
 
     def test_cannot_move_a_directory_inside_iteslf(self):
         ''' Can't rename an editable directory in a way which moves it inside itself
@@ -2129,7 +2128,7 @@ class TestApp (TestCase):
             response = self.test_client.get('/tree/{}/edit/'.format(working_branch_name), follow_redirects=True)
             self.assertEquals(response.status_code, 200)
             # verify that the new folder is represented as a file in the HTML
-            self.assertTrue(EDIT_LISTDIR_FILE_NAME_PATTERN.format(**{"file_name": page_slug}) in response.data)
+            self.assertTrue(EDIT_LISTDIR_FILE_NAME_PATTERN.format(**{"file_name": page_slug, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data)
 
 class TestPublishApp (TestCase):
 

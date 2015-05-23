@@ -96,13 +96,11 @@
                 {% for (edit_path, view_path, item_type, is_editable, modified_date) in list_paths %}
                 <form action="." method="POST">
                 <tr>
-                    <td><a class="{{ item_type }}" href="{{edit_path}}">{{edit_path}}</a>
-                        
+                    <td>
+                        <a class="{{item_type}}" href="{{edit_path}}">{% if item_type == "file" and not is_editable %}<em>{{edit_path}}</em>{% else %}{{edit_path}}{% endif %}</a>
                     </td>
                     <td>
-                        {%if item_type == "folder" %}folder{% endif %}
-                        {%if item_type == "file" and is_editable %}file{% endif %}
-                        {%if item_type == "image" %}image{% endif %}
+                        {% if item_type == "file" and not is_editable %}<em>file</em>{% else %}{{item_type}}{% endif %}
                     </td>
                     <td>
                         {%if item_type == "file" or item_type == "image" %}<span>{{modified_date}}</span>{% endif %}

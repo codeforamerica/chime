@@ -21,7 +21,7 @@ from .view_functions import (
     login_required, browserid_hostname_required, synch_required, synched_checkout_required, sorted_paths,
     directory_paths, should_redirect, make_redirect, get_auth_data_file,
     is_allowed_email, common_template_args, log_application_errors,
-    is_editable_dir, CONTENT_FILE_EXTENSION, ARTICLE_LAYOUT)
+    is_article_dir, CONTENT_FILE_EXTENSION, ARTICLE_LAYOUT)
 
 from .google_api_functions import (
     read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens,
@@ -471,7 +471,7 @@ def branch_edit(branch, path=None):
 
     if isdir(full_path):
         # if this is an editable directory (contains only an editable index file), redirect
-        if is_editable_dir(full_path, ARTICLE_LAYOUT):
+        if is_article_dir(full_path):
             index_path = join(path or u'', u'index.{}'.format(CONTENT_FILE_EXTENSION))
             return redirect('/tree/{}/edit/{}'.format(branch_name2path(branch), index_path))
 
@@ -662,7 +662,7 @@ def branch_save(branch, path):
 
             path = new_slug
             # append the index file if it's an editable directory
-            if is_editable_dir(join(repo.working_dir, new_slug), ARTICLE_LAYOUT):
+            if is_article_dir(join(repo.working_dir, new_slug)):
                 path = join(new_slug, u'index.{}'.format(CONTENT_FILE_EXTENSION))
 
     except repo_functions.MergeConflict as conflict:

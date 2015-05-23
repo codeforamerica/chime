@@ -141,36 +141,27 @@ def path_type(file_path):
 def path_display_type(file_path):
     ''' Returns a type matching how the file at the passed path should be displayed
     '''
-    if is_editable_dir(file_path, ARTICLE_LAYOUT):
-        return 'file'
+    if is_article_dir(file_path):
+        return 'article'
 
     return path_type(file_path)
 
 # ONLY CALLED FROM sorted_paths()
-def is_display_editable(file_path, layout=None):
+def is_display_editable(file_path):
     ''' Returns True if the file at the passed path is either an editable file,
         or a directory containing only an editable index file.
     '''
-    # :NOTE: not sending the layout to is_editable keeps legacy files editable
-    return (is_editable(file_path) or is_editable_dir(file_path, layout))
+    return (is_editable(file_path) or is_article_dir(file_path))
 
-def is_editable_dir(file_path, layout=None):
-    ''' Returns true if the file at the passed path is a directory containing only an editable index file with the passed jekyll layout.
+def is_article_dir(file_path):
+    ''' Returns True if the file at the passed path is a directory containing only an index file with an article jekyll layout.
     '''
-    if isdir(file_path):
-        # it's a directory
-        index_path = join(file_path or u'', u'index.{}'.format(CONTENT_FILE_EXTENSION))
-        if not exists(index_path) or not is_editable(index_path, layout):
-            # there's no index file in the directory or it's not editable
-            return False
+    return is_dir_with_layout(file_path, ARTICLE_LAYOUT, True)
 
-        visible_file_count = len([name for name in listdir(file_path) if not FILE_FILTERS_COMPILED.search(name)])
-        if visible_file_count == 0:
-            # there's only an index file in the directory
-            return True
-
-    # it's not a directory
-    return False
+def is_category_dir(file_path):
+    ''' Returns True if the file at the passed path is a directory containing only an index file with a category jekyll layout.
+    '''
+    return is_dir_with_layout(file_path, CATEGORY_LAYOUT, False)
 
 # ONLY CALLED FROM THE TWO FUNCTIONS ABOVE
 def is_editable(file_path, layout=None):
@@ -195,6 +186,25 @@ def is_editable(file_path, layout=None):
     except:
         pass
 
+    return False
+
+def is_dir_with_layout(file_path, layout, only=True):
+    ''' Returns True if the file at the passed path is a directory containing a index file with the passed jekyll layout variable.
+        When only is True, it's required that there be no 'visible' files or directories in the directory.
+    '''
+    if isdir(file_path):
+        # it's a directory
+        index_path = join(file_path or u'', u'index.{}'.format(CONTENT_FILE_EXTENSION))
+        if not exists(index_path) or not is_editable(index_path, layout):
+            # there's no index file in the directory or it's not editable
+            return False
+
+        visible_file_count = len([name for name in listdir(file_path) if not FILE_FILTERS_COMPILED.search(name)])
+        if visible_file_count == 0 or not only:
+            # there's only an index file in the directory or multiple files are okay
+            return True
+
+    # it's not a directory
     return False
 
 def relative_datetime_string(datetime_string):
@@ -494,7 +504,7 @@ def sorted_paths(repo, branch, path=None, showallfiles=False):
     path_pairs = zip(full_paths, view_paths)
 
     # filename, path, type, editable, modified date
-    list_paths = [(basename(edit_path), view_path, path_display_type(edit_path), is_display_editable(edit_path, ARTICLE_LAYOUT), get_relative_date(repo, edit_path))
+    list_paths = [(basename(edit_path), view_path, path_display_type(edit_path), is_display_editable(edit_path), get_relative_date(repo, edit_path))
                   for (edit_path, view_path) in path_pairs if realpath(edit_path) != repo.git_dir]
 
     return list_paths
