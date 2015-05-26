@@ -19,7 +19,7 @@ from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
 from .view_functions import (
     branch_name2path, branch_var2name, get_repo, dos2unix,
     login_required, browserid_hostname_required, synch_required, synched_checkout_required, sorted_paths,
-    directory_paths, should_redirect, make_redirect, get_auth_data_file,
+    directory_paths, directory_columns, should_redirect, make_redirect, get_auth_data_file,
     is_allowed_email, common_template_args, log_application_errors,
     is_article_dir, CONTENT_FILE_EXTENSION, ARTICLE_LAYOUT, CATEGORY_LAYOUT)
 
@@ -376,16 +376,15 @@ def branch_view(branch, path=None):
 
     return Response(open(local_path).read(), 200, {'Content-Type': mime_type})
 
-
-def render_list_dir(repo, branch, path):
+def render_list_dir(repo, branch_name, path):
     # :NOTE: temporarily turning off filtering if 'showallfiles=true' is in the request
     showallfiles = request.args.get('showallfiles') == u'true'
 
     # make the task root path
-    task_root_path = u'/tree/{}/edit/'.format(branch_name2path(branch))
+    task_root_path = u'/tree/{}/edit/'.format(branch_name2path(branch_name))
 
     # get the task metadata; contains 'author_email', 'task_description'
-    task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch)
+    task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch_name)
     author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
     task_description = task_metadata['task_description'] if 'task_description' in task_metadata else u''
     task_beneficiary = task_metadata['task_beneficiary'] if 'task_beneficiary' in task_metadata else u''
@@ -395,14 +394,15 @@ def render_list_dir(repo, branch, path):
     task_date_updated = repo.git.log('--format=%ad', '--date=relative').split('\n')[0]
 
     kwargs = common_template_args(current_app.config, session)
-    kwargs.update(branch=branch, safe_branch=branch_name2path(branch),
-                  dirs_and_paths=directory_paths(branch, path),
-                  list_paths=sorted_paths(repo, branch, path, showallfiles),
+    kwargs.update(branch=branch_name, safe_branch=branch_name2path(branch_name),
+                  dirs_and_paths=directory_paths(branch_name, path),
+                  dir_columns=directory_columns(repo, branch_name, path),
+                  list_paths=sorted_paths(repo, branch_name, path, showallfiles),
                   author_email=author_email, task_description=task_description,
                   task_beneficiary=task_beneficiary, task_date_created=task_date_created,
                   task_date_updated=task_date_updated, task_root_path=task_root_path)
     master_name = current_app.config['default_branch']
-    kwargs['rejection_messages'] = list(repo_functions.get_rejection_messages(repo, master_name, branch))
+    kwargs['rejection_messages'] = list(repo_functions.get_rejection_messages(repo, master_name, branch_name))
     # TODO: the above might throw a GitCommandError if branch is an orphan.
     if current_app.config['SINGLE_USER']:
         kwargs['eligible_peer'] = True
@@ -410,12 +410,13 @@ def render_list_dir(repo, branch, path):
         kwargs['is_peer_approved'] = True
         kwargs['is_peer_rejected'] = False
     else:
-        kwargs['eligible_peer'] = session['email'] != repo_functions.ineligible_peer(repo, master_name, branch)
-        kwargs['needs_peer_review'] = repo_functions.needs_peer_review(repo, master_name, branch)
-        kwargs['is_peer_approved'] = repo_functions.is_peer_approved(repo, master_name, branch)
-        kwargs['is_peer_rejected'] = repo_functions.is_peer_rejected(repo, master_name, branch)
+        kwargs['eligible_peer'] = session['email'] != repo_functions.ineligible_peer(repo, master_name, branch_name)
+        kwargs['needs_peer_review'] = repo_functions.needs_peer_review(repo, master_name, branch_name)
+        kwargs['is_peer_approved'] = repo_functions.is_peer_approved(repo, master_name, branch_name)
+        kwargs['is_peer_rejected'] = repo_functions.is_peer_rejected(repo, master_name, branch_name)
     if kwargs['is_peer_rejected']:
         kwargs['rejecting_peer'], kwargs['rejection_message'] = kwargs['rejection_messages'].pop(0)
+
     return render_template('articles-list.html', **kwargs)
 
 def render_edit_view(repo, branch, path, file):

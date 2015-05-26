@@ -76,6 +76,19 @@
     </div>
     <div class="grid__item width-two-thirds end-row">
         <table class="files">
+            <tbody>
+                <tr>
+                    {% for dir in dir_columns %}
+                    <td>
+                        {% for file in dir %}
+                        {% if file['selected'] == True %}<strong>{% endif %}<a href="{{file['edit_path']}}">{{file['name']}}</a> ({{file['display_type']}}){% if file['selected'] == True %}</strong>{% endif %}<br />
+                        {% endfor %}
+                    </td>
+                    {% endfor %}
+                </tr>
+            </tbody>
+        </table>
+        <table class="files">
             <thead>
                 <tr>
                     <th colspan="4">

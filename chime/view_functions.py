@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from logging import getLogger
 Logger = getLogger('chime.view_functions')
 
-from os.path import join, isdir, realpath, basename, exists
+from os.path import join, isdir, realpath, basename, exists, split, sep
 from datetime import datetime
 from os import listdir, environ
 from urllib import quote, unquote
@@ -492,7 +492,7 @@ def get_relative_date(repo, file_path):
     '''
     return repo.git.log('-1', '--format=%ad', '--date=relative', '--', file_path)
 
-def sorted_paths(repo, branch, path=None, showallfiles=False):
+def sorted_paths(repo, branch_name, path=None, showallfiles=False):
     full_path = join(repo.working_dir, path or '.').rstrip('/')
     all_sorted_files_dirs = sorted(listdir(full_path))
 
@@ -500,7 +500,7 @@ def sorted_paths(repo, branch, path=None, showallfiles=False):
     if showallfiles:
         file_names = all_sorted_files_dirs
 
-    view_paths = [join('/tree/%s/view' % branch_name2path(branch), join(path or '', fn))
+    view_paths = [join('/tree/%s/view' % branch_name2path(branch_name), join(path or '', fn))
                   for fn in file_names]
 
     full_paths = [join(full_path, name) for name in file_names]
@@ -512,16 +512,64 @@ def sorted_paths(repo, branch, path=None, showallfiles=False):
 
     return list_paths
 
-def directory_paths(branch, path=None):
-    root_dir_with_path = [('root', '/tree/{}/edit'.format(branch_name2path(branch)))]
+def directory_paths(branch_name, path=None):
+    ''' Get a list of tuples (directory name, edit path) for the passed path
+        example: passing 'hello/world' will return something like:
+            [
+                ('hello', '/tree/8bf27f6/edit/hello'), ('world', '/tree/8bf27f6/edit/hello/world')
+            ]
+    '''
+    root_dir_with_path = [('root', '/tree/{}/edit'.format(branch_name2path(branch_name)))]
     if path is None:
         return root_dir_with_path
     directory_list = [dir_name for dir_name in path.split('/')
                       if dir_name and not dir_name.startswith('.')]
 
-    dirs_with_paths = [(dir_name, get_directory_path(branch, path, dir_name))
+    dirs_with_paths = [(dir_name, get_directory_path(branch_name, path, dir_name))
                        for dir_name in directory_list]
     return root_dir_with_path + dirs_with_paths
+
+def directory_columns(clone, branch_name, repo_path=None):
+    ''' Get a list of lists of dicts for the passed path, with file listings for each level.
+        example: passing 'hello/world' will return something like:
+            [
+                [
+                    {'name': 'hello', 'edit_path': '/tree/8bf27f6/edit/hello', 'display_type': 'category', 'selected': True},
+                    {'name': 'goodbye', 'edit_path': '/tree/8bf27f6/edit/goodbye', 'display_type': 'category', 'selected': False}
+                ],
+                [
+                    {'name': 'world', 'edit_path': '/tree/8bf27f6/edit/hello/world', 'display_type': 'category', 'selected': True},
+                    {'name': 'moon', 'edit_path': '/tree/8bf27f6/edit/hello/moon', 'display_type': 'category', 'selected': False}
+                ]
+            ]
+    '''
+    repo_path = repo_path or u''
+
+    # Build a full directory path.
+    head, dirs = split(repo_path)[0], []
+
+    while head:
+        head, dir = split(head)
+        dirs.insert(0, dir)
+
+    if '..' in dirs:
+        raise Exception('Invalid path component.')
+
+    # make sure we get the root dir
+    dirs.insert(0, u'')
+
+    # Create the listings
+    edit_path_root = u'/tree/{}/edit'.format(branch_name)
+    dir_listings = []
+    for i in range(len(dirs) - 1):
+        current_dir = dirs[i + 1]
+        current_path = sep.join(dirs[1:i + 1])
+        current_edit_path = join(edit_path_root, current_path)
+        files = sorted_paths(clone, branch_name, current_path)
+        listing = [{'name': item[0], 'edit_path': join(current_edit_path, item[0]), 'display_type': item[2], 'selected': (current_dir == item[0])} for item in files]
+        dir_listings.append(listing)
+
+    return dir_listings
 
 def get_directory_path(branch, path, dir_name):
     dir_index = path.find(dir_name + '/')
