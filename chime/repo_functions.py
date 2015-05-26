@@ -386,7 +386,7 @@ def make_working_file(clone, dir, path):
                include existing or new directories
     '''
     repo_path = join((dir or '').rstrip('/'), path)
-    real_path = join(clone.working_dir, repo_path)
+    full_path = join(clone.working_dir, repo_path)
 
     #
     # Build a full directory path.
@@ -409,7 +409,7 @@ def make_working_file(clone, dir, path):
         if not isdir(dir_path):
             mkdir(dir_path)
 
-    return repo_path, real_path
+    return repo_path, full_path
 
 def sync_with_default_and_upstream_branches(clone, sync_branch_name):
     ''' Sync the passed branch with default and upstream branches.
