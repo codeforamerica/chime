@@ -1,3 +1,4 @@
+
 from os.path import exists, isdir, join
 from os import rmdir, remove
 
@@ -21,7 +22,7 @@ def create_new_page(clone, path, file_name, front, body):
     file_path, full_path = repo_functions.make_working_file(clone, path, file_name)
 
     if exists(full_path):
-        raise Exception()
+        raise Exception(u'create_new_page: path already exists!')
 
     with open(full_path, 'w') as file:
         dump_jekyll_doc(front, body, file)

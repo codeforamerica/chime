@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from logging import getLogger
 Logger = getLogger('chime.views')
 
@@ -19,13 +20,16 @@ from .view_functions import (
     branch_name2path, branch_var2name, get_repo, dos2unix,
     login_required, browserid_hostname_required, synch_required, synched_checkout_required, sorted_paths,
     directory_paths, should_redirect, make_redirect, get_auth_data_file,
-    is_allowed_email, common_template_args, is_editable_dir, CONTENT_FILE_EXTENSION)
+    is_allowed_email, common_template_args, log_application_errors,
+    is_editable_dir, CONTENT_FILE_EXTENSION
+    )
 from .google_api_functions import (
     read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens,
     authorize_google, get_google_personal_info, get_google_analytics_properties,
     fetch_google_analytics_for_page)
 
 @app.route('/')
+@log_application_errors
 @login_required
 @synch_required
 def index():
@@ -86,6 +90,7 @@ def index():
     return render_template('activities-list.html', **kwargs)
 
 @app.route('/not-allowed')
+@log_application_errors
 @browserid_hostname_required
 def not_allowed():
     email = session.get('email', None)
@@ -104,6 +109,7 @@ def not_allowed():
     return redirect('/')
 
 @app.route('/sign-in', methods=['POST'])
+@log_application_errors
 def sign_in():
     posted = post('https://verifier.login.persona.org/verify',
                   data=dict(assertion=request.form.get('assertion'),
@@ -118,6 +124,7 @@ def sign_in():
     return Response('Failed', status=400)
 
 @app.route('/sign-out', methods=['POST'])
+@log_application_errors
 def sign_out():
     if 'email' in session:
         session.pop('email')
@@ -125,6 +132,7 @@ def sign_out():
     return 'OK'
 
 @app.route('/setup', methods=['GET'])
+@log_application_errors
 @login_required
 def setup():
     ''' Render a form that steps through application setup (currently only google analytics).
@@ -172,6 +180,7 @@ def setup():
     return render_template('authorize.html', **values)
 
 @app.route('/callback')
+@log_application_errors
 def callback():
     ''' Complete Google authentication, get web properties, and show the form.
     '''
@@ -191,12 +200,14 @@ def callback():
     return redirect('/setup')
 
 @app.route('/authorize', methods=['GET', 'POST'])
+@log_application_errors
 def authorize():
     ''' Start Google authentication.
     '''
     return authorize_google()
 
 @app.route('/authorization-complete', methods=['POST'])
+@log_application_errors
 def authorization_complete():
     profile_id = request.form.get('property')
     project_domain = request.form.get('{}-domain'.format(profile_id))
@@ -218,11 +229,13 @@ def authorization_complete():
     return render_template('authorization-complete.html', **values)
 
 @app.route('/authorization-failed')
+@log_application_errors
 def authorization_failed():
     kwargs = common_template_args(current_app.config, session)
     return render_template('authorization-failed.html', **kwargs)
 
 @app.route('/start', methods=['POST'])
+@log_application_errors
 @login_required
 @synch_required
 def start_branch():
@@ -236,6 +249,7 @@ def start_branch():
     return redirect('/tree/{}/edit/'.format(safe_branch), code=303)
 
 @app.route('/merge', methods=['POST'])
+@log_application_errors
 @login_required
 @synch_required
 def merge_branch():
@@ -283,6 +297,7 @@ def merge_branch():
         return redirect('/')
 
 @app.route('/review', methods=['POST'])
+@log_application_errors
 @login_required
 def review_branch():
     repo = get_repo(current_app)
@@ -324,6 +339,7 @@ def review_branch():
         return redirect('/tree/%s/edit/' % safe_branch, code=303)
 
 @app.route('/checkouts/<ref>.zip')
+@log_application_errors
 @login_required
 @synch_required
 def get_checkout(ref):
@@ -337,6 +353,7 @@ def get_checkout(ref):
 
 @app.route('/tree/<branch>/view/', methods=['GET'])
 @app.route('/tree/<branch>/view/<path:path>', methods=['GET'])
+@log_application_errors
 @login_required
 @synched_checkout_required
 def branch_view(branch, path=None):
@@ -443,6 +460,7 @@ def render_edit_view(repo, branch, path, file):
 
 @app.route('/tree/<branch>/edit/', methods=['GET'])
 @app.route('/tree/<branch>/edit/<path:path>', methods=['GET'])
+@log_application_errors
 @login_required
 @synched_checkout_required
 def branch_edit(branch, path=None):
@@ -469,6 +487,7 @@ def branch_edit(branch, path=None):
 
 @app.route('/tree/<branch>/edit/', methods=['POST'])
 @app.route('/tree/<branch>/edit/<path:path>', methods=['POST'])
+@log_application_errors
 @login_required
 @synched_checkout_required
 def branch_edit_file(branch, path=None):
@@ -510,6 +529,7 @@ def branch_edit_file(branch, path=None):
 
 @app.route('/tree/<branch>/history/', methods=['GET'])
 @app.route('/tree/<branch>/history/<path:path>', methods=['GET'])
+@log_application_errors
 @login_required
 @synched_checkout_required
 def branch_history(branch, path=None):
@@ -555,6 +575,7 @@ def branch_history(branch, path=None):
     return render_template('article-history.html', **kwargs)
 
 @app.route('/tree/<branch>/review/', methods=['GET'])
+@log_application_errors
 @login_required
 @synched_checkout_required
 def branch_review(branch):
@@ -577,6 +598,7 @@ def branch_review(branch):
     return render_template('tree-branch-review.html', **kwargs)
 
 @app.route('/tree/<branch>/save/<path:path>', methods=['POST'])
+@log_application_errors
 @login_required
 @synch_required
 def branch_save(branch, path):
@@ -656,6 +678,7 @@ def branch_save(branch, path):
     return redirect('/tree/{}/edit/{}'.format(safe_branch, path), code=303)
 
 @app.route('/.well-known/deploy-key.txt')
+@log_application_errors
 def deploy_key():
     ''' Return contents of public deploy key file.
     '''
@@ -666,6 +689,7 @@ def deploy_key():
         return Response('Not found.', 404, content_type='text/plain')
 
 @app.route('/<path:path>')
+@log_application_errors
 def all_other_paths(path):
     '''
     '''

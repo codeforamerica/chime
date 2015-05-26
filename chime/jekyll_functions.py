@@ -22,6 +22,8 @@ Jekyll likes to have the "---" document separator at the top:
     >>> file.read(4) == _marker
     True
 '''
+from __future__ import absolute_import
+
 from os.path import join, exists
 from collections import OrderedDict
 import yaml
@@ -126,6 +128,7 @@ def dump_jekyll_doc(front_matter, content, file):
     yaml.dump(front_matter, file, **dump_kwargs)
 
     # Write content to the end of the file.
+    content = content or u''
     file.write(_marker)
     file.write(content.encode('utf8'))
 

@@ -1,4 +1,5 @@
 # -- coding: utf-8 --
+from __future__ import absolute_import
 import os
 import logging
 from os import mkdir
@@ -7,8 +8,9 @@ from itertools import chain
 from git.cmd import GitCommandError
 import hashlib
 import yaml
-import edit_functions
 from re import match
+
+from . import edit_functions
 
 TASK_METADATA_FILENAME = u'_task.yml'
 BRANCH_NAME_LENGTH = 7
