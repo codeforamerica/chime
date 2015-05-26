@@ -1,0 +1,30 @@
+.dropdown-nav {
+	position: relative;
+	&:hover {
+		.dropdown-nav__box {
+			display: block;
+		}
+	}	
+}
+
+.dropdown-nav__box {
+	display: none;
+	position: absolute;
+	background-color: #fff;
+	box-shadow: 0 0 3px rgba(#000, .15);
+	color: $color-grey-700;
+	z-index: 2;
+	padding: 1em;
+	// Provides an invisible hover area so popup stays visible
+	// when cursor is between link and popup.
+	&:before {
+		content: '';
+		display: block;
+		position: absolute;
+		top: -1em;
+		left: 0;
+		right: 0;
+		height: 1em;
+		background-color: red;
+	}
+}

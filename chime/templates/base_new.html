@@ -17,9 +17,12 @@
         <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     </head>
     <body class="{% block body_class %}{% endblock %} col">
-      {% include 'includes/global-header.html' %}
 
-      {% include 'includes/feedback-messages.html' %}
+    {% block global_header %}
+      {% from 'macros/macros.html' import globalHeader as globalHeader %}
+      {{ globalHeader(breadcrumb_items = breadcrumb_items, email=email, task_description=task_description) }}
+    {% endblock %}
+
 
      <!-- content -->
         {% block content %}{% endblock %}

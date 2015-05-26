@@ -527,6 +527,7 @@ def branch_history(branch, path=None):
 
     view_path = join('/tree/%s/view' % branch_name2path(branch), path)
     edit_path = join('/tree/%s/edit' % branch_name2path(branch), path)
+    task_root_path = u'/tree/{}/edit/'.format(branch_name2path(branch))
     languages = load_languages(repo.working_dir)
 
     app_authorized = False
@@ -549,7 +550,7 @@ def branch_history(branch, path=None):
                   history=history, view_path=view_path, edit_path=edit_path,
                   path=path, languages=languages, app_authorized=app_authorized,
                   author_email=author_email, task_description=task_description,
-                  task_beneficiary=task_beneficiary)
+                  task_beneficiary=task_beneficiary, task_root_path=task_root_path)
 
     return render_template('article-history.html', **kwargs)
 
