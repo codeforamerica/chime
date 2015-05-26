@@ -23,6 +23,8 @@
       {{ globalHeader(breadcrumb_items = breadcrumb_items, email=email, task_description=task_description, author_email=author_email, branch=branch, task_date_updated=task_date_updated, task_date_created=task_date_created) }}
     {% endblock %}
 
+    {% include 'includes/feedback-messages.html' %}
+
 
      <!-- content -->
         {% block content %}{% endblock %}
