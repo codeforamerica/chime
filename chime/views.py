@@ -425,8 +425,7 @@ def render_edit_view(repo, branch, path, file):
     languages = load_languages(repo.working_dir)
     url_slug = path
     # strip the index file from the slug if appropriate
-    if search(r'\/index.{}$'.format(CONTENT_FILE_EXTENSION), path):
-        url_slug = sub(ur'index.{}$'.format(CONTENT_FILE_EXTENSION), u'', url_slug)
+    url_slug = sub(ur'index.{}$'.format(CONTENT_FILE_EXTENSION), u'', url_slug)
     view_path = join('/tree/{}/view'.format(branch_name2path(branch)), path)
     history_path = join('/tree/{}/history'.format(branch_name2path(branch)), path)
     task_root_path = u'/tree/{}/edit/'.format(branch_name2path(branch))
