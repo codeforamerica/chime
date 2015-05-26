@@ -1,23 +1,30 @@
-.dropdown-nav {
+.dropdown {
 	position: relative;
+	text-align: left;
 	&:hover {
-		.dropdown-nav__box {
+		.dropdown__popup {
 			display: block;
+			opacity: 1;
 		}
 	}	
 }
 
-.dropdown-nav__box {
-	display: none;
+.dropdown__popup {
+	@include transition(opacity .2s ease-out);
+	@include clearfix();
 	position: absolute;
 	background-color: #fff;
-	box-shadow: 0 0 3px rgba(#000, .15);
+	box-shadow: 0 0 5px rgba(#000, .2);
 	color: $color-grey-700;
 	z-index: 2;
 	padding: 1em;
+	display: none;
+	opacity: 0;
+	border-radius: $border-radius;
+
 	// Provides an invisible hover area so popup stays visible
 	// when cursor is between link and popup.
-	&:before {
+	&:after {
 		content: '';
 		display: block;
 		position: absolute;
@@ -25,6 +32,15 @@
 		left: 0;
 		right: 0;
 		height: 1em;
-		background-color: red;
+		background-color: transparent;
+	}
+	&:before {
+		@include triangle(top, #fff, 5px);
+		position: absolute;
+		left: 1em;
+		bottom: 100%;
+	}
+	> li {
+		margin: .5em 0;
 	}
 }

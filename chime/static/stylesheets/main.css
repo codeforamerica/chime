@@ -1060,26 +1060,42 @@ input[type="submit"]:disabled:hover {
 }
 
 /* line 1, ../sass/components/_dropdown-nav.scss */
-.dropdown-nav {
+.dropdown {
   position: relative;
+  text-align: left;
 }
-/* line 4, ../sass/components/_dropdown-nav.scss */
-.dropdown-nav:hover .dropdown-nav__box {
+/* line 5, ../sass/components/_dropdown-nav.scss */
+.dropdown:hover .dropdown__popup {
   display: block;
+  opacity: 1;
 }
 
-/* line 10, ../sass/components/_dropdown-nav.scss */
-.dropdown-nav__box {
-  display: none;
+/* line 12, ../sass/components/_dropdown-nav.scss */
+.dropdown__popup {
+  -webkit-transition: opacity 0.2s ease-out;
+  -moz-transition: opacity 0.2s ease-out;
+  transition: opacity 0.2s ease-out;
   position: absolute;
   background-color: #fff;
-  box-shadow: 0 0 3px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
   color: #616161;
   z-index: 2;
   padding: 1em;
+  display: none;
+  opacity: 0;
+  border-radius: 3px;
 }
-/* line 20, ../sass/components/_dropdown-nav.scss */
-.dropdown-nav__box:before {
+/* line 7, ../sass/core/_utilities.scss */
+.dropdown__popup:before, .dropdown__popup:after {
+  content: " ";
+  display: table;
+}
+/* line 11, ../sass/core/_utilities.scss */
+.dropdown__popup:after {
+  clear: both;
+}
+/* line 27, ../sass/components/_dropdown-nav.scss */
+.dropdown__popup:after {
   content: '';
   display: block;
   position: absolute;
@@ -1087,7 +1103,24 @@ input[type="submit"]:disabled:hover {
   left: 0;
   right: 0;
   height: 1em;
-  background-color: red;
+  background-color: transparent;
+}
+/* line 37, ../sass/components/_dropdown-nav.scss */
+.dropdown__popup:before {
+  width: 0;
+  height: 0;
+  content: '';
+  z-index: 2;
+  border-bottom: 7.5px solid #fff;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  position: absolute;
+  left: 1em;
+  bottom: 100%;
+}
+/* line 43, ../sass/components/_dropdown-nav.scss */
+.dropdown__popup > li {
+  margin: .5em 0;
 }
 
 /*------------------------------------*\

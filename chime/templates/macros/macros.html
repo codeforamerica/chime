@@ -1,4 +1,4 @@
-{% macro globalHeader(breadcrumb_items=[], email="", task_description="") -%}
+{% macro globalHeader(breadcrumb_items=[], email, task_description, author_email, branch, task_date_updated, task_date_created, needs_peer_review, eligible_peer, is_peer_approved, is_peer_rejected) -%}
 <div class="global-header  row">
   <div class="row__left">
 
@@ -11,12 +11,18 @@
   </div>
   <nav class="global-header__nav  row__right  toolbar--right">
     {% if task_description %}
-      <a href="#" class="toolbar__item dropdown-nav">
-        <span class="dropdown-nav__link">Current Activity: {{ task_description | title }}</span>
-        <ul class="dropdown-nav__box">
-          <li>Submit for Pull Request</li>
+      <div href="#" class="toolbar__item dropdown">
+        <span class="dropdown__link">Current Activity: {{ task_description | title }}</span>
+        <ul class="dropdown__popup">
+          {% set itemvalues = branch.split('/') %}
+          {% set name = itemvalues[0] %}
+          {% set task = itemvalues[1] %}
+
+          <li>Started by: <b>{{ author_email }}</b></li>
+
+          <li><a href="#" class="button">Submit for Pull Request</a></li>
         </ul>
-      </a>
+      </div>
     {% endif %}
     <a class="toolbar__item" href="{{ live_site_url }}">Visit site</a>
     {% if email %}
