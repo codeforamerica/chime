@@ -535,7 +535,7 @@ def directory_paths(branch_name, path=None):
 
 def directory_columns(clone, branch_name, repo_path=None):
     ''' Get a list of lists of dicts for the passed path, with file listings for each level.
-        example: passing 'hello/world' will return something like:
+        example: passing 'hello/world/wide' will return something like:
             [
                 [
                     {'name': 'hello', 'edit_path': '/tree/8bf27f6/edit/hello', 'display_type': 'category', 'selected': True},

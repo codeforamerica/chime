@@ -5,7 +5,7 @@ from unittest import main, TestCase
 
 from tempfile import mkdtemp
 from StringIO import StringIO
-from os.path import join, exists, dirname, isdir, abspath, isfile
+from os.path import join, exists, dirname, isdir, abspath, isfile, sep
 from urlparse import urlparse, urljoin
 from os import environ, remove
 from shutil import rmtree, copytree
@@ -1977,6 +1977,66 @@ class TestApp (TestCase):
             self.assertTrue(exists(idx_location))
             # the directory and index page pass the category test
             self.assertTrue(view_functions.is_category_dir(dir_location))
+
+    def test_column_navigation_structure(self):
+        ''' The column navigation structure matches the structure of the site.
+        '''
+        fake_author_email = u'erica@example.com'
+        with HTTMock(self.mock_persona_verify):
+            self.test_client.post('/sign-in', data={'email': fake_author_email})
+
+        with HTTMock(self.auth_csv_example_allowed):
+            # start a new branch via the http interface
+            # invokes view_functions/get_repo which creates a clone
+            task_description = u'force a clam shell open'
+            task_beneficiary = u'starfish'
+
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            self.assertTrue(working_branch.name in self.clone1.branches)
+            self.assertTrue(working_branch.name in self.origin.branches)
+            working_branch_name = working_branch.name
+            working_branch.checkout()
+
+            # create some nested categories
+            slug_hello = u'hello'
+            response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
+                                             data={'action': 'add category', 'path': slug_hello},
+                                             follow_redirects=True)
+            self.assertEquals(response.status_code, 200)
+
+            slug_world = u'world'
+            response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, slug_hello),
+                                             data={'action': 'add category', 'path': slug_world},
+                                             follow_redirects=True)
+            self.assertEquals(response.status_code, 200)
+
+            slug_how = u'how'
+            response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, sep.join([slug_hello, slug_world])),
+                                             data={'action': 'add category', 'path': slug_how},
+                                             follow_redirects=True)
+            self.assertEquals(response.status_code, 200)
+
+            slug_are = u'are'
+            response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, sep.join([slug_hello, slug_world, slug_how])),
+                                             data={'action': 'add category', 'path': slug_are},
+                                             follow_redirects=True)
+            self.assertEquals(response.status_code, 200)
+
+            # pull the changes
+            self.clone1.git.pull('origin', working_branch_name)
+
+            # get the columns
+            dir_columns = view_functions.directory_columns(self.clone1, working_branch_name, sep.join([slug_hello, slug_world, slug_how, slug_are]))
+
+            # test that the contents match our expectations
+            self.assertEquals(len(dir_columns), 3)
+            self.assertEquals(len(dir_columns[0]), 5)
+            expected = {'hello': u'category', 'index.md': u'file', 'other': u'folder', 'other.md': u'file', 'sub': u'folder'}
+            for item in dir_columns[0]:
+                self.assertTrue(item['name'] in expected)
+                self.assertTrue(expected[item['name']] == item['display_type'])
+            self.assertTrue(dir_columns[1][0]['name'] == slug_world)
+            self.assertTrue(dir_columns[2][0]['name'] == slug_how)
 
     def test_create_page_creates_directory_containing_index(self):
         ''' Creating a new page creates a directory with an editable index file inside.
