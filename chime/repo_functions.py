@@ -1,9 +1,8 @@
 # -- coding: utf-8 --
 from __future__ import absolute_import
-import os
 import logging
 from os import mkdir
-from os.path import join, split, exists, isdir
+from os.path import join, split, exists, isdir, sep
 from itertools import chain
 from git.cmd import GitCommandError
 import hashlib
@@ -398,13 +397,13 @@ def make_working_file(clone, dir, path):
         dirs.insert(0, dir)
 
     if '..' in dirs:
-        raise Exception('None of that now')
+        raise Exception('Invalid path component.')
 
     #
     # Create directory tree.
     #
     for i in range(len(dirs)):
-        dir_path = join(clone.working_dir, os.sep.join(dirs[:i + 1]))
+        dir_path = join(clone.working_dir, sep.join(dirs[:i + 1]))
 
         if not isdir(dir_path):
             mkdir(dir_path)
