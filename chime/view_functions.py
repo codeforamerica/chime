@@ -144,6 +144,9 @@ def path_display_type(file_path):
     if is_article_dir(file_path):
         return 'article'
 
+    if is_category_dir(file_path):
+        return 'category'
+
     return path_type(file_path)
 
 # ONLY CALLED FROM sorted_paths()

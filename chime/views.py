@@ -21,7 +21,7 @@ from .view_functions import (
     login_required, browserid_hostname_required, synch_required, synched_checkout_required, sorted_paths,
     directory_paths, should_redirect, make_redirect, get_auth_data_file,
     is_allowed_email, common_template_args, log_application_errors,
-    is_article_dir, CONTENT_FILE_EXTENSION, ARTICLE_LAYOUT)
+    is_article_dir, CONTENT_FILE_EXTENSION, ARTICLE_LAYOUT, CATEGORY_LAYOUT)
 
 from .google_api_functions import (
     read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens,
@@ -500,20 +500,31 @@ def branch_edit_file(branch, path=None):
     if action == 'upload' and 'file' in request.files:
         file_path = edit_functions.upload_new_file(r, path, request.files['file'])
         message = 'Uploaded new file "%s"' % file_path
-        path_303 = path or ''
+        redirect_path = path or ''
 
-    elif action == 'add' and 'path' in request.form:
+    elif action == 'add article' and 'path' in request.form:
         name = u'{}/index.{}'.format(splitext(request.form['path'])[0], CONTENT_FILE_EXTENSION)
 
         front, body = dict(title=u'', layout=ARTICLE_LAYOUT), u''
         file_path = edit_functions.create_new_page(r, path, name, front, body)
-        message = 'Created new file "%s"' % file_path
-        path_303 = file_path
+        message = 'Created new page "%s"' % file_path
+        redirect_path = file_path
+
+    elif action == 'add category' and 'path' in request.form:
+        # sanitize the category name: strip extensions, replace forward slashes with dashes
+        category_name = sub(ur'\/', u'-', splitext(request.form['path'])[0])
+        name = u'{}/index.{}'.format(category_name, CONTENT_FILE_EXTENSION)
+
+        front, body = dict(title=u'', layout=CATEGORY_LAYOUT), u''
+        file_path = edit_functions.create_new_page(r, path, name, front, body)
+        message = 'Created new category "%s"' % file_path
+        # strip the index file from the redirect path
+        redirect_path = sub(r'index.{}$'.format(CONTENT_FILE_EXTENSION), '', file_path)
 
     elif action == 'delete' and 'path' in request.form:
         file_path, do_save = edit_functions.delete_file(r, path, request.form['path'])
         message = 'Deleted file "%s"' % file_path
-        path_303 = path or ''
+        redirect_path = path or ''
 
     else:
         raise Exception()
@@ -525,7 +536,7 @@ def branch_edit_file(branch, path=None):
 
     safe_branch = branch_name2path(branch_var2name(branch))
 
-    return redirect('/tree/%s/edit/%s' % (safe_branch, path_303), code=303)
+    return redirect('/tree/%s/edit/%s' % (safe_branch, redirect_path), code=303)
 
 @app.route('/tree/<branch>/history/', methods=['GET'])
 @app.route('/tree/<branch>/history/<path:path>', methods=['GET'])

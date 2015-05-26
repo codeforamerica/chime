@@ -117,11 +117,20 @@
                 {% endfor %}  
                     
                     <tr>
-                        <td><b>Create new page<b></td>
+                        <td><b>Create new article<b></td>
                         <td colspan="3">
                             <form action="." method="POST">
                                 <input name="path" placeholder="article name" type="text" />
-                                <input name="action" type="submit" value="Add" />
+                                <input name="action" type="submit" value="Add Article" />
+                            </form>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><b>Create new category<b></td>
+                        <td colspan="3">
+                            <form action="." method="POST">
+                                <input name="path" placeholder="category name" type="text" />
+                                <input name="action" type="submit" value="Add Category" />
                             </form>
                         </td>
                     </tr>
