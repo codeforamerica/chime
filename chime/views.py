@@ -507,7 +507,7 @@ def branch_edit_file(branch, path=None):
 
         front, body = dict(title=u'', layout=ARTICLE_LAYOUT), u''
         file_path = edit_functions.create_new_page(r, path, name, front, body)
-        message = 'Created new page "%s"' % file_path
+        message = 'Created new article "%s"' % file_path
         redirect_path = file_path
 
     elif action == 'add category' and 'path' in request.form:

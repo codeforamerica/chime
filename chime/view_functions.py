@@ -162,7 +162,7 @@ def is_article_dir(file_path):
     return is_dir_with_layout(file_path, ARTICLE_LAYOUT, True)
 
 def is_category_dir(file_path):
-    ''' Returns True if the file at the passed path is a directory containing only an index file with a category jekyll layout.
+    ''' Returns True if the file at the passed path is a directory containing an index file with a category jekyll layout.
     '''
     return is_dir_with_layout(file_path, CATEGORY_LAYOUT, False)
 
@@ -202,9 +202,13 @@ def is_dir_with_layout(file_path, layout, only=True):
             # there's no index file in the directory or it's not editable
             return False
 
+        if not only:
+            # it doesn't matter how many files are in the directory
+            return True
+
         visible_file_count = len([name for name in listdir(file_path) if not FILE_FILTERS_COMPILED.search(name)])
-        if visible_file_count == 0 or not only:
-            # there's only an index file in the directory or multiple files are okay
+        if visible_file_count == 0:
+            # there's only an index file in the directory
             return True
 
     # it's not a directory
