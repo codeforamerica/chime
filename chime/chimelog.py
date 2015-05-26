@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from logging import getLogger, Handler, Formatter
+
 Logger = getLogger('chime.chimelog')
 
 import os
@@ -24,12 +25,19 @@ def get_filehandler(dirnames):
     
     return handler
 
+
+FORMAT_STRING = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+class ChimeErrorReportFormatter(Formatter):
+    def __init__(self):
+        super(ChimeErrorReportFormatter, self).__init__(FORMAT_STRING)
+
+
 class SnsHandler(Handler):
     """Logs to the given Amazon SNS topic; meant for errors."""
 
     def __init__(self, arn, *args, **kwargs):
         super(SnsHandler, self).__init__(*args, **kwargs)
-        self.setFormatter(Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+        self.setFormatter(ChimeErrorReportFormatter())
 
         self.topic_arn = arn
         region_name = arn.split(':')[3]
