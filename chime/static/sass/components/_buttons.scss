@@ -65,6 +65,20 @@
 	}
 }
 
+.button--orange {
+	border: 1px solid $color-orange-400;
+	background-color: $color-orange-400;
+	color: #fff;
+	&:hover {
+		border-color: $color-orange-500;
+		background-color: $color-orange-500;
+	}
+	&:active, &.is-selected {
+		border-color: $color-orange-700;
+		background-color: $color-orange-700;
+	}
+}
+
 .button--outline {
 	@include transition(all ease-out .2s);
 	background: transparent;
