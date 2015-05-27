@@ -43,8 +43,7 @@ class SnsHandler(Handler):
         region_name = arn.split(':')[3]
         self.sns_connection = self.make_connection(region_name)
 
-    @staticmethod
-    def make_connection(region_name):
+    def make_connection(self, region_name):
         return sns.connect_to_region(region_name)
 
     def emit(self, record):
