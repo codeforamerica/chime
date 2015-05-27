@@ -492,9 +492,15 @@ def add_article_or_category(repo, path, action, request_path):
     cat_front = dict(title=u'', layout=CATEGORY_LAYOUT)
     body = u''
 
+    # create and commit intermediate categories
     if u'/' in request_path:
-        index_filename = u'index.{}'.format(CONTENT_FILE_EXTENSION)
-        edit_functions.create_path_to_page(repo, path, request_path, cat_front, body, index_filename)
+        filename = u'index.{}'.format(CONTENT_FILE_EXTENSION)
+        page_paths = edit_functions.create_path_to_page(repo, path, request_path, cat_front, body, filename)
+        master_name = current_app.config['default_branch']
+        for new_path in page_paths:
+            message = 'Created new category "{}"'.format(new_path)
+            Logger.debug('save')
+            repo_functions.save_working_file(repo, new_path, message, repo.commit().hexsha, master_name)
 
     name = u'{}/index.{}'.format(splitext(request_path)[0], CONTENT_FILE_EXTENSION)
 
@@ -524,16 +530,17 @@ def branch_edit_file(branch, path=None):
 
     if action == 'upload' and 'file' in request.files:
         file_path = edit_functions.upload_new_file(repo, path, request.files['file'])
-        message = 'Uploaded new file "%s"' % file_path
+        message = 'Uploaded new file "{}"'.format(file_path)
         redirect_path = path or ''
 
     elif (action == 'add article' or action == 'add category') and 'path' in request.form:
         message, file_path, redirect_path = add_article_or_category(repo, path, action, request.form['path'])
+        commit = repo.commit()
 
     elif action == 'delete' and 'path' in request.form:
         request_path = request.form['path']
         file_path, do_save = edit_functions.delete_file(repo, path, request_path)
-        message = 'Deleted file "%s"' % file_path
+        message = 'Deleted file "{}"'.format(file_path)
         redirect_path = path or ''
 
     else:

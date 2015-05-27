@@ -16,7 +16,7 @@ def update_page(clone, file_path, front, body):
     with open(full_path, 'w') as file:
         dump_jekyll_doc(front, body, file)
 
-def create_path_to_page(clone, dir_path, file_path, front, body, index_filename):
+def create_path_to_page(clone, dir_path, file_path, front, body, filename):
     ''' Build non-existing directories in file_path as category directories.
     '''
     # Build a full directory path.
@@ -30,8 +30,12 @@ def create_path_to_page(clone, dir_path, file_path, front, body, index_filename)
         raise Exception('Invalid path component.')
 
     # Build the category directory tree.
+    file_paths = []
     for i in range(len(dirs)):
-        create_new_page(clone, dir_path, join(sep.join(dirs[:i + 1]), index_filename), front, body)
+        file_path = create_new_page(clone, dir_path, join(sep.join(dirs[:i + 1]), filename), front, body)
+        file_paths.append(file_path)
+
+    return file_paths
 
 def create_new_page(clone, dir_path, file_path, front, body):
     ''' Create a new Jekyll page in the working directory, return its path.
