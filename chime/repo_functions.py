@@ -373,18 +373,18 @@ def clobber_default_branch(clone, default_branch_name, working_branch_name):
     clone.remotes.origin.push(':' + working_branch_name)
     clone.delete_head([working_branch_name])
 
-def make_working_file(clone, dir, path):
+def make_working_file(clone, dir_path, file_path):
     ''' Determine the relative and absolute location of a new file, create
         any directories in its path that don't already exist, and return
         its local git and real absolute paths. Does not create the actual
         file.
 
-        `dir` is the existing directory the file is being created in
+        `dir_path` is the existing directory the file is being created in
 
-        `path` is the path that was entered to create the file, which may
-               include existing or new directories
+        `file_path` is the path that was entered to create the file, which
+                    may include existing or new directories
     '''
-    repo_path = join((dir or '').rstrip('/'), path)
+    repo_path = join((dir_path or '').rstrip('/'), file_path)
     full_path = join(clone.working_dir, repo_path)
 
     #
@@ -393,8 +393,8 @@ def make_working_file(clone, dir, path):
     head, dirs = split(repo_path)[0], []
 
     while head:
-        head, dir = split(head)
-        dirs.insert(0, dir)
+        head, check_dir = split(head)
+        dirs.insert(0, check_dir)
 
     if '..' in dirs:
         raise Exception('Invalid path component.')
@@ -403,10 +403,10 @@ def make_working_file(clone, dir, path):
     # Create directory tree.
     #
     for i in range(len(dirs)):
-        dir_path = join(clone.working_dir, sep.join(dirs[:i + 1]))
+        build_path = join(clone.working_dir, sep.join(dirs[:i + 1]))
 
-        if not isdir(dir_path):
-            mkdir(dir_path)
+        if not isdir(build_path):
+            mkdir(build_path)
 
     return repo_path, full_path
 

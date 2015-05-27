@@ -485,44 +485,54 @@ def branch_edit(branch, path=None):
     # it's a file, edit it
     return render_edit_view(repo, branch, path, open(full_path, 'r'))
 
+def add_article_or_category(repo, path, action, request_path):
+    ''' Add an article or category
+    '''
+    article_front = dict(title=u'', layout=ARTICLE_LAYOUT)
+    cat_front = dict(title=u'', layout=CATEGORY_LAYOUT)
+    body = u''
+
+    if u'/' in request_path:
+        index_filename = u'index.{}'.format(CONTENT_FILE_EXTENSION)
+        edit_functions.create_path_to_page(repo, path, request_path, cat_front, body, index_filename)
+
+    name = u'{}/index.{}'.format(splitext(request_path)[0], CONTENT_FILE_EXTENSION)
+
+    if action == 'add article':
+        file_path = edit_functions.create_new_page(repo, path, name, article_front, body)
+        message = 'Created new article "{}"'.format(file_path)
+        redirect_path = file_path
+        return message, file_path, redirect_path
+
+    file_path = edit_functions.create_new_page(repo, path, name, cat_front, body)
+    message = 'Created new category "{}"'.format(file_path)
+    # strip the index file from the redirect path
+    redirect_path = sub(r'index.{}$'.format(CONTENT_FILE_EXTENSION), '', file_path)
+    return message, file_path, redirect_path
+
 @app.route('/tree/<branch>/edit/', methods=['POST'])
 @app.route('/tree/<branch>/edit/<path:path>', methods=['POST'])
 @log_application_errors
 @login_required
 @synched_checkout_required
 def branch_edit_file(branch, path=None):
-    r = get_repo(current_app)
-    c = r.commit()
+    repo = get_repo(current_app)
+    commit = repo.commit()
 
     action = request.form.get('action', '').lower()
     do_save = True
 
     if action == 'upload' and 'file' in request.files:
-        file_path = edit_functions.upload_new_file(r, path, request.files['file'])
+        file_path = edit_functions.upload_new_file(repo, path, request.files['file'])
         message = 'Uploaded new file "%s"' % file_path
         redirect_path = path or ''
 
-    elif action == 'add article' and 'path' in request.form:
-        name = u'{}/index.{}'.format(splitext(request.form['path'])[0], CONTENT_FILE_EXTENSION)
-
-        front, body = dict(title=u'', layout=ARTICLE_LAYOUT), u''
-        file_path = edit_functions.create_new_page(r, path, name, front, body)
-        message = 'Created new article "%s"' % file_path
-        redirect_path = file_path
-
-    elif action == 'add category' and 'path' in request.form:
-        # sanitize the category name: strip extensions, replace forward slashes with dashes
-        category_name = sub(ur'\/', u'-', splitext(request.form['path'])[0])
-        name = u'{}/index.{}'.format(category_name, CONTENT_FILE_EXTENSION)
-
-        front, body = dict(title=u'', layout=CATEGORY_LAYOUT), u''
-        file_path = edit_functions.create_new_page(r, path, name, front, body)
-        message = 'Created new category "%s"' % file_path
-        # strip the index file from the redirect path
-        redirect_path = sub(r'index.{}$'.format(CONTENT_FILE_EXTENSION), '', file_path)
+    elif (action == 'add article' or action == 'add category') and 'path' in request.form:
+        message, file_path, redirect_path = add_article_or_category(repo, path, action, request.form['path'])
 
     elif action == 'delete' and 'path' in request.form:
-        file_path, do_save = edit_functions.delete_file(r, path, request.form['path'])
+        request_path = request.form['path']
+        file_path, do_save = edit_functions.delete_file(repo, path, request_path)
         message = 'Deleted file "%s"' % file_path
         redirect_path = path or ''
 
@@ -532,7 +542,7 @@ def branch_edit_file(branch, path=None):
     if do_save:
         master_name = current_app.config['default_branch']
         Logger.debug('save')
-        repo_functions.save_working_file(r, file_path, message, c.hexsha, master_name)
+        repo_functions.save_working_file(repo, file_path, message, commit.hexsha, master_name)
 
     safe_branch = branch_name2path(branch_var2name(branch))
 
