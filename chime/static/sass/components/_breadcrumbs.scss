@@ -1,0 +1,26 @@
+.breadcrumb {
+    @include clearfix();
+    float: left;
+    position: relative;
+    top: .2em;
+}
+
+.breadcrumb__item {
+    display: block;
+    float: left;
+    color: $color-blue-200;
+    text-decoration: none;
+    margin-left: -1px;
+    margin-top: -.2em;
+    margin-bottom: -.2em;
+    padding: .3em .7em;
+    border: 1px solid $color-blue-400;
+    border-radius: $border-radius;
+    margin-right: .5em;
+    font-size: $small-font-size;
+    &:hover {
+        text-decoration: none;
+        background-color: $color-blue-400;
+        color: $color-blue-100;
+    }
+}
