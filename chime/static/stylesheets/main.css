@@ -664,25 +664,26 @@ body {
   left: 0;
   right: 0;
   min-width: 1000px;
+  background-color: #fafafa;
 }
 
-/* line 21, ../sass/core/_base.scss */
+/* line 22, ../sass/core/_base.scss */
 p {
   font-size: 16px;
 }
 
-/* line 26, ../sass/core/_base.scss */
+/* line 27, ../sass/core/_base.scss */
 ul, ol {
   list-style-type: none;
   padding: 0;
 }
 
-/* line 31, ../sass/core/_base.scss */
+/* line 32, ../sass/core/_base.scss */
 a {
   text-decoration: none;
   color: #6693a5;
 }
-/* line 34, ../sass/core/_base.scss */
+/* line 35, ../sass/core/_base.scss */
 a:hover {
   text-decoration: underline;
 }
@@ -1121,6 +1122,23 @@ input[type="submit"]:disabled:hover {
 /* line 43, ../sass/components/_dropdown-nav.scss */
 .dropdown__popup > li {
   margin: .5em 0;
+}
+
+/* line 2, ../sass/components/_flashes.scss */
+.flash-holder .flashes {
+  padding: .5em 1em;
+}
+
+/* line 7, ../sass/components/_flashes.scss */
+.flash {
+  padding: .5em 1em;
+}
+
+/* line 11, ../sass/components/_flashes.scss */
+.flash--warning {
+  background-color: #eed1d7;
+  border: 1px solid #dda4b0;
+  color: #bb4961;
 }
 
 /*------------------------------------*\
