@@ -1,5 +1,5 @@
 
-from os.path import exists, isdir, join
+from os.path import exists, isdir, join, split, sep
 from os import rmdir, remove
 
 import repo_functions
@@ -16,10 +16,31 @@ def update_page(clone, file_path, front, body):
     with open(full_path, 'w') as file:
         dump_jekyll_doc(front, body, file)
 
-def create_new_page(clone, path, file_name, front, body):
+def create_path_to_page(clone, dir_path, file_path, front, body, filename):
+    ''' Build non-existing directories in file_path as category directories.
+    '''
+    # Build a full directory path.
+    head, dirs = split(file_path)[0], []
+
+    while head:
+        head, check_dir = split(head)
+        dirs.insert(0, check_dir)
+
+    if '..' in dirs:
+        raise Exception('Invalid path component.')
+
+    # Build the category directory tree.
+    file_paths = []
+    for i in range(len(dirs)):
+        file_path = create_new_page(clone, dir_path, join(sep.join(dirs[:i + 1]), filename), front, body)
+        file_paths.append(file_path)
+
+    return file_paths
+
+def create_new_page(clone, dir_path, file_path, front, body):
     ''' Create a new Jekyll page in the working directory, return its path.
     '''
-    file_path, full_path = repo_functions.make_working_file(clone, path, file_name)
+    file_path, full_path = repo_functions.make_working_file(clone, dir_path, file_path)
 
     if exists(full_path):
         raise Exception(u'create_new_page: path already exists!')
