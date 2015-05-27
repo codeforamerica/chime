@@ -39,13 +39,20 @@
 
 
 
+
+
 /*------------------------------------*\
     # Templates
 \*------------------------------------*/
 
 @import 'templates/signin';
+
 @import 'templates/activities-list';
+@import 'templates/activity-review';
+
 @import 'templates/articles-list';
 @import 'templates/article-edit';
 @import 'templates/article-history';
+@import 'templates/article-review';
+
 

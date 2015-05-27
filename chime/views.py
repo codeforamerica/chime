@@ -595,7 +595,19 @@ def branch_review(branch):
                   hexsha=c.hexsha, author_email=author_email, task_description=task_description,
                   task_beneficiary=task_beneficiary)
 
-    return render_template('tree-branch-review.html', **kwargs)
+    return render_template('activity-review.html', **kwargs)
+
+
+# Putting a placeholder template for article review here.
+@app.route('/tree/<branch>/review/<path:path>', methods=['GET'])
+@log_application_errors
+@login_required
+@synched_checkout_required
+def branch_file_review(branch, path):
+    kwargs = common_template_args(current_app.config, session)
+    return render_template('article-review.html', **kwargs)
+
+
 
 @app.route('/tree/<branch>/save/<path:path>', methods=['POST'])
 @log_application_errors
