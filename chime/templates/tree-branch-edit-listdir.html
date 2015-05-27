@@ -5,7 +5,7 @@
 <div class="main-content">
     <div class="file-explorer">
         <h2>Task</h2>
-        <p>This is your work area. Here you can navigate to the content you want to edit, upload images or create new pages.</p>
+        <p>This is your work area. Here you can navigate to the content you want to edit, upload images or create new articles.</p>
         <div class="task-status">
                 {% set itemvalues = branch.split('/') %}
                 {% set name = itemvalues[0] %}
@@ -119,10 +119,10 @@
                 {% endfor %}  
                     
                     <tr>
-                        <th>Create new page</th>
+                        <th>Create new article</th>
                         <td colspan="3">
                             <form action="." method="POST">
-                                <input name="path" placeholder="page name" type="text" />
+                                <input name="path" placeholder="article name" type="text" />
                                 <input name="action" type="submit" value="Add" />
                             </form>
                         </td>

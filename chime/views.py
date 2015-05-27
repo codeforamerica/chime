@@ -19,10 +19,10 @@ from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
 from .view_functions import (
     branch_name2path, branch_var2name, get_repo, dos2unix,
     login_required, browserid_hostname_required, synch_required, synched_checkout_required, sorted_paths,
-    directory_paths, should_redirect, make_redirect, get_auth_data_file,
+    directory_paths, directory_columns, should_redirect, make_redirect, get_auth_data_file,
     is_allowed_email, common_template_args, log_application_errors,
-    is_editable_dir, CONTENT_FILE_EXTENSION
-    )
+    is_article_dir, CONTENT_FILE_EXTENSION, ARTICLE_LAYOUT, CATEGORY_LAYOUT)
+
 from .google_api_functions import (
     read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens,
     authorize_google, get_google_personal_info, get_google_analytics_properties,
@@ -376,16 +376,15 @@ def branch_view(branch, path=None):
 
     return Response(open(local_path).read(), 200, {'Content-Type': mime_type})
 
-
-def render_list_dir(repo, branch, path):
+def render_list_dir(repo, branch_name, path):
     # :NOTE: temporarily turning off filtering if 'showallfiles=true' is in the request
     showallfiles = request.args.get('showallfiles') == u'true'
 
     # make the task root path
-    task_root_path = u'/tree/{}/edit/'.format(branch_name2path(branch))
+    task_root_path = u'/tree/{}/edit/'.format(branch_name2path(branch_name))
 
     # get the task metadata; contains 'author_email', 'task_description'
-    task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch)
+    task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch_name)
     author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
     task_description = task_metadata['task_description'] if 'task_description' in task_metadata else u''
     task_beneficiary = task_metadata['task_beneficiary'] if 'task_beneficiary' in task_metadata else u''
@@ -395,14 +394,15 @@ def render_list_dir(repo, branch, path):
     task_date_updated = repo.git.log('--format=%ad', '--date=relative').split('\n')[0]
 
     kwargs = common_template_args(current_app.config, session)
-    kwargs.update(branch=branch, safe_branch=branch_name2path(branch),
-                  dirs_and_paths=directory_paths(branch, path),
-                  list_paths=sorted_paths(repo, branch, path, showallfiles),
+    kwargs.update(branch=branch_name, safe_branch=branch_name2path(branch_name),
+                  dirs_and_paths=directory_paths(branch_name, path),
+                  dir_columns=directory_columns(repo, branch_name, path),
+                  list_paths=sorted_paths(repo, branch_name, path, showallfiles),
                   author_email=author_email, task_description=task_description,
                   task_beneficiary=task_beneficiary, task_date_created=task_date_created,
                   task_date_updated=task_date_updated, task_root_path=task_root_path)
     master_name = current_app.config['default_branch']
-    kwargs['rejection_messages'] = list(repo_functions.get_rejection_messages(repo, master_name, branch))
+    kwargs['rejection_messages'] = list(repo_functions.get_rejection_messages(repo, master_name, branch_name))
     # TODO: the above might throw a GitCommandError if branch is an orphan.
     if current_app.config['SINGLE_USER']:
         kwargs['eligible_peer'] = True
@@ -410,12 +410,13 @@ def render_list_dir(repo, branch, path):
         kwargs['is_peer_approved'] = True
         kwargs['is_peer_rejected'] = False
     else:
-        kwargs['eligible_peer'] = session['email'] != repo_functions.ineligible_peer(repo, master_name, branch)
-        kwargs['needs_peer_review'] = repo_functions.needs_peer_review(repo, master_name, branch)
-        kwargs['is_peer_approved'] = repo_functions.is_peer_approved(repo, master_name, branch)
-        kwargs['is_peer_rejected'] = repo_functions.is_peer_rejected(repo, master_name, branch)
+        kwargs['eligible_peer'] = session['email'] != repo_functions.ineligible_peer(repo, master_name, branch_name)
+        kwargs['needs_peer_review'] = repo_functions.needs_peer_review(repo, master_name, branch_name)
+        kwargs['is_peer_approved'] = repo_functions.is_peer_approved(repo, master_name, branch_name)
+        kwargs['is_peer_rejected'] = repo_functions.is_peer_rejected(repo, master_name, branch_name)
     if kwargs['is_peer_rejected']:
         kwargs['rejecting_peer'], kwargs['rejection_message'] = kwargs['rejection_messages'].pop(0)
+
     return render_template('articles-list.html', **kwargs)
 
 def render_edit_view(repo, branch, path, file):
@@ -425,8 +426,7 @@ def render_edit_view(repo, branch, path, file):
     languages = load_languages(repo.working_dir)
     url_slug = path
     # strip the index file from the slug if appropriate
-    if search(r'\/index.{}$'.format(CONTENT_FILE_EXTENSION), path):
-        url_slug = sub(ur'index.{}$'.format(CONTENT_FILE_EXTENSION), u'', url_slug)
+    url_slug = sub(ur'index.{}$'.format(CONTENT_FILE_EXTENSION), u'', url_slug)
     view_path = join('/tree/{}/view'.format(branch_name2path(branch)), path)
     history_path = join('/tree/{}/history'.format(branch_name2path(branch)), path)
     task_root_path = u'/tree/{}/edit/'.format(branch_name2path(branch))
@@ -471,7 +471,7 @@ def branch_edit(branch, path=None):
 
     if isdir(full_path):
         # if this is an editable directory (contains only an editable index file), redirect
-        if is_editable_dir(full_path):
+        if is_article_dir(full_path):
             index_path = join(path or u'', u'index.{}'.format(CONTENT_FILE_EXTENSION))
             return redirect('/tree/{}/edit/{}'.format(branch_name2path(branch), index_path))
 
@@ -485,35 +485,63 @@ def branch_edit(branch, path=None):
     # it's a file, edit it
     return render_edit_view(repo, branch, path, open(full_path, 'r'))
 
+def add_article_or_category(repo, path, action, request_path):
+    ''' Add an article or category
+    '''
+    article_front = dict(title=u'', layout=ARTICLE_LAYOUT)
+    cat_front = dict(title=u'', layout=CATEGORY_LAYOUT)
+    body = u''
+
+    # create and commit intermediate categories
+    if u'/' in request_path:
+        filename = u'index.{}'.format(CONTENT_FILE_EXTENSION)
+        page_paths = edit_functions.create_path_to_page(repo, path, request_path, cat_front, body, filename)
+        master_name = current_app.config['default_branch']
+        for new_path in page_paths:
+            message = 'Created new category "{}"'.format(new_path)
+            Logger.debug('save')
+            repo_functions.save_working_file(repo, new_path, message, repo.commit().hexsha, master_name)
+
+    name = u'{}/index.{}'.format(splitext(request_path)[0], CONTENT_FILE_EXTENSION)
+
+    if action == 'add article':
+        file_path = edit_functions.create_new_page(repo, path, name, article_front, body)
+        message = 'Created new article "{}"'.format(file_path)
+        redirect_path = file_path
+        return message, file_path, redirect_path
+
+    file_path = edit_functions.create_new_page(repo, path, name, cat_front, body)
+    message = 'Created new category "{}"'.format(file_path)
+    # strip the index file from the redirect path
+    redirect_path = sub(r'index.{}$'.format(CONTENT_FILE_EXTENSION), '', file_path)
+    return message, file_path, redirect_path
+
 @app.route('/tree/<branch>/edit/', methods=['POST'])
 @app.route('/tree/<branch>/edit/<path:path>', methods=['POST'])
 @log_application_errors
 @login_required
 @synched_checkout_required
 def branch_edit_file(branch, path=None):
-    r = get_repo(current_app)
-    c = r.commit()
+    repo = get_repo(current_app)
+    commit = repo.commit()
 
     action = request.form.get('action', '').lower()
     do_save = True
 
     if action == 'upload' and 'file' in request.files:
-        file_path = edit_functions.upload_new_file(r, path, request.files['file'])
-        message = 'Uploaded new file "%s"' % file_path
-        path_303 = path or ''
+        file_path = edit_functions.upload_new_file(repo, path, request.files['file'])
+        message = 'Uploaded new file "{}"'.format(file_path)
+        redirect_path = path or ''
 
-    elif action == 'add' and 'path' in request.form:
-        name = u'{}/index.{}'.format(splitext(request.form['path'])[0], CONTENT_FILE_EXTENSION)
-
-        front, body = dict(title=u'', layout='default'), u''
-        file_path = edit_functions.create_new_page(r, path, name, front, body)
-        message = 'Created new file "%s"' % file_path
-        path_303 = file_path
+    elif (action == 'add article' or action == 'add category') and 'path' in request.form:
+        message, file_path, redirect_path = add_article_or_category(repo, path, action, request.form['path'])
+        commit = repo.commit()
 
     elif action == 'delete' and 'path' in request.form:
-        file_path, do_save = edit_functions.delete_file(r, path, request.form['path'])
-        message = 'Deleted file "%s"' % file_path
-        path_303 = path or ''
+        request_path = request.form['path']
+        file_path, do_save = edit_functions.delete_file(repo, path, request_path)
+        message = 'Deleted file "{}"'.format(file_path)
+        redirect_path = path or ''
 
     else:
         raise Exception()
@@ -521,11 +549,11 @@ def branch_edit_file(branch, path=None):
     if do_save:
         master_name = current_app.config['default_branch']
         Logger.debug('save')
-        repo_functions.save_working_file(r, file_path, message, c.hexsha, master_name)
+        repo_functions.save_working_file(repo, file_path, message, commit.hexsha, master_name)
 
     safe_branch = branch_name2path(branch_var2name(branch))
 
-    return redirect('/tree/%s/edit/%s' % (safe_branch, path_303), code=303)
+    return redirect('/tree/%s/edit/%s' % (safe_branch, redirect_path), code=303)
 
 @app.route('/tree/<branch>/history/', methods=['GET'])
 @app.route('/tree/<branch>/history/<path:path>', methods=['GET'])
@@ -675,7 +703,7 @@ def branch_save(branch, path):
 
             path = new_slug
             # append the index file if it's an editable directory
-            if is_editable_dir(join(repo.working_dir, new_slug)):
+            if is_article_dir(join(repo.working_dir, new_slug)):
                 path = join(new_slug, u'index.{}'.format(CONTENT_FILE_EXTENSION))
 
     except repo_functions.MergeConflict as conflict:
