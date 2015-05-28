@@ -35,7 +35,15 @@ FILE_FILTERS = [
     r'\.lock$',
     r'Gemfile',
     r'LICENSE',
-    r'index\.{}'.format(CONTENT_FILE_EXTENSION)
+    r'index\.{}'.format(CONTENT_FILE_EXTENSION),
+    # below filters were added by norris to focus bootcamp UI on articles
+    r'^css',
+    r'\.xml',
+    r'README\.markdown',
+    r'^js',
+    r'^media',
+    r'^styleguide',
+    r'^about\.markdown',
 ]
 FILE_FILTERS_COMPILED = re.compile('(' + '|'.join(FILE_FILTERS) + ')')
 
