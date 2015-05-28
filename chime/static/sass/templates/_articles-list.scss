@@ -1,3 +1,8 @@
+.task-area {
+	color: $color-grey-400;
+	background-color: $color-grey-900;
+}
+
 .articles-list__main {
 	@include stretch-content();
 	padding: 0;
