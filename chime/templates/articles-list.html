@@ -11,13 +11,16 @@
 <div class="articles-list__main grid col__flex">
     {% for dir in dir_columns %}
     {% if loop.index != 1 %}
+    {% if dir[0].display_type %}
     <div class="articles-list__category grid__item width-one-fourth ">
         <ul class="category-list">
           {% for file in dir %}
           <li class="category-list__item {% if file['selected'] == True %}is-selected{% endif %}"><a href="{{file['edit_path']}}"><span class="fa fa-folder-o"></span>{{file['name'] | title | replace('-', ' ') }}</a></li>
           {% endfor %}  
         </ul>
+
     </div>
+    {% endif %}
     {% endif %}
     {% endfor %}
     <div class="articles-list__category grid__item width-one-fourth end-row">
@@ -27,10 +30,17 @@
         {% endfor %}   
        </ul>
        <div class="selection-box">
+         <label>Add a new Category</label>
+         <form action="." method="POST" class="form-one-line">
+             <input class="form-one-line__input" name="path" placeholder="category name" type="text" />
+             <input class="form-one-line__submit button button--outline" name="action" type="submit" value="Add Category" />
+         </form>
+       </div>
+       <div class="selection-box">
          <label>Add a New Article</label>
          <form action="." method="POST" class="form-one-line">
              <input class="form-one-line__input" name="path" placeholder="article name" type="text" />
-             <input class="form-one-line__submit button button--outline" name="action" type="submit" value="Create" />
+             <input class="form-one-line__submit button button--outline" name="action" type="submit" value="Add Article" />
          </form>
        </div>
 
