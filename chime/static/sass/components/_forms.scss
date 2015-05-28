@@ -88,3 +88,32 @@ input[type="submit"]:disabled {
 		font-weight: 300;
 	}
 }
+
+.form-one-line {
+	@include display(flex);
+	.lt-ie10 & {
+		@include clearfix();
+	}
+	.form-one-line__input {
+		@include flex(1);
+
+		border-top-right-radius: 0;
+		border-bottom-right-radius: 0;
+
+		.lt-ie10 & {
+			float: left;
+			width: 75%;
+		}
+	}
+
+	.form-one-line__submit {
+		border-top-left-radius: 0;
+		border-bottom-left-radius: 0;
+		margin-left: -1px;
+		.lt-ie10 & {
+			float: left;
+			width: 25%;
+		}
+	}
+}
+
