@@ -89,75 +89,73 @@
     </div>
 </div>
 
-<div class="row task-area">
-      <div class="task-status">
-              {% set itemvalues = branch.split('/') %}
-              {% set name = itemvalues[0] %}
-              {% set task = itemvalues[1] %}
+<div class="row taskbar {% if not eligible_peer %} taskbar--working {% else %} taskbar--reviewing {% endif %}">
+  <div class="taskbar__info row__left">
+    {% set itemvalues = branch.split('/') %}
+    {% set name = itemvalues[0] %}
+    {% set task = itemvalues[1] %}
 
-              <p>Current task: {% if task_description %}{{task_description}}{% elif task %}{{task}}{% else %}{{name}}{% endif %}{% if task_beneficiary %} for {{task_beneficiary}}{% endif %}</p>
-              <ul class="toolbar__left">
-                  <li class="toolbar__item">Started by: <strong>{% if author_email %}{{author_email}}{% elif name and task %}{{name}}{% else %}Unknown{% endif %}</strong></li>
-                  {% if task_date_updated %}<li class="toolbar__item">Updated: <strong>{{task_date_updated}}</strong></li>{% endif %}
-                  {% if task_date_created %}<li class="toolbar__item">Created: <strong>{{task_date_created}}</strong></li>{% endif %}
-              </ul>
-              <!-- testing to get some buttons... this next line should be  if needs_peer_review and not eligible_peer -->
-               {% if needs_peer_review and not eligible_peer %}
-              <form action="/merge" method="POST">
-                  <input name="branch" value="{{branch}}" type="hidden" />
-                  <label>Task complete?</label>
-                  <a href="mailto:?to=&amp;subject={{review_subject|urlencode}}&amp;body={{review_body|urlencode}}" class="button button-alternative">Submit for review</a>
-                  <!--button name="action" value="merge" type="submit" class="button-alternative" disabled>Publish (awaiting review)</button-->
-              </form>    
+    <p class="taskbar__task"><b>Currently {% if not eligible_peer %}working to{% else %} reviewing activity{% endif %}:</b> {% if task_description %}{{task_description}}{% elif task %}{{task}}{% else %}{{name}}{% endif %}{% if task_beneficiary %} for {{task_beneficiary}}{% endif %}</p>
+  </div>
+  <div class="taskbar__actions row__right toolbar--right">
+        <!-- testing to get some buttons... this next line should be  if needs_peer_review and not eligible_peer -->
+        {% if needs_peer_review and not eligible_peer %}
+        <form action="/merge" method="POST" class="toolbar__item">
+          <input name="branch" value="{{branch}}" type="hidden" />
+          <a href="mailto:?to=&amp;subject={{review_subject|urlencode}}&amp;body={{review_body|urlencode}}" class="button button--white">Submit for review</a>
+        </form>    
 
-              {% elif is_peer_approved and eligible_peer %}
-              <form action="/merge" method="POST">
-                  <input name="branch" value="{{branch}}" type="hidden" />
-                  <label>Ready to go live?</label>
-                  <button name="action" value="merge" type="submit" class="button-alternative">Publish</button>
-              </form>    
-          
-              {% elif is_peer_rejected and eligible_peer %}
-               
-              <h5>Current feedback</h5>
+        {% elif is_peer_approved and eligible_peer %}
+        <form action="/merge" method="POST" class="toolbar__item">
+          <input name="branch" value="{{branch}}" type="hidden" />
+          <button name="action" value="merge" type="submit" class="button button--white">Publish</button>
+        </form>    
+
+        {% elif is_peer_rejected and eligible_peer %}
+
+        <div class="toolbar__item taskbar__feedback dropdown">
+            See Feedback
+            <div class="dropdown__popup dropdown__popup--right">
               <p>{{rejection_message}}<br>— {{rejecting_peer}}</p>
-                          <!--
-                          <form action="/merge" method="POST">
-                              <input name="branch" value="{{branch}}" type="hidden" />
-                              <button name="action" value="merge" type="submit" class="button-alternative">Publish</button>
-                          </form>    
-                          -->
-              
-              {% elif needs_peer_review and eligible_peer %}
-               <!-- Reviewer options -->
-              <form action="/review" method="POST">
-                  <input name="branch" value="{{branch}}" type="hidden" />
-                  <label>Does this change achieve <strong>{{task_description}}</strong>{% if task_beneficiary %} for <strong>{{task_beneficiary}}</strong>{% endif %}?</label>
-                  <a class="button-alternative" href="/tree/{{safe_branch}}/review">Not quite</a>
-                  <button name="action" value="approve" type="submit" class="button-alternative">Yes</button>
-              </form>    
-              
-              {% else %}
-              
-                          Needs review? {{ needs_peer_review }}.
-                          Is approved? {{ is_peer_approved }}.
-                          Is rejected? {{ is_peer_rejected }}.
-                          Eligible peer? {{ eligible_peer }}.
-              
-              {% endif %}
-              
-              {% if rejection_messages %}
-                 
-              <h5>All feedback</h5>
-              <ul>
-                  {% for (email, message) in rejection_messages %}
-                  <li>{{message}}<br>— {{email}}</li>
-                  {% endfor %}
-              </ul>
-
-              {% endif %}
             </div>
+        </div>
+
+        <form action="/merge" method="POST" class="toolbar__item">
+          <input name="branch" value="{{branch}}" type="hidden" />
+          <a href="mailto:?to=&amp;subject={{review_subject|urlencode}}&amp;body={{review_body|urlencode}}" class="button button--white">Resubmit for review</a>
+        </form>    
+        
+
+    {% elif needs_peer_review and eligible_peer %}
+    <!-- Reviewer options -->
+    <form action="/review" method="POST" class="toolbar--right">
+      <input name="branch" value="{{branch}}" type="hidden" />
+      <a class="toolbar__item button button--white text-red" href="/tree/{{safe_branch}}/review">Request Fixes</a>
+      <button name="action" value="approve" type="submit" class="toolbar__item button button--white text-green">Approve</button>
+    </form>    
+
+    {% else %}
+
+      Needs review? {{ needs_peer_review }}.
+      Is approved? {{ is_peer_approved }}.
+      Is rejected? {{ is_peer_rejected }}.
+      Eligible peer? {{ eligible_peer }}.
+
+    {% endif %}
+
+    {% if rejection_messages %}
+
+    <h5>All feedback</h5>
+    <ul>
+      {% for (email, message) in rejection_messages %}
+      <li>{{message}}<br>— {{email}}</li>
+      {% endfor %}
+    </ul>
+
+    {% endif %}
+  </div>
 </div>
+
 
 {% endblock %}
 

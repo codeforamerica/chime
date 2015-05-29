@@ -10,20 +10,6 @@
     </nav>
   </div>
   <nav class="global-header__nav  row__right  toolbar--right">
-    {% if task_description %}
-      <div href="#" class="toolbar__item dropdown">
-        <span class="dropdown__link">Current Activity: {{ task_description | title }}</span>
-        <ul class="dropdown__popup">
-          {% set itemvalues = branch.split('/') %}
-          {% set name = itemvalues[0] %}
-          {% set task = itemvalues[1] %}
-
-          <li>Started by: <b>{{ author_email }}</b></li>
-
-          <li><a href="#" class="button">Submit for Review</a></li>
-        </ul>
-      </div>
-    {% endif %}
     <a class="toolbar__item" href="{{ live_site_url }}">Visit site</a>
     {% if email %}
       <a class="toolbar__item" href="#" id="signout">Sign Out</a>

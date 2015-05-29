@@ -381,7 +381,7 @@ def render_list_dir(repo, branch_name, path):
     showallfiles = request.args.get('showallfiles') == u'true'
 
     # make the task root path
-    task_root_path = u'/tree/{}/edit/'.format(branch_name2path(branch_name))
+    task_root_path = u'/tree/{}/edit/categories'.format(branch_name2path(branch_name))
 
     # get the task metadata; contains 'author_email', 'task_description'
     task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch_name)
@@ -429,7 +429,7 @@ def render_edit_view(repo, branch, path, file):
     url_slug = sub(ur'index.{}$'.format(CONTENT_FILE_EXTENSION), u'', url_slug)
     view_path = join('/tree/{}/view'.format(branch_name2path(branch)), path)
     history_path = join('/tree/{}/history'.format(branch_name2path(branch)), path)
-    task_root_path = u'/tree/{}/edit/'.format(branch_name2path(branch))
+    task_root_path = u'/tree/{}/edit/categories'.format(branch_name2path(branch))
     folder_root_slug = u'/'.join([item for item in url_slug.split('/') if item][:-1]) + u'/'
     app_authorized = False
     ga_config = read_ga_config(current_app.config['RUNNING_STATE_DIR'])
@@ -576,7 +576,7 @@ def branch_history(branch, path=None):
 
     view_path = join('/tree/%s/view' % branch_name2path(branch), path)
     edit_path = join('/tree/%s/edit' % branch_name2path(branch), path)
-    task_root_path = u'/tree/{}/edit/'.format(branch_name2path(branch))
+    task_root_path = u'/tree/{}/edit/categories'.format(branch_name2path(branch))
     languages = load_languages(repo.working_dir)
 
     app_authorized = False
