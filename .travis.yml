@@ -14,7 +14,7 @@ install:
 - pip install -r requirements.txt
 - pip install -r fabfile/requirements.txt
 script:
-- python test/test.py
+- nosetests test/unit
 - fab test_chime:despawn_on_failure=t
 notifications:
   webhooks: http://project-monitor.codeforamerica.org/projects/1bf2f3b3-bed8-42bc-91e8-d47f873443de/status
