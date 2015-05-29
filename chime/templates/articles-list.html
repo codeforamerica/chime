@@ -9,9 +9,8 @@
 {% block content %}
 
 <div class="articles-list__main grid col__flex">
-    {% for dir in dir_columns %}
+    {% for column in dir_columns %}
     {% if loop.index != 1 %}
-    {% if dir[0].display_type %}
     <div class="dir grid__item width-one-fourth">
       {% if loop.index == 2 %}
       <h2>Categories</h2>
@@ -19,6 +18,7 @@
         <form action="." method="POST" class="form-one-line">
             <input class="form-one-line__input" name="path" placeholder="category name" type="text" />
             <input name="create_what" value="category" type="hidden" />
+            <input name="create_path" value="{{column['path']}}" type="hidden" />
             <input class="form-one-line__submit button" name="action" type="submit" value="Create" />
         </form>
       </div>
@@ -28,65 +28,34 @@
         <form action="." method="POST" class="form-one-line">
             <input class="form-one-line__input" name="path" placeholder="subcategory name" type="text" />
             <input name="create_what" value="category" type="hidden" />
+            <input name="create_path" value="{{column['path']}}" type="hidden" />
             <input class="form-one-line__submit button" name="action" type="submit" value="Create" />
         </form>
       </div>
-      {% endif %}
-        <ul class="dir__listing">
-          {% for file in dir %}
-          <li class="dir-item row {% if file['selected'] == True %}is-selected{% endif %}">
-            <a class="dir-item__name row__left" href="{{file['edit_path']}}"><span class="fa fa-folder-o"></span>{{file['name'] | title | replace('-', ' ') }}</a>
-            <div class="dir-item__actions toolbar--right row__right">
-              <a href="#"><span class="fa fa-pencil"></span></a>
-            </div>
-          </li>
-          {% endfor %}  
-        </ul>
-
-    </div>
-    {% endif %}
-    {% endif %}
-    {% endfor %}
-    <div class="{% if dir_columns | length == 3 %} articles width-one-half {% else %} dir width-one-fourth {% endif %} grid__item  end-row">
-      {% if dir_columns | length == 3 %}
+      {% elif loop.index == 4 %}
       <h2>Articles</h2>
       <div class="selection-box box-add-file-folder">
         <form action="." method="POST" class="form-one-line">
             <input class="form-one-line__input" name="path" placeholder="article name" type="text" />
             <input name="create_what" value="article" type="hidden" />
-            <input class="form-one-line__submit button" name="action" type="submit" value="Create" />
-        </form>
-      </div>
-      {% elif dir_columns | length == 2 %}
-      <h2>Subcategories</h2>
-      <div class="selection-box box-add-file-folder">
-        <form action="." method="POST" class="form-one-line">
-            <input class="form-one-line__input" name="path" placeholder="subcategory name" type="text" />
-            <input name="create_what" value="category" type="hidden" />
-            <input class="form-one-line__submit button" name="action" type="submit" value="Create" />
-        </form>
-      </div>
-      {% elif dir_columns | length == 1 %}
-      <h2>Categories</h2>
-      <div class="selection-box box-add-file-folder">
-        <form action="." method="POST" class="form-one-line">
-            <input class="form-one-line__input" name="path" placeholder="category name" type="text" />
-            <input name="create_what" value="category" type="hidden" />
+            <input name="create_path" value="{{column['path']}}" type="hidden" />
             <input class="form-one-line__submit button" name="action" type="submit" value="Create" />
         </form>
       </div>
       {% endif %}
-       <ul class="dir__listing">
-        {% for (edit_path, view_path, item_type, is_editable, modified_date) in list_paths %}
-           <li class="dir-item row">
-              <a class="dir-item__name {{item_type}} row__left" href="{{edit_path}}">{% if item_type == "article" %}<span class="fa fa-file-text-o"></span>{% elif item_type == "category" %}<span class="fa fa-folder-o"></span>{% else %}{% endif %}{{ edit_path  | title | replace('-', ' ') }}</a>
-              <div class="dir-item__actions toolbar--right row__right">
-                <a href="#"><span class="fa fa-pencil"></span></a>
-              </div>
-            </li>
-        {% endfor %}   
-       </ul>
+      <ul class="dir__listing">
+      {% for file in column['files'] %}
+         <li class="dir-item row {% if file['selected'] == True %}is-selected{% endif %}">
+            <a class="dir-item__name {{file['display_type']}} row__left" href="{{file['edit_path']}}">{% if file['display_type'] == "article" %}<span class="fa fa-file-text-o"></span>{% elif file['display_type'] == "category" %}<span class="fa fa-folder-o"></span>{% else %}{% endif %}{{ file['name']  | title | replace('-', ' ') }}</a>
+            <div class="dir-item__actions toolbar--right row__right">
+              <a href="#"><span class="fa fa-pencil"></span></a>
+            </div>
+          </li>
+      {% endfor %}   
+      </ul>
     </div>
+    {% endif %}
+    {% endfor %}
 </div>
 
 <div class="row taskbar {% if not eligible_peer %} taskbar--working {% else %} taskbar--reviewing {% endif %}">

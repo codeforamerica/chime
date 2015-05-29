@@ -396,8 +396,7 @@ def render_list_dir(repo, branch_name, path):
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(branch=branch_name, safe_branch=branch_name2path(branch_name),
                   dirs_and_paths=directory_paths(branch_name, path),
-                  dir_columns=directory_columns(repo, branch_name, path),
-                  list_paths=sorted_paths(repo, branch_name, path, showallfiles),
+                  dir_columns=directory_columns(repo, branch_name, path, showallfiles),
                   author_email=author_email, task_description=task_description,
                   task_beneficiary=task_beneficiary, task_date_created=task_date_created,
                   task_date_updated=task_date_updated, task_root_path=task_root_path)
@@ -527,6 +526,7 @@ def branch_edit_file(branch, path=None):
 
     action = request.form.get('action', '').lower()
     create_what = request.form.get('create_what', '').lower()
+    create_path = request.form.get('create_path', '') or path
     do_save = True
 
     if action == 'upload' and 'file' in request.files:
@@ -534,8 +534,8 @@ def branch_edit_file(branch, path=None):
         message = 'Uploaded new file "{}"'.format(file_path)
         redirect_path = path or ''
 
-    elif action == 'create' and (create_what == 'article' or create_what == 'category') and 'path' in request.form:
-        message, file_path, redirect_path = add_article_or_category(repo, path, create_what, request.form['path'])
+    elif action == 'create' and (create_what == 'article' or create_what == 'category') and create_path:
+        message, file_path, redirect_path = add_article_or_category(repo, create_path, create_what, request.form['path'])
         commit = repo.commit()
 
     elif action == 'delete' and 'path' in request.form:
