@@ -485,7 +485,7 @@ def branch_edit(branch, path=None):
     # it's a file, edit it
     return render_edit_view(repo, branch, path, open(full_path, 'r'))
 
-def add_article_or_category(repo, path, target, request_path):
+def add_article_or_category(repo, path, create_what, request_path):
     ''' Add an article or category
     '''
     article_front = dict(title=u'', layout=ARTICLE_LAYOUT)
@@ -504,7 +504,7 @@ def add_article_or_category(repo, path, target, request_path):
 
     name = u'{}/index.{}'.format(splitext(request_path)[0], CONTENT_FILE_EXTENSION)
 
-    if target == 'article':
+    if create_what == 'article':
         file_path = edit_functions.create_new_page(repo, path, name, article_front, body)
         message = 'Created new article "{}"'.format(file_path)
         redirect_path = file_path
@@ -526,7 +526,7 @@ def branch_edit_file(branch, path=None):
     commit = repo.commit()
 
     action = request.form.get('action', '').lower()
-    target = request.form.get('target', '').lower()
+    create_what = request.form.get('create_what', '').lower()
     do_save = True
 
     if action == 'upload' and 'file' in request.files:
@@ -534,8 +534,8 @@ def branch_edit_file(branch, path=None):
         message = 'Uploaded new file "{}"'.format(file_path)
         redirect_path = path or ''
 
-    elif action == 'create' and (target == 'article' or target == 'category') and 'path' in request.form:
-        message, file_path, redirect_path = add_article_or_category(repo, path, target, request.form['path'])
+    elif action == 'create' and (create_what == 'article' or create_what == 'category') and 'path' in request.form:
+        message, file_path, redirect_path = add_article_or_category(repo, path, create_what, request.form['path'])
         commit = repo.commit()
 
     elif action == 'delete' and 'path' in request.form:
