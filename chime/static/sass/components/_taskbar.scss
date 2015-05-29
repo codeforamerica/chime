@@ -1,0 +1,23 @@
+.taskbar {
+	color: $color-grey-900;
+	background-color: $color-grey-100;
+}
+
+.taskbar--working {
+	background-color: $color-green-400;
+}
+
+.taskbar--reviewing {
+	background-color: $color-orange-400;
+}
+
+.taskbar__task {
+	margin: 0;	
+}
+
+.taskbar__actions {
+	.button {
+		font-weight: normal;
+		box-shadow: 0 0 3px rgba(0,0,0,.2);
+	}
+}
