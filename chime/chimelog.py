@@ -8,28 +8,37 @@ from logging import handlers
 from os.path import join, realpath
 from boto import sns
 
+
 def get_filehandler(dirnames):
     ''' Make a new RotatingFileHandler.
     
         Choose a logfile path based on priority-ordered list of directories.
     '''
     writeable_dirs = [d for d in dirnames if os.access(d, os.W_OK | os.X_OK)]
-    
+
     if not writeable_dirs:
         raise RuntimeError('Unable to pick a writeable directory name')
-    
+
     logfile_path = join(realpath(writeable_dirs[0]), 'app.log')
     handler = handlers.RotatingFileHandler(logfile_path, 'a', 10000000, 10)
     formatter = Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
-    
+
     return handler
 
 
-FORMAT_STRING = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+ERROR_REPORT_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 class ChimeErrorReportFormatter(Formatter):
     def __init__(self):
-        super(ChimeErrorReportFormatter, self).__init__(FORMAT_STRING)
+        super(ChimeErrorReportFormatter, self).__init__(ERROR_REPORT_FORMAT)
+
+    def format(self, record):
+        result = super(ChimeErrorReportFormatter, self).format(record)
+        if hasattr(record, 'request'):
+            result += "\n\nRequest info:\n"
+            result += "%s" % record.request
+            # This is a good place to add more detailed error reporting
+        return result
 
 
 class SnsHandler(Handler):

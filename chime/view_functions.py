@@ -342,7 +342,7 @@ def log_application_errors(route_function):
         try:
             return route_function(*args, **kwargs)
         except Exception as e:
-            Logger.error(e, exc_info=True)
+            Logger.error(e, exc_info=True, extra={'request':request})
             raise
 
     return decorated_function
