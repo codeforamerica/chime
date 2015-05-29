@@ -37,11 +37,11 @@ import logging
 logging.disable(logging.CRITICAL)
 
 # these patterns help us search the HTML of a response to determine if the expected page loaded
-EDIT_LISTDIR_TASK_DESCRIPTION_PATTERN = '<h3>Current task: <strong>{}</strong>'
-EDIT_LISTDIR_TASK_DESCRIPTION_AND_BENEFICIARY_PATTERN = '<h3>Current task: <strong>{}</strong> for <strong>{}</strong></h3>'
-EDIT_LISTDIR_AUTHOR_EMAIL_PATTERN = '<li>Started by: <strong>{}</strong></li>'
-EDIT_LISTDIR_BRANCH_NAME_PATTERN = '<li class="active-task"><a href="./">{}</a></li>'
-EDIT_LISTDIR_FILE_NAME_PATTERN = '<a class="{file_type}" href="{file_name}">{file_name}</a>'
+EDIT_LISTDIR_TASK_DESCRIPTION_PATTERN = '<p>Current task: {}</p>'
+EDIT_LISTDIR_TASK_DESCRIPTION_AND_BENEFICIARY_PATTERN = '<p>Current task: {} for {}</p>'
+EDIT_LISTDIR_AUTHOR_EMAIL_PATTERN = '<li class="toolbar__item">Started by: <strong>{}</strong></li>'
+EDIT_LISTDIR_BRANCH_NAME_PATTERN = '<input name="branch" value="{}" type="hidden" />'
+EDIT_LISTDIR_FILE_NAME_PATTERN = '<a class="dir-item__name {file_type} row__left" href="{file_name}"><span class="fa fa-file-text-o"></span>{file_name}</a>'
 
 class TestJekyll (TestCase):
 
@@ -1560,7 +1560,7 @@ class TestApp (TestCase):
             self.assertTrue(EDIT_LISTDIR_AUTHOR_EMAIL_PATTERN.format(fake_author_email) in response.data)
 
             # extract the generated branch name from the returned HTML
-            generated_branch_search = search(r'\/tree\/(.{{{}}})\/edit'.format(repo_functions.BRANCH_NAME_LENGTH), response.data)
+            generated_branch_search = search(r'<input name="branch" value="(.{{{}}})" type="hidden" />'.format(repo_functions.BRANCH_NAME_LENGTH), response.data)
             self.assertIsNotNone(generated_branch_search)
             try:
                 generated_branch_name = generated_branch_search.group(1)
@@ -1570,7 +1570,7 @@ class TestApp (TestCase):
         with HTTMock(self.mock_google_analytics):
             # create a new file
             response = self.test_client.post('/tree/{}/edit/'.format(generated_branch_name),
-                                             data={'action': 'add article', 'path': fake_page_slug},
+                                             data={'action': 'create', 'target': 'article', 'path': fake_page_slug},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
             self.assertTrue(fake_page_path in response.data)
@@ -1578,7 +1578,7 @@ class TestApp (TestCase):
             # get the index page for the branch and verify that the new file is listed
             response = self.test_client.get('/tree/{}/edit/'.format(generated_branch_name), follow_redirects=True)
             self.assertEquals(response.status_code, 200)
-            self.assertTrue(EDIT_LISTDIR_FILE_NAME_PATTERN.format(**{"file_name": fake_page_slug, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data)
+            self.assertTrue(EDIT_LISTDIR_FILE_NAME_PATTERN.format(**{"file_name": fake_page_slug, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data.lower())
 
             # get the edit page for the new file and extract the hexsha value
             response = self.test_client.get('/tree/{}/edit/{}'.format(generated_branch_name, fake_page_path))
@@ -1692,9 +1692,10 @@ class TestApp (TestCase):
             fake_task_beneficiary = u'Nobody'
             fake_author_email = u'erica@example.com'
             fake_branch_name = repo_functions.make_branch_name(fake_task_description, fake_task_beneficiary, fake_author_email)
-            response = self.test_client.post('/tree/{}/edit/'.format(fake_branch_name), data={'action': 'add article', 'path': fake_page_slug}, follow_redirects=True)
+            response = self.test_client.post('/tree/{}/edit/'.format(fake_branch_name), data={'action': 'create', 'target': 'article', 'path': fake_page_slug}, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # the branch name should not be in the returned HTML
+            # :TODO: need a better assertion for this
             self.assertFalse(EDIT_LISTDIR_BRANCH_NAME_PATTERN.format(fake_branch_name) in response.data)
             # the branch name should not be in the origin's branches list
             self.assertFalse(fake_branch_name in self.origin.branches)
@@ -1707,19 +1708,19 @@ class TestApp (TestCase):
             self.assertTrue(EDIT_LISTDIR_TASK_DESCRIPTION_AND_BENEFICIARY_PATTERN.format(fake_task_description, fake_task_beneficiary) in response.data)
 
             # extract the generated branch name from the returned HTML
-            generated_branch_search = search(r'\/tree\/(.{{{}}})\/edit'.format(repo_functions.BRANCH_NAME_LENGTH), response.data)
+            generated_branch_search = search(r'<input name="branch" value="(.{{{}}})" type="hidden" />'.format(repo_functions.BRANCH_NAME_LENGTH), response.data)
             self.assertIsNotNone(generated_branch_search)
             try:
                 generated_branch_name = generated_branch_search.group(1)
             except AttributeError:
                 raise Exception('No match for generated branch name.')
 
-            response = self.test_client.post('/tree/{}/edit/'.format(generated_branch_name), data={'action': 'add article', 'path': fake_page_slug}, follow_redirects=True)
+            response = self.test_client.post('/tree/{}/edit/'.format(generated_branch_name), data={'action': 'create', 'target': 'article', 'path': fake_page_slug}, follow_redirects=True)
             self.assertEquals(response.status_code, 200)
 
             response = self.test_client.get('/tree/{}/edit/'.format(generated_branch_name), follow_redirects=True)
             self.assertEquals(response.status_code, 200)
-            self.assertTrue(EDIT_LISTDIR_FILE_NAME_PATTERN.format(**{"file_name": fake_page_slug, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data)
+            self.assertTrue(EDIT_LISTDIR_FILE_NAME_PATTERN.format(**{"file_name": fake_page_slug, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data.lower())
 
             response = self.test_client.get('/tree/{}/edit/{}'.format(generated_branch_name, fake_page_path))
             self.assertEquals(response.status_code, 200)
@@ -1962,7 +1963,7 @@ class TestApp (TestCase):
             # create a new category
             page_slug = u'hello'
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'add category', 'path': page_slug},
+                                             data={'action': 'create', 'target': 'category', 'path': page_slug},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
 
@@ -2001,7 +2002,7 @@ class TestApp (TestCase):
             # create multiple new categories
             page_slug = u'when/the/drum/beat'
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'add category', 'path': page_slug},
+                                             data={'action': 'create', 'target': 'category', 'path': page_slug},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
 
@@ -2024,7 +2025,7 @@ class TestApp (TestCase):
             page_slug = u'goes/like/this'
             page_path = u'{}/index.{}'.format(page_slug, view_functions.CONTENT_FILE_EXTENSION)
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'add article', 'path': page_slug},
+                                             data={'action': 'create', 'target': 'article', 'path': page_slug},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
             self.assertTrue(page_path in response.data)
@@ -2070,25 +2071,25 @@ class TestApp (TestCase):
             # create some nested categories
             slug_hello = u'hello'
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'add category', 'path': slug_hello},
+                                             data={'action': 'create', 'target': 'category', 'path': slug_hello},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
 
             slug_world = u'world'
             response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, slug_hello),
-                                             data={'action': 'add category', 'path': slug_world},
+                                             data={'action': 'create', 'target': 'category', 'path': slug_world},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
 
             slug_how = u'how'
             response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, sep.join([slug_hello, slug_world])),
-                                             data={'action': 'add category', 'path': slug_how},
+                                             data={'action': 'create', 'target': 'category', 'path': slug_how},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
 
             slug_are = u'are'
             response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, sep.join([slug_hello, slug_world, slug_how])),
-                                             data={'action': 'add category', 'path': slug_are},
+                                             data={'action': 'create', 'target': 'category', 'path': slug_are},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
 
@@ -2131,7 +2132,7 @@ class TestApp (TestCase):
             page_slug = u'hello'
             page_path = u'{}/index.{}'.format(page_slug, view_functions.CONTENT_FILE_EXTENSION)
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'add article', 'path': page_slug},
+                                             data={'action': 'create', 'target': 'article', 'path': page_slug},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
             self.assertTrue(page_path in response.data)
@@ -2171,7 +2172,7 @@ class TestApp (TestCase):
             page_slug = u'hello'
             page_path = u'{}/index.{}'.format(page_slug, view_functions.CONTENT_FILE_EXTENSION)
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'add article', 'path': page_slug},
+                                             data={'action': 'create', 'target': 'article', 'path': page_slug},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
             self.assertTrue(page_path in response.data)
@@ -2230,7 +2231,7 @@ class TestApp (TestCase):
             page_slug = u'hello'
             page_path = u'{}/index.{}'.format(page_slug, view_functions.CONTENT_FILE_EXTENSION)
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'add article', 'path': page_slug},
+                                             data={'action': 'create', 'target': 'article', 'path': page_slug},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
             self.assertTrue(page_path in response.data)
@@ -2287,7 +2288,7 @@ class TestApp (TestCase):
             page_slug = u'hello'
             page_path = u'{}/index.{}'.format(page_slug, view_functions.CONTENT_FILE_EXTENSION)
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'add article', 'path': page_slug},
+                                             data={'action': 'create', 'target': 'article', 'path': page_slug},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
             self.assertTrue(page_path in response.data)
@@ -2296,7 +2297,7 @@ class TestApp (TestCase):
             response = self.test_client.get('/tree/{}/edit/'.format(working_branch_name), follow_redirects=True)
             self.assertEquals(response.status_code, 200)
             # verify that the new folder is represented as a file in the HTML
-            self.assertTrue(EDIT_LISTDIR_FILE_NAME_PATTERN.format(**{"file_name": page_slug, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data)
+            self.assertTrue(EDIT_LISTDIR_FILE_NAME_PATTERN.format(**{"file_name": page_slug, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data.lower())
 
 class TestPublishApp (TestCase):
 
