@@ -21,6 +21,8 @@
 	display: none;
 	opacity: 0;
 	border-radius: $border-radius;
+	margin-top: 1em;
+	top: 100%;
 
 	// Provides an invisible hover area so popup stays visible
 	// when cursor is between link and popup.
@@ -42,5 +44,13 @@
 	}
 	> li {
 		margin: .5em 0;
+	}
+}
+
+.dropdown__popup--right {
+	right: 0;
+	&:before {
+		left: auto;
+		right: 1em;
 	}
 }

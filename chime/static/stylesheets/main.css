@@ -1205,6 +1205,8 @@ button.button {
   display: none;
   opacity: 0;
   border-radius: 3px;
+  margin-top: 1em;
+  top: 100%;
 }
 /* line 7, ../sass/core/_utilities.scss */
 .dropdown__popup:before, .dropdown__popup:after {
@@ -1215,7 +1217,7 @@ button.button {
 .dropdown__popup:after {
   clear: both;
 }
-/* line 27, ../sass/components/_dropdown-nav.scss */
+/* line 29, ../sass/components/_dropdown-nav.scss */
 .dropdown__popup:after {
   content: '';
   display: block;
@@ -1226,7 +1228,7 @@ button.button {
   height: 1em;
   background-color: transparent;
 }
-/* line 37, ../sass/components/_dropdown-nav.scss */
+/* line 39, ../sass/components/_dropdown-nav.scss */
 .dropdown__popup:before {
   width: 0;
   height: 0;
@@ -1239,9 +1241,19 @@ button.button {
   left: 1em;
   bottom: 100%;
 }
-/* line 43, ../sass/components/_dropdown-nav.scss */
+/* line 45, ../sass/components/_dropdown-nav.scss */
 .dropdown__popup > li {
   margin: .5em 0;
+}
+
+/* line 50, ../sass/components/_dropdown-nav.scss */
+.dropdown__popup--right {
+  right: 0;
+}
+/* line 52, ../sass/components/_dropdown-nav.scss */
+.dropdown__popup--right:before {
+  left: auto;
+  right: 1em;
 }
 
 /* line 2, ../sass/components/_flashes.scss */
