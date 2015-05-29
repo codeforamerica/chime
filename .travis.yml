@@ -5,10 +5,9 @@ before_install:
 - openssl aes-256-cbc -K $encrypted_389dd021eb6c_key -iv $encrypted_389dd021eb6c_iv
   -in fabfile/cfa-chime-keypair.id_rsa.enc -out fabfile/cfa-chime-keypair.id_rsa -d
 - chmod 400 fabfile/cfa-chime-keypair.id_rsa
-# disabled to see about containerizing this
-#- sudo apt-get update -y
-#- sudo apt-get install git
-#- sudo apt-get install apache2
+- sudo apt-get update -y
+- sudo apt-get install git
+- sudo apt-get install apache2
 #
 # only needed for acceptance tests which are temporarily disabled
 # - export DISPLAY=:99.0
