@@ -1,5 +1,7 @@
+import logging
 import sys
 from os.path import abspath, join, dirname
+import time
 
 repo_root = abspath(join(dirname(__file__), '..'))
 sys.path.insert(0, repo_root)
@@ -39,6 +41,7 @@ class TestSnsHandler(TestCase):
     def setUp(self):
         super(TestSnsHandler, self).setUp()
         self.handler = TestableSnsHandler(FAKE_ARN)
+        logging.Formatter.converter = time.gmtime
 
     def test_setup(self):
         self.assertEqual(self.handler.given_region_name, FAKE_ZONE)
@@ -46,12 +49,12 @@ class TestSnsHandler(TestCase):
     def test_basic_use(self):
         self.handler.emit(self.fake_record('chime', ERROR, "Foo failed"))
         self.assertEqual(self.handler.published_to_sns_topic(), FAKE_ARN)
-        self.assertRegexpMatches(self.handler.published_message(), '2015-01-01 00:00:00,000 - chime - ERROR - Foo failed')
+        self.assertRegexpMatches(self.handler.published_message(), '2015-01-01 08:00:00,000 - chime - ERROR - Foo failed')
         self.assertEqual(self.handler.published_subject(), 'Production alert: ERROR: chime')
 
     def test_exception_use(self):
         self.handler.emit(self.fake_record('chime', ERROR, "Foo failed", RuntimeError))
-        self.assertRegexpMatches(self.handler.published_message(), '2015-01-01 00:00:00,000 - chime - ERROR - Foo failed')
+        self.assertRegexpMatches(self.handler.published_message(), '2015-01-01 08:00:00,000 - chime - ERROR - Foo failed')
         self.assertRegexpMatches(self.handler.published_message(), 'Traceback')
         self.assertRegexpMatches(self.handler.published_message(), 'File.*line \d+')
 
