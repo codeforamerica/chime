@@ -18,7 +18,8 @@
       <div class="selection-box box-add-file-folder">
         <form action="." method="POST" class="form-one-line">
             <input class="form-one-line__input" name="path" placeholder="category name" type="text" />
-            <input class="form-one-line__submit button" name="action" type="submit" value="Add Category" />
+            <input name="target" value="category" type="hidden" />
+            <input class="form-one-line__submit button" name="action" type="submit" value="Create" />
         </form>
       </div>
       {% elif loop.index == 3 %}
@@ -26,7 +27,8 @@
       <div class="selection-box box-add-file-folder">
         <form action="." method="POST" class="form-one-line">
             <input class="form-one-line__input" name="path" placeholder="subcategory name" type="text" />
-            <input class="form-one-line__submit button" name="action" type="submit" value="Add Category" />
+            <input name="target" value="category" type="hidden" />
+            <input class="form-one-line__submit button" name="action" type="submit" value="Create" />
         </form>
       </div>
       {% endif %}
@@ -51,7 +53,8 @@
       <div class="selection-box box-add-file-folder">
         <form action="." method="POST" class="form-one-line">
             <input class="form-one-line__input" name="path" placeholder="article name" type="text" />
-            <input class="form-one-line__submit button" name="action" type="submit" value="Add Article" />
+            <input name="target" value="article" type="hidden" />
+            <input class="form-one-line__submit button" name="action" type="submit" value="Create" />
         </form>
       </div>
       {% elif dir_columns | length == 2 %}
@@ -59,7 +62,8 @@
       <div class="selection-box box-add-file-folder">
         <form action="." method="POST" class="form-one-line">
             <input class="form-one-line__input" name="path" placeholder="subcategory name" type="text" />
-            <input class="form-one-line__submit button" name="action" type="submit" value="Add Category" />
+            <input name="target" value="category" type="hidden" />
+            <input class="form-one-line__submit button" name="action" type="submit" value="Create" />
         </form>
       </div>
       {% elif dir_columns | length == 1 %}
@@ -67,7 +71,8 @@
       <div class="selection-box box-add-file-folder">
         <form action="." method="POST" class="form-one-line">
             <input class="form-one-line__input" name="path" placeholder="category name" type="text" />
-            <input class="form-one-line__submit button" name="action" type="submit" value="Add Category" />
+            <input name="target" value="category" type="hidden" />
+            <input class="form-one-line__submit button" name="action" type="submit" value="Create" />
         </form>
       </div>
       {% endif %}
