@@ -2,6 +2,10 @@ sudo: false # make sure we run in the container infrastructure, which is faster
 language: python
 python:
 - '2.7'
+cache:
+  directories:
+    - $HOME/virtualenv
+
 install:
 - pip install -r requirements.txt
 - pip install -r fabfile/requirements.txt
