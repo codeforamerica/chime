@@ -8,6 +8,8 @@ install:
 script:
 - nosetests test/unit
 notifications:
-  webhooks: http://project-monitor.codeforamerica.org/projects/1bf2f3b3-bed8-42bc-91e8-d47f873443de/status
+  webhooks:
+    - http://project-monitor.codeforamerica.org/projects/1bf2f3b3-bed8-42bc-91e8-d47f873443de/status
+    - http://chime.chimecms.org/ops/travis
   slack:
     secure: jayLiI1FjF5/M4WtL5mjO+2NOnCJZI+7IhMvZPSUiikutZSrxCvggf2C/YtlAD2NaxZXrCpnVgdB4XjQTnmRdo8U/M7pLbAF2JVgphSizrRhEY15tIPuyRRKqCQMZo5fz3+Tb6wvgLEGHxVhJv8COfe9zuwlVTcK9XmXrJkPYBE=
