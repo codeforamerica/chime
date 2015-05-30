@@ -1,33 +1,13 @@
+sudo: false # make sure we run in the container infrastructure, which is faster
 language: python
 python:
 - '2.7'
-before_install:
-- openssl aes-256-cbc -K $encrypted_389dd021eb6c_key -iv $encrypted_389dd021eb6c_iv
-  -in fabfile/cfa-chime-keypair.id_rsa.enc -out fabfile/cfa-chime-keypair.id_rsa -d
-- chmod 400 fabfile/cfa-chime-keypair.id_rsa
-# disabling sudo in pursuit of containerization
-#- sudo apt-get update -y
-#- sudo apt-get install git
-#- sudo apt-get install apache2
-#
-# only needed for acceptance tests which are temporarily disabled
-# - export DISPLAY=:99.0
-# - sh -e /etc/init.d/xvfb start
 install:
 - pip install -r requirements.txt
 - pip install -r fabfile/requirements.txt
 script:
 - nosetests test/unit
-#- fab test_chime:despawn_on_failure=t
 notifications:
   webhooks: http://project-monitor.codeforamerica.org/projects/1bf2f3b3-bed8-42bc-91e8-d47f873443de/status
   slack:
     secure: jayLiI1FjF5/M4WtL5mjO+2NOnCJZI+7IhMvZPSUiikutZSrxCvggf2C/YtlAD2NaxZXrCpnVgdB4XjQTnmRdo8U/M7pLbAF2JVgphSizrRhEY15tIPuyRRKqCQMZo5fz3+Tb6wvgLEGHxVhJv8COfe9zuwlVTcK9XmXrJkPYBE=
-# AWS_ACCESS_KEY AWS_SECRET_KEY SSH_PRIVATE_KEY_PATH TESTING_EMAIL TESTING_PASSWORD
-env:
-  global:
-  - secure: M+PrGzEfHRj+mPn7d1vHC0n/IQN6fNGER2dhG8qBE8wfC3tfaB3F50R8YSR9R5SdkdapxtgEjPgGvR3agum999qYXo839nra0zq2l3DeQYvwM0IXX0JlscwUkBrMtqMFW9iIIyxB6dgdksUJ5Zz7qcYudm+Msr15iob3DfIxZqs=
-  - secure: C8Br1052Hqd+X2OS6g+x31gZtwIzWSq1M2fvGxgIWR+wqZ5IQ6NfkTD2Ht6KwtW4fMUo/41le3t+AFReQeSMZ16l7yvkC7BWcrqQOWaNXNm9Gj1t1QFMuKQvhv3NT0H6HGLXXGMrHwLKDHTCAnSOe8k/xbhqG8Og4UF0hoOF7lY=
-  - secure: dVA5sQPJ2jE7wSENMEgqLuoyvFae2ghxBHPru52XOKSRtSgqXoqgf/jbKbpEwCDxCqlIFpdIEv33RtmmNvBMxYhmP5uToOBcyOzyc5/HbMn/+53nclLN6yTWGPtH3JT+5kqds/YL/HWdP3DWuel5gBn175SzTSFuszRPAbCyrMs=
-  - secure: I/6KqYx2i0xwCtfOW3VIORP0bMjYuD9gHpdQx1iVeKYYoVTHMnUP2RQbmu8uA31VPSZlKBofod7FX1VO41FR8M+NI4r+IrImOq/J9aWC9Upq+dBB1rPnEPfJFxPmGg+sVoNCK2utZXE1z/8WkopYAeZ9wdE4DM6235a12dIyxIY=
-  - secure: fW/O/iFDOwI/sINW2vYCDf+H4QahaaI0YNpEcJ7QXl0Nzm4UcCWLu39gYSCeaIwjfUwPFvQ/e09HH8ba2FtsdeeX+8pPECE4Ilqj0m4sZOItbSfYTdfU25okgmcsy9T652CNhUfqnkbire1Fq5nwL31CKc4BDKP0iQqSd9m3d2k=
