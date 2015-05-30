@@ -1,5 +1,7 @@
+import logging
 import sys
 from os.path import abspath, join, dirname
+import time
 from flask import Request
 
 repo_root = abspath(join(dirname(__file__), '..'))
@@ -29,7 +31,7 @@ def fake_request(scheme='http', host='example.org', path='/'):
 
 
 def fake_record(name, level, msg, exception=None, extra=None):
-    record = Logger("ignored").makeRecord( name, level, '/this/that', 123, msg, None, exc_info_for(exception), None, extra)
+    record = Logger("ignored").makeRecord(name, level, '/this/that', 123, msg, None, exc_info_for(exception), None, extra)
     record.created = 1420099200  # 1/1/2015 Pacific
     record.msecs = 0
     return record
@@ -68,6 +70,7 @@ class TestSnsHandler(TestCase):
     def setUp(self):
         super(TestSnsHandler, self).setUp()
         self.handler = TestableSnsHandler(FAKE_ARN)
+        logging.Formatter.converter = time.gmtime
 
     def test_setup(self):
         self.assertEqual(FAKE_ZONE, self.handler.given_region_name)
@@ -76,12 +79,12 @@ class TestSnsHandler(TestCase):
         self.handler.emit(fake_record('chime', ERROR, "Foo failed"))
         self.assertEqual(FAKE_ARN, self.handler.published_to_sns_topic())
         self.assertEqual('Production alert: ERROR: chime', self.handler.published_subject())
-        self.assertIn('2015-01-01 00:00:00,000 - chime - ERROR - Foo failed', self.handler.published_message())
+        self.assertIn('2015-01-01 08:00:00,000 - chime - ERROR - Foo failed', self.handler.published_message())
 
     def test_exception_use(self):
         self.handler.emit(fake_record('chime', ERROR, "Foo failed", RuntimeError))
         message = self.handler.published_message()
-        self.assertIn('2015-01-01 00:00:00,000 - chime - ERROR - Foo failed', message)
+        self.assertIn('2015-01-01 08:00:00,000 - chime - ERROR - Foo failed', message)
         self.assertIn('Traceback', message)
         self.assertRegexpMatches(message, 'File.*line \d+')
 
@@ -98,7 +101,6 @@ class TestSnsHandler(TestCase):
         message = self.handler.published_message()
         self.assertIn('GET', message)
         self.assertIn('http://chime.chimecms.org/', message)
-
 
 if __name__ == '__main__':
     unittest.main()

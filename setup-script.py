@@ -13,7 +13,7 @@ Follows the process described here:
 '''
 from os import environ
 from time import sleep
-from chime.setup import functions as F
+from chime.instantiation import functions as F
 
 # Establish some baseline details.
 gh_client_id, gh_client_secret, gdocs_client_id, gdocs_client_secret, \

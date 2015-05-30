@@ -71,7 +71,7 @@ class TestJekyll (TestCase):
 class TestViewFunctions (TestCase):
 
     def setUp(self):
-        repo_path = dirname(abspath(__file__)) + '/test-app.git'
+        repo_path = dirname(abspath(__file__)) + '/../test-app.git'
         temp_repo_dir = mkdtemp(prefix='chime-root')
         temp_repo_path = temp_repo_dir + '/test-app.git'
         copytree(repo_path, temp_repo_path)
@@ -188,7 +188,7 @@ mike@teczno.com,Code for America,Mike Migurski
 class TestRepo (TestCase):
 
     def setUp(self):
-        repo_path = dirname(abspath(__file__)) + '/test-app.git'
+        repo_path = dirname(abspath(__file__)) + '/../test-app.git'
         temp_repo_dir = mkdtemp(prefix='chime-root')
         temp_repo_path = temp_repo_dir + '/test-app.git'
         copytree(repo_path, temp_repo_path)
@@ -1387,7 +1387,7 @@ class TestApp (TestCase):
     def setUp(self):
         self.work_path = mkdtemp(prefix='chime-repo-clones-')
 
-        repo_path = dirname(abspath(__file__)) + '/test-app.git'
+        repo_path = dirname(abspath(__file__)) + '/../test-app.git'
         temp_repo_dir = mkdtemp(prefix='chime-root')
         temp_repo_path = temp_repo_dir + '/test-app.git'
         copytree(repo_path, temp_repo_path)

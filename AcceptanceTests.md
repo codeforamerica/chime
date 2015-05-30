@@ -69,7 +69,7 @@ running `fab -d <command>`. You can view all fab commands with `fab -l`
   Chime running on the new instance. This can only deploy the master
   branch.
 + `fab test_chime`: Spawns a new EC2 instance, installs Chime, runs the
-  tests found in `./test/selenium`, and then terminates the instance.
+  tests found in `./test/acceptance`, and then terminates the instance.
   Takes three arguments: setup, despawn, and branch (Example:
   `fab test_chime:setup=f,despawn=f`):
     + setup: Flag for running the setup scraccipts on the instance.

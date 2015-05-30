@@ -8,14 +8,16 @@ before_install:
 - sudo apt-get update -y
 - sudo apt-get install git
 - sudo apt-get install apache2
-- export DISPLAY=:99.0
-- sh -e /etc/init.d/xvfb start
+#
+# only needed for acceptance tests which are temporarily disabled
+# - export DISPLAY=:99.0
+# - sh -e /etc/init.d/xvfb start
 install:
 - pip install -r requirements.txt
 - pip install -r fabfile/requirements.txt
 script:
-- python test/test.py
-- fab test_chime:despawn_on_failure=t
+- nosetests test/unit
+#- fab test_chime:despawn_on_failure=t
 notifications:
   webhooks: http://project-monitor.codeforamerica.org/projects/1bf2f3b3-bed8-42bc-91e8-d47f873443de/status
   slack:
