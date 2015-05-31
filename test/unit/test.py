@@ -43,12 +43,6 @@ PATTERN_TASK_COMMENT = '<!-- task: {} -->'
 PATTERN_BENEFICIARY_COMMENT = '<!-- beneficiary: {} -->'
 PATTERN_TEMPLATE_NAME = '<body class="{} col">'
 PATTERN_FILE_LINK = '<a class="dir-item__name {file_type} row__left" href="/tree/{branch_name}/edit/{file_name}">'
-EDIT_LISTDIR_TASK_DESCRIPTION_PATTERN = '<p>Current task: {}</p>'
-EDIT_LISTDIR_TASK_DESCRIPTION_AND_BENEFICIARY_PATTERN = '<p>Current task: {} for {}</p>'
-EDIT_LISTDIR_AUTHOR_EMAIL_PATTERN = '<li class="toolbar__item">Started by: <strong>{}</strong></li>'
-EDIT_LISTDIR_BRANCH_NAME_PATTERN = '<input name="branch" value="{}" type="hidden" />'
-EDIT_LISTDIR_FILE_NAME_PATTERN = '<a class="dir-item__name {file_type} row__left" href="{file_name}"><span class="fa fa-file-text-o"></span>{file_name}</a>'
-
 
 class TestJekyll (TestCase):
 
@@ -1706,8 +1700,7 @@ class TestApp (TestCase):
             response = self.test_client.post('/tree/{}/edit/'.format(fake_branch_name), data={'action': 'create', 'create_what': 'article', 'path': fake_page_slug}, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # the branch name should not be in the returned HTML
-            # :TODO: need a better assertion for this
-            self.assertFalse(EDIT_LISTDIR_BRANCH_NAME_PATTERN.format(fake_branch_name) in response.data)
+            # :TODO: need an assertion for this
             # the branch name should not be in the origin's branches list
             self.assertFalse(fake_branch_name in self.origin.branches)
 
