@@ -8,9 +8,10 @@
 
 {% block content %}
 
+<!-- task: {% if task_description %}{{task_description}}{% elif task %}{{task}}{% else %}{{name}}{% endif %} -->
+<!-- beneficiary: {% if task_beneficiary %}{{task_beneficiary}}{% endif %} -->
 <div class="articles-list__main grid col__flex">
     {% for column in dir_columns %}
-    {% if loop.index != 1 %}
     <div class="dir grid__item width-one-fourth">
       {% if loop.index == 2 %}
       <h2>Categories</h2>
@@ -54,7 +55,6 @@
       {% endfor %}   
       </ul>
     </div>
-    {% endif %}
     {% endfor %}
 </div>
 
@@ -64,7 +64,7 @@
     {% set name = itemvalues[0] %}
     {% set task = itemvalues[1] %}
 
-    <p class="taskbar__task"><b>Currently {% if not eligible_peer %}working to{% else %} reviewing activity{% endif %}:</b> {% if task_description %}{{task_description}}{% elif task %}{{task}}{% else %}{{name}}{% endif %}{% if task_beneficiary %} for {{task_beneficiary}}{% endif %}</p>
+    <p class="taskbar__task"><b>Currently {% if not eligible_peer %}working to{% else %}reviewing activity{% endif %}:</b> {% if task_description %}{{task_description}}{% elif task %}{{task}}{% else %}{{name}}{% endif %}{% if task_beneficiary %} for {{task_beneficiary}}{% endif %}</p>
   </div>
   <div class="taskbar__actions row__right toolbar--right">
         <!-- testing to get some buttons... this next line should be  if needs_peer_review and not eligible_peer -->

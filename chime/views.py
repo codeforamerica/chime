@@ -526,7 +526,7 @@ def branch_edit_file(branch, path=None):
 
     action = request.form.get('action', '').lower()
     create_what = request.form.get('create_what', '').lower()
-    create_path = request.form.get('create_path', '') or path
+    create_path = request.form.get('create_path', path or '')
     do_save = True
 
     if action == 'upload' and 'file' in request.files:
@@ -534,7 +534,7 @@ def branch_edit_file(branch, path=None):
         message = 'Uploaded new file "{}"'.format(file_path)
         redirect_path = path or ''
 
-    elif action == 'create' and (create_what == 'article' or create_what == 'category') and create_path:
+    elif action == 'create' and (create_what == 'article' or create_what == 'category') and create_path is not None:
         message, file_path, redirect_path = add_article_or_category(repo, create_path, create_what, request.form['path'])
         commit = repo.commit()
 
