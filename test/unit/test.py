@@ -78,7 +78,7 @@ class TestJekyll (TestCase):
 class TestViewFunctions (TestCase):
 
     def setUp(self):
-        repo_path = dirname(abspath(__file__)) + '/test-app.git'
+        repo_path = dirname(abspath(__file__)) + '/../test-app.git'
         temp_repo_dir = mkdtemp(prefix='chime-root')
         temp_repo_path = temp_repo_dir + '/test-app.git'
         copytree(repo_path, temp_repo_path)
@@ -195,7 +195,7 @@ mike@teczno.com,Code for America,Mike Migurski
 class TestRepo (TestCase):
 
     def setUp(self):
-        repo_path = dirname(abspath(__file__)) + '/test-app.git'
+        repo_path = dirname(abspath(__file__)) + '/../test-app.git'
         temp_repo_dir = mkdtemp(prefix='chime-root')
         temp_repo_path = temp_repo_dir + '/test-app.git'
         copytree(repo_path, temp_repo_path)
@@ -1163,15 +1163,16 @@ class TestRepo (TestCase):
 class TestGoogleApiFunctions (TestCase):
 
     def setUp(self):
-        app_args = {}
-        app_args['BROWSERID_URL'] = 'http://example.com'
-        app_args['GA_CLIENT_ID'] = 'client_id'
-        app_args['GA_CLIENT_SECRET'] = 'meow_secret'
+        environment = {}
+        environment['BROWSERID_URL'] = 'http://example.com'
+        environment['LIVE_SITE_URL'] = 'http://example.org/'
+        environment['GA_CLIENT_ID'] = 'client_id'
+        environment['GA_CLIENT_SECRET'] = 'meow_secret'
 
         self.ga_config_dir = mkdtemp(prefix='chime-config-')
-        app_args['RUNNING_STATE_DIR'] = self.ga_config_dir
+        environment['RUNNING_STATE_DIR'] = self.ga_config_dir
 
-        self.app = create_app(app_args)
+        self.app = create_app(environment)
 
         # write a tmp config file
         config_values = {
@@ -1394,7 +1395,7 @@ class TestApp (TestCase):
     def setUp(self):
         self.work_path = mkdtemp(prefix='chime-repo-clones-')
 
-        repo_path = dirname(abspath(__file__)) + '/test-app.git'
+        repo_path = dirname(abspath(__file__)) + '/../test-app.git'
         temp_repo_dir = mkdtemp(prefix='chime-root')
         temp_repo_path = temp_repo_dir + '/test-app.git'
         copytree(repo_path, temp_repo_path)
@@ -1403,20 +1404,21 @@ class TestApp (TestCase):
         self.clone1 = self.origin.clone(mkdtemp(prefix='chime-'))
         repo_functions.ignore_task_metadata_on_merge(self.clone1)
 
-        app_args = {}
+        environment = {}
 
-        app_args['SINGLE_USER'] = 'Yes'
-        app_args['GA_CLIENT_ID'] = 'client_id'
-        app_args['GA_CLIENT_SECRET'] = 'meow_secret'
+        environment['SINGLE_USER'] = 'Yes'
+        environment['GA_CLIENT_ID'] = 'client_id'
+        environment['GA_CLIENT_SECRET'] = 'meow_secret'
 
         self.ga_config_dir = mkdtemp(prefix='chime-config-')
-        app_args['RUNNING_STATE_DIR'] = self.ga_config_dir
-        app_args['WORK_PATH'] = self.work_path
-        app_args['REPO_PATH'] = temp_repo_path
-        app_args['AUTH_DATA_HREF'] = 'http://example.com/auth.csv'
-        app_args['BROWSERID_URL'] = 'http://localhost'
+        environment['RUNNING_STATE_DIR'] = self.ga_config_dir
+        environment['WORK_PATH'] = self.work_path
+        environment['REPO_PATH'] = temp_repo_path
+        environment['AUTH_DATA_HREF'] = 'http://example.com/auth.csv'
+        environment['BROWSERID_URL'] = 'http://localhost'
+        environment['LIVE_SITE_URL'] = 'http://example.org/'
 
-        self.app = create_app(app_args)
+        self.app = create_app(environment)
 
         # write a tmp config file
         config_values = {

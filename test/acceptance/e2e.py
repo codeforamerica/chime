@@ -55,7 +55,7 @@ class TestSelenium(TestCase):
         submit_row.find_element_by_css_selector('.isReturning.isTransitionToSecondary').click()
 
         # switch back to the main window
-        self.driver.switch_to_window(main_window)
+        self.driver.switch_to.window(main_window)
 
         # make sure we're back to Chime
         # self.assertEquals(self.driver.title, 'Tasks | Chime')
@@ -87,7 +87,7 @@ class TestSelenium(TestCase):
 
         self.waiter.until(EC.presence_of_element_located((By.TAG_NAME, 'body')))
         self.driver.close()
-        self.driver.switch_to_window(main_window)
+        self.driver.switch_to.window(main_window)
 
         # go back to the main page
         self.driver.get(main_url)

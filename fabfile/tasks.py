@@ -2,16 +2,15 @@
 
 from __future__ import with_statement
 
-import boto.ec2
 import time
-import subprocess
 
-from fabric.context_managers import cd
+import boto.ec2
 from fabric.operations import local
 from fabric.api import task, env, run, sudo
 from fabric.colors import green, yellow, red
 from fabric.exceptions import NetworkError
 from fabric.contrib.project import rsync_project
+
 
 @task
 def spawn_instance():
@@ -105,7 +104,7 @@ def test_chime(setup=True, despawn=True, despawn_on_failure=False):
     print(green('Running tests...'))
     time.sleep(2)
     try:
-        local('python ' + fabconf.get('FAB_CONFIG_PATH') + '/../test/selenium/e2e.py')
+        local('python ' + fabconf.get('FAB_CONFIG_PATH') + '/../test/acceptance/e2e.py')
         if _looks_true(despawn):
             _despawn(public_dns)
     except:
