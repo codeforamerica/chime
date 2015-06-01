@@ -1,14 +1,6 @@
 .taskbar {
-	color: $color-grey-900;
-	background-color: $color-grey-100;
-}
-
-.taskbar--working {
-	background-color: $color-green-400;
-}
-
-.taskbar--reviewing {
-	background-color: $color-orange-400;
+	background-color: $color-grey-900;
+	color: $color-grey-200;
 }
 
 .taskbar__task {

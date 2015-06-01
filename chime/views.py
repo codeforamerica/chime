@@ -246,7 +246,7 @@ def start_branch():
     branch = repo_functions.get_start_branch(repo, master_name, task_description, task_beneficiary, session['email'])
 
     safe_branch = branch_name2path(branch.name)
-    return redirect('/tree/{}/edit/'.format(safe_branch), code=303)
+    return redirect('/tree/{}/edit/categories'.format(safe_branch), code=303)
 
 @app.route('/merge', methods=['POST'])
 @log_application_errors

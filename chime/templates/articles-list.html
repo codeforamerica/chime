@@ -12,12 +12,13 @@
 <!-- beneficiary: {% if task_beneficiary %}{{task_beneficiary}}{% endif %} -->
 <div class="articles-list__main grid col__flex">
     {% for column in dir_columns %}
-    <div class="dir grid__item width-one-fourth">
+    {% if loop.index != 1 %}
+    <div class="dir grid__item {% if loop.index == 4 %}width-one-half{% else %}width-one-fourth{% endif %}">
       {% if loop.index == 2 %}
       <h2>Categories</h2>
       <div class="selection-box box-add-file-folder">
         <form action="." method="POST" class="form-one-line">
-            <input class="form-one-line__input" name="path" placeholder="category name" type="text" />
+            <input class="form-one-line__input" name="path" placeholder="Add Category" type="text" />
             <input name="create_what" value="category" type="hidden" />
             <input name="create_path" value="{{column['path']}}" type="hidden" />
             <input class="form-one-line__submit button" name="action" type="submit" value="Create" />
@@ -27,7 +28,7 @@
       <h2>Subcategories</h2>
       <div class="selection-box box-add-file-folder">
         <form action="." method="POST" class="form-one-line">
-            <input class="form-one-line__input" name="path" placeholder="subcategory name" type="text" />
+            <input class="form-one-line__input" name="path" placeholder="Add Subcategory" type="text" />
             <input name="create_what" value="category" type="hidden" />
             <input name="create_path" value="{{column['path']}}" type="hidden" />
             <input class="form-one-line__submit button" name="action" type="submit" value="Create" />
@@ -37,37 +38,39 @@
       <h2>Articles</h2>
       <div class="selection-box box-add-file-folder">
         <form action="." method="POST" class="form-one-line">
-            <input class="form-one-line__input" name="path" placeholder="article name" type="text" />
+            <input class="form-one-line__input" name="path" placeholder="Add Article" type="text" />
             <input name="create_what" value="article" type="hidden" />
             <input name="create_path" value="{{column['path']}}" type="hidden" />
             <input class="form-one-line__submit button" name="action" type="submit" value="Create" />
         </form>
       </div>
       {% endif %}
-      <ul class="dir__listing">
-      {% for file in column['files'] %}
+      <ul class="dir">
+        {% for file in column['files'] %}
          <li class="dir-item row {% if file['selected'] == True %}is-selected{% endif %}">
             <a class="dir-item__name {{file['display_type']}} row__left" href="{{file['edit_path']}}">{% if file['display_type'] == "article" %}<span class="fa fa-file-text-o"></span>{% elif file['display_type'] == "category" %}<span class="fa fa-folder-o"></span>{% else %}{% endif %}{{ file['name']  | title | replace('-', ' ') }}</a>
             <div class="dir-item__actions toolbar--right row__right">
               <a href="#"><span class="fa fa-pencil"></span></a>
             </div>
           </li>
-      {% endfor %}   
+        {% endfor %}   
       </ul>
     </div>
+    {% endif %}
     {% endfor %}
 </div>
 
-<div class="row taskbar {% if not eligible_peer %} taskbar--working {% else %} taskbar--reviewing {% endif %}">
+<div class="row taskbar">
   <div class="taskbar__info row__left">
     {% set itemvalues = branch.split('/') %}
     {% set name = itemvalues[0] %}
     {% set task = itemvalues[1] %}
 
-    <p class="taskbar__task"><b>Currently {% if not eligible_peer %}working to{% else %}reviewing activity{% endif %}:</b> {% if task_description %}{{task_description}}{% elif task %}{{task}}{% else %}{{name}}{% endif %}{% if task_beneficiary %} for {{task_beneficiary}}{% endif %}</p>
+    <p class="taskbar__task"><b>{% if task_description %}{{task_description}}{% elif task %}{{task}}{% else %}{{name}}{% endif %}{% if task_beneficiary %} for {{task_beneficiary}}{% endif %}</p>
   </div>
   <div class="taskbar__actions row__right toolbar--right">
         <!-- testing to get some buttons... this next line should be  if needs_peer_review and not eligible_peer -->
+        {{ eligible_peer }}
         {% if needs_peer_review and not eligible_peer %}
         <form action="/merge" method="POST" class="toolbar__item">
           <input name="branch" value="{{branch}}" type="hidden" />
@@ -77,6 +80,7 @@
         {% elif is_peer_approved and eligible_peer %}
         <form action="/merge" method="POST" class="toolbar__item">
           <input name="branch" value="{{branch}}" type="hidden" />
+          <a class="toolbar__item button button--white text-red" href="/tree/{{safe_branch}}/review">Request Fixes</a>
           <button name="action" value="merge" type="submit" class="button button--white">Publish</button>
         </form>    
 
@@ -102,13 +106,8 @@
       <a class="toolbar__item button button--white text-red" href="/tree/{{safe_branch}}/review">Request Fixes</a>
       <button name="action" value="approve" type="submit" class="toolbar__item button button--white text-green">Approve</button>
     </form>    
-
     {% else %}
 
-      Needs review? {{ needs_peer_review }}.
-      Is approved? {{ is_peer_approved }}.
-      Is rejected? {{ is_peer_rejected }}.
-      Eligible peer? {{ eligible_peer }}.
 
     {% endif %}
 
