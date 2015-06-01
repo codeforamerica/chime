@@ -58,6 +58,7 @@ def index():
         ahead = pattern.findall(ahead_raw)
 
         if current_app.config['SINGLE_USER']:
+            eligible_peer = True
             needs_peer_review = False
             is_peer_approved = True
             is_peer_rejected = False
@@ -65,6 +66,7 @@ def index():
             needs_peer_review = repo_functions.needs_peer_review(repo, master_name, name)
             is_peer_approved = repo_functions.is_peer_approved(repo, master_name, name)
             is_peer_rejected = repo_functions.is_peer_rejected(repo, master_name, name)
+            eligible_peer = session['email'] != repo_functions.ineligible_peer(repo, master_name, name)
 
         review_subject = 'Plz review this thing'
         review_body = '%s/tree/%s/edit' % (request.url, path)
@@ -75,6 +77,7 @@ def index():
         task_description = task_metadata['task_description'] if 'task_description' in task_metadata else name
         task_beneficiary = task_metadata['task_beneficiary'] if 'task_beneficiary' in task_metadata else u''
 
+
         list_items.append(dict(name=name, path=path, behind=behind, ahead=ahead,
                                needs_peer_review=needs_peer_review,
                                is_peer_approved=is_peer_approved,
@@ -82,10 +85,13 @@ def index():
                                review_subject=review_subject,
                                review_body=review_body,
                                author_email=author_email, task_description=task_description,
-                               task_beneficiary=task_beneficiary))
+                               task_beneficiary=task_beneficiary, eligible_peer=eligible_peer))
+
 
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(items=list_items)
+
+
 
     return render_template('activities-list.html', **kwargs)
 
