@@ -66,11 +66,7 @@
 
 <div class="row taskbar">
   <div class="taskbar__info row__left">
-    {% set itemvalues = branch.split('/') %}
-    {% set name = itemvalues[0] %}
-    {% set task = itemvalues[1] %}
-
-    <p class="taskbar__task"><b>{% if task_description %}{{task_description}}{% elif task %}{{task}}{% else %}{{name}}{% endif %}{% if task_beneficiary %} for {{task_beneficiary}}{% endif %}</p>
+    <p class="taskbar__task"><b>{% if task_description %}{{task_description}}{% else %}{{branch}}{% endif %}{% if task_beneficiary %} for {{task_beneficiary}}{% endif %}</p>
   </div>
   <div class="taskbar__actions row__right toolbar--right">
         <!-- testing to get some buttons... this next line should be  if needs_peer_review and not eligible_peer -->
