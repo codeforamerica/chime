@@ -27,6 +27,7 @@
 \*------------------------------------*/
 
 @import 'components/global-header';
+@import 'components/taskbar';
 @import 'components/table';
 @import 'components/forms';
 @import 'components/toolbar';
@@ -36,6 +37,7 @@
 @import 'components/dropdown-nav';
 @import 'components/activity-log';
 @import 'components/comment';
+@import 'components/flashes';
 
 
 
@@ -44,9 +46,12 @@
 \*------------------------------------*/
 
 @import 'templates/signin';
+
 @import 'templates/activities-list';
 @import 'templates/activity-overview';
 @import 'templates/articles-list';
 @import 'templates/article-edit';
 @import 'templates/article-history';
+@import 'templates/article-review';
+
 

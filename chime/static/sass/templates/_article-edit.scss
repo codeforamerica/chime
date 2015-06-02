@@ -44,9 +44,14 @@
 		height: auto;
 		overflow: auto;
 		padding: 2em;
-		max-height: 700px;
+
+		&:focus {
+			background-color: transparent;
+		}
+
 		.lt-ie10 & {
 			min-height: 300px;
+			max-height: 700px;
 		}
 	}
 }

@@ -1,5 +1,6 @@
 .grid {
 	@include outer-container();
+	@include clearfix();
 	max-width: $site-max-width;
 	padding: 1em $site-margins;
 	width: 100%;

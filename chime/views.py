@@ -18,7 +18,7 @@ from . import publish
 from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
 from .view_functions import (
     branch_name2path, branch_var2name, get_repo, dos2unix,
-    login_required, browserid_hostname_required, synch_required, synched_checkout_required, sorted_paths,
+    login_required, browserid_hostname_required, synch_required, synched_checkout_required,
     directory_paths, directory_columns, should_redirect, make_redirect, get_auth_data_file,
     is_allowed_email, common_template_args, log_application_errors,
     is_article_dir, CONTENT_FILE_EXTENSION, ARTICLE_LAYOUT, CATEGORY_LAYOUT)
@@ -404,8 +404,7 @@ def render_list_dir(repo, branch_name, path):
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(branch=branch_name, safe_branch=branch_name2path(branch_name),
                   dirs_and_paths=directory_paths(branch_name, path),
-                  dir_columns=directory_columns(repo, branch_name, path),
-                  list_paths=sorted_paths(repo, branch_name, path, showallfiles),
+                  dir_columns=directory_columns(repo, branch_name, path, showallfiles),
                   author_email=author_email, task_description=task_description,
                   task_beneficiary=task_beneficiary, task_date_created=task_date_created,
                   task_date_updated=task_date_updated, task_root_path=task_root_path)
@@ -493,7 +492,7 @@ def branch_edit(branch, path=None):
     # it's a file, edit it
     return render_edit_view(repo, branch, path, open(full_path, 'r'))
 
-def add_article_or_category(repo, path, action, request_path):
+def add_article_or_category(repo, path, create_what, request_path):
     ''' Add an article or category
     '''
     article_front = dict(title=u'', layout=ARTICLE_LAYOUT)
@@ -512,7 +511,7 @@ def add_article_or_category(repo, path, action, request_path):
 
     name = u'{}/index.{}'.format(splitext(request_path)[0], CONTENT_FILE_EXTENSION)
 
-    if action == 'add article':
+    if create_what == 'article':
         file_path = edit_functions.create_new_page(repo, path, name, article_front, body)
         message = 'Created new article "{}"'.format(file_path)
         redirect_path = file_path
@@ -534,6 +533,8 @@ def branch_edit_file(branch, path=None):
     commit = repo.commit()
 
     action = request.form.get('action', '').lower()
+    create_what = request.form.get('create_what', '').lower()
+    create_path = request.form.get('create_path', path or '')
     do_save = True
 
     if action == 'upload' and 'file' in request.files:
@@ -541,8 +542,8 @@ def branch_edit_file(branch, path=None):
         message = 'Uploaded new file "{}"'.format(file_path)
         redirect_path = path or ''
 
-    elif (action == 'add article' or action == 'add category') and 'path' in request.form:
-        message, file_path, redirect_path = add_article_or_category(repo, path, action, request.form['path'])
+    elif action == 'create' and (create_what == 'article' or create_what == 'category') and create_path is not None:
+        message, file_path, redirect_path = add_article_or_category(repo, create_path, create_what, request.form['path'])
         commit = repo.commit()
 
     elif action == 'delete' and 'path' in request.form:
@@ -656,7 +657,16 @@ def branch_review(branch):
                   hexsha=c.hexsha, author_email=author_email, task_description=task_description,
                   task_beneficiary=task_beneficiary)
 
-    return render_template('tree-branch-review.html', **kwargs)
+    return render_template('activity-review.html', **kwargs)
+
+# Putting a placeholder template for article review here.
+@app.route('/tree/<branch>/review/<path:path>', methods=['GET'])
+@log_application_errors
+@login_required
+@synched_checkout_required
+def branch_file_review(branch, path):
+    kwargs = common_template_args(current_app.config, session)
+    return render_template('article-review.html', **kwargs)
 
 @app.route('/tree/<branch>/save/<path:path>', methods=['POST'])
 @log_application_errors

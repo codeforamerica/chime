@@ -1,0 +1,34 @@
+{% extends "base_new.html" %}
+
+{% set breadcrumb_items = [{'name': 'Activites', 'url': '/'}, {'name': 'Review (fix url)', 'url': '/'}] %}
+
+{% block title %}Review Article{% endblock %}
+
+{% block body_class %}article-review{% endblock %}
+
+{% block content %}
+
+    
+
+    <div class="article-review__main row grid col__flex">
+        <div class="article-review__preview grid__item width-two-thirds col">
+            <h2>Article Title</h2>
+            <textarea id="body" class="col__flex" name="body" type="text">Preview</textarea>
+        </div>
+        <div class="review-pane grid__item width-one-third end-row">
+            <h3>Reviewer Notes</h3>
+
+            <form action="/review" method="post">
+                <textarea name="comments" class="review-pane__textarea" placeholder="Type your feedback here."></textarea>
+                <input name="hexsha" value="{{hexsha}}" type="hidden" />
+                <input name="branch" value="{{branch}}" type="hidden" />
+                <button name="action" class="button button--red button--large" value="feedback" type="submit" />Request Fixes</button>
+            </form>
+
+            <form action="/merge" method="POST">
+                <input name="branch" value="{{branch}}" type="hidden" />
+                <button class="button button--green button--large" name="action" value="merge" type="submit" class="button-alternative">Approve and Publish</button>
+            </form>  
+        </div>
+    </div>
+{% endblock %}
