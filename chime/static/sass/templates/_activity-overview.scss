@@ -1,68 +1,89 @@
 .activity-overview__container {
 	@include stretch-content();
-	padding: 0;
+	background-color: $color-grey-100;
+	overflow: auto;
+	padding-top: 3em;
+}
+
+
+
+.activity-overview__subtitle {
+	margin-bottom: 0;
 }
 
 .activity-overview__header {
-	background-color: #fff;
-	padding: 1em $site-margins;
+	margin-top: 0;
+}
+
+.activity-overview__description {
+	margin-top: 4em;
 }
 
 .activity-overview__main {
-	padding: 1em $site-margins;
-	background-color: $color-grey-100;
-	overflow: auto;
+	margin: 0 auto;
+	padding: 3px;
+	max-width: 600px;
 }
 
+
+.activity-log {
+	margin: 4em 0;
+	padding-left: 1em;
+}
+
+
 .activity-log-item {
-	margin: 2em 0;
+	position: relative;
+	border-left: 1px solid $color-grey-400;
+	padding-left: 3em;
+	padding-bottom: 4em;
+	&:first-child {
+	}
+	&:last-child {
+		border: 0;
+	}
+	&:before {
+		content: '';
+		position: absolute;
+		display: block;
+		height: 2.5em;
+		width: 2.5em;
+		z-index: 2;
+		background-color: $color-grey-100;
+		border: 1px solid $color-grey-400;
+		border-radius: 50%;
+		left: -1.25em;
+		font-family: 'FontAwesome';
+		font-size: 14px;
+		text-align: center;
+		line-height: 2.5em;
+		color: $color-grey-800;
+	}
 	p {
 		margin: 0;
+	}
+}
+
+.activity-log-item--info {
+	&:before {
+		content: '\f129';
+	}
+}
+
+.activity-log-item--edit {
+	&:before {
+		content: '\f040';
+	}
+}
+
+.activity-log-item--comment {
+	&:before {
+		line-height: 2.25em; //fixes vertical alignment of comment icon for visual balance.
+		content: '\f075';
 	}
 }
 
 .activity-log-item__datetime {
 	margin-top: .5em;
 	font-size: $small-font-size;
-}
-
-
-
-.activity-overview-alt__header {
-	background-color: #fff;
-	padding: {
-		top: 2em;
-		bottom: 2em;
-	}
-}
-
-.activity-overview-alt__title {
-	margin: 0;
-}
-
-.activity-overview-alt__main {
-	@include stretch-content();
-	background-color: $color-grey-100;
-	padding: {
-		top: 0;
-		bottom: 0;
-	}
-}
-
-.activity_overview__discussion {
-	border-right: 1px solid $color-grey-300;
-	padding-right: $site-margins;
-	overflow: auto;
-	padding-left: 3px;
-	padding: {
-		top: 1em;
-		bottom: 3em;
-	}
-}
-
-.activity-overview-alt__history {
-	padding: {
-		top: 1em;
-		bottom: 3em;
-	}
 }
