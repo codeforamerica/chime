@@ -1,0 +1,8 @@
+.activity-overview__header {
+	background-color: #fff;
+}
+
+.activity-overview__main {
+	@include stretch-content();
+	background-color: $color-grey-100;
+}

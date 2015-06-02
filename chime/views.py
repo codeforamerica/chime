@@ -555,6 +555,30 @@ def branch_edit_file(branch, path=None):
 
     return redirect('/tree/%s/edit/%s' % (safe_branch, redirect_path), code=303)
 
+@app.route('/tree/<branch>/', methods=['GET'])
+@log_application_errors
+@login_required
+@synched_checkout_required
+
+def activity_overview(branch):
+
+    branch = branch_var2name(branch)
+    repo = get_repo(current_app)
+    safe_branch = branch_name2path(branch)
+
+    date_created = repo.git.log('--format=%ad', '--date=relative', '--', repo_functions.TASK_METADATA_FILENAME).split('\n')[-1]
+    date_updated = repo.git.log('--format=%ad', '--date=relative').split('\n')[0]
+
+    activity = repo_functions.get_task_metadata_for_branch(repo, branch)
+    activity.update(
+        date_created=date_created,
+        date_updated=date_updated
+    )
+
+    kwargs = common_template_args(current_app.config, session)
+    kwargs.update(activity=activity)
+    return render_template('activity-overview.html', **kwargs)
+
 @app.route('/tree/<branch>/history/', methods=['GET'])
 @app.route('/tree/<branch>/history/<path:path>', methods=['GET'])
 @log_application_errors
@@ -715,6 +739,7 @@ def deploy_key():
             return Response(file.read(), 200, content_type='text/plain')
     except IOError:
         return Response('Not found.', 404, content_type='text/plain')
+
 
 @app.route('/<path:path>')
 @log_application_errors

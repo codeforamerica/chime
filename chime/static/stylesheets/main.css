@@ -1234,6 +1234,36 @@ input[type="submit"]:disabled:hover {
   padding: 1em;
 }
 
+/* line 1, ../sass/templates/_activity-overview.scss */
+.activity-overview__header {
+  background-color: #fff;
+}
+
+/* line 5, ../sass/templates/_activity-overview.scss */
+.activity-overview__main {
+  display: -webkit-box;
+  display: -moz-box;
+  display: box;
+  display: -webkit-flex;
+  display: -moz-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: stretch;
+  -moz-box-align: stretch;
+  box-align: stretch;
+  -webkit-align-items: stretch;
+  -moz-align-items: stretch;
+  -ms-align-items: stretch;
+  -o-align-items: stretch;
+  align-items: stretch;
+  -ms-flex-align: stretch;
+  background-color: #f5f5f5;
+}
+/* line 5, ../sass/core/_layout.scss */
+.lt-ie10 .activity-overview__main {
+  display: block;
+}
+
 /* line 1, ../sass/templates/_article-edit.scss */
 .edit-article__form {
   padding: 0;

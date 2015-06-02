@@ -1,0 +1,26 @@
+{% extends "base_new.html" %}
+
+{% set breadcrumb_items = [{'name': 'Activites', 'url': '/'}] %}
+
+{% block title %}Activity Overview{% endblock %}
+
+{% block body_class %}activity-overview{% endblock %}
+
+{% block content %}
+
+<div class="activity-overview__header grid">
+	<div class="grid__item width-one-half">
+		<h4>Activity Overview</h4>
+		<h2>{{ activity.task_description | title }} For {{ activity.task_beneficiary | title }}</h2>
+	</div>
+	<div class="grid__item width-one-half">
+		<p>Activity Created On: {{ activity.date_created }}</p>
+		<p>Last Updated: {{ activity.date_updated }}</p>
+	</div>
+</div>
+<div class="activity-overview__main row col__flex">
+	
+</div>
+
+
+{% endblock %}
