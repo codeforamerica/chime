@@ -1123,6 +1123,68 @@ input[type="submit"]:disabled:hover {
   margin: .5em 0;
 }
 
+/* line 1, ../sass/components/_activity-log.scss */
+.activity-log {
+  margin: 4em 0;
+  padding-left: 1em;
+}
+
+/* line 7, ../sass/components/_activity-log.scss */
+.activity-log-item {
+  position: relative;
+  border-left: 1px solid #bdbdbd;
+  padding-left: 3em;
+  padding-bottom: 4em;
+}
+/* line 12, ../sass/components/_activity-log.scss */
+.activity-log-item:last-child {
+  border: 0;
+}
+/* line 15, ../sass/components/_activity-log.scss */
+.activity-log-item:before {
+  content: '';
+  position: absolute;
+  display: block;
+  height: 2.5em;
+  width: 2.5em;
+  z-index: 2;
+  background-color: #f5f5f5;
+  border: 1px solid #bdbdbd;
+  border-radius: 50%;
+  left: -1.25em;
+  font-family: 'FontAwesome';
+  font-size: 14px;
+  text-align: center;
+  line-height: 2.5em;
+  color: #424242;
+}
+/* line 32, ../sass/components/_activity-log.scss */
+.activity-log-item p {
+  margin: 0;
+}
+
+/* line 38, ../sass/components/_activity-log.scss */
+.activity-log-item--info:before {
+  content: '\f129';
+}
+
+/* line 44, ../sass/components/_activity-log.scss */
+.activity-log-item--edit:before {
+  content: '\f040';
+}
+
+/* line 50, ../sass/components/_activity-log.scss */
+.activity-log-item--comment:before {
+  line-height: 2.25em;
+  content: '\f075';
+}
+
+/* line 56, ../sass/components/_activity-log.scss */
+.activity-log-item__datetime {
+  margin-top: .5em;
+  font-size: 12px;
+}
+
 /* line 1, ../sass/components/_comment.scss */
 .comment {
   background-color: #fff;
@@ -1310,88 +1372,26 @@ input[type="submit"]:disabled:hover {
   display: block;
 }
 
-/* line 10, ../sass/templates/_activity-overview.scss */
+/* line 8, ../sass/templates/_activity-overview.scss */
 .activity-overview__subtitle {
   margin-bottom: 0;
 }
 
-/* line 14, ../sass/templates/_activity-overview.scss */
+/* line 12, ../sass/templates/_activity-overview.scss */
 .activity-overview__header {
   margin-top: 0;
 }
 
-/* line 18, ../sass/templates/_activity-overview.scss */
+/* line 16, ../sass/templates/_activity-overview.scss */
 .activity-overview__description {
   margin-top: 4em;
 }
 
-/* line 22, ../sass/templates/_activity-overview.scss */
+/* line 20, ../sass/templates/_activity-overview.scss */
 .activity-overview__main {
   margin: 0 auto;
   padding: 3px;
   max-width: 600px;
-}
-
-/* line 29, ../sass/templates/_activity-overview.scss */
-.activity-log {
-  margin: 4em 0;
-  padding-left: 1em;
-}
-
-/* line 35, ../sass/templates/_activity-overview.scss */
-.activity-log-item {
-  position: relative;
-  border-left: 1px solid #bdbdbd;
-  padding-left: 3em;
-  padding-bottom: 4em;
-}
-/* line 42, ../sass/templates/_activity-overview.scss */
-.activity-log-item:last-child {
-  border: 0;
-}
-/* line 45, ../sass/templates/_activity-overview.scss */
-.activity-log-item:before {
-  content: '';
-  position: absolute;
-  display: block;
-  height: 2.5em;
-  width: 2.5em;
-  z-index: 2;
-  background-color: #f5f5f5;
-  border: 1px solid #bdbdbd;
-  border-radius: 50%;
-  left: -1.25em;
-  font-family: 'FontAwesome';
-  font-size: 14px;
-  text-align: center;
-  line-height: 2.5em;
-  color: #424242;
-}
-/* line 62, ../sass/templates/_activity-overview.scss */
-.activity-log-item p {
-  margin: 0;
-}
-
-/* line 68, ../sass/templates/_activity-overview.scss */
-.activity-log-item--info:before {
-  content: '\f129';
-}
-
-/* line 74, ../sass/templates/_activity-overview.scss */
-.activity-log-item--edit:before {
-  content: '\f040';
-}
-
-/* line 80, ../sass/templates/_activity-overview.scss */
-.activity-log-item--comment:before {
-  line-height: 2.25em;
-  content: '\f075';
-}
-
-/* line 86, ../sass/templates/_activity-overview.scss */
-.activity-log-item__datetime {
-  margin-top: .5em;
-  font-size: 12px;
 }
 
 /* line 1, ../sass/templates/_article-edit.scss */
