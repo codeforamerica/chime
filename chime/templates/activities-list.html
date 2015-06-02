@@ -20,11 +20,15 @@
               <div class="current-task__actions row__right toolbar--right">
                 <form action="/merge" method="POST">
                   {% if item.needs_peer_review and not item.is_eligible_peer %}
-                    <a href="mailto:?to=&amp;subject={{item.review_subject|urlencode}}&amp;body={{item.review_body|urlencode}}" class="button-review button toolbar__item">Submit Changes for Feedback</a>
+                    <a href="/tree/{{item.path}}" class="button-review button toolbar__item">Request Feedback</a>
+                  {% endif %}
+
+                  {% if item.needs_peer_review and item.is_eligible_peer %}
+                    <a href="/tree/{{item.path}}" class="button-review button toolbar__item">Give Feedback</a>
                   {% endif %}
                   
                   {% if item.is_peer_approved %}
-                    <button name="action" value="merge" type="submit" class="button button-publish toolbar__item">Publish</button>
+                    <button name="action" value="merge" type="submit" class="button button--blue button-publish toolbar__item">Publish</button>
                   {% endif %}
 
                     <button name="action" value="abandon" type="submit" class="button button--red toolbar__item">Delete</button>

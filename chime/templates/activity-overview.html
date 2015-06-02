@@ -22,7 +22,7 @@
 				<div class="activity-log-item activity-log-item--info">
 					<div class="activity-log-item__content">
 						<p>This activity was created by {{ activity.author_email }}</p>
-						<div class="activity-log-item__datetime">1{{ activity.date_created }}</div>
+						<div class="activity-log-item__datetime">{{ activity.date_created }}</div>
 					</div>
 				</div>
 
@@ -63,12 +63,33 @@
 					</div>
 				</div>
 
+				<div class="activity-log-item activity-log-item--info">
+					<div class="activity-log-item__content">
+						<p class="text-orange">{{ activity.author_email }} requested feedback on this activity</p>
+						<div class="activity-log-item__datetime">2 days ago</div>
+					</div>
+				</div>
+
+				<div class="activity-log-item activity-log-item--info">
+					<div class="activity-log-item__content">
+						<p class="text-green">{{ activity.author_email }} has endorsed this activity.</p>
+						<div class="activity-log-item__datetime">2 days ago</div>
+					</div>
+				</div>
+
+				<div class="activity-log-item activity-log-item--info">
+					<div class="activity-log-item__content">
+						<p class="text-blue">{{ activity.author_email }} published this activity.</p>
+						<div class="activity-log-item__datetime">2 days ago</div>
+					</div>
+				</div>
+
 
 				<div class="activity-log-item activity-log-item--comment">
 					<div class="comment comment--new">
 						<div class="comment__author">norris@codeforamerica.org</div>
 						<div class="comment__body">
-							<textarea class="comment__input" placeholder="{{ activity.last_editor }} is looking for feedback. Decide whether changes meet the user need and/or leave your comment here (optional)"></textarea>
+							<textarea class="comment__input" placeholder="Leave your comment here (optional)"></textarea>
 						</div>
 						<div class="row comment__actions">
 							<div class="row__left"><input type="checkbox"><span class="text-green">Looks good!</span></div>

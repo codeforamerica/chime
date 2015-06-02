@@ -1311,7 +1311,7 @@ input[type="submit"]:disabled:hover {
   padding: .5em 1em;
   background-color: #fff;
   box-shadow: 0 0 3px rgba(0, 0, 0, 0.15);
-  margin-bottom: 1em;
+  margin-bottom: 2em;
   border-radius: 3px;
 }
 /* line 26, ../sass/templates/_activities-list.scss */
