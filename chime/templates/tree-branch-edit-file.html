@@ -76,7 +76,7 @@
             {% set form_section = front['section'] %}
             
             <ul class="list-form slug">
-                <li class="form-field">{% for (dir_name, dir_path) in dirs_and_paths %} / <a href="{{dir_path}}">{{dir_name}}</a>{% endfor %}</li>
+                <li class="form-field">{% for (dir_name, dir_path) in breadcrumb_paths %} / <a href="{{dir_path}}">{{dir_name}}</a>{% endfor %}</li>
                 <li class="form-field">
                     <label for="url-slug">URL</label>
                     <input name="url-slug" type="text" value="{{url_slug}}" />  

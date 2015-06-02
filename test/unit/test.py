@@ -104,21 +104,21 @@ class TestViewFunctions (TestCase):
                          ('sub', '/tree/master/view/sub', 'folder', False, view_functions.get_relative_date(self.clone, 'sub'))]
         self.assertEqual(sorted_list, expected_list)
 
-    def test_directory_paths_with_no_relative_path(self):
+    def test_breadcrumb_paths_with_no_relative_path(self):
         ''' Ensure that a list with pairs of a sub-directory and the absolute path
             to that directory is returned for all sub-directories in a path
         '''
-        dirs_and_paths = view_functions.directory_paths('my-branch')
-        self.assertEqual(dirs_and_paths, [('root', '/tree/my-branch/edit')])
+        breadcrumb_paths = view_functions.breadcrumb_paths('my-branch')
+        self.assertEqual(breadcrumb_paths, [('root', '/tree/my-branch/edit')])
 
-    def test_directory_paths_with_relative_path(self):
+    def test_breadcrumb_paths_with_relative_path(self):
         ''' Ensure that a list with pairs of a sub-directory and the absolute path
             to that directory is returned for all sub-directories in a path
         '''
-        dirs_and_paths = view_functions.directory_paths('my-branch', 'blah/foo/')
-        self.assertEqual(dirs_and_paths, [('root', '/tree/my-branch/edit'),
-                                          ('blah', '/tree/my-branch/edit/blah/'),
-                                          ('foo', '/tree/my-branch/edit/blah/foo/')])
+        breadcrumb_paths = view_functions.breadcrumb_paths('my-branch', 'blah/foo/')
+        self.assertEqual(breadcrumb_paths, [('root', '/tree/my-branch/edit'),
+                                            ('blah', '/tree/my-branch/edit/blah/'),
+                                            ('foo', '/tree/my-branch/edit/blah/foo/')])
 
     def test_auth_url(self):
         '''
