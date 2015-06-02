@@ -728,7 +728,7 @@ table {
 /* line 3, ../sass/components/_table.scss */
 table th, table td {
   text-align: left;
-  padding: .5em;
+  padding: 1em .5em;
 }
 /* line 7, ../sass/components/_table.scss */
 table th {
@@ -1123,6 +1123,56 @@ input[type="submit"]:disabled:hover {
   margin: .5em 0;
 }
 
+/* line 1, ../sass/components/_comment.scss */
+.comment {
+  background-color: #fff;
+  border-radius: 3px;
+  padding: 1em;
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.15);
+  margin-bottom: 1em;
+}
+
+/* line 9, ../sass/components/_comment.scss */
+.comment--new {
+  margin-top: 3em;
+  background-color: #fafafa;
+}
+/* line 12, ../sass/components/_comment.scss */
+.comment--new .comment__author {
+  color: #757575;
+}
+
+/* line 17, ../sass/components/_comment.scss */
+.comment__author {
+  border-bottom: 1px solid #eeeeee;
+  padding-bottom: 1em;
+  margin-bottom: 1em;
+}
+
+/* line 23, ../sass/components/_comment.scss */
+.comment__body {
+  font-size: 1.125rem;
+  font-weight: normal;
+}
+
+/* line 28, ../sass/components/_comment.scss */
+.comment__datetime {
+  font-size: 12px;
+  margin-top: 1em;
+}
+
+/* line 33, ../sass/components/_comment.scss */
+.comment__input {
+  border: 1px solid #eeeeee;
+  height: 70px;
+  padding: .5em;
+}
+
+/* line 39, ../sass/components/_comment.scss */
+.comment__actions {
+  margin-top: 1em;
+}
+
 /*------------------------------------*\
     # Templates
 \*------------------------------------*/
@@ -1235,12 +1285,72 @@ input[type="submit"]:disabled:hover {
 }
 
 /* line 1, ../sass/templates/_activity-overview.scss */
-.activity-overview__header {
-  background-color: #fff;
+.activity-overview__container {
+  display: -webkit-box;
+  display: -moz-box;
+  display: box;
+  display: -webkit-flex;
+  display: -moz-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: stretch;
+  -moz-box-align: stretch;
+  box-align: stretch;
+  -webkit-align-items: stretch;
+  -moz-align-items: stretch;
+  -ms-align-items: stretch;
+  -o-align-items: stretch;
+  align-items: stretch;
+  -ms-flex-align: stretch;
+  padding: 0;
+}
+/* line 5, ../sass/core/_layout.scss */
+.lt-ie10 .activity-overview__container {
+  display: block;
 }
 
-/* line 5, ../sass/templates/_activity-overview.scss */
+/* line 6, ../sass/templates/_activity-overview.scss */
+.activity-overview__header {
+  background-color: #fff;
+  padding: 1em 40px;
+}
+
+/* line 11, ../sass/templates/_activity-overview.scss */
 .activity-overview__main {
+  padding: 1em 40px;
+  background-color: #f5f5f5;
+  overflow: auto;
+}
+
+/* line 17, ../sass/templates/_activity-overview.scss */
+.activity-log-item {
+  margin: 2em 0;
+}
+/* line 19, ../sass/templates/_activity-overview.scss */
+.activity-log-item p {
+  margin: 0;
+}
+
+/* line 24, ../sass/templates/_activity-overview.scss */
+.activity-log-item__datetime {
+  margin-top: .5em;
+  font-size: 12px;
+}
+
+/* line 31, ../sass/templates/_activity-overview.scss */
+.activity-overview-alt__header {
+  background-color: #fff;
+  padding-top: 2em;
+  padding-bottom: 2em;
+}
+
+/* line 39, ../sass/templates/_activity-overview.scss */
+.activity-overview-alt__title {
+  margin: 0;
+}
+
+/* line 43, ../sass/templates/_activity-overview.scss */
+.activity-overview-alt__main {
   display: -webkit-box;
   display: -moz-box;
   display: box;
@@ -1258,10 +1368,28 @@ input[type="submit"]:disabled:hover {
   align-items: stretch;
   -ms-flex-align: stretch;
   background-color: #f5f5f5;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 /* line 5, ../sass/core/_layout.scss */
-.lt-ie10 .activity-overview__main {
+.lt-ie10 .activity-overview-alt__main {
   display: block;
+}
+
+/* line 52, ../sass/templates/_activity-overview.scss */
+.activity_overview__discussion {
+  border-right: 1px solid #e0e0e0;
+  padding-right: 40px;
+  overflow: auto;
+  padding-left: 3px;
+  padding-top: 1em;
+  padding-bottom: 3em;
+}
+
+/* line 63, ../sass/templates/_activity-overview.scss */
+.activity-overview-alt__history {
+  padding-top: 1em;
+  padding-bottom: 3em;
 }
 
 /* line 1, ../sass/templates/_article-edit.scss */

@@ -1,8 +1,68 @@
+.activity-overview__container {
+	@include stretch-content();
+	padding: 0;
+}
+
 .activity-overview__header {
 	background-color: #fff;
+	padding: 1em $site-margins;
 }
 
 .activity-overview__main {
+	padding: 1em $site-margins;
+	background-color: $color-grey-100;
+	overflow: auto;
+}
+
+.activity-log-item {
+	margin: 2em 0;
+	p {
+		margin: 0;
+	}
+}
+
+.activity-log-item__datetime {
+	margin-top: .5em;
+	font-size: $small-font-size;
+}
+
+
+
+.activity-overview-alt__header {
+	background-color: #fff;
+	padding: {
+		top: 2em;
+		bottom: 2em;
+	}
+}
+
+.activity-overview-alt__title {
+	margin: 0;
+}
+
+.activity-overview-alt__main {
 	@include stretch-content();
 	background-color: $color-grey-100;
+	padding: {
+		top: 0;
+		bottom: 0;
+	}
+}
+
+.activity_overview__discussion {
+	border-right: 1px solid $color-grey-300;
+	padding-right: $site-margins;
+	overflow: auto;
+	padding-left: 3px;
+	padding: {
+		top: 1em;
+		bottom: 3em;
+	}
+}
+
+.activity-overview-alt__history {
+	padding: {
+		top: 1em;
+		bottom: 3em;
+	}
 }

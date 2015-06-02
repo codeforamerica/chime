@@ -8,19 +8,62 @@
 
 {% block content %}
 
-<div class="activity-overview__header grid">
-	<div class="grid__item width-one-half">
-		<h4>Activity Overview</h4>
-		<h2>{{ activity.task_description | title }} For {{ activity.task_beneficiary | title }}</h2>
+<div class="activity-overview__container grid col__flex">
+	<div class="activity-overview__header grid__item width-one-fourth">
+			<h2 class="activity-overview__title">Activity Overview: {{ activity.task_description | title }} For {{ activity.task_beneficiary | title }}</h2>
+			<p>Created {{ activity.date_created }}</p>
+			<div class="toolbar--left">
+				<a href="#" class="button toolbar__item">Continue Working</a>
+				<a href="#" class="button button--green toolbar__item">Approve</a>
+			</div>
+
 	</div>
-	<div class="grid__item width-one-half">
-		<p>Activity Created On: {{ activity.date_created }}</p>
-		<p>Last Updated: {{ activity.date_updated }}</p>
+	<div class="activity-overview__main grid__item width-three-fourths end-row">
+			<h2>Activity Log</h2>
+			
+			<div class="activity-log-item">
+				<p><b><a href="#">Parking Tickets</a></b> was edited by <b>sally@codeforamerica</b>.</p>
+				<div class="activity-log-item__datetime">18 hours ago</div>
+			</div>
+
+			<div class="activity-log-item">
+				<p><b><a href="#">Snowstorm Operations</a></b> was created by <b>sally@codeforamerica</b>.</p>
+				<div class="activity-log-item__datetime">12 hours ago</div>
+			</div>
+
+			<div class="comment">
+				<div class="comment__author">sally@codeforamerica.org</div>
+				<div class="comment__body">Added and fixed some articles. Please check!</div>
+				<div class="comment__datetime">3 days ago</div>
+			</div>
+
+			<div class="comment">
+				<div class="comment__author">norris@codeforamerica.org</div>
+				<div class="comment__body">Looks good but there are a lot of typos. Can you give this a thorough proofread? Nice work though!</div>
+				<div class="comment__datetime">3 minute ago</div>
+			</div>
+			
+
+			<div class="activity-log-item">
+				<p><b><a href="#">Snowstorm Operations</a></b> was edited by <b>sally@codeforamerica</b>.</p>
+				<div class="activity-log-item__datetime">1 min ago</div>
+			</div>
+
+
+
+			<div class="comment comment--new">
+				<div class="comment__author">norris@codeforamerica.org</div>
+				<div class="comment__body">
+					<textarea class="comment__input" placeholder="Leave your comment here..."></textarea>
+				</div>
+				<div class="comment__actions">
+					<a href="#" class="button button--green">Add Comment</a>
+				</div>
+			</div>
+		</div>
 	</div>
 </div>
-<div class="activity-overview__main row col__flex">
-	
-</div>
+
 
 
 {% endblock %}

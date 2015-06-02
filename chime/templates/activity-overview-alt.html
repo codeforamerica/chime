@@ -1,0 +1,85 @@
+{% extends "base_new.html" %}
+
+{% set breadcrumb_items = [{'name': 'Activites', 'url': '/'}] %}
+
+{% block title %}Activity Overview{% endblock %}
+
+{% block body_class %}activity-overview{% endblock %}
+
+{% block content %}
+
+<div class="activity-overview__header grid">
+	<div class="grid__item width-two-thirds">
+		<h2 class="activity-overview__title">Activity Overview: {{ activity.task_description | title }} For {{ activity.task_beneficiary | title }}</h2>
+		<span>Created On: {{ activity.date_created }}</span>
+	</div>
+	<div class="grid__item width-one-third toolbar--right">
+		<a href="#" class="button button--green button--large toolbar__item">Approve</a>
+	</div>
+</div>
+<div class="activity-overview__main grid col__flex">
+	<div class="activity_overview__discussion grid__item width-one-third">
+		<h3>Discussion</h3>
+
+		<!-- Start Comment -->
+
+		<div class="comment">
+			<div class="comment__author">norris@codeforamerica.org</div>
+			<div class="comment__body">There are a lot of typos. Someone needs to double check this.</div>
+			<div class="comment__datetime">3 minute ago</div>
+		</div>
+
+		<!-- End Comment -->
+
+		<!-- Start Comment -->
+
+		<div class="comment">
+			<div class="comment__author">norris@codeforamerica.org</div>
+			<div class="comment__body">There are a lot of typos. Someone needs to double check this.</div>
+			<div class="comment__datetime">3 minute ago</div>
+		</div>
+
+		<!-- End Comment -->
+
+		<div class="comment comment--new">
+			<div class="comment__author">norris@codeforamerica.org</div>
+			<div class="comment__body">
+				<textarea class="comment__input" placeholder="Leave your comment here..."></textarea>
+			</div>
+			<div class="comment__actions">
+				<a href="#" class="button button--green">Add Comment</a>
+			</div>
+		</div>
+
+	</div>
+	<div class="activity-overview__history grid__item width-two-thirds end-row">
+		<h3>History of Edits</h3>
+		<table class="files-table">
+		    <thead>
+		        <tr>
+		            <th>Article</th>
+		            <th>Changes</th>
+		            <th>Last Update</th>
+		            <th>Changes by</th>
+		        </tr>
+		    </thead>
+		    <tbody>
+		        <tr>
+		            <td><a href="http://127.0.0.1:5000/tree/4c90744/review/index.html">Paying Parking Tickets</a></td>
+		            <td>Created</td>
+		            <td>April 25th, 2015</td>
+		            <td>norris@codeforamerica.org</td>
+		        </tr>
+		        <tr>
+		            <td><a href="#">Snowstorm Operations</a></td>
+		            <td>Edited</td>
+		            <td>April 25th, 2015</td>
+		            <td>william@codeforamerica.org</td>
+		        </tr>
+		    </tbody>
+		</table>
+	</div>
+</div>
+
+
+{% endblock %}
