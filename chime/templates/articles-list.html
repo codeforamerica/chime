@@ -1,6 +1,7 @@
 {% extends "base_new.html" %}
 
-{% block body_class %}articles-list{% endblock %}
+{% set template_name = 'articles-list' %}
+{% block body_class %}{{template_name}}{% endblock %}
 
 {% set breadcrumb_items = [{'name': 'Activites', 'url': '/'}] %}
 
@@ -10,9 +11,10 @@
 
 <!-- task: {% if task_description %}{{task_description}}{% elif task %}{{task}}{% else %}{{name}}{% endif %} -->
 <!-- beneficiary: {% if task_beneficiary %}{{task_beneficiary}}{% endif %} -->
+<!-- template name: {{template_name}} -->
 <div class="articles-list__main grid col__flex">
     {% for column in dir_columns %}
-    {% if loop.index != 1 %}
+    {% if loop.index != 1 or (loop.index == 1 and dir_columns|length == 1) %}
     <div class="dir grid__item {% if loop.index == 4 %}width-one-half{% else %}width-one-fourth{% endif %}">
       {% if loop.index == 2 %}
       <h2>Categories</h2>
@@ -47,6 +49,7 @@
       {% endif %}
       <ul class="dir">
         {% for file in column['files'] %}
+         <!-- file type: {{file['display_type']}}, file name: {{file['name']}} -->
          <li class="dir-item row {% if file['selected'] == True %}is-selected{% endif %}">
             <a class="dir-item__name {{file['display_type']}} row__left" href="{{file['edit_path']}}">{% if file['display_type'] == "article" %}<span class="fa fa-file-text-o"></span>{% elif file['display_type'] == "category" %}<span class="fa fa-folder-o"></span>{% else %}{% endif %}{{ file['name']  | title | replace('-', ' ') }}</a>
             <div class="dir-item__actions toolbar--right row__right">

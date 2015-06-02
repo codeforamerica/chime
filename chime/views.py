@@ -18,7 +18,7 @@ from . import publish
 from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
 from .view_functions import (
     branch_name2path, branch_var2name, get_repo, dos2unix,
-    login_required, browserid_hostname_required, synch_required, synched_checkout_required, sorted_paths,
+    login_required, browserid_hostname_required, synch_required, synched_checkout_required,
     directory_paths, directory_columns, should_redirect, make_redirect, get_auth_data_file,
     is_allowed_email, common_template_args, log_application_errors,
     is_article_dir, CONTENT_FILE_EXTENSION, ARTICLE_LAYOUT, CATEGORY_LAYOUT)
@@ -246,7 +246,7 @@ def start_branch():
     branch = repo_functions.get_start_branch(repo, master_name, task_description, task_beneficiary, session['email'])
 
     safe_branch = branch_name2path(branch.name)
-    return redirect('/tree/{}/edit/categories'.format(safe_branch), code=303)
+    return redirect('/tree/{}/edit/'.format(safe_branch), code=303)
 
 @app.route('/merge', methods=['POST'])
 @log_application_errors
@@ -381,7 +381,7 @@ def render_list_dir(repo, branch_name, path):
     showallfiles = request.args.get('showallfiles') == u'true'
 
     # make the task root path
-    task_root_path = u'/tree/{}/edit/categories'.format(branch_name2path(branch_name))
+    task_root_path = u'/tree/{}/edit/'.format(branch_name2path(branch_name))
 
     # get the task metadata; contains 'author_email', 'task_description'
     task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch_name)
@@ -428,7 +428,7 @@ def render_edit_view(repo, branch, path, file):
     url_slug = sub(ur'index.{}$'.format(CONTENT_FILE_EXTENSION), u'', url_slug)
     view_path = join('/tree/{}/view'.format(branch_name2path(branch)), path)
     history_path = join('/tree/{}/history'.format(branch_name2path(branch)), path)
-    task_root_path = u'/tree/{}/edit/categories'.format(branch_name2path(branch))
+    task_root_path = u'/tree/{}/edit/'.format(branch_name2path(branch))
     folder_root_slug = u'/'.join([item for item in url_slug.split('/') if item][:-1]) + u'/'
     app_authorized = False
     ga_config = read_ga_config(current_app.config['RUNNING_STATE_DIR'])
@@ -576,7 +576,7 @@ def branch_history(branch, path=None):
 
     view_path = join('/tree/%s/view' % branch_name2path(branch), path)
     edit_path = join('/tree/%s/edit' % branch_name2path(branch), path)
-    task_root_path = u'/tree/{}/edit/categories'.format(branch_name2path(branch))
+    task_root_path = u'/tree/{}/edit/'.format(branch_name2path(branch))
     languages = load_languages(repo.working_dir)
 
     app_authorized = False
@@ -626,7 +626,6 @@ def branch_review(branch):
 
     return render_template('activity-review.html', **kwargs)
 
-
 # Putting a placeholder template for article review here.
 @app.route('/tree/<branch>/review/<path:path>', methods=['GET'])
 @log_application_errors
@@ -635,8 +634,6 @@ def branch_review(branch):
 def branch_file_review(branch, path):
     kwargs = common_template_args(current_app.config, session)
     return render_template('article-review.html', **kwargs)
-
-
 
 @app.route('/tree/<branch>/save/<path:path>', methods=['POST'])
 @log_application_errors
