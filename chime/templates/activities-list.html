@@ -14,15 +14,13 @@
           <ul class="current-tasks__list">
           {% for item in items %}
            <li class="current-task">
-            <p class="current-task__title"><a href="/tree/{{item.path}}/edit/">{{item.task_description}}{% if item.task_beneficiary %} for {{item.task_beneficiary}}{% endif %}</a> <!--({{item.ahead|count}} ahead, {{item.behind|count}} behind)--></p>
+            <p class="current-task__title"><a href="/tree/{{item.path}}/edit/">{{item.task_description}}{% if item.task_beneficiary %} for {{item.task_beneficiary}}{% endif %}</a></p>
             <div class="current-task__details row">
-              <p class="current-task__author row__left">{{item.author_email}}</p>
+              <p class="current-task__author row__left">Last edited by {{item.last_editor}}</p>
               <div class="current-task__actions row__right toolbar--right">
                 <form action="/merge" method="POST">
-                  <a class="button-edit button toolbar__item" href="/tree/{{item.path}}/edit/">Continue</a>
-                  
-                  {% if item.needs_peer_review %}
-                    <a href="mailto:?to=&amp;subject={{item.review_subject|urlencode}}&amp;body={{item.review_body|urlencode}}" class="button-review button toolbar__item">Submit for review</a>
+                  {% if item.needs_peer_review and not item.is_eligible_peer %}
+                    <a href="mailto:?to=&amp;subject={{item.review_subject|urlencode}}&amp;body={{item.review_body|urlencode}}" class="button-review button toolbar__item">Submit Changes for Feedback</a>
                   {% endif %}
                   
                   {% if item.is_peer_approved %}
