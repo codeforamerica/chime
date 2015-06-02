@@ -9,6 +9,7 @@
 	border-left: 1px solid $color-grey-400;
 	padding-left: 3em;
 	padding-bottom: 4em;
+	font-weight: 400;
 	&:last-child {
 		border: 0;
 	}
@@ -56,4 +57,5 @@
 .activity-log-item__datetime {
 	margin-top: .5em;
 	font-size: $small-font-size;
+	color: $color-grey-600;
 }

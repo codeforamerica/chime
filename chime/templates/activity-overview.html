@@ -13,7 +13,7 @@
 			<p class="activity-overview__subtitle">Activity Overview</p>
 			<h1 class="activity-overview__header">{{ activity.task_description | title }} For {{ activity.task_beneficiary | title }}</h1>
 			<div class="toolbar--left">
-				<a href="#" class="toolbar__item">Continue working</a>
+				<a href="{{ task_root_path }}edit" class="button button--outline button--large toolbar__item">Continue working</a>
 			</div>
 
 			<p class="activity-overview__description">Below is a timeline of all of the work and discussion around this activity. Any work you do will appear at the the bottom of this list.</p>
@@ -24,12 +24,33 @@
 						<p>This activity was created by {{ activity.author_email }}</p>
 						<div class="activity-log-item__datetime">1{{ activity.date_created }}</div>
 					</div>
-					
 				</div>
+
+				<div class="activity-log-item activity-log-item--edit">
+					<div class="activity-log-item__content">
+						<p><a href="#">Parking Tickets</a> was created by sally@codeforamerica.</p>
+						<div class="activity-log-item__datetime">19 hours ago</div>
+					</div>	
+				</div>
+
 				
 				<div class="activity-log-item activity-log-item--edit">
 					<div class="activity-log-item__content">
-						<p><b><a href="#">Parking Tickets</a></b> was edited by <b>sally@codeforamerica</b>.</p>
+						<p><a href="#">Parking Tickets</a> was edited by sally@codeforamerica.</p>
+						<div class="activity-log-item__datetime">18 hours ago</div>
+					</div>	
+				</div>
+
+				<div class="activity-log-item activity-log-item--edit">
+					<div class="activity-log-item__content">
+						<p><a href="#">Parking Tickets</a> was moved from ___ to ___ by sally@codeforamerica.</p>
+						<div class="activity-log-item__datetime">18 hours ago</div>
+					</div>	
+				</div>
+
+				<div class="activity-log-item activity-log-item--edit">
+					<div class="activity-log-item__content">
+						<p><a href="#">Parking Tickets</a> was deleted by sally@codeforamerica.</p>
 						<div class="activity-log-item__datetime">18 hours ago</div>
 					</div>	
 				</div>
@@ -47,11 +68,37 @@
 					<div class="comment comment--new">
 						<div class="comment__author">norris@codeforamerica.org</div>
 						<div class="comment__body">
-							<textarea class="comment__input" placeholder="Leave your comment here..."></textarea>
+							<textarea class="comment__input" placeholder="{{ activity.last_editor }} is looking for feedback. Decide whether changes meet the user need and/or leave your comment here (optional)"></textarea>
 						</div>
-						<div class="comment__actions toolbar--right">
-							<a href="#" class="button toolbar__item">Add Comment</a>
-							<a href="#" class="button button--green toolbar__item">Add Comment and Approve</a>
+						<div class="row comment__actions">
+							<div class="row__left"><input type="checkbox"><span class="text-green">Looks good!</span></div>
+							<button href="#" class="row__right button">Submit</button>
+						</div>
+					</div>
+				</div>
+
+				<div class="activity-log-item activity-log-item--comment">
+					<div class="comment comment--new">
+						<div class="comment__author">norris@codeforamerica.org</div>
+						<div class="comment__body">
+							<textarea class="comment__input" placeholder="Leave your comment here (optional)"></textarea>
+						</div>
+						<div class="row comment__actions">
+							<div class="row__left"><input type="checkbox"><span class="text-orange">Request Feedback</span></div>
+							<button href="#" class="row__right button">Submit</button>
+						</div>
+					</div>
+				</div>
+
+				<div class="activity-log-item activity-log-item--comment">
+					<div class="comment comment--new">
+						<div class="comment__author">norris@codeforamerica.org</div>
+						<div class="comment__body">
+							<textarea class="comment__input" placeholder="Leave your comment here (optional)"></textarea>
+						</div>
+						<div class="row comment__actions">
+							<div class="row__left"><input type="checkbox"><span class="text-blue">Publish to Site</span></div>
+							<button href="#" class="row__right button">Submit</button>
 						</div>
 					</div>
 				</div>

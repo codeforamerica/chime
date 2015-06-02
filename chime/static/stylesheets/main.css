@@ -669,22 +669,38 @@ body {
 /* line 21, ../sass/core/_base.scss */
 p {
   font-size: 16px;
+  line-height: 1.5em;
 }
 
-/* line 26, ../sass/core/_base.scss */
+/* line 27, ../sass/core/_base.scss */
 ul, ol {
   list-style-type: none;
   padding: 0;
 }
 
-/* line 31, ../sass/core/_base.scss */
+/* line 32, ../sass/core/_base.scss */
 a {
   text-decoration: none;
-  color: #6693a5;
+  color: #009DDB;
 }
-/* line 34, ../sass/core/_base.scss */
+/* line 35, ../sass/core/_base.scss */
 a:hover {
   text-decoration: underline;
+}
+
+/* line 1, ../sass/core/_helpers.scss */
+.text-orange {
+  color: #ec9755;
+}
+
+/* line 5, ../sass/core/_helpers.scss */
+.text-blue {
+  color: #336f87;
+}
+
+/* line 9, ../sass/core/_helpers.scss */
+.text-green {
+  color: #33b390;
 }
 
 /*------------------------------------*\
@@ -1135,12 +1151,13 @@ input[type="submit"]:disabled:hover {
   border-left: 1px solid #bdbdbd;
   padding-left: 3em;
   padding-bottom: 4em;
+  font-weight: 400;
 }
-/* line 12, ../sass/components/_activity-log.scss */
+/* line 13, ../sass/components/_activity-log.scss */
 .activity-log-item:last-child {
   border: 0;
 }
-/* line 15, ../sass/components/_activity-log.scss */
+/* line 16, ../sass/components/_activity-log.scss */
 .activity-log-item:before {
   content: '';
   position: absolute;
@@ -1158,31 +1175,32 @@ input[type="submit"]:disabled:hover {
   line-height: 2.5em;
   color: #424242;
 }
-/* line 32, ../sass/components/_activity-log.scss */
+/* line 33, ../sass/components/_activity-log.scss */
 .activity-log-item p {
   margin: 0;
 }
 
-/* line 38, ../sass/components/_activity-log.scss */
+/* line 39, ../sass/components/_activity-log.scss */
 .activity-log-item--info:before {
   content: '\f129';
 }
 
-/* line 44, ../sass/components/_activity-log.scss */
+/* line 45, ../sass/components/_activity-log.scss */
 .activity-log-item--edit:before {
   content: '\f040';
 }
 
-/* line 50, ../sass/components/_activity-log.scss */
+/* line 51, ../sass/components/_activity-log.scss */
 .activity-log-item--comment:before {
   line-height: 2.25em;
   content: '\f075';
 }
 
-/* line 56, ../sass/components/_activity-log.scss */
+/* line 57, ../sass/components/_activity-log.scss */
 .activity-log-item__datetime {
   margin-top: .5em;
   font-size: 12px;
+  color: #757575;
 }
 
 /* line 1, ../sass/components/_comment.scss */
@@ -1205,33 +1223,36 @@ input[type="submit"]:disabled:hover {
 
 /* line 16, ../sass/components/_comment.scss */
 .comment__author {
+  color: #757575;
   border-bottom: 1px solid #eeeeee;
   padding-bottom: 1em;
   margin-bottom: 1em;
 }
 
-/* line 22, ../sass/components/_comment.scss */
+/* line 23, ../sass/components/_comment.scss */
 .comment__body {
   font-size: 1.125rem;
   font-weight: normal;
 }
 
-/* line 27, ../sass/components/_comment.scss */
+/* line 28, ../sass/components/_comment.scss */
 .comment__datetime {
+  color: #757575;
   font-size: 12px;
   margin-top: 1em;
 }
 
-/* line 32, ../sass/components/_comment.scss */
+/* line 34, ../sass/components/_comment.scss */
 .comment__input {
   border: 1px solid #eeeeee;
   height: 70px;
   padding: .5em;
 }
 
-/* line 38, ../sass/components/_comment.scss */
+/* line 40, ../sass/components/_comment.scss */
 .comment__actions {
   margin-top: 1em;
+  padding: 0;
 }
 
 /*------------------------------------*\
@@ -1312,7 +1333,7 @@ input[type="submit"]:disabled:hover {
 }
 /* line 39, ../sass/templates/_activities-list.scss */
 .current-task__title a:hover {
-  color: #336f87;
+  color: #009DDB;
   text-decoration: none;
 }
 
@@ -1372,22 +1393,18 @@ input[type="submit"]:disabled:hover {
   display: block;
 }
 
-/* line 8, ../sass/templates/_activity-overview.scss */
-.activity-overview__subtitle {
-  margin-bottom: 0;
-}
-
-/* line 12, ../sass/templates/_activity-overview.scss */
+/* line 9, ../sass/templates/_activity-overview.scss */
 .activity-overview__header {
   margin-top: 0;
 }
 
-/* line 16, ../sass/templates/_activity-overview.scss */
+/* line 13, ../sass/templates/_activity-overview.scss */
 .activity-overview__description {
-  margin-top: 4em;
+  margin-top: 2em;
+  font-size: 1.5rem;
 }
 
-/* line 20, ../sass/templates/_activity-overview.scss */
+/* line 18, ../sass/templates/_activity-overview.scss */
 .activity-overview__main {
   margin: 0 auto;
   padding: 3px;

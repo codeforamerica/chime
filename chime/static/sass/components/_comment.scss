@@ -14,6 +14,7 @@
 }
 
 .comment__author {
+	color: $color-grey-600;
 	border-bottom: 1px solid $color-grey-200;
 	padding-bottom: 1em;
 	margin-bottom: 1em;
@@ -25,6 +26,7 @@
 }
 
 .comment__datetime {
+	color: $color-grey-600;
 	font-size: $small-font-size;
 	margin-top: 1em;
 }
@@ -37,4 +39,5 @@
 
 .comment__actions {
 	margin-top: 1em;
+	padding: 0;
 }

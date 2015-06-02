@@ -572,7 +572,8 @@ def activity_overview(branch):
     activity = repo_functions.get_task_metadata_for_branch(repo, branch)
     activity.update(
         date_created=date_created,
-        date_updated=date_updated
+        date_updated=date_updated,
+        task_root_path=u'/tree/{}/edit/'.format(branch_name2path(branch))
     )
 
     kwargs = common_template_args(current_app.config, session)
