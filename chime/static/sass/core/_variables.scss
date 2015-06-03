@@ -44,6 +44,7 @@ $color-blue-900:		shade($color-blue-500, 80%);
 $color-blue-800:		shade($color-blue-500, 60%);
 $color-blue-700:		shade($color-blue-500, 40%);
 $color-blue-600:		shade($color-blue-500, 20%);
+$color-blue-450:		tint($color-blue-500, 10%);
 $color-blue-400:		tint($color-blue-500, 20%);
 $color-blue-300:		tint($color-blue-500, 40%);
 $color-blue-200:		tint($color-blue-500, 60%);

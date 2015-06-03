@@ -764,7 +764,7 @@ a:hover {
   display: inline-block;
   margin-left: .5em;
   font-family: "FontAwesome";
-  content: '\f0d7';
+  content: '\f107';
 }
 /* line 11, ../sass/components/_dropdown-nav.scss */
 .dropdown:hover .dropdown__popup {
@@ -1265,14 +1265,14 @@ button.button {
   text-decoration: none;
   color: #ccdbe1;
   padding: 1em 2em;
-  border-left: 1px solid #336f87;
+  border-left: 1px solid #195d78;
   margin: 0;
 }
 /* line 32, ../sass/components/_global-header.scss */
 .global-header__link:hover {
   color: #fff;
   text-decoration: underline;
-  background-color: #336f87;
+  background-color: #195d78;
 }
 
 /* line 39, ../sass/components/_global-header.scss */

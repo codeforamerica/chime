@@ -27,12 +27,12 @@
 	text-decoration: none;
 	color: $color-blue-100;
 	padding: 1em 2em;
-	border-left: 1px solid $color-blue-400;
+	border-left: 1px solid $color-blue-450;
 	margin: 0;
 	&:hover {
 		color: #fff;
 		text-decoration: underline;
-		background-color: $color-blue-400;
+		background-color: $color-blue-450;
 	}
 }
 
