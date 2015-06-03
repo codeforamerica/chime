@@ -22,7 +22,7 @@
 
     {% block global_header %}
       {% from 'macros/macros.html' import globalHeader as globalHeader %}
-      {{ globalHeader(breadcrumb_items = breadcrumb_items, email=email, task_description=task_description, author_email=author_email, branch=branch, task_date_updated=task_date_updated, task_date_created=task_date_created) }}
+      {{ globalHeader(breadcrumb_items = breadcrumb_items, email=email, task_description=task_description, branch=branch) }}
     {% endblock %}
 
     {% include 'includes/feedback-messages.html' %}

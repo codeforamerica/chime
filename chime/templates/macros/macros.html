@@ -1,4 +1,4 @@
-{% macro globalHeader(breadcrumb_items=[], email, task_description, author_email, branch, task_date_updated, task_date_created, needs_peer_review, eligible_peer, is_peer_approved, is_peer_rejected) -%}
+{% macro globalHeader(breadcrumb_items=[], task_description, email, branch) -%}
 <div class="global-header  row">
   <div class="row__left">
 
@@ -10,9 +10,12 @@
     </nav>
   </div>
   <nav class="global-header__nav  row__right  toolbar--right">
+    {% if branch %}
+    <a href="/tree/{{ branch }}" class="activity-button toolbar__item">Current Activity: {{ task_description | title }}</a>
     <a class="toolbar__item" href="{{ live_site_url }}">Visit site</a>
     {% if email %}
       <a class="toolbar__item" href="#" id="signout">Sign Out</a>
+    {% endif %}
     {% endif %}
   </nav>
 </div>
