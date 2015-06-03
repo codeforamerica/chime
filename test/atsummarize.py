@@ -12,7 +12,7 @@ class Stats:
     records = []
 
     def record(self, *args, **data):
-        data['browsername'] = "{os}/{os_version} {browser}/{browser_version}".format(**params)
+        data['browsername'] = "{os}/{os_version} {browser}/{browser_version}".format(**data)
         self.records.append(data)
 
     def success_ratio_by_browser(self):
@@ -47,22 +47,27 @@ class Stats:
         return failures
 
 
-stats = Stats()
-for filename in sys.argv[1:]:
-    try:
-        results = untangle.parse(filename)
-        for case in results.testsuite.testcase:
+def load_stats(files):
+    stats = Stats()
+    for filename in files:
+        try:
+            results = untangle.parse(filename)
+            for case in results.testsuite.testcase:
 
-            params = ast.literal_eval(case.system_err.cdata.replace('Now testing on ', ''))
-            if hasattr(case, 'error'):
-                params['error_type'] = case.error['type']
-            stats.record(filename=filename,
-                         time=case['time'],
-                         success=(not (hasattr(case, 'error') or hasattr(case, 'failure'))),
-                         **params)
+                params = ast.literal_eval(case.system_err.cdata.replace('Now testing on ', ''))
+                if hasattr(case, 'error'):
+                    params['error_type'] = case.error['type']
+                stats.record(filename=filename,
+                             time=case['time'],
+                             success=(not (hasattr(case, 'error') or hasattr(case, 'failure'))),
+                             **params)
 
-    except Exception as e:
-        print "skipping {} because {}".format(filename, e)
+        except Exception as e:
+            print "skipping {} because {}".format(filename, e)
+    return stats
+
+
+stats = load_stats(sys.argv[1:])
 
 print "Success ratio by browser:"
 by_browser = stats.success_ratio_by_browser()
