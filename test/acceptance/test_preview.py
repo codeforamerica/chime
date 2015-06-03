@@ -83,7 +83,7 @@ class TestSelenium(TestCase):
 
     def use_driver(self, capabilities):
         self.driver = webdriver.Remote(
-            command_executor='http://mickthompson:BxgmL6VIK1lUkVtxyiod@hub.browserstack.com:80/wd/hub',
+            command_executor='http://chimetests1:AxRS34k3vrf7mu9zZ2hE@hub.browserstack.com:80/wd/hub',
             desired_capabilities=capabilities)
         self.waiter = WebDriverWait(self.driver, timeout=60)
 
