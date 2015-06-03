@@ -50,7 +50,7 @@
       {% endif %}
       <ul class="dir">
         {% for file in column['files'] %}
-         <!-- file type: {{file['display_type']}}, file name: {{file['name']}} -->
+         <!-- file type: {{file['display_type']}}, file name: {{file['name']}}, file title: {{file['title']}} -->
          <li class="dir-item row {% if file['selected'] == True %}is-selected{% endif %}">
             <a class="dir-item__name {{file['display_type']}} row__left" href="{{file['edit_path']}}"><span class="{{icon_class_lookup[file['display_type']]}}"></span>{{ file['title'] }}</a>
             <div class="dir-item__actions toolbar--right row__right">

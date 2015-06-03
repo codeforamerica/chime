@@ -37,12 +37,12 @@ import logging
 logging.disable(logging.CRITICAL)
 
 # these patterns help us search the HTML of a response to determine if the expected page loaded
-PATTERN_BRANCH_COMMENT = '<!-- branch: {} -->'
-PATTERN_AUTHOR_COMMENT = '<!-- author: {} -->'
-PATTERN_TASK_COMMENT = '<!-- task: {} -->'
-PATTERN_BENEFICIARY_COMMENT = '<!-- beneficiary: {} -->'
-PATTERN_TEMPLATE_COMMENT = '<!-- template name: {} -->'
-PATTERN_FILE_COMMENT = '<!-- file type: {file_type}, file name: {file_name} -->'
+PATTERN_BRANCH_COMMENT = u'<!-- branch: {} -->'
+PATTERN_AUTHOR_COMMENT = u'<!-- author: {} -->'
+PATTERN_TASK_COMMENT = u'<!-- task: {} -->'
+PATTERN_BENEFICIARY_COMMENT = u'<!-- beneficiary: {} -->'
+PATTERN_TEMPLATE_COMMENT = u'<!-- template name: {} -->'
+PATTERN_FILE_COMMENT = u'<!-- file type: {file_type}, file name: {file_name}, file title: {file_title} -->'
 
 class TestJekyll (TestCase):
 
@@ -1586,7 +1586,7 @@ class TestApp (TestCase):
             response = self.test_client.get('/tree/{}/edit/'.format(generated_branch_name), follow_redirects=True)
             self.assertEquals(response.status_code, 200)
             self.assertTrue(PATTERN_BRANCH_COMMENT.format(generated_branch_name) in response.data)
-            self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": fake_page_slug, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data)
+            self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": fake_page_slug, "file_title": fake_page_slug, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data)
 
             # get the edit page for the new file and extract the hexsha value
             response = self.test_client.get('/tree/{}/edit/{}'.format(generated_branch_name, fake_page_path))
@@ -1734,7 +1734,7 @@ class TestApp (TestCase):
             self.assertEquals(response.status_code, 200)
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('articles-list') in response.data)
             self.assertTrue(PATTERN_BRANCH_COMMENT.format(generated_branch_name) in response.data)
-            self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": fake_page_slug, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data)
+            self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": fake_page_slug, "file_title": fake_page_slug, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data)
 
             response = self.test_client.get('/tree/{}/edit/{}'.format(generated_branch_name, fake_page_path))
             self.assertEquals(response.status_code, 200)
@@ -1983,7 +1983,7 @@ class TestApp (TestCase):
             # create a new category
             page_slug = u'hello'
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': 'category', 'path': page_slug},
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'path': page_slug},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
 
@@ -1998,6 +1998,80 @@ class TestApp (TestCase):
             self.assertTrue(exists(idx_location))
             # the directory and index page pass the category test
             self.assertTrue(view_functions.is_category_dir(dir_location))
+
+    def test_new_item_has_name_and_title(self):
+        ''' A slugified directory name and display title are created when a new category or article is created.
+        '''
+        fake_author_email = u'erica@example.com'
+        with HTTMock(self.mock_persona_verify):
+            self.test_client.post('/sign-in', data={'email': fake_author_email})
+
+        with HTTMock(self.auth_csv_example_allowed):
+            # start a new branch via the http interface
+            # invokes view_functions/get_repo which creates a clone
+            task_description = u'eviscerate a salmon'
+            task_beneficiary = u'baby grizzly bears'
+
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            self.assertTrue(working_branch.name in self.clone1.branches)
+            self.assertTrue(working_branch.name in self.origin.branches)
+            working_branch_name = working_branch.name
+            working_branch.checkout()
+
+            # create a new category
+            cat_title = u'grrowl!! Yeah'
+            cat_title_slugified = u'grrowl-yeah'
+            response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'path': cat_title},
+                                             follow_redirects=True)
+            self.assertEquals(response.status_code, 200)
+
+            # pull the changes
+            self.clone1.git.pull('origin', working_branch_name)
+
+            # a directory was created
+            dir_location = join(self.clone1.working_dir, cat_title_slugified)
+            idx_location = u'{}/index.{}'.format(dir_location, view_functions.CONTENT_FILE_EXTENSION)
+            self.assertTrue(exists(dir_location) and isdir(dir_location))
+            # an index page was created inside
+            self.assertTrue(exists(idx_location))
+            # the directory and index page pass the category test
+            self.assertTrue(view_functions.is_category_dir(dir_location))
+            # the title saved in the index front matter is the same text that was used to create the category
+            self.assertEqual(view_functions.get_value_from_front_matter('title', idx_location), cat_title)
+
+            # the title saved in the index front matter is displayed on the article list page
+            response = self.test_client.get('/tree/{}/edit/'.format(working_branch_name), follow_redirects=True)
+            self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": cat_title_slugified, "file_title": cat_title, "file_type": view_functions.CATEGORY_LAYOUT}) in response.data)
+            self.assertTrue(cat_title in response.data)
+
+            # create a new article
+            art_title = u'快速狐狸'
+            art_title_slugified = u'kuai-su-hu-li'
+            response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name), data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'path': art_title}, follow_redirects=True)
+            self.assertEquals(response.status_code, 200)
+            self.assertTrue(PATTERN_TEMPLATE_COMMENT.format(u'article-edit') in response.data.decode('utf-8'))
+
+            # pull the changes
+            self.clone1.git.pull('origin', working_branch_name)
+
+            # a directory was created
+            dir_location = join(self.clone1.working_dir, art_title_slugified)
+            idx_location = u'{}/index.{}'.format(dir_location, view_functions.CONTENT_FILE_EXTENSION)
+            self.assertTrue(exists(dir_location) and isdir(dir_location))
+            # an index page was created inside
+            self.assertTrue(exists(idx_location))
+            # the directory and index page pass the article test
+            self.assertTrue(view_functions.is_article_dir(dir_location))
+            # the title saved in the index front matter is the same text that was used to create the article
+            self.assertEqual(view_functions.get_value_from_front_matter('title', idx_location), art_title)
+
+            # the title saved in the index front matter is displayed on the article list page
+            response = self.test_client.get('/tree/{}/edit/'.format(working_branch_name), follow_redirects=True)
+            self.assertEquals(response.status_code, 200)
+            self.assertTrue(PATTERN_TEMPLATE_COMMENT.format(u'articles-list') in response.data.decode('utf-8'))
+            self.assertTrue(PATTERN_BRANCH_COMMENT.format(working_branch) in response.data.decode('utf-8'))
+            self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": art_title_slugified, "file_title": art_title, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data.decode('utf-8'))
 
     def test_create_many_categories_with_slash_separated_input(self):
         ''' Entering a slash-separated string into the new article or category
@@ -2022,7 +2096,7 @@ class TestApp (TestCase):
             # create multiple new categories
             page_slug = u'when/the/drum/beat'
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': 'category', 'path': page_slug},
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'path': page_slug},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
 
@@ -2091,25 +2165,25 @@ class TestApp (TestCase):
             # create some nested categories
             slug_hello = u'hello'
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': 'category', 'path': slug_hello},
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'path': slug_hello},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
 
             slug_world = u'world'
             response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, slug_hello),
-                                             data={'action': 'create', 'create_what': 'category', 'path': slug_world},
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'path': slug_world},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
 
             slug_how = u'how'
             response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, sep.join([slug_hello, slug_world])),
-                                             data={'action': 'create', 'create_what': 'category', 'path': slug_how},
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'path': slug_how},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
 
             slug_are = u'are'
             response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, sep.join([slug_hello, slug_world, slug_how])),
-                                             data={'action': 'create', 'create_what': 'category', 'path': slug_are},
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'path': slug_are},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
 
@@ -2319,7 +2393,7 @@ class TestApp (TestCase):
             self.assertEquals(response.status_code, 200)
             # verify that the new folder is represented as a file in the HTML
             self.assertTrue(PATTERN_BRANCH_COMMENT.format(working_branch_name) in response.data)
-            self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": page_slug, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data)
+            self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": page_slug, "file_title": page_slug, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data)
 
 class TestPublishApp (TestCase):
 
