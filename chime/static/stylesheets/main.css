@@ -1901,33 +1901,3 @@ button.button {
 .history-table__subject {
   font-weight: 700;
 }
-
-/* line 1, ../sass/templates/_article-review.scss */
-.article-review__main {
-  display: -webkit-box;
-  display: -moz-box;
-  display: box;
-  display: -webkit-flex;
-  display: -moz-flex;
-  display: -ms-flexbox;
-  display: flex;
-  -webkit-box-align: stretch;
-  -moz-box-align: stretch;
-  box-align: stretch;
-  -webkit-align-items: stretch;
-  -moz-align-items: stretch;
-  -ms-align-items: stretch;
-  -o-align-items: stretch;
-  align-items: stretch;
-  -ms-flex-align: stretch;
-  padding: 0;
-}
-/* line 5, ../sass/core/_layout.scss */
-.lt-ie10 .article-review__main {
-  display: block;
-}
-
-/* line 6, ../sass/templates/_article-review.scss */
-.article-review__preview {
-  padding: 1em 40px;
-}

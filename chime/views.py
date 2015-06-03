@@ -636,37 +636,6 @@ def branch_history(branch, path=None):
 
     return render_template('article-history.html', **kwargs)
 
-@app.route('/tree/<branch>/review/', methods=['GET'])
-@log_application_errors
-@login_required
-@synched_checkout_required
-def branch_review(branch):
-    branch = branch_var2name(branch)
-
-    repo = get_repo(current_app)
-    c = repo.commit()
-
-    # contains 'author_email', 'task_description', 'task_beneficiary'
-    task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch)
-    author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
-    task_description = task_metadata['task_description'] if 'task_description' in task_metadata else u''
-    task_beneficiary = task_metadata['task_beneficiary'] if 'task_beneficiary' in task_metadata else u''
-
-    kwargs = common_template_args(current_app.config, session)
-    kwargs.update(branch=branch, safe_branch=branch_name2path(branch),
-                  hexsha=c.hexsha, author_email=author_email, task_description=task_description,
-                  task_beneficiary=task_beneficiary)
-
-    return render_template('activity-review.html', **kwargs)
-
-# Putting a placeholder template for article review here.
-@app.route('/tree/<branch>/review/<path:path>', methods=['GET'])
-@log_application_errors
-@login_required
-@synched_checkout_required
-def branch_file_review(branch, path):
-    kwargs = common_template_args(current_app.config, session)
-    return render_template('article-review.html', **kwargs)
 
 @app.route('/tree/<branch>/save/<path:path>', methods=['POST'])
 @log_application_errors
