@@ -1338,34 +1338,45 @@ button.button {
 /* line 37, ../sass/templates/_activities-list.scss */
 .current-task__title a {
   color: #212121;
+  display: block;
+  position: relative;
 }
-/* line 39, ../sass/templates/_activities-list.scss */
+/* line 41, ../sass/templates/_activities-list.scss */
+.current-task__title a:after {
+  content: '\f105';
+  font-family: "FontAwesome";
+  position: absolute;
+  display: block;
+  right: 0;
+  top: .2em;
+}
+/* line 49, ../sass/templates/_activities-list.scss */
 .current-task__title a:hover {
   color: #336f87;
   text-decoration: none;
 }
 
-/* line 46, ../sass/templates/_activities-list.scss */
+/* line 56, ../sass/templates/_activities-list.scss */
 .current-task__author {
   margin-top: 0;
 }
 
-/* line 50, ../sass/templates/_activities-list.scss */
+/* line 60, ../sass/templates/_activities-list.scss */
 .current-task__details {
   padding: 0;
 }
 
-/* line 54, ../sass/templates/_activities-list.scss */
+/* line 64, ../sass/templates/_activities-list.scss */
 .new-task {
   padding: 0 20px;
   border-left: 1px solid #eeeeee;
 }
-/* line 57, ../sass/templates/_activities-list.scss */
+/* line 67, ../sass/templates/_activities-list.scss */
 .new-task input {
   margin: .5em 0;
 }
 
-/* line 62, ../sass/templates/_activities-list.scss */
+/* line 72, ../sass/templates/_activities-list.scss */
 .new-task__form {
   margin-top: 2em;
   background-color: #eeeeee;
