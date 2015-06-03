@@ -1,7 +1,6 @@
 {% macro globalHeader(breadcrumb_items=[], task_description, email, branch) -%}
 <div class="global-header  row">
   <div class="row__left">
-
     <a href="/" class="global-header__title">Chime</a>
     <nav class="breadcrumb">
       {% for item in breadcrumb_items %}
@@ -11,11 +10,28 @@
   </div>
   <nav class="global-header__nav  row__right  toolbar--right">
     {% if branch %}
-    <a href="/tree/{{ branch }}" class="activity-button toolbar__item">Current Activity: {{ task_description | title }}</a>
-    <a class="toolbar__item" href="{{ live_site_url }}">Visit site</a>
-    {% if email %}
-      <a class="toolbar__item" href="#" id="signout">Sign Out</a>
+    <div class="dropdown activity-dropdown toolbar__item global-header__link">
+      <a href="/tree/{{ branch }}" class="dropdown__label activity-dropdown__link">{{ task_description | title }}</a>
+      <div class="dropdown__popup dropdown__popup--right">
+        <p class="activity-dropdown__subtitle">Current Activity</p>
+        <h2 class="activity-dropdown__title">{{ task_description | title }}</h2>
+        <a class="button button--green button--large activity-dropdown__button" href="/tree/{{branch}}">See full history and discussion</a>
+        <div class="comment comment--new">
+          <div class="comment__author">norris@codeforamerica.org</div>
+          <div class="comment__body">
+            <textarea class="comment__input" placeholder="Leave your comment here (optional)"></textarea>
+          </div>
+          <div class="row comment__actions">
+            <div class="row__left"><label><input type="checkbox"><span class="text-orange">Request Feedback</span></label></div>
+            <button href="#" class="row__right button">Submit</button>
+          </div>
+        </div>
+      </div>
+    </div>
     {% endif %}
+    <a class="toolbar__item global-header__link" href="{{ live_site_url }}">Visit site</a>
+    {% if email %}
+      <a class="toolbar__item global-header__link" href="#" id="signout">Sign Out</a>
     {% endif %}
   </nav>
 </div>

@@ -2,42 +2,62 @@
 	@include flex-shrink(0);
 	background-color: $color-blue-600;
 	color: $color-blue-100;
-	.global-header__title {
-		@include allcaps();
-		float: left;
-		font-size: 1.2rem;
-		color: #fff;
-		font-weight: bold;
-		text-decoration: none;
-		margin-right: 2em;
+	padding: {
+		top: 0;
+		bottom: 0;
+		right: 0;
 	}
-	.toolbar--right {
-		.toolbar__item {
-			text-decoration: none;
-			margin-left: 2em;
-			color: $color-grey-50;
-			&:hover {
-				text-decoration: underline;
-			}
-		}
-		.activity-button {
-			@include transition(opacity, .2s, ease-out);
-			background-color: #fff;
-			color: $color-grey-800;
-			opacity: .9;
-			font-weight: 400;
-			padding: .5em .7em;
-			box-shadow: 0 0 3px rgba(0,0,0,.3);
-			border-radius: $border-radius;
-			margin: {
-				top: -.35em;
-				bottom: -.5em;
-			}
-			&:hover {
-				opacity: 1;
-				text-decoration: none;
-			}
-		}
+	.breadcrumb {
+		margin-top: .75em;
 	}
+}
 
+.global-header__title {
+	@include allcaps();
+	float: left;
+	font-size: 1.2rem;
+	color: #fff;
+	font-weight: bold;
+	text-decoration: none;
+	margin-right: 2em;
+	margin-top: .7em;
+}
+
+.global-header__link {
+	text-decoration: none;
+	color: $color-blue-100;
+	padding: 1em 2em;
+	border-left: 1px solid $color-blue-400;
+	margin: 0;
+	&:hover {
+		color: #fff;
+		text-decoration: underline;
+		background-color: $color-blue-400;
+	}
+}
+
+.activity-dropdown__link {
+	color: $color-blue-100;
+	&:hover {
+		color: #fff;
+	}
+}
+
+.activity-dropdown__subtitle {
+	margin: 0em;
+}
+
+.activity-dropdown__title {
+	font-weight: 600;
+	padding-bottom: 1em;
+	margin-top: .2em;
+	margin-bottom: 1em;
+	border-bottom: 1px solid $color-grey-300;
+	color: $color-grey-900;
+}
+
+.activity-dropdown__button {
+	width: 100%;
+	margin-bottom: 2em;
+	text-align: center;
 }

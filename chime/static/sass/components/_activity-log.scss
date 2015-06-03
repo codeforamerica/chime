@@ -1,5 +1,11 @@
+
+.activity-overview {
+	.activity-log {
+		margin: 4em 0
+	}
+}
+
 .activity-log {
-	margin: 4em 0;
 	padding-left: 1em;
 }
 
@@ -12,6 +18,7 @@
 	font-weight: 400;
 	&:last-child {
 		border: 0;
+		padding-bottom: 0;
 	}
 	&:before {
 		content: '';

@@ -26,24 +26,26 @@
     # Components
 \*------------------------------------*/
 
-@import 'components/global-header';
+@import 'components/toolbar';
+@import 'components/dropdown-nav';
 @import 'components/table';
 @import 'components/forms';
-@import 'components/toolbar';
 @import 'components/buttons';
 @import 'components/alerts';
 @import 'components/breadcrumbs';
-@import 'components/dropdown-nav';
+
+
+@import 'components/flashes';
+@import 'components/global-header';
+@import 'components/activity-bar';
 @import 'components/activity-log';
 @import 'components/comment';
-@import 'components/activity-bar';
-@import 'components/flashes';
-
 
 
 /*------------------------------------*\
     # Templates
 \*------------------------------------*/
+
 
 @import 'templates/signin';
 

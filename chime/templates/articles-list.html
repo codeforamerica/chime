@@ -16,7 +16,7 @@
 <div class="articles-list__main grid col__flex">
     {% for column in dir_columns %}
     {% if loop.index != 1 or (loop.index == 1 and dir_columns|length == 1) %}
-    <div class="dir grid__item {% if loop.index == 4 %}width-one-half{% else %}width-one-fourth{% endif %}">
+    <div class="dir grid__item {% if loop.index == 4 %}width-one-half end-row{% else %}width-one-fourth{% endif %}">
       {% if loop.index == 2 %}
       <h2>Categories</h2>
       <div class="selection-box box-add-file-folder">

@@ -27,6 +27,10 @@ textarea  {
 	line-height: $base-line-height;
 }
 
+label {
+	@include user-select(none);
+}
+
 select {
 	color: #000; // standardize on firefox
 	box-sizing: border-box;
