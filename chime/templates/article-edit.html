@@ -79,9 +79,7 @@
                 {% if app_authorized %}
                 <span class="toolbar__item">This week, <b>{{page_views}} people</b> spent an average of <b>{{average_time_page}} secs</b> on this page.</span>
                 {% else %}
-                <form method="POST" action="/authorize">
-                    <button id="authorize-button" class="toolbar__item button button--outline">Connect to Google Analytics</button>
-                </form>
+                <a href="/setup" class="toolbar__item button button--outline">Connect to Google Analytics</a>
                 {% endif %}
             </div>
         </div>
