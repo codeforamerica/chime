@@ -19,7 +19,7 @@ from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
 from .view_functions import (
     branch_name2path, branch_var2name, get_repo, dos2unix,
     login_required, browserid_hostname_required, synch_required, synched_checkout_required,
-    directory_paths, directory_columns, should_redirect, make_redirect, get_auth_data_file,
+    breadcrumb_paths, directory_columns, should_redirect, make_redirect, get_auth_data_file,
     is_allowed_email, common_template_args, log_application_errors,
     is_article_dir, CONTENT_FILE_EXTENSION, ARTICLE_LAYOUT, CATEGORY_LAYOUT)
 
@@ -403,7 +403,7 @@ def render_list_dir(repo, branch_name, path):
 
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(branch=branch_name, safe_branch=branch_name2path(branch_name),
-                  dirs_and_paths=directory_paths(branch_name, path),
+                  breadcrumb_paths=breadcrumb_paths(branch_name, path),
                   dir_columns=directory_columns(repo, branch_name, path, showallfiles),
                   author_email=author_email, task_description=task_description,
                   task_beneficiary=task_beneficiary, task_date_created=task_date_created,
@@ -458,7 +458,7 @@ def render_edit_view(repo, branch, path, file):
                   front=front, view_path=view_path, edit_path=path,
                   history_path=history_path, languages=languages,
                   task_root_path=task_root_path,
-                  dirs_and_paths=directory_paths(branch, folder_root_slug),
+                  breadcrumb_paths=breadcrumb_paths(branch, folder_root_slug),
                   app_authorized=app_authorized, author_email=author_email,
                   task_description=task_description, task_beneficiary=task_beneficiary)
     kwargs.update(analytics_dict)

@@ -78,7 +78,7 @@
                 <tr>
                     <th colspan="4">
                         
-                        {% for (dir_name, dir_path) in dirs_and_paths %}
+                        {% for (dir_name, dir_path) in breadcrumb_paths %}
                             / <a href="{{dir_path}}">{{dir_name}}</a>
                         {% endfor %}
                     </th>
