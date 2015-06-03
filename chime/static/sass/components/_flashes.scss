@@ -1,0 +1,15 @@
+.flash-holder {
+	.flashes {
+		padding: .5em 1em;
+	}
+}
+
+.flash {
+	padding: .5em 1em;
+}
+
+.flash--warning {
+	background-color: $color-red-100;
+	border: 1px solid $color-red-200;
+	color: $color-red-400;
+}

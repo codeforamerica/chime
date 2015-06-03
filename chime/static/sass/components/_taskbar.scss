@@ -1,0 +1,15 @@
+.taskbar {
+	background-color: $color-grey-900;
+	color: $color-grey-200;
+}
+
+.taskbar__task {
+	margin: 0;	
+}
+
+.taskbar__actions {
+	.button {
+		font-weight: normal;
+		box-shadow: 0 0 3px rgba(0,0,0,.2);
+	}
+}

@@ -23,6 +23,11 @@
 	}
 }
 
+button.button {
+	position: relative;
+	top: -1px;
+}
+
 .button--blue {
 	border: 1px solid $color-blue-400;
 	background-color: $color-blue-400;
@@ -76,6 +81,20 @@
 	&:active, &.is-selected {
 		border-color: $color-orange-700;
 		background-color: $color-orange-700;
+	}
+}
+
+.button--white {
+	border: 1px solid #fff;
+	background-color: #fff;
+	color: $color-grey-800;
+	&:hover {
+		border-color: $color-grey-100;
+		background-color: $color-grey-100;
+	}
+	&:active, &.is-selected {
+		border-color: $color-grey-200;
+		background-color: $color-grey-200;
 	}
 }
 

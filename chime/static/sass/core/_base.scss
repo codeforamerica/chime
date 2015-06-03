@@ -16,10 +16,12 @@ body {
 	left: 0;
 	right: 0;
 	min-width: $site-min-width;
+	background-color: $color-grey-50;
 }
 
 p {
 	font-size: $text-font-size;
+	line-height: $base-line-height;
 }
 
 

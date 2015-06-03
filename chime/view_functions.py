@@ -35,7 +35,15 @@ FILE_FILTERS = [
     r'\.lock$',
     r'Gemfile',
     r'LICENSE',
-    r'index\.{}'.format(CONTENT_FILE_EXTENSION)
+    r'index\.{}'.format(CONTENT_FILE_EXTENSION),
+    # below filters were added by norris to focus bootcamp UI on articles
+    r'^css',
+    r'\.xml',
+    r'README\.markdown',
+    r'^js',
+    r'^media',
+    r'^styleguide',
+    r'^about\.markdown',
 ]
 FILE_FILTERS_COMPILED = re.compile('(' + '|'.join(FILE_FILTERS) + ')')
 
@@ -142,10 +150,10 @@ def path_display_type(file_path):
     ''' Returns a type matching how the file at the passed path should be displayed
     '''
     if is_article_dir(file_path):
-        return 'article'
+        return ARTICLE_LAYOUT
 
     if is_category_dir(file_path):
-        return 'category'
+        return CATEGORY_LAYOUT
 
     return path_type(file_path)
 
@@ -190,6 +198,25 @@ def is_editable(file_path, layout=None):
         pass
 
     return False
+
+def get_front_matter(file_path):
+    ''' Get the front matter for the file at the passed path if it exists.
+    '''
+    if isdir(file_path) or not exists(file_path):
+        return None
+
+    with open(file_path) as file:
+        front_matter, _ = load_jekyll_doc(file)
+
+    return front_matter
+
+def get_value_from_front_matter(key, file_path):
+    ''' Get the value for the passed key in the front matter
+    '''
+    try:
+        return get_front_matter(file_path)[key]
+    except:
+        return None
 
 def is_dir_with_layout(file_path, layout, only=True):
     ''' Returns True if the file at the passed path is a directory containing a index file with the passed jekyll layout variable.
@@ -497,6 +524,8 @@ def get_relative_date(repo, file_path):
     return repo.git.log('-1', '--format=%ad', '--date=relative', '--', file_path)
 
 def sorted_paths(repo, branch_name, path=None, showallfiles=False):
+    ''' Returns a list of files and their attributes in the passed directory.
+    '''
     full_path = join(repo.working_dir, path or '.').rstrip('/')
     all_sorted_files_dirs = sorted(listdir(full_path))
 
@@ -510,13 +539,28 @@ def sorted_paths(repo, branch_name, path=None, showallfiles=False):
     full_paths = [join(full_path, name) for name in file_names]
     path_pairs = zip(full_paths, view_paths)
 
-    # filename, path, type, editable, modified date
-    list_paths = [(basename(edit_path), view_path, path_display_type(edit_path), is_display_editable(edit_path), get_relative_date(repo, edit_path))
-                  for (edit_path, view_path) in path_pairs if realpath(edit_path) != repo.git_dir]
+    # name, title, view_path, display_type, is_editable, modified_date
+    path_details = []
+    for (edit_path, view_path) in path_pairs:
+        if realpath(edit_path) != repo.git_dir:
+            info = {}
+            info['name'] = basename(edit_path)
+            info['display_type'] = path_display_type(edit_path)
+            file_title = get_value_from_front_matter('title', join(edit_path, u'index.{}'.format(CONTENT_FILE_EXTENSION)))
+            if not file_title:
+                if info['display_type'] in ('folder', 'image', 'file'):
+                    file_title = info['name']
+                else:
+                    file_title = re.sub('-', ' ', info['name']).title()
+            info['title'] = file_title
+            info['view_path'] = view_path
+            info['is_editable'] = is_display_editable(edit_path)
+            info['modified_date'] = get_relative_date(repo, edit_path)
+            path_details.append(info)
 
-    return list_paths
+    return path_details
 
-def directory_paths(branch_name, path=None):
+def breadcrumb_paths(branch_name, path=None):
     ''' Get a list of tuples (directory name, edit path) for the passed path
         example: passing 'hello/world' will return something like:
             [
@@ -533,18 +577,24 @@ def directory_paths(branch_name, path=None):
                        for dir_name in directory_list]
     return root_dir_with_path + dirs_with_paths
 
-def directory_columns(clone, branch_name, repo_path=None):
+def directory_columns(clone, branch_name, repo_path=None, showallfiles=False):
     ''' Get a list of lists of dicts for the passed path, with file listings for each level.
         example: passing 'hello/world/wide' will return something like:
             [
-                [
-                    {'name': 'hello', 'edit_path': '/tree/8bf27f6/edit/hello', 'display_type': 'category', 'selected': True},
-                    {'name': 'goodbye', 'edit_path': '/tree/8bf27f6/edit/goodbye', 'display_type': 'category', 'selected': False}
-                ],
-                [
-                    {'name': 'world', 'edit_path': '/tree/8bf27f6/edit/hello/world', 'display_type': 'category', 'selected': True},
-                    {'name': 'moon', 'edit_path': '/tree/8bf27f6/edit/hello/moon', 'display_type': 'category', 'selected': False}
-                ]
+                {'path': '',
+                 'files':
+                    [
+                        {'name': 'hello', 'title': 'Hello', 'view_path': '/tree/dfffcd8/view/hello', 'display_type': 'category', 'is_editable': False, 'modified_date': '75 minutes ago', 'current_path': '', 'edit_path': '/tree/8bf27f6/edit/hello', 'selected': True},
+                        {'name': 'goodbye', 'title': 'Goodbye', 'view_path': '/tree/dfffcd8/view/goodbye', 'display_type': 'category', 'is_editable': False, 'modified_date': '2 days ago', 'current_path': '', 'edit_path': '/tree/8bf27f6/edit/goodbye', 'selected': False}
+                    ]
+                },
+                {'path': 'hello',
+                 'files':
+                    [
+                        {'name': 'world', 'title': 'World', 'view_path': '/tree/dfffcd8/view/hello/world', 'display_type': 'category', 'is_editable': False, 'modified_date': '75 minutes ago', 'current_path': 'hello', 'edit_path': '/tree/8bf27f6/edit/hello/world', 'selected': True},
+                        {'name': 'moon', 'title': 'Moon', 'view_path': '/tree/dfffcd8/view/hello/moon', 'display_type': 'category', 'is_editable': False, 'modified_date': '4 days ago', 'current_path': 'hello', 'edit_path': '/tree/8bf27f6/edit/hello/moon', 'selected': False}
+                    ]
+                }
             ]
     '''
     repo_path = repo_path or u''
@@ -565,13 +615,18 @@ def directory_columns(clone, branch_name, repo_path=None):
     # Create the listings
     edit_path_root = u'/tree/{}/edit'.format(branch_name)
     dir_listings = []
-    for i in range(len(dirs) - 1):
-        current_dir = dirs[i + 1]
+    for i in range(len(dirs)):
+        try:
+            current_dir = dirs[i + 1]
+        except IndexError:
+            current_dir = dirs[-1]
+
         current_path = sep.join(dirs[1:i + 1])
         current_edit_path = join(edit_path_root, current_path)
-        files = sorted_paths(clone, branch_name, current_path)
-        listing = [{'name': item[0], 'edit_path': join(current_edit_path, item[0]), 'display_type': item[2], 'selected': (current_dir == item[0])} for item in files]
-        dir_listings.append(listing)
+        files = sorted_paths(clone, branch_name, current_path, showallfiles)
+        # name, title, view_path, display_type, is_editable, modified_date
+        listing = [{'name': item['name'], 'title': item['title'], 'view_path': item['view_path'], 'display_type': item['display_type'], 'is_editable': item['is_editable'], 'modified_date': item['modified_date'], 'current_path': current_path, 'edit_path': join(current_edit_path, item['name']), 'selected': (current_dir == item['name'])} for item in files]
+        dir_listings.append({'path': current_path, 'files': listing})
 
     return dir_listings
 

@@ -1,0 +1,33 @@
+.activity-review__container {
+	@include stretch-content();
+	padding: 0;
+}
+
+.activity-review__changed-files {
+	padding: 1em $site-margins;
+	.description {
+		width: 75%;
+	}
+}
+
+.files-table {
+	margin-top: 2em;
+	margin-bottom: 2em;
+}
+
+.review-pane {
+	background-color: $color-grey-200;
+	padding: 1em $site-margins/2;
+	overflow: auto;
+	.button {
+		width: 100%;
+		margin-bottom: 1em;
+	}
+}
+
+.review-pane__textarea {
+	height: 300px;
+	margin-bottom: 2em;
+	resize: none;
+	padding: 1em;
+}
