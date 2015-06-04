@@ -182,6 +182,7 @@ class TestPreview(TestCase):
         self.driver.get(main_url)
         # delete our branch
         self.driver.find_element_by_xpath("//form[@action='/merge']/button[@value='abandon']").click()
+        # TODO: make sure deletion happens
 
     def tearDown(self):
         self.driver.quit()
