@@ -16,16 +16,16 @@
         <p class="activity-dropdown__subtitle">Current Activity</p>
         <h2 class="activity-dropdown__title">{{ task_description | title }}</h2>
         <a class="button button--green button--large activity-dropdown__button" href="/tree/{{branch}}">See full history and discussion</a>
-        <div class="comment comment--new">
+        <form action="/review" class="comment comment--new">
           <div class="comment__author">norris@codeforamerica.org</div>
           <div class="comment__body">
             <textarea class="comment__input" placeholder="Leave your comment here (optional)"></textarea>
           </div>
           <div class="row comment__actions">
-            <div class="row__left"><label><input type="checkbox"><span class="text-orange">Request Feedback</span></label></div>
-            <button href="#" class="row__right button">Submit</button>
+            <div class="row__left"><label><input type="checkbox" name="action" value="request_feedback"><span class="text-orange">Request Feedback</span></label></div>
+            <button href="#" class="row__right button" type="submit">Submit</button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
     {% endif %}
