@@ -70,7 +70,6 @@
   </div>
   <div class="taskbar__actions row__right toolbar--right">
         <!-- testing to get some buttons... this next line should be  if needs_peer_review and not eligible_peer -->
-        {{ eligible_peer }}
         {% if needs_peer_review and not eligible_peer %}
         <form action="/merge" method="POST" class="toolbar__item">
           <input name="branch" value="{{branch}}" type="hidden" />
