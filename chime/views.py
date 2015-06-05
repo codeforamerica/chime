@@ -519,7 +519,7 @@ def add_article_or_category(repo, path, create_what, request_path):
     elif create_what == 'category':
         file_path = repo.canonicalize_path(path, name)
         if repo.exists(file_path):
-            message = 'Category "{}" already exists'.format(file_path)
+            message = 'Category "{}" already exists'.format(request_path)
             return message, file_path, strip_index_file(file_path), False
         else:
             file_path = edit_functions.create_new_page(repo, path, name, cat_front, body)
@@ -554,7 +554,13 @@ def branch_edit_file(branch, path=None):
 
     elif action == 'create' and (create_what == 'article' or create_what == 'category') and create_path is not None:
         message, file_path, redirect_path, do_save = add_article_or_category(repo, create_path, create_what, request.form['path'])
-        commit = repo.commit()
+        if do_save:
+            commit = repo.commit()
+        else:
+            import sys
+
+            sys.stderr.write("flashing!\n")
+            flash(message, u'notice')
 
 
 

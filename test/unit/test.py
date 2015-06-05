@@ -372,7 +372,7 @@ class TestRepo (TestCase):
         self.assertEqual(u'categories/my-new-category/', first_result[2])
         self.assertEqual(True, first_result[3])
         second_result = views.add_article_or_category(self.clone1, 'categories', 'category', 'my new category')
-        self.assertEqual('Category "categories/my-new-category/index.markdown" already exists', second_result[0])
+        self.assertEqual('Category "my new category" already exists', second_result[0])
         self.assertEqual(u'categories/my-new-category/index.markdown', second_result[1])
         self.assertEqual(u'categories/my-new-category/', second_result[2])
         self.assertEqual(False, second_result[3])
@@ -2040,6 +2040,7 @@ class TestApp (TestCase):
                                              data=request_data,
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
+            self.assertTrue(u'Category &#34;hello&#34; already exists' in response.data)
 
 
             # pull the changes
