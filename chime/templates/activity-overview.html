@@ -84,42 +84,42 @@
 
 
 				<div class="activity-log-item activity-log-item--comment">
-					<div class="comment comment--new">
+					<form action="/review" class="comment comment--new">
 						<div class="comment__author">norris@codeforamerica.org</div>
 						<div class="comment__body">
 							<textarea class="comment__input" placeholder="Leave your comment here (optional)"></textarea>
 						</div>
 						<div class="row comment__actions">
-							<div class="row__left"><input type="checkbox"><span class="text-green">Looks good!</span></div>
+							<div class="row__left"><input type="checkbox" name="action" value="approve"><span class="text-green">Looks good!</span></div>
 							<button href="#" class="row__right button">Submit</button>
 						</div>
-					</div>
+					</form>
 				</div>
 
 				<div class="activity-log-item activity-log-item--comment">
-					<div class="comment comment--new">
+					<form action="/review" class="comment comment--new">
 						<div class="comment__author">norris@codeforamerica.org</div>
 						<div class="comment__body">
 							<textarea class="comment__input" placeholder="Leave your comment here (optional)"></textarea>
 						</div>
 						<div class="row comment__actions">
-							<div class="row__left"><input type="checkbox"><span class="text-orange">Request Feedback</span></div>
+							<div class="row__left"><input type="checkbox" name="action" value="request_feedback"><span class="text-orange">Request Feedback</span></div>
 							<button href="#" class="row__right button">Submit</button>
 						</div>
-					</div>
+					</form>
 				</div>
 
 				<div class="activity-log-item activity-log-item--comment">
-					<div class="comment comment--new">
+					<form action="/merge" class="comment comment--new">
 						<div class="comment__author">norris@codeforamerica.org</div>
 						<div class="comment__body">
 							<textarea class="comment__input" placeholder="Leave your comment here (optional)"></textarea>
 						</div>
 						<div class="row comment__actions">
-							<div class="row__left"><input type="checkbox"><span class="text-blue">Publish to Site</span></div>
+							<div class="row__left"><input type="checkbox" name="action" value="merge"><span class="text-blue">Publish to Site</span></div>
 							<button href="#" class="row__right button">Submit</button>
 						</div>
-					</div>
+					</form>
 				</div>
 			</div>
 		</div>
