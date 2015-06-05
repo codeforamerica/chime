@@ -495,8 +495,8 @@ def branch_edit(branch, path=None):
 def add_article_or_category(repo, path, create_what, request_path):
     ''' Add an article or category
     '''
-    article_front = dict(title=u'', layout=ARTICLE_LAYOUT)
-    cat_front = dict(title=u'', layout=CATEGORY_LAYOUT)
+    article_front = dict(title=u'', description=u'', order=0, layout=ARTICLE_LAYOUT)
+    cat_front = dict(title=u'', description=u'', order=0, layout=CATEGORY_LAYOUT)
     body = u''
 
     # create and commit intermediate categories
