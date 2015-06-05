@@ -4,12 +4,14 @@ import logging
 from os import mkdir
 from os.path import join, split, exists, isdir, sep
 from itertools import chain
+from git import Repo
 from git.cmd import GitCommandError
 import hashlib
 import yaml
 from re import match
 
 from . import edit_functions
+from .edit_functions import make_slug_path
 
 TASK_METADATA_FILENAME = u'_task.yml'
 BRANCH_NAME_LENGTH = 7
@@ -31,6 +33,29 @@ class MergeConflict (Exception):
 
     def __str__(self):
         return 'MergeConflict(%s, %s)' % (self.remote_commit, self.local_commit)
+
+class ChimeRepo(Repo):
+
+    def full_path(self, *args):
+        return join(self.working_dir, self.repo_path(*args))
+
+    def repo_path(self, *args):
+        if len(args) >= 2:
+            return self.canonicalize_path(*args) # no idea why; probably belongs up in web-handling code
+        return join(*args)
+
+    def canonicalize_path(self, *args):
+
+        result = join((args[0] or '').rstrip('/'), *args[1:])
+        split_path = split(result) # also probably belongs up in request handling code
+        result = join(make_slug_path(split_path[0]), split_path[1])
+
+        return result
+
+    def exists(self, path_in_repo):
+        return exists(self.full_path(path_in_repo))
+
+
 
 def _origin(branch_name):
     ''' Format the branch name into a origin path and return it.
@@ -384,8 +409,8 @@ def make_working_file(clone, dir_path, file_path):
         `file_path` is the path that was entered to create the file, which
                     may include existing or new directories
     '''
-    repo_path = join((dir_path or '').rstrip('/'), file_path)
-    full_path = join(clone.working_dir, repo_path)
+    repo_path = clone.repo_path(dir_path, file_path)
+    full_path = clone.full_path(dir_path, file_path)
 
     #
     # Build a full directory path.

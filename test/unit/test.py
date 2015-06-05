@@ -14,6 +14,8 @@ from re import search
 import random
 from datetime import date, timedelta
 import sys
+from chime import views
+from chime.repo_functions import ChimeRepo
 
 repo_root = abspath(join(dirname(__file__), '..'))
 sys.path.insert(0, repo_root)
@@ -195,7 +197,7 @@ class TestRepo (TestCase):
         temp_repo_dir = mkdtemp(prefix='chime-root')
         temp_repo_path = temp_repo_dir + '/test-app.git'
         copytree(repo_path, temp_repo_path)
-        self.origin = Repo(temp_repo_path)
+        self.origin = ChimeRepo(temp_repo_path)
         repo_functions.ignore_task_metadata_on_merge(self.origin)
 
         self.clone1 = self.origin.clone(mkdtemp(prefix='chime-'))
@@ -361,6 +363,19 @@ class TestRepo (TestCase):
             self.assertEquals(body, 'Hello hello.')
 
         self.assertFalse(exists(join(self.clone2.working_dir, 'index.md')))
+
+    def test_try_to_create_existing_category(self):
+
+        first_result = views.add_article_or_category(self.clone1, 'categories', 'category', 'my new category')
+        self.assertEqual('Created new category "categories/my-new-category/index.markdown"', first_result[0])
+        self.assertEqual(u'categories/my-new-category/index.markdown', first_result[1])
+        self.assertEqual(u'categories/my-new-category/', first_result[2])
+        self.assertEqual(True, first_result[3])
+        second_result = views.add_article_or_category(self.clone1, 'categories', 'category', 'my new category')
+        self.assertEqual('Category "categories/my-new-category/index.markdown" already exists', second_result[0])
+        self.assertEqual(u'categories/my-new-category/index.markdown', second_result[1])
+        self.assertEqual(u'categories/my-new-category/', second_result[2])
+        self.assertEqual(False, second_result[3])
 
     def test_delete_directory(self):
         ''' Make a new file and directory and delete them.
@@ -1992,6 +2007,46 @@ class TestApp (TestCase):
 
             # a directory was created
             dir_location = join(self.clone1.working_dir, page_slug)
+            idx_location = u'{}/index.{}'.format(dir_location, view_functions.CONTENT_FILE_EXTENSION)
+            self.assertTrue(exists(dir_location) and isdir(dir_location))
+            # an index page was created inside
+            self.assertTrue(exists(idx_location))
+            # the directory and index page pass the category test
+            self.assertTrue(view_functions.is_category_dir(dir_location))
+
+    def test_create_duplicate_category(self):
+        ''' If we ask to create a category that exists, let's not and say we did.
+        '''
+        fake_author_email = u'erica@example.com'
+        with HTTMock(self.mock_persona_verify):
+            self.test_client.post('/sign-in', data={'email': fake_author_email})
+
+        with HTTMock(self.auth_csv_example_allowed):
+            # start a new branch via the http interface
+            # invokes view_functions/get_repo which creates a clone
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', u'force a clam shell open',
+                                                             u'starfish', fake_author_email)
+            working_branch.checkout()
+
+            # create a new category
+            request_data = {'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'path': u'hello'}
+            response = self.test_client.post('/tree/{}/edit/'.format(working_branch.name),
+                                             data=request_data,
+                                             follow_redirects=True)
+            self.assertEquals(response.status_code, 200)
+
+            # now do it again
+            response = self.test_client.post('/tree/{}/edit/'.format(working_branch.name),
+                                             data=request_data,
+                                             follow_redirects=True)
+            self.assertEquals(response.status_code, 200)
+
+
+            # pull the changes
+            self.clone1.git.pull('origin', working_branch.name)
+
+            # everything looks good
+            dir_location = join(self.clone1.working_dir, u'hello')
             idx_location = u'{}/index.{}'.format(dir_location, view_functions.CONTENT_FILE_EXTENSION)
             self.assertTrue(exists(dir_location) and isdir(dir_location))
             # an index page was created inside

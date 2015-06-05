@@ -515,13 +515,23 @@ def add_article_or_category(repo, path, create_what, request_path):
         file_path = edit_functions.create_new_page(repo, path, name, article_front, body)
         message = 'Created new article "{}"'.format(file_path)
         redirect_path = file_path
-        return message, file_path, redirect_path
+        return message, file_path, redirect_path, True
+    elif create_what == 'category':
+        file_path = repo.canonicalize_path(path, name)
+        if repo.exists(file_path):
+            message = 'Category "{}" already exists'.format(file_path)
+            return message, file_path, strip_index_file(file_path), False
+        else:
+            file_path = edit_functions.create_new_page(repo, path, name, cat_front, body)
+            message = 'Created new category "{}"'.format(file_path)
+            return message, file_path, strip_index_file(file_path), True
+    else:
+        raise ValueError("Illegal creation request %s " % create_what)
 
-    file_path = edit_functions.create_new_page(repo, path, name, cat_front, body)
-    message = 'Created new category "{}"'.format(file_path)
-    # strip the index file from the redirect path
-    redirect_path = sub(r'index.{}$'.format(CONTENT_FILE_EXTENSION), '', file_path)
-    return message, file_path, redirect_path
+
+def strip_index_file(file_path):
+    return sub(r'index.{}$'.format(CONTENT_FILE_EXTENSION), '', file_path)
+
 
 @app.route('/tree/<branch>/edit/', methods=['POST'])
 @app.route('/tree/<branch>/edit/<path:path>', methods=['POST'])
@@ -543,8 +553,10 @@ def branch_edit_file(branch, path=None):
         redirect_path = path or ''
 
     elif action == 'create' and (create_what == 'article' or create_what == 'category') and create_path is not None:
-        message, file_path, redirect_path = add_article_or_category(repo, create_path, create_what, request.form['path'])
+        message, file_path, redirect_path, do_save = add_article_or_category(repo, create_path, create_what, request.form['path'])
         commit = repo.commit()
+
+
 
     elif action == 'delete' and 'path' in request.form:
         request_path = request.form['path']
