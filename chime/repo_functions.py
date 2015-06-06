@@ -55,6 +55,35 @@ class ChimeRepo(Repo):
     def exists(self, path_in_repo):
         return exists(self.full_path(path_in_repo))
 
+    def create_directories_if_necessary(self, path):
+        """
+        Creates any necessary directories for a path, ignoring any
+        file component. If you pass "foo/bar.txt" it'll create directory foo.
+        If you pass "foo/bar/" it will create foo and foo/bar.
+        :param path:
+        :return:
+        """
+        dirs = self._dirs_for_path(path)
+
+        # Create directory tree.
+        #
+        for i in range(len(dirs)):
+            build_path = join(self.working_dir, sep.join(dirs[:i + 1]))
+
+            if not isdir(build_path):
+                mkdir(build_path)
+
+
+    def _dirs_for_path(self, path):
+        head, dirs = split(path)[0], []
+        while head:
+            head, check_dir = split(head)
+            dirs.insert(0, check_dir)
+        if '..' in dirs:
+            raise Exception('Invalid path component.')
+
+        return dirs
+
 
 
 def _origin(branch_name):
@@ -398,43 +427,6 @@ def clobber_default_branch(clone, default_branch_name, working_branch_name):
     clone.remotes.origin.push(':' + working_branch_name)
     clone.delete_head([working_branch_name])
 
-def make_working_file(clone, dir_path, file_path):
-    ''' Determine the relative and absolute location of a new file, create
-        any directories in its path that don't already exist, and return
-        its local git and real absolute paths. Does not create the actual
-        file.
-
-        `dir_path` is the existing directory the file is being created in
-
-        `file_path` is the path that was entered to create the file, which
-                    may include existing or new directories
-    '''
-    repo_path = clone.repo_path(dir_path, file_path)
-    full_path = clone.full_path(dir_path, file_path)
-
-    #
-    # Build a full directory path.
-    #
-    head, dirs = split(repo_path)[0], []
-
-    while head:
-        head, check_dir = split(head)
-        dirs.insert(0, check_dir)
-
-    if '..' in dirs:
-        raise Exception('Invalid path component.')
-
-    #
-    # Create directory tree.
-    #
-    for i in range(len(dirs)):
-        build_path = join(clone.working_dir, sep.join(dirs[:i + 1]))
-
-        if not isdir(build_path):
-            mkdir(build_path)
-
-    return repo_path, full_path
-
 def sync_with_default_and_upstream_branches(clone, sync_branch_name):
     ''' Sync the passed branch with default and upstream branches.
     '''
@@ -498,7 +490,7 @@ def move_existing_file(clone, old_path, new_path, base_sha, default_branch_name)
 
     # check whether we're being asked to move a dir
     if not isdir(join(clone.working_dir, old_path)):
-        make_working_file(clone, '', new_path)
+        clone.create_directories_if_necessary(new_path)
     else:
         # send make_working_file a path without the last directory,
         # which will be created by git mv
@@ -511,7 +503,7 @@ def move_existing_file(clone, old_path, new_path, base_sha, default_branch_name)
         if len(new_dirs) > 1:
             new_dirs = new_dirs[:-1]
             short_new_path = u'{}/'.format(u'/'.join(new_dirs))
-            make_working_file(clone, '', short_new_path)
+            clone.create_directories_if_necessary(short_new_path)
 
     clone.git.mv(old_path, new_path, f=True)
 

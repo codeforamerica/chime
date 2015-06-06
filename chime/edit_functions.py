@@ -54,12 +54,13 @@ def create_new_page(clone, dir_path, request_path, front, body):
     front_copy = dict(front)
     if not front_copy['title']:
         front_copy['title'] = request_path.split('/')[-2]
-    file_path, full_path = repo_functions.make_working_file(clone, dir_path, slug_path)
+    file_path = clone.repo_path(dir_path, slug_path)
+    clone.create_directories_if_necessary(file_path)
 
-    if exists(full_path):
+    if clone.exists(file_path):
         raise Exception(u'create_new_page: path already exists!')
 
-    with open(full_path, 'w') as file:
+    with open(clone.full_path(file_path), 'w') as file:
         dump_jekyll_doc(front_copy, body, file)
 
     return file_path
@@ -67,10 +68,11 @@ def create_new_page(clone, dir_path, request_path, front, body):
 def upload_new_file(clone, dir_path, upload):
     ''' Upload a new file in the working directory, return its path.
     '''
-    file_path, full_path = repo_functions.make_working_file(clone, dir_path, upload.filename)
 
-    if not exists(full_path):
-        with open(full_path, 'w') as file:
+    file_path = clone.repo_path(dir_path, upload.filename)
+
+    if not clone.exists(file_path):
+        with open(clone.full_path(file_path), 'w') as file:
             upload.save(file)
 
     return file_path
