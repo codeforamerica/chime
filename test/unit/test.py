@@ -377,6 +377,19 @@ class TestRepo (TestCase):
         self.assertEqual(u'categories/my-new-category/', second_result[2])
         self.assertEqual(False, second_result[3])
 
+    def test_try_to_create_existing_article(self):
+
+        first_result = views.add_article_or_category(self.clone1, 'categories/example', 'article', 'new article')
+        self.assertEqual('Created new article "categories/example/new-article/index.markdown"', first_result[0])
+        self.assertEqual(u'categories/example/new-article/index.markdown', first_result[1])
+        self.assertEqual(u'categories/example/new-article/index.markdown', first_result[2])
+        self.assertEqual(True, first_result[3])
+        second_result = views.add_article_or_category(self.clone1, 'categories/example', 'article', 'new article')
+        self.assertEqual('Article "new article" already exists', second_result[0])
+        self.assertEqual(u'categories/example/new-article/index.markdown', first_result[1])
+        self.assertEqual(u'categories/example/new-article/index.markdown', first_result[2])
+        self.assertEqual(False, second_result[3])
+
     def test_delete_directory(self):
         ''' Make a new file and directory and delete them.
         '''

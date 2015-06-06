@@ -505,22 +505,25 @@ def add_article_or_category(repo, path, create_what, request_path):
         page_paths = edit_functions.create_path_to_page(repo, path, request_path, cat_front, body, filename)
         master_name = current_app.config['default_branch']
         for new_path in page_paths:
-            message = 'Created new category "{}"'.format(new_path)
             Logger.debug('save')
-            repo_functions.save_working_file(repo, new_path, message, repo.commit().hexsha, master_name)
+            repo_functions.save_working_file(repo, new_path, 'Created new category "{}"'.format(new_path),
+                                             repo.commit().hexsha, master_name)
 
     name = u'{}/index.{}'.format(splitext(request_path)[0], CONTENT_FILE_EXTENSION)
 
     if create_what == 'article':
-        file_path = edit_functions.create_new_page(repo, path, name, article_front, body)
-        message = 'Created new article "{}"'.format(file_path)
-        redirect_path = file_path
-        return message, file_path, redirect_path, True
+        file_path = repo.canonicalize_path(path, name)
+        if repo.exists(file_path):
+            return 'Article "{}" already exists'.format(request_path), file_path, file_path, False
+        else:
+            file_path = edit_functions.create_new_page(repo, path, name, article_front, body)
+            message = 'Created new article "{}"'.format(file_path)
+            redirect_path = file_path
+            return message, file_path, redirect_path, True
     elif create_what == 'category':
         file_path = repo.canonicalize_path(path, name)
         if repo.exists(file_path):
-            message = 'Category "{}" already exists'.format(request_path)
-            return message, file_path, strip_index_file(file_path), False
+            return 'Category "{}" already exists'.format(request_path), file_path, strip_index_file(file_path), False
         else:
             file_path = edit_functions.create_new_page(repo, path, name, cat_front, body)
             message = 'Created new category "{}"'.format(file_path)
@@ -557,9 +560,6 @@ def branch_edit_file(branch, path=None):
         if do_save:
             commit = repo.commit()
         else:
-            import sys
-
-            sys.stderr.write("flashing!\n")
             flash(message, u'notice')
 
 
