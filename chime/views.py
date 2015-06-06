@@ -669,11 +669,17 @@ def branch_save(branch, path):
     #
     existing_branch.checkout()
 
-    front = {'layout': dos2unix(request.form.get('layout')), 'title': dos2unix(request.form.get('en-title'))}
+    front = {
+        'layout': dos2unix(request.form.get('layout')),
+        'order': int(dos2unix(request.form.get('order', '0'))),
+        'title': dos2unix(request.form.get('en-title', '')),
+        'description': dos2unix(request.form.get('en-description', ''))
+    }
 
     for iso in load_languages(repo.working_dir):
         if iso != 'en':
             front['title-' + iso] = dos2unix(request.form.get(iso + '-title', ''))
+            front['description-' + iso] = dos2unix(request.form.get(iso + '-description', ''))
             front['body-' + iso] = dos2unix(request.form.get(iso + '-body', ''))
 
     body = dos2unix(request.form.get('en-body'))
