@@ -19,7 +19,7 @@ from dateutil.relativedelta import relativedelta
 from flask import request, session, current_app, redirect, flash
 from requests import get
 
-from .repo_functions import get_existing_branch, ignore_task_metadata_on_merge
+from .repo_functions import get_existing_branch, ignore_task_metadata_on_merge, ChimeRepo
 from .jekyll_functions import load_jekyll_doc
 from .href import needs_redirect, get_redirect
 
@@ -92,13 +92,13 @@ def get_repo(flask_app):
         the cloned directory, to reduce history conflicts when tweaking
         the repository during development.
     '''
-    source_repo = Repo(flask_app.config['REPO_PATH'])
+    source_repo = ChimeRepo(flask_app.config['REPO_PATH'])
     first_commit = list(source_repo.iter_commits())[-1].hexsha
     dir_name = 'repo-{}-{}'.format(first_commit[:8], session.get('email', 'nobody'))
     user_dir = realpath(join(flask_app.config['WORK_PATH'], quote(dir_name)))
 
     if isdir(user_dir):
-        user_repo = Repo(user_dir)
+        user_repo = ChimeRepo(user_dir)
         user_repo.git.reset(hard=True)
         user_repo.remotes.origin.fetch()
     else:
@@ -597,18 +597,9 @@ def directory_columns(clone, branch_name, repo_path=None, showallfiles=False):
                 }
             ]
     '''
-    repo_path = repo_path or u''
-
     # Build a full directory path.
-    head, dirs = split(repo_path)[0], []
-
-    while head:
-        head, dir = split(head)
-        dirs.insert(0, dir)
-
-    if '..' in dirs:
-        raise Exception('Invalid path component.')
-
+    repo_path = repo_path or u''
+    dirs = clone.dirs_for_path(repo_path)
     # make sure we get the root dir
     dirs.insert(0, u'')
 
