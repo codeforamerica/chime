@@ -1,6 +1,7 @@
 # -- coding: utf-8 --
 
 import os
+from random import random, randint
 from unittest import main, TestCase
 import re
 from selenium import webdriver
@@ -77,6 +78,7 @@ BROWSERS_TO_TRY = all_targets()
 
 
 class TestPreview(TestCase):
+    _multiprocess_can_split_ = True
     def setUp(self):
         self.email = os.environ['TESTING_EMAIL']
         self.password = os.environ['TESTING_PASSWORD']
@@ -125,25 +127,7 @@ class TestPreview(TestCase):
 
         self.driver.get(self.live_site)
         main_window = self.driver.current_window_handle
-        self.driver.find_element_by_id('signin').click()
-
-        # wait until the persona window's available and switch to it
-        self.waiter.until(self.switch_to_other_window(main_window))
-
-        self.waiter.until(EC.visibility_of_element_located((By.ID, 'authentication_email'))).send_keys(self.email)
-
-        # there are many possible submit buttons on this page
-        # so grab the whole row and then click the first button
-        submit_row = self.driver.find_element_by_css_selector('.submit.cf.buttonrow')
-        submit_row.find_element_by_css_selector('.isStart.isAddressInfo').click()
-
-        # ajax, wait until the element is visible
-        self.waiter.until(EC.visibility_of_element_located((By.ID, 'authentication_password'))).send_keys(self.password)
-
-        submit_row.find_element_by_css_selector('.isReturning.isTransitionToSecondary').click()
-
-        # switch back to the main window
-        self.driver.switch_to.window(main_window)
+        self.log_in_to_persona(main_window)
 
         # make sure we're back to Chime
         # self.assertEquals(self.driver.title, 'Tasks | Chime')
@@ -151,18 +135,21 @@ class TestPreview(TestCase):
         main_url = self.driver.current_url
 
         # start a new task
-        self.waiter.until(EC.visibility_of_element_located((By.NAME, 'task_description'))).send_keys('foobar')
-        self.driver.find_element_by_name('task_beneficiary').send_keys('raboof')
+        task_description = self.marked_string('task_description')
+        self.waiter.until(EC.visibility_of_element_located((By.NAME, 'task_description'))).send_keys(
+            task_description)
+        self.driver.find_element_by_name('task_beneficiary').send_keys(self.marked_string('task_beneficiary'))
         self.driver.find_element_by_class_name('create').click()
 
         # create a new page
         self.waiter.until(
-            EC.visibility_of_element_located((By.XPATH, "//form[@action='.']/input[@type='text']"))).send_keys('foobar')
+            EC.visibility_of_element_located((By.XPATH, "//form[@action='.']/input[@name='path']"))).send_keys(self.marked_string('filename'))
         self.driver.find_element_by_xpath("//form[@action='.']/input[@type='submit']").click()
 
         # add some content to that page
-        self.waiter.until(EC.visibility_of_element_located((By.NAME, 'en-title'))).send_keys('foo')
-        test_page_content = 'This is some test content.', Keys.RETURN, Keys.RETURN, '# This is a test h1', Keys.RETURN, Keys.RETURN, '> This is a test pull-quote'
+        self.waiter.until(EC.visibility_of_element_located((By.NAME, 'en-title'))).send_keys(self.marked_string('title'))
+        test_page_content = 'This is some test content.', Keys.RETURN, Keys.RETURN, self.marked_string('body_text'),\
+                            Keys.RETURN, Keys.RETURN, '# This is a test h1', Keys.RETURN, Keys.RETURN, '> This is a test pull-quote'
         self.driver.find_element_by_id('en-body markItUp').send_keys(*test_page_content)
 
         # save the page
@@ -181,8 +168,26 @@ class TestPreview(TestCase):
         # go back to the main page
         self.driver.get(main_url)
         # delete our branch
-        self.driver.find_element_by_xpath("//form[@action='/merge']/button[@value='abandon']").click()
+        self.driver.find_element_by_xpath("//a[contains(text(),'{}')]/../..//button[@value='abandon']".format(task_description)).click()
         # TODO: make sure deletion happens
+
+    def marked_string(self, base='string'):
+        return "{}-{:06d}".format(base,randint(0,999999))
+
+    def log_in_to_persona(self, main_window):
+        self.driver.find_element_by_id('signin').click()
+        # wait until the persona window's available and switch to it
+        self.waiter.until(self.switch_to_other_window(main_window))
+        self.waiter.until(EC.visibility_of_element_located((By.ID, 'authentication_email'))).send_keys(self.email)
+        # there are many possible submit buttons on this page
+        # so grab the whole row and then click the first button
+        submit_row = self.driver.find_element_by_css_selector('.submit.cf.buttonrow')
+        submit_row.find_element_by_css_selector('.isStart.isAddressInfo').click()
+        # ajax, wait until the element is visible
+        self.waiter.until(EC.visibility_of_element_located((By.ID, 'authentication_password'))).send_keys(self.password)
+        submit_row.find_element_by_css_selector('.isReturning.isTransitionToSecondary').click()
+        # switch back to the main window
+        self.driver.switch_to.window(main_window)
 
     def tearDown(self):
         self.driver.quit()
