@@ -2,8 +2,6 @@
 from os.path import exists, isdir, join, split, sep
 from os import rmdir, remove
 from slugify import slugify
-
-import repo_functions
 from .jekyll_functions import dump_jekyll_doc
 
 def update_page(clone, file_path, front, body):
@@ -29,14 +27,7 @@ def create_path_to_page(clone, dir_path, request_path, front, body, filename):
     ''' Build non-existing directories in request_path as category directories.
     '''
     # Build a full directory path.
-    head, dirs = split(request_path)[0], []
-
-    while head:
-        head, check_dir = split(head)
-        dirs.insert(0, check_dir)
-
-    if '..' in dirs:
-        raise Exception('Invalid path component.')
+    dirs = clone.dirs_for_path(request_path)
 
     # Build the category directory tree.
     file_paths = []

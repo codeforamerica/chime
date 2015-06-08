@@ -78,7 +78,7 @@ class TestViewFunctions (TestCase):
         temp_repo_dir = mkdtemp(prefix='chime-root')
         temp_repo_path = temp_repo_dir + '/test-app.git'
         copytree(repo_path, temp_repo_path)
-        self.origin = Repo(temp_repo_path)
+        self.origin = ChimeRepo(temp_repo_path)
         repo_functions.ignore_task_metadata_on_merge(self.origin)
         self.clone = self.origin.clone(mkdtemp(prefix='chime-'))
         repo_functions.ignore_task_metadata_on_merge(self.clone)
@@ -366,12 +366,12 @@ class TestRepo (TestCase):
 
     def test_try_to_create_existing_category(self):
 
-        first_result = views.add_article_or_category(self.clone1, 'categories', 'category', 'my new category')
+        first_result = views.add_article_or_category(self.clone1, 'categories', 'my new category', view_functions.CATEGORY_LAYOUT)
         self.assertEqual('Created new category "categories/my-new-category/index.markdown"', first_result[0])
         self.assertEqual(u'categories/my-new-category/index.markdown', first_result[1])
         self.assertEqual(u'categories/my-new-category/', first_result[2])
         self.assertEqual(True, first_result[3])
-        second_result = views.add_article_or_category(self.clone1, 'categories', 'category', 'my new category')
+        second_result = views.add_article_or_category(self.clone1, 'categories', 'my new category', view_functions.CATEGORY_LAYOUT)
         self.assertEqual('Category "my new category" already exists', second_result[0])
         self.assertEqual(u'categories/my-new-category/index.markdown', second_result[1])
         self.assertEqual(u'categories/my-new-category/', second_result[2])
@@ -379,12 +379,12 @@ class TestRepo (TestCase):
 
     def test_try_to_create_existing_article(self):
 
-        first_result = views.add_article_or_category(self.clone1, 'categories/example', 'article', 'new article')
+        first_result = views.add_article_or_category(self.clone1, 'categories/example', 'new article', view_functions.ARTICLE_LAYOUT)
         self.assertEqual('Created new article "categories/example/new-article/index.markdown"', first_result[0])
         self.assertEqual(u'categories/example/new-article/index.markdown', first_result[1])
         self.assertEqual(u'categories/example/new-article/index.markdown', first_result[2])
         self.assertEqual(True, first_result[3])
-        second_result = views.add_article_or_category(self.clone1, 'categories/example', 'article', 'new article')
+        second_result = views.add_article_or_category(self.clone1, 'categories/example', 'new article', view_functions.ARTICLE_LAYOUT)
         self.assertEqual('Article "new article" already exists', second_result[0])
         self.assertEqual(u'categories/example/new-article/index.markdown', first_result[1])
         self.assertEqual(u'categories/example/new-article/index.markdown', first_result[2])
@@ -1423,7 +1423,7 @@ class TestApp (TestCase):
         temp_repo_dir = mkdtemp(prefix='chime-root')
         temp_repo_path = temp_repo_dir + '/test-app.git'
         copytree(repo_path, temp_repo_path)
-        self.origin = Repo(temp_repo_path)
+        self.origin = ChimeRepo(temp_repo_path)
         repo_functions.ignore_task_metadata_on_merge(self.origin)
         self.clone1 = self.origin.clone(mkdtemp(prefix='chime-'))
         repo_functions.ignore_task_metadata_on_merge(self.clone1)
@@ -2054,7 +2054,6 @@ class TestApp (TestCase):
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
             self.assertTrue(u'Category &#34;hello&#34; already exists' in response.data)
-
 
             # pull the changes
             self.clone1.git.pull('origin', working_branch.name)

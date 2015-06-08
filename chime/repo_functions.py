@@ -45,7 +45,8 @@ class ChimeRepo(Repo):
         return join(*args)
 
     def canonicalize_path(self, *args):
-
+        ''' Return a slugified version of the passed path
+        '''
         result = join((args[0] or '').rstrip('/'), *args[1:])
         split_path = split(result) # also probably belongs up in request handling code
         result = join(make_slug_path(split_path[0]), split_path[1])
@@ -56,14 +57,11 @@ class ChimeRepo(Repo):
         return exists(self.full_path(path_in_repo))
 
     def create_directories_if_necessary(self, path):
-        """
-        Creates any necessary directories for a path, ignoring any
-        file component. If you pass "foo/bar.txt" it'll create directory foo.
-        If you pass "foo/bar/" it will create foo and foo/bar.
-        :param path:
-        :return:
-        """
-        dirs = self._dirs_for_path(path)
+        ''' Creates any necessary directories for a path, ignoring any file component.
+            If you pass "foo/bar.txt" or "foo/bar" it'll create directory "foo".
+            If you pass "foo/bar/" it will create directories "foo" and "foo/bar".
+        '''
+        dirs = self.dirs_for_path(path)
 
         # Create directory tree.
         #
@@ -73,7 +71,7 @@ class ChimeRepo(Repo):
             if not isdir(build_path):
                 mkdir(build_path)
 
-    def _dirs_for_path(self, path):
+    def dirs_for_path(self, path):
         head, dirs = split(path)[0], []
         while head:
             head, check_dir = split(head)

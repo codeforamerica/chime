@@ -597,18 +597,9 @@ def directory_columns(clone, branch_name, repo_path=None, showallfiles=False):
                 }
             ]
     '''
-    repo_path = repo_path or u''
-
     # Build a full directory path.
-    head, dirs = split(repo_path)[0], []
-
-    while head:
-        head, dir = split(head)
-        dirs.insert(0, dir)
-
-    if '..' in dirs:
-        raise Exception('Invalid path component.')
-
+    repo_path = repo_path or u''
+    dirs = clone.dirs_for_path(repo_path)
     # make sure we get the root dir
     dirs.insert(0, u'')
 
