@@ -79,7 +79,6 @@ def index():
         task_description = task_metadata['task_description'] if 'task_description' in task_metadata else name
         task_beneficiary = task_metadata['task_beneficiary'] if 'task_beneficiary' in task_metadata else u''
 
-
         list_items.append(dict(name=name, path=path, behind=behind, ahead=ahead,
                                needs_peer_review=needs_peer_review,
                                is_peer_approved=is_peer_approved,
@@ -89,11 +88,8 @@ def index():
                                author_email=author_email, task_description=task_description,
                                task_beneficiary=task_beneficiary, is_eligible_peer=is_eligible_peer, last_editor=last_editor))
 
-
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(items=list_items)
-
-
 
     return render_template('activities-list.html', **kwargs)
 
@@ -561,8 +557,6 @@ def branch_edit_file(branch, path=None):
             commit = repo.commit()
         else:
             flash(message, u'notice')
-
-
 
     elif action == 'delete' and 'path' in request.form:
         request_path = request.form['path']

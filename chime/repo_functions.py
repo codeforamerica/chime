@@ -73,7 +73,6 @@ class ChimeRepo(Repo):
             if not isdir(build_path):
                 mkdir(build_path)
 
-
     def _dirs_for_path(self, path):
         head, dirs = split(path)[0], []
         while head:
@@ -83,8 +82,6 @@ class ChimeRepo(Repo):
             raise Exception('Invalid path component.')
 
         return dirs
-
-
 
 def _origin(branch_name):
     ''' Format the branch name into a origin path and return it.
