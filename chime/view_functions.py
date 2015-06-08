@@ -356,6 +356,10 @@ def login_required(route_function):
     def decorated_function(*args, **kwargs):
         email = session.get('email', None)
 
+        if current_app.config['ACCEPTANCE_TEST_MODE'] and not email and request.cookies.get('test_email_bypass'):
+            email = request.cookies.get('test_email_bypass')
+            session['email'] = email
+
         if not email:
             redirect_url = '/not-allowed'
             Logger.info("No email; redirecting to %s", redirect_url)
