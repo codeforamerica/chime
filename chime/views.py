@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from logging import getLogger
 Logger = getLogger('chime.views')
 
-from os.path import join, isdir, splitext
+from os.path import join, isdir, splitext, sep
 from re import compile, MULTILINE, sub, search
 from mimetypes import guess_type
 from glob import glob
@@ -79,7 +79,6 @@ def index():
         task_description = task_metadata['task_description'] if 'task_description' in task_metadata else name
         task_beneficiary = task_metadata['task_beneficiary'] if 'task_beneficiary' in task_metadata else u''
 
-
         list_items.append(dict(name=name, path=path, behind=behind, ahead=ahead,
                                needs_peer_review=needs_peer_review,
                                is_peer_approved=is_peer_approved,
@@ -89,11 +88,8 @@ def index():
                                author_email=author_email, task_description=task_description,
                                task_beneficiary=task_beneficiary, is_eligible_peer=is_eligible_peer, last_editor=last_editor))
 
-
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(items=list_items)
-
-
 
     return render_template('activities-list.html', **kwargs)
 
@@ -492,36 +488,56 @@ def branch_edit(branch, path=None):
     # it's a file, edit it
     return render_edit_view(repo, branch, path, open(full_path, 'r'))
 
-def add_article_or_category(repo, path, create_what, request_path):
+def add_article_or_category(repo, dir_path, request_path, create_what):
     ''' Add an article or category
     '''
     article_front = dict(title=u'', layout=ARTICLE_LAYOUT)
     cat_front = dict(title=u'', layout=CATEGORY_LAYOUT)
     body = u''
 
-    # create and commit intermediate categories
+    # create and commit intermediate categories recursively
     if u'/' in request_path:
-        filename = u'index.{}'.format(CONTENT_FILE_EXTENSION)
-        page_paths = edit_functions.create_path_to_page(repo, path, request_path, cat_front, body, filename)
-        master_name = current_app.config['default_branch']
-        for new_path in page_paths:
-            message = 'Created new category "{}"'.format(new_path)
-            Logger.debug('save')
-            repo_functions.save_working_file(repo, new_path, message, repo.commit().hexsha, master_name)
+        cat_paths = repo.dirs_for_path(request_path)
+        flash_messages = []
+        for i in range(len(cat_paths)):
+            cat_path = cat_paths[i]
+            dir_cat_path = join(dir_path, sep.join(cat_paths[:i]))
+            message, file_path, _, do_save = add_article_or_category(repo, dir_cat_path, cat_path, CATEGORY_LAYOUT)
+            if do_save:
+                Logger.debug('save')
+                repo_functions.save_working_file(repo, file_path, message, repo.commit().hexsha, current_app.config['default_branch'])
+            else:
+                flash_messages.append(message)
+
+        if len(flash_messages):
+            flash(', '.join(flash_messages), u'notice')
 
     name = u'{}/index.{}'.format(splitext(request_path)[0], CONTENT_FILE_EXTENSION)
 
     if create_what == 'article':
-        file_path = edit_functions.create_new_page(repo, path, name, article_front, body)
-        message = 'Created new article "{}"'.format(file_path)
-        redirect_path = file_path
-        return message, file_path, redirect_path
+        file_path = repo.canonicalize_path(dir_path, name)
+        if repo.exists(file_path):
+            return 'Article "{}" already exists'.format(request_path), file_path, file_path, False
+        else:
+            file_path = edit_functions.create_new_page(repo, dir_path, name, article_front, body)
+            message = 'Created new article "{}"'.format(file_path)
+            redirect_path = file_path
+            return message, file_path, redirect_path, True
+    elif create_what == 'category':
+        file_path = repo.canonicalize_path(dir_path, name)
+        if repo.exists(file_path):
+            return 'Category "{}" already exists'.format(request_path), file_path, strip_index_file(file_path), False
+        else:
+            file_path = edit_functions.create_new_page(repo, dir_path, name, cat_front, body)
+            message = 'Created new category "{}"'.format(file_path)
+            return message, file_path, strip_index_file(file_path), True
+    else:
+        raise ValueError("Illegal creation request %s " % create_what)
 
-    file_path = edit_functions.create_new_page(repo, path, name, cat_front, body)
-    message = 'Created new category "{}"'.format(file_path)
-    # strip the index file from the redirect path
-    redirect_path = sub(r'index.{}$'.format(CONTENT_FILE_EXTENSION), '', file_path)
-    return message, file_path, redirect_path
+
+def strip_index_file(file_path):
+    return sub(r'index.{}$'.format(CONTENT_FILE_EXTENSION), '', file_path)
+
 
 @app.route('/tree/<branch>/edit/', methods=['POST'])
 @app.route('/tree/<branch>/edit/<path:path>', methods=['POST'])
@@ -543,8 +559,11 @@ def branch_edit_file(branch, path=None):
         redirect_path = path or ''
 
     elif action == 'create' and (create_what == 'article' or create_what == 'category') and create_path is not None:
-        message, file_path, redirect_path = add_article_or_category(repo, create_path, create_what, request.form['path'])
-        commit = repo.commit()
+        message, file_path, redirect_path, do_save = add_article_or_category(repo, create_path, request.form['path'], create_what)
+        if do_save:
+            commit = repo.commit()
+        else:
+            flash(message, u'notice')
 
     elif action == 'delete' and 'path' in request.form:
         request_path = request.form['path']
