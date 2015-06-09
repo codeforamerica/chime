@@ -11,6 +11,7 @@
 
 
 .activity-log-item {
+	@include clearfix();
 	position: relative;
 	border-left: 1px solid $color-grey-400;
 	padding-left: 3em;

@@ -742,12 +742,16 @@ a:hover {
   margin-right: 0;
 }
 
-/* line 12, ../sass/components/_toolbar.scss */
+/* line 11, ../sass/components/_toolbar.scss */
+.toolbar--right {
+  float: right;
+}
+/* line 13, ../sass/components/_toolbar.scss */
 .toolbar--right :last-child {
   margin-right: 0;
 }
 
-/* line 17, ../sass/components/_toolbar.scss */
+/* line 18, ../sass/components/_toolbar.scss */
 .toolbar__item {
   float: left;
   margin-left: .5em;
@@ -1343,12 +1347,21 @@ button.button {
   padding-bottom: 4em;
   font-weight: 400;
 }
-/* line 19, ../sass/components/_activity-log.scss */
+/* line 7, ../sass/core/_utilities.scss */
+.activity-log-item:before, .activity-log-item:after {
+  content: " ";
+  display: table;
+}
+/* line 11, ../sass/core/_utilities.scss */
+.activity-log-item:after {
+  clear: both;
+}
+/* line 20, ../sass/components/_activity-log.scss */
 .activity-log-item:last-child {
   border: 0;
   padding-bottom: 0;
 }
-/* line 23, ../sass/components/_activity-log.scss */
+/* line 24, ../sass/components/_activity-log.scss */
 .activity-log-item:before {
   content: '';
   position: absolute;
@@ -1366,28 +1379,28 @@ button.button {
   line-height: 2.5em;
   color: #424242;
 }
-/* line 40, ../sass/components/_activity-log.scss */
+/* line 41, ../sass/components/_activity-log.scss */
 .activity-log-item p {
   margin: 0;
 }
 
-/* line 46, ../sass/components/_activity-log.scss */
+/* line 47, ../sass/components/_activity-log.scss */
 .activity-log-item--info:before {
   content: '\f129';
 }
 
-/* line 52, ../sass/components/_activity-log.scss */
+/* line 53, ../sass/components/_activity-log.scss */
 .activity-log-item--edit:before {
   content: '\f040';
 }
 
-/* line 58, ../sass/components/_activity-log.scss */
+/* line 59, ../sass/components/_activity-log.scss */
 .activity-log-item--comment:before {
   line-height: 2.25em;
   content: '\f075';
 }
 
-/* line 64, ../sass/components/_activity-log.scss */
+/* line 65, ../sass/components/_activity-log.scss */
 .activity-log-item__datetime {
   margin-top: .5em;
   font-size: 12px;
@@ -1402,17 +1415,26 @@ button.button {
   box-shadow: 0 0 3px rgba(0, 0, 0, 0.15);
   margin-bottom: 1em;
 }
+/* line 7, ../sass/core/_utilities.scss */
+.comment:before, .comment:after {
+  content: " ";
+  display: table;
+}
+/* line 11, ../sass/core/_utilities.scss */
+.comment:after {
+  clear: both;
+}
 
-/* line 9, ../sass/components/_comment.scss */
+/* line 10, ../sass/components/_comment.scss */
 .comment--new {
   background-color: #fafafa;
 }
-/* line 11, ../sass/components/_comment.scss */
+/* line 12, ../sass/components/_comment.scss */
 .comment--new .comment__author {
   color: #757575;
 }
 
-/* line 16, ../sass/components/_comment.scss */
+/* line 17, ../sass/components/_comment.scss */
 .comment__author {
   color: #757575;
   border-bottom: 1px solid #eeeeee;
@@ -1420,27 +1442,27 @@ button.button {
   margin-bottom: 1em;
 }
 
-/* line 23, ../sass/components/_comment.scss */
+/* line 24, ../sass/components/_comment.scss */
 .comment__body {
   font-size: 18px;
   font-weight: normal;
 }
 
-/* line 28, ../sass/components/_comment.scss */
+/* line 29, ../sass/components/_comment.scss */
 .comment__datetime {
   color: #757575;
   font-size: 12px;
   margin-top: 1em;
 }
 
-/* line 34, ../sass/components/_comment.scss */
+/* line 35, ../sass/components/_comment.scss */
 .comment__input {
   border: 1px solid #eeeeee;
   height: 70px;
   padding: .5em;
 }
 
-/* line 40, ../sass/components/_comment.scss */
+/* line 41, ../sass/components/_comment.scss */
 .comment__actions {
   margin-top: 1em;
   padding: 0;

@@ -1,4 +1,5 @@
 .comment {
+	@include clearfix();
 	background-color: #fff;
 	border-radius: $border-radius;
 	padding: 1em;
