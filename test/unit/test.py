@@ -2189,6 +2189,9 @@ class TestApp (TestCase):
                                                    'en-title': new_cat_title, 'en-description': cat_description, 'order': cat_order},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
+            # check the returned HTML for the description and order values (format will change as pages are designed)
+            self.assertTrue(u'<input name="en-description" type="hidden" value="{}" />'.format(cat_description) in response.data)
+            self.assertTrue(u'<input name="order" type="hidden" value="{}" />'.format(cat_order) in response.data)
 
             # pull the changes
             self.clone1.git.pull('origin', working_branch_name)
