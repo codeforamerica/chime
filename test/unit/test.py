@@ -2111,7 +2111,6 @@ class TestApp (TestCase):
             # the title saved in the index front matter is displayed on the article list page
             response = self.test_client.get('/tree/{}/edit/'.format(working_branch_name), follow_redirects=True)
             self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": cat_title_slugified, "file_title": cat_title, "file_type": view_functions.CATEGORY_LAYOUT}) in response.data)
-            self.assertTrue(cat_title in response.data)
 
             # create a new article
             art_title = u'快速狐狸'
@@ -2140,6 +2139,81 @@ class TestApp (TestCase):
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format(u'articles-list') in response.data.decode('utf-8'))
             self.assertTrue(PATTERN_BRANCH_COMMENT.format(working_branch) in response.data.decode('utf-8'))
             self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": art_title_slugified, "file_title": art_title, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data.decode('utf-8'))
+
+    def test_set_and_retrieve_order_and_description(self):
+        ''' Order and description can be set to and retrieved from an article's or category's front matter.
+        '''
+        fake_author_email = u'erica@example.com'
+        with HTTMock(self.mock_persona_verify):
+            self.test_client.post('/sign-in', data={'email': fake_author_email})
+
+        with HTTMock(self.auth_csv_example_allowed):
+            # start a new branch via the http interface
+            # invokes view_functions/get_repo which creates a clone
+            task_description = u'regurgitate partially digested worms and grubs'
+            task_beneficiary = u'baby birds'
+
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            self.assertTrue(working_branch.name in self.clone1.branches)
+            self.assertTrue(working_branch.name in self.origin.branches)
+            working_branch_name = working_branch.name
+            working_branch.checkout()
+
+            # create a categories directory
+            categories_slug = u'categories'
+            response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'path': categories_slug},
+                                             follow_redirects=True)
+
+            # and put a new category inside it
+            cat_title = u'Small Intestine'
+            cat_title_slugified = u'small-intestine'
+            response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, categories_slug),
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'path': cat_title},
+                                             follow_redirects=True)
+            self.assertEquals(response.status_code, 200)
+
+            # pull the changes
+            self.clone1.git.pull('origin', working_branch_name)
+
+            # get the hexsha
+            hexsha = self.clone1.commit().hexsha
+
+            # now save some values into the category's index page's front matter
+            new_cat_title = u'The Small Intestine'
+            cat_description = u'The part of the GI tract following the stomach and followed by the large intestine where much of the digestion and absorption of food takes place.'
+            cat_order = 3
+            cat_path = join(categories_slug, cat_title_slugified, u'index.{}'.format(view_functions.CONTENT_FILE_EXTENSION))
+            response = self.test_client.post('/tree/{}/save/{}'.format(working_branch_name, cat_path),
+                                             data={'layout': view_functions.CATEGORY_LAYOUT, 'hexsha': hexsha,
+                                                   'en-title': new_cat_title, 'en-description': cat_description, 'order': cat_order},
+                                             follow_redirects=True)
+            self.assertEquals(response.status_code, 200)
+            # check the returned HTML for the description and order values (format will change as pages are designed)
+            self.assertTrue(u'<input name="en-description" type="hidden" value="{}" />'.format(cat_description) in response.data)
+            self.assertTrue(u'<input name="order" type="hidden" value="{}" />'.format(cat_order) in response.data)
+
+            # pull the changes
+            self.clone1.git.pull('origin', working_branch_name)
+
+            # a directory was created
+            dir_location = join(self.clone1.working_dir, categories_slug, cat_title_slugified)
+            idx_location = u'{}/index.{}'.format(dir_location, view_functions.CONTENT_FILE_EXTENSION)
+            self.assertTrue(exists(dir_location) and isdir(dir_location))
+            # an index page was created inside
+            self.assertTrue(exists(idx_location))
+            # the directory and index page pass the category test
+            self.assertTrue(view_functions.is_category_dir(dir_location))
+            # the title saved in the index front matter is the same text that was used to create the category
+            self.assertEqual(view_functions.get_value_from_front_matter('title', idx_location), new_cat_title)
+
+            # check order and description
+            self.assertEqual(view_functions.get_value_from_front_matter('order', idx_location), cat_order)
+            self.assertEqual(view_functions.get_value_from_front_matter('description', idx_location), cat_description)
+
+            # the title saved in the index front matter is displayed on the article list page
+            response = self.test_client.get('/tree/{}/edit/{}'.format(working_branch_name, categories_slug), follow_redirects=True)
+            self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": cat_title_slugified, "file_title": new_cat_title, "file_type": view_functions.CATEGORY_LAYOUT}) in response.data)
 
     def test_create_many_categories_with_slash_separated_input(self):
         ''' Entering a slash-separated string into the new article or category
