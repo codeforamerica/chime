@@ -678,9 +678,9 @@ def branch_save(branch, path):
         flash(u'There is no {} branch!'.format(branch), u'warning')
         return redirect('/')
 
-    c = existing_branch.commit
+    commit = existing_branch.commit
 
-    if c.hexsha != request.form.get('hexsha'):
+    if commit.hexsha != request.form.get('hexsha'):
         raise Exception('Out of date SHA: %s' % request.form.get('hexsha'))
 
     #
@@ -688,9 +688,15 @@ def branch_save(branch, path):
     #
     existing_branch.checkout()
 
+    # make sure order is an integer; otherwise default to 0
+    try:
+        order = int(dos2unix(request.form.get('order', '0')))
+    except ValueError:
+        order = 0
+
     front = {
         'layout': dos2unix(request.form.get('layout')),
-        'order': int(dos2unix(request.form.get('order', '0'))),
+        'order': order,
         'title': dos2unix(request.form.get('en-title', '')),
         'description': dos2unix(request.form.get('en-description', ''))
     }
@@ -701,7 +707,7 @@ def branch_save(branch, path):
             front['description-' + iso] = dos2unix(request.form.get(iso + '-description', ''))
             front['body-' + iso] = dos2unix(request.form.get(iso + '-body', ''))
 
-    body = dos2unix(request.form.get('en-body'))
+    body = dos2unix(request.form.get('en-body', ''))
     edit_functions.update_page(repo, path, front, body)
 
     #
@@ -709,7 +715,7 @@ def branch_save(branch, path):
     #
     try:
         message = 'Saved file "{}"'.format(path)
-        c2 = repo_functions.save_working_file(repo, path, message, c.hexsha, master_name)
+        c2 = repo_functions.save_working_file(repo, path, message, commit.hexsha, master_name)
         # they may've renamed the page by editing the URL slug
         original_slug = path
         if search(r'\/index.{}$'.format(CONTENT_FILE_EXTENSION), path):
@@ -717,28 +723,29 @@ def branch_save(branch, path):
 
         # do some simple input cleaning
         new_slug = request.form.get('url-slug')
-        new_slug = sub(r'\/+', '/', new_slug)
+        if new_slug:
+            new_slug = sub(r'\/+', '/', new_slug)
 
-        if new_slug != original_slug:
-            try:
-                repo_functions.move_existing_file(repo, original_slug, new_slug, c2.hexsha, master_name)
-            except Exception as e:
-                error_message = e.args[0]
-                error_type = e.args[1] if len(e.args) > 1 else None
-                # let unexpected errors raise normally
-                if error_type:
-                    flash(error_message, error_type)
-                    return redirect('/tree/{}/edit/{}'.format(safe_branch, path), code=303)
-                else:
-                    raise
+            if new_slug != original_slug:
+                try:
+                    repo_functions.move_existing_file(repo, original_slug, new_slug, c2.hexsha, master_name)
+                except Exception as e:
+                    error_message = e.args[0]
+                    error_type = e.args[1] if len(e.args) > 1 else None
+                    # let unexpected errors raise normally
+                    if error_type:
+                        flash(error_message, error_type)
+                        return redirect('/tree/{}/edit/{}'.format(safe_branch, path), code=303)
+                    else:
+                        raise
 
-            path = new_slug
-            # append the index file if it's an editable directory
-            if is_article_dir(join(repo.working_dir, new_slug)):
-                path = join(new_slug, u'index.{}'.format(CONTENT_FILE_EXTENSION))
+                path = new_slug
+                # append the index file if it's an editable directory
+                if is_article_dir(join(repo.working_dir, new_slug)):
+                    path = join(new_slug, u'index.{}'.format(CONTENT_FILE_EXTENSION))
 
     except repo_functions.MergeConflict as conflict:
-        repo.git.reset(c.hexsha, hard=True)
+        repo.git.reset(commit.hexsha, hard=True)
 
         Logger.debug('1 {}'.format(conflict.remote_commit))
         Logger.debug('  {}'.format(repr(conflict.remote_commit.tree[path].data_stream.read())))
