@@ -1,8 +1,8 @@
 
-from os.path import exists, isdir, join, split, sep
-from os import rmdir, remove
+from os.path import exists, join, split, sep
 from slugify import slugify
 from .jekyll_functions import dump_jekyll_doc
+from re import search
 
 def update_page(clone, file_path, front, body):
     ''' Update existing Jekyll page in the working directory.
@@ -69,15 +69,17 @@ def upload_new_file(clone, dir_path, upload):
     return file_path
 
 def delete_file(clone, file_path):
-    ''' Delete a file from the working directory, return its path.
+    ''' Delete files from the working directory, return their paths.
     '''
     full_path = join(clone.working_dir, file_path)
     do_save = False
 
-    if isdir(full_path):
-        rmdir(full_path)
-    elif exists(full_path):
-        remove(full_path)
-        do_save = True
+    removed_paths = []
+    if exists(full_path):
+        removed_path_notes = clone.git.rm('-r', full_path).splitlines()
+        # paths are returned by git rm in the format: "rm 'path/goes/here'"; extract the paths
+        for note in removed_path_notes:
+            removed_paths.append(search(r"rm '(.+?)'", note).group(1))
+        do_save = len(removed_paths) > 0
 
-    return (file_path, do_save)
+    return (removed_paths, do_save)

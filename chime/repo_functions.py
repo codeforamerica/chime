@@ -207,7 +207,7 @@ def delete_task_metadata_for_branch(clone, default_branch_name):
     ''' Delete the task metadata file and return its contents
     '''
     task_metadata = get_task_metadata_for_branch(clone)
-    file_path, do_save = edit_functions.delete_file(clone, TASK_METADATA_FILENAME)
+    deleted_paths, do_save = edit_functions.delete_file(clone, TASK_METADATA_FILENAME)
     if do_save:
         message = u'Deleted task metadata file "{}"'.format(TASK_METADATA_FILENAME)
         save_working_file(clone, TASK_METADATA_FILENAME, message, clone.commit().hexsha, default_branch_name)
@@ -332,7 +332,6 @@ def complete_branch(clone, default_branch_name, working_branch_name):
         # remove the task metadata file if it exists
         _, do_save = edit_functions.delete_file(clone, TASK_METADATA_FILENAME)
         if do_save:
-            clone.index.remove([TASK_METADATA_FILENAME])
             # amend the merge commit to include the deletion and push it
             clone.git.commit('--amend', '--no-edit', '--reset-author')
 
@@ -452,8 +451,6 @@ def save_working_file(clone, path, message, base_sha, default_branch_name):
 
     if exists(join(clone.working_dir, path)):
         clone.index.add([path])
-    else:
-        clone.index.remove([path])
 
     clone.index.commit(message)
     active_branch_name = clone.active_branch.name
