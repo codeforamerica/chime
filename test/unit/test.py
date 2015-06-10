@@ -338,7 +338,7 @@ class TestRepo (TestCase):
         #
         message = str(uuid4())
 
-        edit_functions.delete_file(self.clone1, '', 'index.md')
+        edit_functions.delete_file(self.clone1, 'index.md')
 
         args = self.clone1, 'index.md', message, branch1.commit.hexsha, 'master'
         repo_functions.save_working_file(*args)
@@ -415,14 +415,14 @@ class TestRepo (TestCase):
         #
         message = str(uuid4())
 
-        edit_functions.delete_file(self.clone1, 'hello/', 'hello.md')
+        edit_functions.delete_file(self.clone1, 'hello/hello.md')
 
         args = self.clone1, 'hello/hello.md', message, branch1.commit.hexsha, 'master'
         repo_functions.save_working_file(*args)
 
         self.assertFalse(exists(join(self.clone1.working_dir, 'hello/hello.md')))
 
-        edit_functions.delete_file(self.clone1, 'hello/', '')
+        edit_functions.delete_file(self.clone1, 'hello/')
 
         self.assertFalse(exists(join(self.clone1.working_dir, 'hello/')))
 
@@ -1605,7 +1605,7 @@ class TestApp (TestCase):
         with HTTMock(self.mock_google_analytics):
             # create a new file
             response = self.test_client.post('/tree/{}/edit/'.format(generated_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'path': fake_page_slug},
+                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': fake_page_slug},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
             self.assertTrue(fake_page_path in response.data)
@@ -1728,7 +1728,7 @@ class TestApp (TestCase):
             fake_task_beneficiary = u'Nobody'
             fake_author_email = u'erica@example.com'
             fake_branch_name = repo_functions.make_branch_name(fake_task_description, fake_task_beneficiary, fake_author_email)
-            response = self.test_client.post('/tree/{}/edit/'.format(fake_branch_name), data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'path': fake_page_slug}, follow_redirects=True)
+            response = self.test_client.post('/tree/{}/edit/'.format(fake_branch_name), data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': fake_page_slug}, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # the branch name should not be in the returned HTML
             # :TODO: need an assertion for this
@@ -1754,7 +1754,7 @@ class TestApp (TestCase):
                 raise Exception('No match for generated branch name.')
 
             # create a new article
-            response = self.test_client.post('/tree/{}/edit/'.format(generated_branch_name), data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'path': fake_page_slug}, follow_redirects=True)
+            response = self.test_client.post('/tree/{}/edit/'.format(generated_branch_name), data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': fake_page_slug}, follow_redirects=True)
             self.assertEquals(response.status_code, 200)
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('article-edit') in response.data)
 
@@ -2011,7 +2011,7 @@ class TestApp (TestCase):
             # create a new category
             page_slug = u'hello'
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'path': page_slug},
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': page_slug},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
 
@@ -2042,7 +2042,7 @@ class TestApp (TestCase):
             working_branch.checkout()
 
             # create a new category
-            request_data = {'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'path': u'hello'}
+            request_data = {'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': u'hello'}
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch.name),
                                              data=request_data,
                                              follow_redirects=True)
@@ -2090,7 +2090,7 @@ class TestApp (TestCase):
             cat_title = u'grrowl!! Yeah'
             cat_title_slugified = u'grrowl-yeah'
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'path': cat_title},
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': cat_title},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
 
@@ -2115,7 +2115,7 @@ class TestApp (TestCase):
             # create a new article
             art_title = u'快速狐狸'
             art_title_slugified = u'kuai-su-hu-li'
-            response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name), data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'path': art_title}, follow_redirects=True)
+            response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name), data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': art_title}, follow_redirects=True)
             self.assertEquals(response.status_code, 200)
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format(u'article-edit') in response.data.decode('utf-8'))
 
@@ -2162,14 +2162,14 @@ class TestApp (TestCase):
             # create a categories directory
             categories_slug = u'categories'
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'path': categories_slug},
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': categories_slug},
                                              follow_redirects=True)
 
             # and put a new category inside it
             cat_title = u'Small Intestine'
             cat_title_slugified = u'small-intestine'
             response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, categories_slug),
-                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'path': cat_title},
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': cat_title},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
 
@@ -2238,7 +2238,7 @@ class TestApp (TestCase):
             # create multiple new categories
             page_slug = u'when/the/drum/beat'
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'path': page_slug},
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': page_slug},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
 
@@ -2261,7 +2261,7 @@ class TestApp (TestCase):
             page_slug = u'goes/like/this'
             page_path = u'{}/index.{}'.format(page_slug, view_functions.CONTENT_FILE_EXTENSION)
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'path': page_slug},
+                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': page_slug},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
             self.assertTrue(page_path in response.data)
@@ -2307,25 +2307,25 @@ class TestApp (TestCase):
             # create some nested categories
             slug_hello = u'hello'
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'path': slug_hello},
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': slug_hello},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
 
             slug_world = u'world'
             response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, slug_hello),
-                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'path': slug_world},
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': slug_world},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
 
             slug_how = u'how'
             response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, sep.join([slug_hello, slug_world])),
-                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'path': slug_how},
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': slug_how},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
 
             slug_are = u'are'
             response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, sep.join([slug_hello, slug_world, slug_how])),
-                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'path': slug_are},
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': slug_are},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
 
@@ -2369,7 +2369,7 @@ class TestApp (TestCase):
             page_slug = u'hello'
             page_path = u'{}/index.{}'.format(page_slug, view_functions.CONTENT_FILE_EXTENSION)
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'path': page_slug},
+                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': page_slug},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
             self.assertTrue(page_path in response.data)
@@ -2409,7 +2409,7 @@ class TestApp (TestCase):
             page_slug = u'hello'
             page_path = u'{}/index.{}'.format(page_slug, view_functions.CONTENT_FILE_EXTENSION)
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'path': page_slug},
+                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': page_slug},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
             self.assertTrue(page_path in response.data)
@@ -2468,7 +2468,7 @@ class TestApp (TestCase):
             page_slug = u'hello'
             page_path = u'{}/index.{}'.format(page_slug, view_functions.CONTENT_FILE_EXTENSION)
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'path': page_slug},
+                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': page_slug},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
             self.assertTrue(page_path in response.data)
@@ -2525,7 +2525,7 @@ class TestApp (TestCase):
             page_slug = u'hello'
             page_path = u'{}/index.{}'.format(page_slug, view_functions.CONTENT_FILE_EXTENSION)
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'path': page_slug},
+                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': page_slug},
                                              follow_redirects=True)
             self.assertEquals(response.status_code, 200)
             self.assertTrue(page_path in response.data)

@@ -68,10 +68,9 @@ def upload_new_file(clone, dir_path, upload):
 
     return file_path
 
-def delete_file(clone, path, file_name):
+def delete_file(clone, file_path):
     ''' Delete a file from the working directory, return its path.
     '''
-    file_path = join(path or '', file_name)
     full_path = join(clone.working_dir, file_path)
     do_save = False
 

@@ -559,20 +559,19 @@ def branch_edit_file(branch, path=None):
         redirect_path = path or ''
 
     elif action == 'create' and (create_what == 'article' or create_what == 'category') and create_path is not None:
-        message, file_path, redirect_path, do_save = add_article_or_category(repo, create_path, request.form['path'], create_what)
+        message, file_path, redirect_path, do_save = add_article_or_category(repo, create_path, request.form['request_path'], create_what)
         if do_save:
             commit = repo.commit()
         else:
             flash(message, u'notice')
 
-    elif action == 'delete' and 'path' in request.form:
-        request_path = request.form['path']
-        file_path, do_save = edit_functions.delete_file(repo, path, request_path)
+    elif action == 'delete' and 'request_path' in request.form:
+        file_path, do_save = edit_functions.delete_file(repo, request.form['request_path'])
         message = 'Deleted file "{}"'.format(file_path)
         redirect_path = path or ''
 
     else:
-        raise Exception()
+        raise Exception(u'Unrecognized request posted to branch_edit_file()')
 
     if do_save:
         master_name = current_app.config['default_branch']
