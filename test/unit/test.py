@@ -2067,6 +2067,79 @@ class TestApp (TestCase):
             # the directory and index page pass the category test
             self.assertTrue(view_functions.is_category_dir(dir_location))
 
+    def test_delete_categories_and_articles(self):
+        ''' Non-empty categories and articles can be deleted
+        '''
+        fake_author_email = u'erica@example.com'
+        with HTTMock(self.mock_persona_verify):
+            self.test_client.post('/sign-in', data={'email': fake_author_email})
+
+        with HTTMock(self.auth_csv_example_allowed):
+            # start a new branch via the http interface
+            # invokes view_functions/get_repo which creates a clone
+            task_description = u'vomit digestive fluid onto rotting flesh'
+            task_beneficiary = u'flies'
+
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            self.assertTrue(working_branch.name in self.clone1.branches)
+            self.assertTrue(working_branch.name in self.origin.branches)
+            working_branch_name = working_branch.name
+            working_branch.checkout()
+
+            # create a categories directory
+            categories_slug = u'categories'
+            response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': categories_slug},
+                                             follow_redirects=True)
+
+            # and put a new category inside it
+            cata_title = u'Mouth Parts'
+            cata_slug = u'mouth-parts'
+            response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, categories_slug),
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': cata_title},
+                                             follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+
+            # put another cateogry inside that
+            catb_title = u'Esophagus'
+            catb_slug = u'esophagus'
+            response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, join(categories_slug, cata_slug)),
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': catb_title},
+                                             follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+
+            # and an article inside that
+            art_title = u'Stomach'
+            art_slug = u'stomach'
+            response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, join(categories_slug, cata_slug, catb_slug)),
+                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': art_title},
+                                             follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+
+            # pull the changes
+            self.clone1.git.pull('origin', working_branch_name)
+
+            # verify that the categories and article exist
+            art_location = join(self.clone1.working_dir, categories_slug, cata_slug, catb_slug, art_slug)
+            catb_location = join(self.clone1.working_dir, categories_slug, cata_slug, catb_slug)
+            cata_location = join(self.clone1.working_dir, categories_slug, cata_slug)
+            self.assertTrue(exists(art_location))
+            self.assertTrue(view_functions.is_article_dir(art_location))
+
+            # delete category a while in category b
+            response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, join(categories_slug, cata_slug, catb_slug)),
+                                             data={'action': 'delete', 'request_path': join(categories_slug, cata_slug)},
+                                             follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+
+            # pull the changes
+            self.clone1.git.pull('origin', working_branch_name)
+
+            # verify that the deleted category and article no longer exist
+            self.assertFalse(exists(art_location))
+            self.assertFalse(exists(catb_location))
+            self.assertFalse(exists(cata_location))
+
     def test_new_item_has_name_and_title(self):
         ''' A slugified directory name and display title are created when a new category or article is created.
         '''
