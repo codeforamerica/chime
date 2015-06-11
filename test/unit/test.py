@@ -1567,7 +1567,7 @@ class TestApp (TestCase):
             self.assertTrue(PATTERN_AUTHOR_COMMENT.format(fake_author_email) in response.data)
 
             # extract the generated branch name from the returned HTML
-            generated_branch_search = search(r'<input name="branch" value="(.{{{}}})" type="hidden" />'.format(repo_functions.BRANCH_NAME_LENGTH), response.data)
+            generated_branch_search = search(r'<!-- branch: (.{{{}}}) -->'.format(repo_functions.BRANCH_NAME_LENGTH), response.data)
             self.assertIsNotNone(generated_branch_search)
             try:
                 generated_branch_name = generated_branch_search.group(1)
@@ -1718,7 +1718,7 @@ class TestApp (TestCase):
             self.assertTrue(PATTERN_BENEFICIARY_COMMENT.format(fake_task_beneficiary) in response.data)
 
             # extract the generated branch name from the returned HTML
-            generated_branch_search = search(r'<input name="branch" value="(.{{{}}})" type="hidden" />'.format(repo_functions.BRANCH_NAME_LENGTH), response.data)
+            generated_branch_search = search(r'<!-- branch: (.{{{}}}) -->'.format(repo_functions.BRANCH_NAME_LENGTH), response.data)
             self.assertIsNotNone(generated_branch_search)
             try:
                 generated_branch_name = generated_branch_search.group(1)

@@ -19,7 +19,8 @@ from dateutil.relativedelta import relativedelta
 from flask import request, session, current_app, redirect, flash
 from requests import get
 
-from .repo_functions import get_existing_branch, ignore_task_metadata_on_merge
+from .repo_functions import get_existing_branch, ignore_task_metadata_on_merge, ACTIVITY_CREATED_MESSAGE, ACTIVITY_UPDATED_MESSAGE
+
 from .jekyll_functions import load_jekyll_doc
 from .href import needs_redirect, get_redirect
 
@@ -361,7 +362,7 @@ def common_template_args(app_config, session):
 
 def log_application_errors(route_function):
     ''' Error-logging decorator for route functions.
-    
+
         Don't do much, but get an error out to the logger.
     '''
     @wraps(route_function)
@@ -369,7 +370,7 @@ def log_application_errors(route_function):
         try:
             return route_function(*args, **kwargs)
         except Exception as e:
-            Logger.error(e, exc_info=True, extra={'request':request})
+            Logger.error(e, exc_info=True, extra={'request': request})
             raise
 
     return decorated_function
@@ -522,6 +523,32 @@ def get_relative_date(repo, file_path):
     ''' Return the relative modified date for the passed path in the passed repo
     '''
     return repo.git.log('-1', '--format=%ad', '--date=relative', '--', file_path)
+
+def make_activity_history(repo):
+    ''' Make an easily-parsable history of an activity since it was created.
+    '''
+    # see <http://git-scm.com/docs/git-log> for placeholders
+    log_format = '%x00Name: %an\tEmail: %ae\tDate: %ad\tSubject: %s'
+    pattern = re.compile(r'^\x00Name: (.*?)\tEmail: (.*?)\tDate: (.*?)\tSubject: (.*?)$', re.MULTILINE)
+    log = repo.git.log('--format={}'.format(log_format), '--date=relative')
+
+    history = []
+    for (name, email, date, message) in pattern.findall(log):
+        log_item = dict(author_name=name, author_email=email, commit_date=date, commit_message=message, commit_type=get_message_type(message))
+        history.append(log_item)
+        # don't get any history beyond the creation of the task metadata file, which is the beginning of the activity
+        if message == ACTIVITY_CREATED_MESSAGE:
+            break
+
+    return history
+
+def get_message_type(message):
+    ''' Figure out what type of history log message this is
+    '''
+    if message == ACTIVITY_CREATED_MESSAGE or message == ACTIVITY_UPDATED_MESSAGE:
+        return u'info'
+    else:
+        return u'edit'
 
 def sorted_paths(repo, branch_name, path=None, showallfiles=False):
     ''' Returns a list of files and their attributes in the passed directory.

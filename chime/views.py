@@ -21,7 +21,7 @@ from .view_functions import (
     login_required, browserid_hostname_required, synch_required, synched_checkout_required,
     breadcrumb_paths, directory_columns, should_redirect, make_redirect, get_auth_data_file,
     is_allowed_email, common_template_args, log_application_errors,
-    is_article_dir, CONTENT_FILE_EXTENSION, ARTICLE_LAYOUT, CATEGORY_LAYOUT)
+    is_article_dir, make_activity_history, CONTENT_FILE_EXTENSION, ARTICLE_LAYOUT, CATEGORY_LAYOUT)
 
 from .google_api_functions import (
     read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens,
@@ -568,25 +568,36 @@ def branch_edit_file(branch, path=None):
 @log_application_errors
 @login_required
 @synched_checkout_required
-
 def activity_overview(branch):
-
     branch = branch_var2name(branch)
     repo = get_repo(current_app)
     safe_branch = branch_name2path(branch)
 
+    # contains 'author_email', 'task_description', 'task_beneficiary'
+    activity = repo_functions.get_task_metadata_for_branch(repo, branch)
+    activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
+    activity['task_description'] = activity['task_description'] if 'task_description' in activity else u''
+    activity['task_beneficiary'] = activity['task_beneficiary'] if 'task_beneficiary' in activity else u''
+
+    languages = load_languages(repo.working_dir)
+
+    app_authorized = False
+    ga_config = read_ga_config(current_app.config['RUNNING_STATE_DIR'])
+    if ga_config.get('access_token'):
+        app_authorized = True
+
+    history = make_activity_history(repo)
+
     date_created = repo.git.log('--format=%ad', '--date=relative', '--', repo_functions.TASK_METADATA_FILENAME).split('\n')[-1]
     date_updated = repo.git.log('--format=%ad', '--date=relative').split('\n')[0]
 
-    activity = repo_functions.get_task_metadata_for_branch(repo, branch)
-    activity.update(
-        date_created=date_created,
-        date_updated=date_updated,
-        task_root_path=u'/tree/{}/edit/'.format(branch_name2path(branch))
-    )
+    activity.update(date_created=date_created, date_updated=date_updated,
+                    task_root_path=u'/tree/{}/edit/'.format(branch_name2path(branch)),
+                    safe_branch=safe_branch, history=history)
 
     kwargs = common_template_args(current_app.config, session)
-    kwargs.update(activity=activity)
+    kwargs.update(activity=activity, app_authorized=app_authorized, languages=languages)
+
     return render_template('activity-overview.html', **kwargs)
 
 @app.route('/tree/<branch>/history/', methods=['GET'])
@@ -618,6 +629,7 @@ def branch_history(branch, path=None):
     if ga_config.get('access_token'):
         app_authorized = True
 
+    # see <http://git-scm.com/docs/git-log> for placeholders
     log_format = '%x00Name: %an\tEmail: %ae\tDate: %ad\tSubject: %s'
     pattern = compile(r'^\x00Name: (.*?)\tEmail: (.*?)\tDate: (.*?)\tSubject: (.*?)$', MULTILINE)
     log = repo.git.log('-30', '--format={}'.format(log_format), '--date=relative', path)

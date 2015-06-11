@@ -14,6 +14,8 @@ from . import edit_functions
 TASK_METADATA_FILENAME = u'_task.yml'
 BRANCH_NAME_LENGTH = 7
 DESCRIPTION_MAX_LENGTH = 15
+ACTIVITY_CREATED_MESSAGE = u'This activity was created'
+ACTIVITY_UPDATED_MESSAGE = u'This activity was updated'
 
 class MergeConflict (Exception):
     def __init__(self, remote_commit, local_commit):
@@ -125,9 +127,7 @@ def save_task_metadata_for_branch(clone, default_branch_name, values={}):
     # Get the current task metadata (if any)
     task_metadata = get_task_metadata_for_branch(clone)
     check_metadata = dict(task_metadata)
-    # :NOTE: changing the commit message may break tests
-    verbed = u'Created' if task_metadata == {} else u'Updated'
-    message = u'{} task metadata file "{}"'.format(verbed, TASK_METADATA_FILENAME)
+
     # update with the new values
     try:
         task_metadata.update(values)
@@ -137,6 +137,18 @@ def save_task_metadata_for_branch(clone, default_branch_name, values={}):
     # Don't write if there haven't been any changes
     if check_metadata == task_metadata:
         return
+
+    # craft the commit message
+    # :NOTE: changing the commit message may break tests
+    message_details = []
+    for change in values:
+        if change not in check_metadata or check_metadata[change] != values[change]:
+            message_details.append(u'Set {} to {}'.format(change, values[change]))
+
+    if check_metadata == {}:
+        message = u'{}\n\nCreated task metadata file "{}"\n{}'.format(ACTIVITY_CREATED_MESSAGE, TASK_METADATA_FILENAME, u'\n'.join(message_details))
+    else:
+        message = u'{}\n\nUpdated task metadata file "{}"\n{}'.format(ACTIVITY_UPDATED_MESSAGE, TASK_METADATA_FILENAME, u'\n'.join(message_details))
 
     # Dump the updated task metadata to disk
     # Use newline-preserving block literal form.
@@ -333,13 +345,13 @@ def complete_branch(clone, default_branch_name, working_branch_name):
 def abandon_branch(clone, default_branch_name, working_branch_name):
     ''' Complete work on a branch by abandoning and deleting it.
     '''
-    msg = 'Abandoned work from "%s"' % working_branch_name
+    message = 'Abandoned work from "%s"' % working_branch_name
 
     #
     # Add an empty commit with abandonment note.
     #
     clone.branches[default_branch_name].checkout()
-    clone.index.commit(msg)
+    clone.index.commit(message.encode('utf-8'))
 
     #
     # Delete the old branch.
@@ -352,7 +364,7 @@ def abandon_branch(clone, default_branch_name, working_branch_name):
 def clobber_default_branch(clone, default_branch_name, working_branch_name):
     ''' Complete work on a branch by clobbering master and deleting it.
     '''
-    msg = 'Clobbered with work from "%s"' % working_branch_name
+    message = 'Clobbered with work from "{}"'.format(working_branch_name)
 
     #
     # First merge default to working branch, because
@@ -360,7 +372,7 @@ def clobber_default_branch(clone, default_branch_name, working_branch_name):
     #
     clone.branches[working_branch_name].checkout()
     clone.git.fetch('origin', default_branch_name)
-    clone.git.merge('FETCH_HEAD', '--no-ff', s='ours', m=msg) # "ours" = working
+    clone.git.merge('FETCH_HEAD', '--no-ff', s='ours', m=message) # "ours" = working
 
     clone.branches[default_branch_name].checkout()
     clone.git.pull('origin', default_branch_name)
@@ -443,7 +455,7 @@ def save_working_file(clone, path, message, base_sha, default_branch_name):
     else:
         clone.index.remove([path])
 
-    clone.index.commit(message)
+    clone.index.commit(message.encode('utf-8'))
     active_branch_name = clone.active_branch.name
 
     #
@@ -490,7 +502,7 @@ def move_existing_file(clone, old_path, new_path, base_sha, default_branch_name)
 
     clone.git.mv(old_path, new_path, f=True)
 
-    clone.index.commit('Renamed "{}" to "{}"'.format(old_path, new_path))
+    clone.index.commit(u'Renamed "{}" to "{}"'.format(old_path, new_path))
     active_branch_name = clone.active_branch.name
 
     #
@@ -577,7 +589,7 @@ def is_peer_rejected(repo, default_branch_name, working_branch_name):
 def mark_as_reviewed(clone):
     ''' Adds a new empty commit with the message "Approved changes."
     '''
-    clone.index.commit('Approved changes.')
+    clone.index.commit(u'Approved changes.')
     active_branch_name = clone.active_branch.name
 
     #
@@ -596,7 +608,7 @@ def mark_as_reviewed(clone):
 def provide_feedback(clone, comments):
     ''' Adds a new empty commit with the message "Provided feedback."
     '''
-    clone.index.commit('Provided feedback.\n\n' + comments)
+    clone.index.commit(u'Provided feedback.\n\n' + comments)
     active_branch_name = clone.active_branch.name
 
     #
