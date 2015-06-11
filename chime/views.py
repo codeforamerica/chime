@@ -495,6 +495,7 @@ def branch_edit(branch, path=None):
 def add_article_or_category(repo, path, create_what, request_path):
     ''' Add an article or category
     '''
+    request_path = request_path.rstrip('/')
     article_front = dict(title=u'', layout=ARTICLE_LAYOUT)
     cat_front = dict(title=u'', layout=CATEGORY_LAYOUT)
     body = u''
@@ -502,10 +503,12 @@ def add_article_or_category(repo, path, create_what, request_path):
     # create and commit intermediate categories
     if u'/' in request_path:
         filename = u'index.{}'.format(CONTENT_FILE_EXTENSION)
-        page_paths = edit_functions.create_path_to_page(repo, path, request_path, cat_front, body, filename)
+        page_paths, page_names = edit_functions.create_path_to_page(repo, path, request_path, cat_front, body, filename)
         master_name = current_app.config['default_branch']
-        for new_path in page_paths:
-            message = 'Created new category "{}"'.format(new_path)
+        for i in range(len(page_paths)):
+            new_path = page_paths[i]
+            new_name = page_names[i]
+            message = '{} category was created\n\ncreated new file {}'.format(new_name, new_path)
             Logger.debug('save')
             repo_functions.save_working_file(repo, new_path, message, repo.commit().hexsha, master_name)
 
@@ -513,12 +516,12 @@ def add_article_or_category(repo, path, create_what, request_path):
 
     if create_what == 'article':
         file_path = edit_functions.create_new_page(repo, path, name, article_front, body)
-        message = 'Created new article "{}"'.format(file_path)
+        message = '{} article was created\n\ncreated new file {}'.format(name.split('/')[-2], file_path)
         redirect_path = file_path
         return message, file_path, redirect_path
 
     file_path = edit_functions.create_new_page(repo, path, name, cat_front, body)
-    message = 'Created new category "{}"'.format(file_path)
+    message = '{} category was created\n\ncreated new file {}'.format(name.split('/')[-2], file_path)
     # strip the index file from the redirect path
     redirect_path = sub(r'index.{}$'.format(CONTENT_FILE_EXTENSION), '', file_path)
     return message, file_path, redirect_path
@@ -689,7 +692,7 @@ def branch_save(branch, path):
     # Try to merge from the master to the current branch.
     #
     try:
-        message = 'Saved file "{}"'.format(path)
+        message = '{} {} was edited\n\nSaved file "{}"'.format(request.form.get('en-title'), request.form.get('layout'), path)
         c2 = repo_functions.save_working_file(repo, path, message, c.hexsha, master_name)
         # they may've renamed the page by editing the URL slug
         original_slug = path
