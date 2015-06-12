@@ -20,6 +20,7 @@
             <div class="current-task__details row">
               <p class="current-task__author row__left">Last edited by {{item.last_editor}}</p>
               <div class="current-task__actions row__right toolbar--right">
+                  <form action="/merge" method="POST" class="toolbar__item">
                   {% if item.needs_peer_review and not item.is_eligible_peer %}
                     <a href="/tree/{{item.path}}" class="button-review button button--orange toolbar__item">Request Feedback</a>
                   {% endif %}
@@ -27,14 +28,13 @@
                   {% if item.needs_peer_review and item.is_eligible_peer %}
                     <a href="/tree/{{item.path}}" class="button-review button button--green toolbar__item">Give Feedback</a>
                   {% endif %}
-                  
+
                   {% if item.is_peer_approved %}
-                  <form action="/merge" method="POST" class="toolbar__item">
                     <button name="action" value="merge" type="submit" class="button button--blue button-publish">Publish</button>
-                  </form>
                   {% endif %}
                     <button name="action" value="abandon" type="submit" class="button button--red toolbar__item">Delete</button>
                     <input type="hidden" name="branch" value="{{item.name}}">
+                  </form>
                 </div>
               </div>
             </li>
