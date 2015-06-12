@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from logging import getLogger
 Logger = getLogger('chime.view_functions')
 
-from os.path import join, isdir, realpath, basename, exists, split, sep
+from os.path import join, isdir, realpath, basename, exists, sep
 from datetime import datetime
 from os import listdir, environ
 from urllib import quote, unquote
@@ -19,8 +19,7 @@ from dateutil.relativedelta import relativedelta
 from flask import request, session, current_app, redirect, flash
 from requests import get
 
-from .repo_functions import get_existing_branch, ignore_task_metadata_on_merge, ACTIVITY_CREATED_MESSAGE, ACTIVITY_UPDATED_MESSAGE, ACTIVITY_DELETED_MESSAGE
-
+from .repo_functions import get_existing_branch, ignore_task_metadata_on_merge, ChimeRepo, ACTIVITY_CREATED_MESSAGE, ACTIVITY_UPDATED_MESSAGE, ACTIVITY_DELETED_MESSAGE
 from .jekyll_functions import load_jekyll_doc
 from .href import needs_redirect, get_redirect
 
@@ -93,13 +92,13 @@ def get_repo(flask_app):
         the cloned directory, to reduce history conflicts when tweaking
         the repository during development.
     '''
-    source_repo = Repo(flask_app.config['REPO_PATH'])
+    source_repo = ChimeRepo(flask_app.config['REPO_PATH'])
     first_commit = list(source_repo.iter_commits())[-1].hexsha
     dir_name = 'repo-{}-{}'.format(first_commit[:8], session.get('email', 'nobody'))
     user_dir = realpath(join(flask_app.config['WORK_PATH'], quote(dir_name)))
 
     if isdir(user_dir):
-        user_repo = Repo(user_dir)
+        user_repo = ChimeRepo(user_dir)
         user_repo.git.reset(hard=True)
         user_repo.remotes.origin.fetch()
     else:
@@ -608,34 +607,25 @@ def directory_columns(clone, branch_name, repo_path=None, showallfiles=False):
     ''' Get a list of lists of dicts for the passed path, with file listings for each level.
         example: passing 'hello/world/wide' will return something like:
             [
-                {'path': '',
+                {'base_path': '',
                  'files':
                     [
-                        {'name': 'hello', 'title': 'Hello', 'view_path': '/tree/dfffcd8/view/hello', 'display_type': 'category', 'is_editable': False, 'modified_date': '75 minutes ago', 'current_path': '', 'edit_path': '/tree/8bf27f6/edit/hello', 'selected': True},
-                        {'name': 'goodbye', 'title': 'Goodbye', 'view_path': '/tree/dfffcd8/view/goodbye', 'display_type': 'category', 'is_editable': False, 'modified_date': '2 days ago', 'current_path': '', 'edit_path': '/tree/8bf27f6/edit/goodbye', 'selected': False}
+                        {'name': 'hello', 'title': 'Hello', 'base_path': '', 'file_path': 'hello', 'edit_path': '/tree/8bf27f6/edit/hello', 'view_path': '/tree/dfffcd8/view/hello', 'display_type': 'category', 'is_editable': False, 'modified_date': '75 minutes ago', 'selected': True},
+                        {'name': 'goodbye', 'title': 'Goodbye', 'base_path': '', 'file_path': 'goodbye', 'edit_path': '/tree/8bf27f6/edit/goodbye', 'view_path': '/tree/dfffcd8/view/goodbye', 'display_type': 'category', 'is_editable': False, 'modified_date': '2 days ago', 'selected': False}
                     ]
                 },
-                {'path': 'hello',
+                {'base_path': 'hello',
                  'files':
                     [
-                        {'name': 'world', 'title': 'World', 'view_path': '/tree/dfffcd8/view/hello/world', 'display_type': 'category', 'is_editable': False, 'modified_date': '75 minutes ago', 'current_path': 'hello', 'edit_path': '/tree/8bf27f6/edit/hello/world', 'selected': True},
-                        {'name': 'moon', 'title': 'Moon', 'view_path': '/tree/dfffcd8/view/hello/moon', 'display_type': 'category', 'is_editable': False, 'modified_date': '4 days ago', 'current_path': 'hello', 'edit_path': '/tree/8bf27f6/edit/hello/moon', 'selected': False}
+                        {'name': 'world', 'title': 'World', 'base_path': 'hello', 'file_path': 'hello/world', 'edit_path': '/tree/8bf27f6/edit/hello/world', 'view_path': '/tree/dfffcd8/view/hello/world', 'display_type': 'category', 'is_editable': False, 'modified_date': '75 minutes ago', 'selected': True},
+                        {'name': 'moon', 'title': 'Moon', 'base_path': 'hello', 'file_path': 'hello/moon', 'edit_path': '/tree/8bf27f6/edit/hello/moon', 'view_path': '/tree/dfffcd8/view/hello/moon', 'display_type': 'category', 'is_editable': False, 'modified_date': '4 days ago', 'selected': False}
                     ]
                 }
             ]
     '''
-    repo_path = repo_path or u''
-
     # Build a full directory path.
-    head, dirs = split(repo_path)[0], []
-
-    while head:
-        head, dir = split(head)
-        dirs.insert(0, dir)
-
-    if '..' in dirs:
-        raise Exception('Invalid path component.')
-
+    repo_path = repo_path or u''
+    dirs = clone.dirs_for_path(repo_path)
     # make sure we get the root dir
     dirs.insert(0, u'')
 
@@ -648,19 +638,19 @@ def directory_columns(clone, branch_name, repo_path=None, showallfiles=False):
         except IndexError:
             current_dir = dirs[-1]
 
-        current_path = sep.join(dirs[1:i + 1])
-        current_edit_path = join(edit_path_root, current_path)
-        files = sorted_paths(clone, branch_name, current_path, showallfiles)
-        # name, title, view_path, display_type, is_editable, modified_date
-        listing = [{'name': item['name'], 'title': item['title'], 'view_path': item['view_path'], 'display_type': item['display_type'], 'is_editable': item['is_editable'], 'modified_date': item['modified_date'], 'current_path': current_path, 'edit_path': join(current_edit_path, item['name']), 'selected': (current_dir == item['name'])} for item in files]
-        dir_listings.append({'path': current_path, 'files': listing})
+        base_path = sep.join(dirs[1:i + 1])
+        current_edit_path = join(edit_path_root, base_path)
+        files = sorted_paths(clone, branch_name, base_path, showallfiles)
+        # name, title, base_path, file_path, edit_path, view_path, display_type, is_editable, modified_date, selected
+        listing = [{'name': item['name'], 'title': item['title'], 'base_path': base_path, 'file_path': join(base_path, item['name']), 'edit_path': join(current_edit_path, item['name']), 'view_path': item['view_path'], 'display_type': item['display_type'], 'is_editable': item['is_editable'], 'modified_date': item['modified_date'], 'selected': (current_dir == item['name'])} for item in files]
+        dir_listings.append({'base_path': base_path, 'files': listing})
 
     return dir_listings
 
 def get_directory_path(branch, path, dir_name):
     dir_index = path.find(dir_name + '/')
-    current_path = path[:dir_index] + dir_name + '/'
-    return join('/tree/%s/edit' % branch_name2path(branch), current_path)
+    base_path = path[:dir_index] + dir_name + '/'
+    return join('/tree/{}/edit'.format(branch_name2path(branch)), base_path)
 
 def should_redirect():
     ''' Return True if the current flask.request should redirect.

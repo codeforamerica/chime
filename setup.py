@@ -11,7 +11,7 @@ setup(
     url = 'https://github.com/chimecms/chime',
     author = 'Code for America',
     description = 'Hashing out some ideas about Git, Jekyll, language, and content management',
-    packages = ['chime', 'chime.httpd', 'chime.publish', 'chime.setup'],
+    packages = ['chime', 'chime.httpd', 'chime.publish', 'chime.instantiation'],
     package_data = {
         'chime': []
     },

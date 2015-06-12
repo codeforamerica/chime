@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from logging import getLogger
 Logger = getLogger('chime.views')
 
-from os.path import join, isdir, splitext
+from os.path import join, isdir, splitext, sep
 from re import compile, MULTILINE, sub, search
 from mimetypes import guess_type
 from glob import glob
@@ -79,7 +79,6 @@ def index():
         task_description = task_metadata['task_description'] if 'task_description' in task_metadata else name
         task_beneficiary = task_metadata['task_beneficiary'] if 'task_beneficiary' in task_metadata else u''
 
-
         list_items.append(dict(name=name, path=path, behind=behind, ahead=ahead,
                                needs_peer_review=needs_peer_review,
                                is_peer_approved=is_peer_approved,
@@ -89,11 +88,8 @@ def index():
                                author_email=author_email, task_description=task_description,
                                task_beneficiary=task_beneficiary, is_eligible_peer=is_eligible_peer, last_editor=last_editor))
 
-
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(items=list_items)
-
-
 
     return render_template('activities-list.html', **kwargs)
 
@@ -492,39 +488,57 @@ def branch_edit(branch, path=None):
     # it's a file, edit it
     return render_edit_view(repo, branch, path, open(full_path, 'r'))
 
-def add_article_or_category(repo, path, create_what, request_path):
+def add_article_or_category(repo, dir_path, request_path, create_what):
     ''' Add an article or category
     '''
     request_path = request_path.rstrip('/')
-    article_front = dict(title=u'', layout=ARTICLE_LAYOUT)
-    cat_front = dict(title=u'', layout=CATEGORY_LAYOUT)
+    article_front = dict(title=u'', description=u'', order=0, layout=ARTICLE_LAYOUT)
+    cat_front = dict(title=u'', description=u'', order=0, layout=CATEGORY_LAYOUT)
     body = u''
 
-    # create and commit intermediate categories
+    # create and commit intermediate categories recursively
     if u'/' in request_path:
-        filename = u'index.{}'.format(CONTENT_FILE_EXTENSION)
-        page_paths, page_names = edit_functions.create_path_to_page(repo, path, request_path, cat_front, body, filename)
-        master_name = current_app.config['default_branch']
-        for i in range(len(page_paths)):
-            new_path = page_paths[i]
-            new_name = page_names[i]
-            message = '{} category was created\n\ncreated new file {}'.format(new_name, new_path)
-            Logger.debug('save')
-            repo_functions.save_working_file(repo, new_path, message, repo.commit().hexsha, master_name)
+        cat_paths = repo.dirs_for_path(request_path)
+        flash_messages = []
+        for i in range(len(cat_paths)):
+            cat_path = cat_paths[i]
+            dir_cat_path = join(dir_path, sep.join(cat_paths[:i]))
+            message, file_path, _, do_save = add_article_or_category(repo, dir_cat_path, cat_path, CATEGORY_LAYOUT)
+            if do_save:
+                Logger.debug('save')
+                repo_functions.save_working_file(repo, file_path, message, repo.commit().hexsha, current_app.config['default_branch'])
+            else:
+                flash_messages.append(message)
+
+        if len(flash_messages):
+            flash(', '.join(flash_messages), u'notice')
 
     name = u'{}/index.{}'.format(splitext(request_path)[0], CONTENT_FILE_EXTENSION)
 
     if create_what == 'article':
-        file_path = edit_functions.create_new_page(repo, path, name, article_front, body)
-        message = '{} article was created\n\ncreated new file {}'.format(name.split('/')[-2], file_path)
-        redirect_path = file_path
-        return message, file_path, redirect_path
+        file_path = repo.canonicalize_path(dir_path, name)
+        if repo.exists(file_path):
+            return 'Article "{}" already exists'.format(request_path), file_path, file_path, False
+        else:
+            file_path = edit_functions.create_new_page(repo, dir_path, name, article_front, body)
+            message = '{} article was created\n\ncreated new file {}'.format(name.split('/')[-2], file_path)
+            redirect_path = file_path
+            return message, file_path, redirect_path, True
+    elif create_what == 'category':
+        file_path = repo.canonicalize_path(dir_path, name)
+        if repo.exists(file_path):
+            return 'Category "{}" already exists'.format(request_path), file_path, strip_index_file(file_path), False
+        else:
+            file_path = edit_functions.create_new_page(repo, dir_path, name, cat_front, body)
+            message = '{} category was created\n\ncreated new file {}'.format(name.split('/')[-2], file_path)
+            redirect_path = strip_index_file(file_path)
+            return message, file_path, redirect_path, True
+    else:
+        raise ValueError("Illegal creation request %s " % create_what)
 
-    file_path = edit_functions.create_new_page(repo, path, name, cat_front, body)
-    message = '{} category was created\n\ncreated new file {}'.format(name.split('/')[-2], file_path)
-    # strip the index file from the redirect path
-    redirect_path = sub(r'index.{}$'.format(CONTENT_FILE_EXTENSION), '', file_path)
-    return message, file_path, redirect_path
+
+def strip_index_file(file_path):
+    return sub(r'index.{}$'.format(CONTENT_FILE_EXTENSION), '', file_path)
 
 @app.route('/tree/<branch>/edit/', methods=['POST'])
 @app.route('/tree/<branch>/edit/<path:path>', methods=['POST'])
@@ -535,36 +549,48 @@ def branch_edit_file(branch, path=None):
     repo = get_repo(current_app)
     commit = repo.commit()
 
+    path = path or u''
     action = request.form.get('action', '').lower()
     create_what = request.form.get('create_what', '').lower()
-    create_path = request.form.get('create_path', path or '')
+    create_path = request.form.get('create_path', path)
     do_save = True
 
+    file_path = path
+    commit_message = u''
     if action == 'upload' and 'file' in request.files:
         file_path = edit_functions.upload_new_file(repo, path, request.files['file'])
-        message = 'Uploaded new file "{}"'.format(file_path)
-        redirect_path = path or ''
+        redirect_path = path
+        commit_message = u'Uploaded file "{}"'.format(file_path)
 
     elif action == 'create' and (create_what == 'article' or create_what == 'category') and create_path is not None:
-        message, file_path, redirect_path = add_article_or_category(repo, create_path, create_what, request.form['path'])
-        commit = repo.commit()
+        add_message, file_path, redirect_path, do_save = add_article_or_category(repo, create_path, request.form['request_path'], create_what)
+        if do_save:
+            commit = repo.commit()
+            commit_message = add_message
+        else:
+            flash(add_message, u'notice')
 
-    elif action == 'delete' and 'path' in request.form:
-        request_path = request.form['path']
-        file_path, do_save = edit_functions.delete_file(repo, path, request_path)
-        message = 'Deleted file "{}"'.format(file_path)
-        redirect_path = path or ''
+    elif action == 'delete' and 'request_path' in request.form:
+        file_paths, do_save = edit_functions.delete_file(repo, request.form['request_path'])
+        message_subject = u'files' if len(file_paths) > 1 else u'file'
+        commit_message = u'Deleted {} "{}"'.format(message_subject, u'", "'.join(file_paths))
+        # if we're in the path that's been deleted, redirect to the first still-existing directory in the path
+        path_dirs = path.split('/')
+        req_dirs = request.form['request_path'].split('/')
+        if len(path_dirs) >= len(req_dirs) and path_dirs[len(req_dirs) - 1] == req_dirs[-1]:
+            redirect_path = u'/'.join(req_dirs[:-1])
+        else:
+            redirect_path = path
 
     else:
-        raise Exception()
+        raise Exception(u'Unrecognized request posted to branch_edit_file()')
 
     if do_save:
         master_name = current_app.config['default_branch']
         Logger.debug('save')
-        repo_functions.save_working_file(repo, file_path, message, commit.hexsha, master_name)
+        repo_functions.save_working_file(repo, file_path, commit_message, commit.hexsha, master_name)
 
     safe_branch = branch_name2path(branch_var2name(branch))
-
     return redirect('/tree/%s/edit/%s' % (safe_branch, redirect_path), code=303)
 
 @app.route('/tree/<branch>/', methods=['GET'])
@@ -668,9 +694,9 @@ def branch_save(branch, path):
         flash(u'There is no {} branch!'.format(branch), u'warning')
         return redirect('/')
 
-    c = existing_branch.commit
+    commit = existing_branch.commit
 
-    if c.hexsha != request.form.get('hexsha'):
+    if commit.hexsha != request.form.get('hexsha'):
         raise Exception('Out of date SHA: %s' % request.form.get('hexsha'))
 
     #
@@ -678,14 +704,26 @@ def branch_save(branch, path):
     #
     existing_branch.checkout()
 
-    front = {'layout': dos2unix(request.form.get('layout')), 'title': dos2unix(request.form.get('en-title'))}
+    # make sure order is an integer; otherwise default to 0
+    try:
+        order = int(dos2unix(request.form.get('order', '0')))
+    except ValueError:
+        order = 0
+
+    front = {
+        'layout': dos2unix(request.form.get('layout')),
+        'order': order,
+        'title': dos2unix(request.form.get('en-title', '')),
+        'description': dos2unix(request.form.get('en-description', ''))
+    }
 
     for iso in load_languages(repo.working_dir):
         if iso != 'en':
             front['title-' + iso] = dos2unix(request.form.get(iso + '-title', ''))
+            front['description-' + iso] = dos2unix(request.form.get(iso + '-description', ''))
             front['body-' + iso] = dos2unix(request.form.get(iso + '-body', ''))
 
-    body = dos2unix(request.form.get('en-body'))
+    body = dos2unix(request.form.get('en-body', ''))
     edit_functions.update_page(repo, path, front, body)
 
     #
@@ -693,7 +731,7 @@ def branch_save(branch, path):
     #
     try:
         message = '{} {} was edited\n\nSaved file "{}"'.format(request.form.get('en-title'), request.form.get('layout'), path)
-        c2 = repo_functions.save_working_file(repo, path, message, c.hexsha, master_name)
+        c2 = repo_functions.save_working_file(repo, path, message, commit.hexsha, master_name)
         # they may've renamed the page by editing the URL slug
         original_slug = path
         if search(r'\/index.{}$'.format(CONTENT_FILE_EXTENSION), path):
@@ -701,28 +739,29 @@ def branch_save(branch, path):
 
         # do some simple input cleaning
         new_slug = request.form.get('url-slug')
-        new_slug = sub(r'\/+', '/', new_slug)
+        if new_slug:
+            new_slug = sub(r'\/+', '/', new_slug)
 
-        if new_slug != original_slug:
-            try:
-                repo_functions.move_existing_file(repo, original_slug, new_slug, c2.hexsha, master_name)
-            except Exception as e:
-                error_message = e.args[0]
-                error_type = e.args[1] if len(e.args) > 1 else None
-                # let unexpected errors raise normally
-                if error_type:
-                    flash(error_message, error_type)
-                    return redirect('/tree/{}/edit/{}'.format(safe_branch, path), code=303)
-                else:
-                    raise
+            if new_slug != original_slug:
+                try:
+                    repo_functions.move_existing_file(repo, original_slug, new_slug, c2.hexsha, master_name)
+                except Exception as e:
+                    error_message = e.args[0]
+                    error_type = e.args[1] if len(e.args) > 1 else None
+                    # let unexpected errors raise normally
+                    if error_type:
+                        flash(error_message, error_type)
+                        return redirect('/tree/{}/edit/{}'.format(safe_branch, path), code=303)
+                    else:
+                        raise
 
-            path = new_slug
-            # append the index file if it's an editable directory
-            if is_article_dir(join(repo.working_dir, new_slug)):
-                path = join(new_slug, u'index.{}'.format(CONTENT_FILE_EXTENSION))
+                path = new_slug
+                # append the index file if it's an editable directory
+                if is_article_dir(join(repo.working_dir, new_slug)):
+                    path = join(new_slug, u'index.{}'.format(CONTENT_FILE_EXTENSION))
 
     except repo_functions.MergeConflict as conflict:
-        repo.git.reset(c.hexsha, hard=True)
+        repo.git.reset(commit.hexsha, hard=True)
 
         Logger.debug('1 {}'.format(conflict.remote_commit))
         Logger.debug('  {}'.format(repr(conflict.remote_commit.tree[path].data_stream.read())))
