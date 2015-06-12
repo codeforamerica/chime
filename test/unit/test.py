@@ -366,26 +366,26 @@ class TestRepo (TestCase):
 
     def test_try_to_create_existing_category(self):
 
-        first_result = views.add_article_or_category(self.clone1, 'categories', 'my new category', view_functions.CATEGORY_LAYOUT)
-        self.assertEqual('Created new category "categories/my-new-category/index.markdown"', first_result[0])
+        first_result = views.add_article_or_category(self.clone1, 'categories', 'My New Category', view_functions.CATEGORY_LAYOUT)
+        self.assertEqual(u'"My New Category" category was created\n\ncreated new file categories/my-new-category/index.markdown', first_result[0])
         self.assertEqual(u'categories/my-new-category/index.markdown', first_result[1])
         self.assertEqual(u'categories/my-new-category/', first_result[2])
         self.assertEqual(True, first_result[3])
-        second_result = views.add_article_or_category(self.clone1, 'categories', 'my new category', view_functions.CATEGORY_LAYOUT)
-        self.assertEqual('Category "my new category" already exists', second_result[0])
+        second_result = views.add_article_or_category(self.clone1, 'categories', 'My New Category', view_functions.CATEGORY_LAYOUT)
+        self.assertEqual('Category "My New Category" already exists', second_result[0])
         self.assertEqual(u'categories/my-new-category/index.markdown', second_result[1])
         self.assertEqual(u'categories/my-new-category/', second_result[2])
         self.assertEqual(False, second_result[3])
 
     def test_try_to_create_existing_article(self):
 
-        first_result = views.add_article_or_category(self.clone1, 'categories/example', 'new article', view_functions.ARTICLE_LAYOUT)
-        self.assertEqual('Created new article "categories/example/new-article/index.markdown"', first_result[0])
+        first_result = views.add_article_or_category(self.clone1, 'categories/example', 'New Article', view_functions.ARTICLE_LAYOUT)
+        self.assertEqual('"New Article" article was created\n\ncreated new file categories/example/new-article/index.markdown', first_result[0])
         self.assertEqual(u'categories/example/new-article/index.markdown', first_result[1])
         self.assertEqual(u'categories/example/new-article/index.markdown', first_result[2])
         self.assertEqual(True, first_result[3])
-        second_result = views.add_article_or_category(self.clone1, 'categories/example', 'new article', view_functions.ARTICLE_LAYOUT)
-        self.assertEqual('Article "new article" already exists', second_result[0])
+        second_result = views.add_article_or_category(self.clone1, 'categories/example', 'New Article', view_functions.ARTICLE_LAYOUT)
+        self.assertEqual('Article "New Article" already exists', second_result[0])
         self.assertEqual(u'categories/example/new-article/index.markdown', first_result[1])
         self.assertEqual(u'categories/example/new-article/index.markdown', first_result[2])
         self.assertEqual(False, second_result[3])
@@ -1151,7 +1151,7 @@ class TestRepo (TestCase):
         self.assertEqual(commit1, branch1.commit)
 
         # merge the branch to master manually so the task metadata file will be included
-        message = 'Manual merge including task metadata'
+        message = u'Manual merge including task metadata'
         self.clone1.git.checkout('master')
         self.clone1.git.pull('origin', 'master')
 

@@ -321,9 +321,9 @@ def complete_branch(clone, default_branch_name, working_branch_name):
     try:
         kwargs = dict(task_metadata)
         kwargs.update({"working_branch_name": working_branch_name})
-        message = 'Merged work by {author_email} for the task {task_description} (for {task_beneficiary}) from branch {working_branch_name}'.format(**kwargs)
+        message = u'Merged work by {author_email} for the task {task_description} (for {task_beneficiary}) from branch {working_branch_name}'.format(**kwargs)
     except KeyError:
-        message = 'Merged work from "{}"'.format(working_branch_name)
+        message = u'Merged work from "{}"'.format(working_branch_name)
 
     clone.git.checkout(default_branch_name)
     clone.git.pull('origin', default_branch_name)
@@ -394,7 +394,7 @@ def complete_branch(clone, default_branch_name, working_branch_name):
 def abandon_branch(clone, default_branch_name, working_branch_name):
     ''' Complete work on a branch by abandoning and deleting it.
     '''
-    message = 'Abandoned work from "%s"' % working_branch_name
+    message = u'Abandoned work from "%s"' % working_branch_name
 
     #
     # Add an empty commit with abandonment note.
@@ -413,7 +413,7 @@ def abandon_branch(clone, default_branch_name, working_branch_name):
 def clobber_default_branch(clone, default_branch_name, working_branch_name):
     ''' Complete work on a branch by clobbering master and deleting it.
     '''
-    message = 'Clobbered with work from "{}"'.format(working_branch_name)
+    message = u'Clobbered with work from "{}"'.format(working_branch_name)
 
     #
     # First merge default to working branch, because
