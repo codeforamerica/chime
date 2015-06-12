@@ -19,7 +19,7 @@ from dateutil.relativedelta import relativedelta
 from flask import request, session, current_app, redirect, flash
 from requests import get
 
-from .repo_functions import get_existing_branch, ignore_task_metadata_on_merge, ACTIVITY_CREATED_MESSAGE, ACTIVITY_UPDATED_MESSAGE
+from .repo_functions import get_existing_branch, ignore_task_metadata_on_merge, ACTIVITY_CREATED_MESSAGE, ACTIVITY_UPDATED_MESSAGE, ACTIVITY_DELETED_MESSAGE
 
 from .jekyll_functions import load_jekyll_doc
 from .href import needs_redirect, get_redirect
@@ -537,7 +537,7 @@ def make_activity_history(repo):
         log_item = dict(author_name=name, author_email=email, commit_date=date, commit_message=message, commit_type=get_message_type(message))
         history.append(log_item)
         # don't get any history beyond the creation of the task metadata file, which is the beginning of the activity
-        if message == ACTIVITY_CREATED_MESSAGE:
+        if re.search(r'{}$'.format(ACTIVITY_CREATED_MESSAGE), message):
             break
 
     return history
@@ -545,7 +545,7 @@ def make_activity_history(repo):
 def get_message_type(message):
     ''' Figure out what type of history log message this is
     '''
-    if message == ACTIVITY_CREATED_MESSAGE or message == ACTIVITY_UPDATED_MESSAGE:
+    if re.search(r'{}$|{}$|{}$'.format(ACTIVITY_CREATED_MESSAGE, ACTIVITY_UPDATED_MESSAGE, ACTIVITY_DELETED_MESSAGE), message):
         return u'info'
     else:
         return u'edit'

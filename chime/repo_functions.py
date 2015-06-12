@@ -14,8 +14,9 @@ from . import edit_functions
 TASK_METADATA_FILENAME = u'_task.yml'
 BRANCH_NAME_LENGTH = 7
 DESCRIPTION_MAX_LENGTH = 15
-ACTIVITY_CREATED_MESSAGE = u'This activity was created'
-ACTIVITY_UPDATED_MESSAGE = u'This activity was updated'
+ACTIVITY_CREATED_MESSAGE = u'activity was created'
+ACTIVITY_UPDATED_MESSAGE = u'activity was updated'
+ACTIVITY_DELETED_MESSAGE = u'activity was deleted'
 
 class MergeConflict (Exception):
     def __init__(self, remote_commit, local_commit):
@@ -146,9 +147,9 @@ def save_task_metadata_for_branch(clone, default_branch_name, values={}):
             message_details.append(u'Set {} to {}'.format(change, values[change]))
 
     if check_metadata == {}:
-        message = u'{}\n\nCreated task metadata file "{}"\n{}'.format(ACTIVITY_CREATED_MESSAGE, TASK_METADATA_FILENAME, u'\n'.join(message_details))
+        message = u'The "{}" {}\n\nCreated task metadata file "{}"\n{}'.format(task_metadata['task_description'], ACTIVITY_CREATED_MESSAGE, TASK_METADATA_FILENAME, u'\n'.join(message_details))
     else:
-        message = u'{}\n\nUpdated task metadata file "{}"\n{}'.format(ACTIVITY_UPDATED_MESSAGE, TASK_METADATA_FILENAME, u'\n'.join(message_details))
+        message = u'The "{}" {}\n\nUpdated task metadata file "{}"\n{}'.format(task_metadata['task_description'], ACTIVITY_UPDATED_MESSAGE, TASK_METADATA_FILENAME, u'\n'.join(message_details))
 
     # Dump the updated task metadata to disk
     # Use newline-preserving block literal form.
@@ -172,7 +173,7 @@ def delete_task_metadata_for_branch(clone, default_branch_name):
     task_metadata = get_task_metadata_for_branch(clone)
     file_path, do_save = edit_functions.delete_file(clone, None, TASK_METADATA_FILENAME)
     if do_save:
-        message = u'Deleted task metadata file "{}"'.format(TASK_METADATA_FILENAME)
+        message = u'The "{}" {}'.format(task_metadata['task_description'], ACTIVITY_DELETED_MESSAGE)
         save_working_file(clone, TASK_METADATA_FILENAME, message, clone.commit().hexsha, default_branch_name)
     return task_metadata
 
