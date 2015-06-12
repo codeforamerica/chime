@@ -521,7 +521,7 @@ def add_article_or_category(repo, dir_path, request_path, create_what):
             return 'Article "{}" already exists'.format(request_path), file_path, file_path, False
         else:
             file_path = edit_functions.create_new_page(repo, dir_path, name, article_front, body)
-            message = '{} article was created\n\ncreated new file {}'.format(name.split('/')[-2], file_path)
+            message = '"{}" article was created\n\ncreated new file {}'.format(name.split('/')[-2], file_path)
             redirect_path = file_path
             return message, file_path, redirect_path, True
     elif create_what == 'category':
@@ -530,7 +530,7 @@ def add_article_or_category(repo, dir_path, request_path, create_what):
             return 'Category "{}" already exists'.format(request_path), file_path, strip_index_file(file_path), False
         else:
             file_path = edit_functions.create_new_page(repo, dir_path, name, cat_front, body)
-            message = '{} category was created\n\ncreated new file {}'.format(name.split('/')[-2], file_path)
+            message = '"{}" category was created\n\ncreated new file {}'.format(name.split('/')[-2], file_path)
             redirect_path = strip_index_file(file_path)
             return message, file_path, redirect_path, True
     else:
@@ -730,7 +730,7 @@ def branch_save(branch, path):
     # Try to merge from the master to the current branch.
     #
     try:
-        message = '{} {} was edited\n\nSaved file "{}"'.format(request.form.get('en-title'), request.form.get('layout'), path)
+        message = '"{}" {} was edited\n\nSaved file "{}"'.format(request.form.get('en-title'), request.form.get('layout'), path)
         c2 = repo_functions.save_working_file(repo, path, message, commit.hexsha, master_name)
         # they may've renamed the page by editing the URL slug
         original_slug = path
