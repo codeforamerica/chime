@@ -1,8 +1,9 @@
 
+from os import walk
 from os.path import exists, join, split, sep
 from slugify import slugify
 from .jekyll_functions import dump_jekyll_doc
-from re import search
+from re import search, sub
 
 def update_page(clone, file_path, front, body):
     ''' Update existing Jekyll page in the working directory.
@@ -73,6 +74,11 @@ def delete_file(clone, file_path):
     '''
     full_path = join(clone.working_dir, file_path)
     do_save = False
+
+    # pre-find all the files that're going to be deleted
+    doomed_files = []
+    for (dirpath, dirnames, filenames) in walk(full_path):
+        doomed_files.extend([sub('{}/'.format(clone.working_dir), '', join(dirpath, item)) for item in filenames])
 
     removed_paths = []
     if exists(full_path):
