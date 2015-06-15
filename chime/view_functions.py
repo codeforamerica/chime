@@ -2,9 +2,9 @@ from __future__ import absolute_import
 from logging import getLogger
 Logger = getLogger('chime.view_functions')
 
-from os.path import join, isdir, realpath, basename, exists, sep
+from os.path import join, isdir, realpath, basename, exists, sep, split
 from datetime import datetime
-from os import listdir, environ
+from os import listdir, environ, walk
 from urllib import quote, unquote
 from urlparse import urljoin, urlparse, urlunparse
 from mimetypes import guess_type
@@ -29,6 +29,15 @@ from fcntl import flock, LOCK_EX, LOCK_UN, LOCK_SH
 CONTENT_FILE_EXTENSION = u'markdown'
 CATEGORY_LAYOUT = 'category'
 ARTICLE_LAYOUT = 'article'
+FOLDER_FILE_TYPE = 'folder'
+FILE_FILE_TYPE = 'file'
+IMAGE_FILE_TYPE = 'image'
+CATEGORY_LAYOUT_PLURAL = 'categories'
+ARTICLE_LAYOUT_PLURAL = 'articles'
+FOLDER_FILE_TYPE_PLURAL = 'folders'
+FILE_FILE_TYPE_PLURAL = 'files'
+IMAGE_FILE_TYPE_PLURAL = 'images'
+
 FILE_FILTERS = [
     r'^\.',
     r'^_',
@@ -139,12 +148,12 @@ def path_type(file_path):
     ''' Returns the type of file at the passed path
     '''
     if isdir(file_path):
-        return 'folder'
+        return FOLDER_FILE_TYPE
 
     if str(guess_type(file_path)[0]).startswith('image/'):
-        return 'image'
+        return IMAGE_FILE_TYPE
 
-    return 'file'
+    return FILE_FILE_TYPE
 
 def path_display_type(file_path):
     ''' Returns a type matching how the file at the passed path should be displayed
@@ -156,6 +165,45 @@ def path_display_type(file_path):
         return CATEGORY_LAYOUT
 
     return path_type(file_path)
+
+def index_path_display_type_and_title(file_path):
+    ''' Works like path_display_type except that when the path is to an index file,
+        it checks the containing directory. Also returns an article or category title if
+        appropriate.
+    '''
+    index_filename = u'index.{}'.format(CONTENT_FILE_EXTENSION)
+    path_split = split(file_path)
+    if path_split[1] == index_filename:
+        folder_type = path_display_type(path_split[0])
+        # if the enclosing folder is just a folder (and not an article or category)
+        # return the type of the index file instead
+        if folder_type == FOLDER_FILE_TYPE:
+            return FILE_FILE_TYPE, u''
+
+        # the enclosing folder is an article or category
+        return folder_type, get_value_from_front_matter('title', file_path)
+
+    # the path was to something other than an index file
+    path_type = path_display_type(file_path)
+    if path_type in (ARTICLE_LAYOUT, CATEGORY_LAYOUT):
+        return path_type, get_value_from_front_matter('title', join(file_path, index_filename))
+
+    return path_type, u''
+
+def file_type_plural(file_type):
+    ''' Get the plural of the passed file type
+    '''
+    plural_lookup = {
+        CATEGORY_LAYOUT: CATEGORY_LAYOUT_PLURAL,
+        ARTICLE_LAYOUT: ARTICLE_LAYOUT_PLURAL,
+        FOLDER_FILE_TYPE: FOLDER_FILE_TYPE_PLURAL,
+        FILE_FILE_TYPE: FILE_FILE_TYPE_PLURAL,
+        IMAGE_FILE_TYPE: IMAGE_FILE_TYPE_PLURAL
+    }
+    if file_type in plural_lookup:
+        return plural_lookup[file_type]
+
+    return file_type
 
 # ONLY CALLED FROM sorted_paths()
 def is_display_editable(file_path):
@@ -198,6 +246,20 @@ def is_editable(file_path, layout=None):
         pass
 
     return False
+
+def describe_directory_contents(clone, file_path):
+    ''' Return a description of the contents of the passed path
+    '''
+    full_path = join(clone.working_dir, file_path)
+    described_files = []
+    for (dirpath, dirnames, filenames) in walk(full_path):
+        for file_name in filenames:
+            file_path = join(dirpath, file_name)
+            display_type, title = index_path_display_type_and_title(file_path)
+            short_path = re.sub('{}/'.format(clone.working_dir), '', file_path)
+            described_files.append({"display_type": display_type, "title": title, "short_path": short_path})
+
+    return described_files
 
 def get_front_matter(file_path):
     ''' Get the front matter for the file at the passed path if it exists.
@@ -574,7 +636,7 @@ def sorted_paths(repo, branch_name, path=None, showallfiles=False):
             info['display_type'] = path_display_type(edit_path)
             file_title = get_value_from_front_matter('title', join(edit_path, u'index.{}'.format(CONTENT_FILE_EXTENSION)))
             if not file_title:
-                if info['display_type'] in ('folder', 'image', 'file'):
+                if info['display_type'] in (FOLDER_FILE_TYPE, IMAGE_FILE_TYPE, FILE_FILE_TYPE):
                     file_title = info['name']
                 else:
                     file_title = re.sub('-', ' ', info['name']).title()

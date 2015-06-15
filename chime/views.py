@@ -21,7 +21,8 @@ from .view_functions import (
     login_required, browserid_hostname_required, synch_required, synched_checkout_required,
     breadcrumb_paths, directory_columns, should_redirect, make_redirect, get_auth_data_file,
     is_allowed_email, common_template_args, log_application_errors,
-    is_article_dir, make_activity_history, CONTENT_FILE_EXTENSION, ARTICLE_LAYOUT, CATEGORY_LAYOUT)
+    is_article_dir, make_activity_history, describe_directory_contents, file_type_plural,
+    CONTENT_FILE_EXTENSION, ARTICLE_LAYOUT, CATEGORY_LAYOUT)
 
 from .google_api_functions import (
     read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens,
@@ -570,9 +571,34 @@ def branch_edit_file(branch, path=None):
             flash(add_message, u'notice')
 
     elif action == 'delete' and 'request_path' in request.form:
+        # construct the commit message
+        targeted_files = describe_directory_contents(repo, request.form['request_path'])
+        message_details = {}
+        for file_details in targeted_files:
+            display_type = file_details['display_type']
+            if display_type not in message_details:
+                message_details[display_type] = {}
+                message_details[display_type]['noun'] = display_type
+                message_details[display_type]['files'] = []
+            else:
+                message_details[display_type]['noun'] = file_type_plural(display_type)
+            message_details[display_type]['files'].append(file_details)
+
+        message_parts = []
+        for detail_key in message_details:
+            detail = message_details[detail_key]
+            file_titles = [item['title'] for item in detail['files']]
+            title_list = u'", "'.join(file_titles[:-2] + [u'" and "'.join(file_titles[-2:])])
+            message_parts.append(u'"{}" {}'.format(title_list, detail['noun']))
+        was_were = u' was ' if len(targeted_files) == 1 else u' were '
+
+        # delete the file(s)
         file_paths, do_save = edit_functions.delete_file(repo, request.form['request_path'])
-        message_subject = u'files' if len(file_paths) > 1 else u'file'
-        commit_message = u'Deleted {} "{}"'.format(message_subject, u'", "'.join(file_paths))
+
+        # finish constructing the commit message
+        file_files = u'files' if len(file_paths) > 1 else u'file'
+        commit_message = u'{} {} deleted\n\ndeleted {} "{}"'.format(u'; '.join(message_parts), was_were, file_files, u'", "'.join(file_paths))
+
         # if we're in the path that's been deleted, redirect to the first still-existing directory in the path
         path_dirs = path.split('/')
         req_dirs = request.form['request_path'].split('/')
@@ -729,7 +755,7 @@ def branch_save(branch, path):
     # Try to merge from the master to the current branch.
     #
     try:
-        message = u'"{}" {} was edited\n\nSaved file "{}"'.format(request.form.get('en-title'), request.form.get('layout'), path)
+        message = u'"{}" {} was edited\n\nsaved file "{}"'.format(request.form.get('en-title'), request.form.get('layout'), path)
         c2 = repo_functions.save_working_file(repo, path, message, commit.hexsha, master_name)
         # they may've renamed the page by editing the URL slug
         original_slug = path

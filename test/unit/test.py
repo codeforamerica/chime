@@ -101,10 +101,10 @@ class TestViewFunctions (TestCase):
         sorted_list = view_functions.sorted_paths(self.clone, 'master')
 
         expected_list = [
-            {'modified_date': view_functions.get_relative_date(self.clone, 'index.md'), 'name': 'index.md', 'title': 'index.md', 'view_path': '/tree/master/view/index.md', 'is_editable': True, 'display_type': 'file'},
-            {'modified_date': view_functions.get_relative_date(self.clone, 'other'), 'name': 'other', 'title': 'other', 'view_path': '/tree/master/view/other', 'is_editable': False, 'display_type': 'folder'},
-            {'modified_date': view_functions.get_relative_date(self.clone, 'other.md'), 'name': 'other.md', 'title': 'other.md', 'view_path': '/tree/master/view/other.md', 'is_editable': True, 'display_type': 'file'},
-            {'modified_date': view_functions.get_relative_date(self.clone, 'sub'), 'name': 'sub', 'title': 'sub', 'view_path': '/tree/master/view/sub', 'is_editable': False, 'display_type': 'folder'}]
+            {'modified_date': view_functions.get_relative_date(self.clone, 'index.md'), 'name': 'index.md', 'title': 'index.md', 'view_path': '/tree/master/view/index.md', 'is_editable': True, 'display_type': view_functions.FILE_FILE_TYPE},
+            {'modified_date': view_functions.get_relative_date(self.clone, 'other'), 'name': 'other', 'title': 'other', 'view_path': '/tree/master/view/other', 'is_editable': False, 'display_type': view_functions.FOLDER_FILE_TYPE},
+            {'modified_date': view_functions.get_relative_date(self.clone, 'other.md'), 'name': 'other.md', 'title': 'other.md', 'view_path': '/tree/master/view/other.md', 'is_editable': True, 'display_type': view_functions.FILE_FILE_TYPE},
+            {'modified_date': view_functions.get_relative_date(self.clone, 'sub'), 'name': 'sub', 'title': 'sub', 'view_path': '/tree/master/view/sub', 'is_editable': False, 'display_type': view_functions.FOLDER_FILE_TYPE}]
 
         self.assertEqual(sorted_list, expected_list)
 
