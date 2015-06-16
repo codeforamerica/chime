@@ -5,8 +5,9 @@ from unittest import main, TestCase
 
 from tempfile import mkdtemp
 from StringIO import StringIO
-from os.path import join, exists, dirname, isdir, abspath, isfile, sep
+from os.path import join, exists, dirname, isdir, abspath, isfile, sep, realpath
 from urlparse import urlparse, urljoin
+from urllib import quote
 from os import environ, remove
 from shutil import rmtree, copytree
 from uuid import uuid4
@@ -16,11 +17,11 @@ from datetime import date, timedelta
 import sys
 from chime import views
 from chime.repo_functions import ChimeRepo
+from slugify import slugify
 
 repo_root = abspath(join(dirname(__file__), '..'))
 sys.path.insert(0, repo_root)
 
-from git import Repo
 from git.cmd import GitCommandError
 from box.util.rotunicode import RotUnicode
 from httmock import response, HTTMock
@@ -190,9 +191,11 @@ mike@teczno.com,Code for America,Mike Migurski
             self.assertFalse(view_functions.is_allowed_email(no_file(), 'mike@teczno.com'))
             self.assertFalse(view_functions.is_allowed_email(no_file(), 'whatever@teczno.com'))
 
+# ;;;
 class TestRepo (TestCase):
 
     def setUp(self):
+        self.work_path = mkdtemp(prefix='chime-repo-clones-')
         repo_path = dirname(abspath(__file__)) + '/../test-app.git'
         temp_repo_dir = mkdtemp(prefix='chime-root')
         temp_repo_path = temp_repo_dir + '/test-app.git'
@@ -365,7 +368,8 @@ class TestRepo (TestCase):
         self.assertFalse(exists(join(self.clone2.working_dir, 'index.md')))
 
     def test_try_to_create_existing_category(self):
-
+        ''' We can't create a category that exists already.
+        '''
         first_result = views.add_article_or_category(self.clone1, 'categories', 'My New Category', view_functions.CATEGORY_LAYOUT)
         self.assertEqual(u'"My New Category" category was created\n\ncreated new file categories/my-new-category/index.markdown', first_result[0])
         self.assertEqual(u'categories/my-new-category/index.markdown', first_result[1])
@@ -378,7 +382,8 @@ class TestRepo (TestCase):
         self.assertEqual(False, second_result[3])
 
     def test_try_to_create_existing_article(self):
-
+        ''' We can't create an article that exists already
+        '''
         first_result = views.add_article_or_category(self.clone1, 'categories/example', 'New Article', view_functions.ARTICLE_LAYOUT)
         self.assertEqual('"New Article" article was created\n\ncreated new file categories/example/new-article/index.markdown', first_result[0])
         self.assertEqual(u'categories/example/new-article/index.markdown', first_result[1])
@@ -1021,6 +1026,47 @@ class TestRepo (TestCase):
         self.assertEqual(email2, 'reviewer@example.org')
         self.assertTrue('This still sucks.' in message2)
 
+    # ;;; TestRepo
+    def test_article_creation_with_unicode(self):
+        ''' A category is created and logged as expected.
+        '''
+        # start a new branch
+        fake_author_email = u'erica@example.com'
+        task_description = u'suck blood from a mammal'
+        task_beneficiary = u'mosquito larvae'
+
+        source_repo = self.origin
+        first_commit = list(source_repo.iter_commits())[-1].hexsha
+        dir_name = 'repo-{}-{}'.format(first_commit[:8], slugify(fake_author_email))
+        user_dir = realpath(join(self.work_path, quote(dir_name)))
+
+        if isdir(user_dir):
+            new_clone = ChimeRepo(user_dir)
+            new_clone.git.reset(hard=True)
+            new_clone.remotes.origin.fetch()
+        else:
+            new_clone = source_repo.clone(user_dir, bare=False)
+
+        # tell git to ignore merge conflicts on the task metadata file
+        repo_functions.ignore_task_metadata_on_merge(new_clone)
+
+        working_branch = repo_functions.get_start_branch(new_clone, 'master', task_description, task_beneficiary, fake_author_email)
+        self.assertTrue(working_branch.name in new_clone.branches)
+        self.assertTrue(working_branch.name in self.origin.branches)
+        working_branch.checkout()
+
+        # create a category
+        art_title = u'快速狐狸'
+        art_slug = u'kuai-su-hu-li'
+        add_message, file_path, redirect_path, do_save = views.add_article_or_category(new_clone, u'', art_title, view_functions.ARTICLE_LAYOUT)
+        self.assertEqual(u'"{}" article was created\n\ncreated new file {}/index.markdown'.format(art_title, art_slug), add_message)
+        self.assertEqual(u'{}/index.markdown'.format(art_slug), file_path)
+        self.assertEqual(u'{}/index.{}'.format(art_slug, view_functions.CONTENT_FILE_EXTENSION), redirect_path)
+        self.assertEqual(True, do_save)
+        # commit the category
+        repo_functions.save_working_file(new_clone, file_path, add_message, new_clone.commit().hexsha, 'master')
+        pass
+
     def test_task_metadata_creation(self):
         ''' The task metadata file is created when a branch is started, and contains the expected information.
         '''
@@ -1414,6 +1460,7 @@ class TestAppConfig (TestCase):
         environment['BROWSERID_URL'] = 'Hey'
         create_app(environment)
 
+# ;;;
 class TestApp (TestCase):
 
     def setUp(self):
@@ -2139,6 +2186,54 @@ class TestApp (TestCase):
             self.assertFalse(exists(art_location))
             self.assertFalse(exists(catb_location))
             self.assertFalse(exists(cata_location))
+
+    # ;;; TestApp
+    def test_article_creation_with_unicode(self):
+        ''' A slugified directory name and display title are created when a new category or article is created.
+        '''
+        fake_author_email = u'erica@example.com'
+        with HTTMock(self.mock_persona_verify):
+            self.test_client.post('/sign-in', data={'email': fake_author_email})
+
+        with HTTMock(self.auth_csv_example_allowed):
+            # start a new branch via the http interface
+            # invokes view_functions/get_repo which creates a clone
+            task_description = u'eviscerate a salmon'
+            task_beneficiary = u'baby grizzly bears'
+
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            self.assertTrue(working_branch.name in self.clone1.branches)
+            self.assertTrue(working_branch.name in self.origin.branches)
+            working_branch_name = working_branch.name
+            working_branch.checkout()
+
+            # create a new article
+            art_title = u'快速狐狸'
+            art_slug = u'kuai-su-hu-li'
+            response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name), data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': art_title}, follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            self.assertTrue(PATTERN_TEMPLATE_COMMENT.format(u'article-edit') in response.data.decode('utf-8'))
+
+            # pull the changes
+            self.clone1.git.pull('origin', working_branch_name)
+
+            # a directory was created
+            dir_location = join(self.clone1.working_dir, art_slug)
+            idx_location = u'{}/index.{}'.format(dir_location, view_functions.CONTENT_FILE_EXTENSION)
+            self.assertTrue(exists(dir_location) and isdir(dir_location))
+            # an index page was created inside
+            self.assertTrue(exists(idx_location))
+            # the directory and index page pass the article test
+            self.assertTrue(view_functions.is_article_dir(dir_location))
+            # the title saved in the index front matter is the same text that was used to create the article
+            self.assertEqual(view_functions.get_value_from_front_matter('title', idx_location), art_title)
+
+            # the title saved in the index front matter is displayed on the article list page
+            response = self.test_client.get('/tree/{}/edit/'.format(working_branch_name), follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            self.assertTrue(PATTERN_TEMPLATE_COMMENT.format(u'articles-list') in response.data.decode('utf-8'))
+            self.assertTrue(PATTERN_BRANCH_COMMENT.format(working_branch) in response.data.decode('utf-8'))
+            self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": art_slug, "file_title": art_title, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data.decode('utf-8'))
 
     def test_new_item_has_name_and_title(self):
         ''' A slugified directory name and display title are created when a new category or article is created.
