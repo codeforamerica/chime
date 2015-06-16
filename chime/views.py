@@ -468,9 +468,9 @@ def render_edit_view(repo, branch, path, file):
 @login_required
 @synched_checkout_required
 def branch_edit(branch, path=None):
+    repo = get_repo(current_app)
     branch = branch_var2name(branch)
 
-    repo = get_repo(current_app)
     full_path = join(repo.working_dir, path or '.').rstrip('/')
 
     if isdir(full_path):
