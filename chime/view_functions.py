@@ -10,6 +10,7 @@ from urlparse import urljoin, urlparse, urlunparse
 from mimetypes import guess_type
 from functools import wraps
 from io import BytesIO
+from slugify import slugify
 import csv
 import re
 
@@ -103,7 +104,7 @@ def get_repo(flask_app):
     '''
     source_repo = ChimeRepo(flask_app.config['REPO_PATH'])
     first_commit = list(source_repo.iter_commits())[-1].hexsha
-    dir_name = 'repo-{}-{}'.format(first_commit[:8], session.get('email', 'nobody'))
+    dir_name = 'repo-{}-{}'.format(first_commit[:8], slugify(session.get('email', 'nobody')))
     user_dir = realpath(join(flask_app.config['WORK_PATH'], quote(dir_name)))
 
     if isdir(user_dir):
