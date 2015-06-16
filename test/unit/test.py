@@ -371,7 +371,7 @@ class TestRepo (TestCase):
         ''' We can't create a category that exists already.
         '''
         first_result = views.add_article_or_category(self.clone1, 'categories', 'My New Category', view_functions.CATEGORY_LAYOUT)
-        self.assertEqual(u'"My New Category" category was created\n\ncreated new file categories/my-new-category/index.markdown', first_result[0])
+        self.assertEqual(u'The "My New Category" category was created\n\ncreated new file categories/my-new-category/index.markdown', first_result[0])
         self.assertEqual(u'categories/my-new-category/index.markdown', first_result[1])
         self.assertEqual(u'categories/my-new-category/', first_result[2])
         self.assertEqual(True, first_result[3])
@@ -385,7 +385,7 @@ class TestRepo (TestCase):
         ''' We can't create an article that exists already
         '''
         first_result = views.add_article_or_category(self.clone1, 'categories/example', 'New Article', view_functions.ARTICLE_LAYOUT)
-        self.assertEqual('"New Article" article was created\n\ncreated new file categories/example/new-article/index.markdown', first_result[0])
+        self.assertEqual('The "New Article" article was created\n\ncreated new file categories/example/new-article/index.markdown', first_result[0])
         self.assertEqual(u'categories/example/new-article/index.markdown', first_result[1])
         self.assertEqual(u'categories/example/new-article/index.markdown', first_result[2])
         self.assertEqual(True, first_result[3])
@@ -1059,7 +1059,7 @@ class TestRepo (TestCase):
         art_title = u'快速狐狸'
         art_slug = u'kuai-su-hu-li'
         add_message, file_path, redirect_path, do_save = views.add_article_or_category(new_clone, u'', art_title, view_functions.ARTICLE_LAYOUT)
-        self.assertEqual(u'"{}" article was created\n\ncreated new file {}/index.markdown'.format(art_title, art_slug), add_message)
+        self.assertEqual(u'The "{}" article was created\n\ncreated new file {}/index.markdown'.format(art_title, art_slug), add_message)
         self.assertEqual(u'{}/index.markdown'.format(art_slug), file_path)
         self.assertEqual(u'{}/index.{}'.format(art_slug, view_functions.CONTENT_FILE_EXTENSION), redirect_path)
         self.assertEqual(True, do_save)

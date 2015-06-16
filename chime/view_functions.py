@@ -20,14 +20,21 @@ from dateutil.relativedelta import relativedelta
 from flask import request, session, current_app, redirect, flash
 from requests import get
 
-from .repo_functions import get_existing_branch, ignore_task_metadata_on_merge, ChimeRepo, ACTIVITY_CREATED_MESSAGE, ACTIVITY_UPDATED_MESSAGE, ACTIVITY_DELETED_MESSAGE
+from .repo_functions import get_existing_branch, ignore_task_metadata_on_merge, ChimeRepo, ACTIVITY_CREATED_MESSAGE, ACTIVITY_UPDATED_MESSAGE, ACTIVITY_DELETED_MESSAGE, COMMENT_COMMIT_PREFIX
 from .jekyll_functions import load_jekyll_doc
 from .href import needs_redirect, get_redirect
 
 from fcntl import flock, LOCK_EX, LOCK_UN, LOCK_SH
 
-# files that match these regex patterns will not be shown in the file explorer
+# when creating a content file, what extension should it have?
 CONTENT_FILE_EXTENSION = u'markdown'
+
+# the different types of messages that can be displayed in the activity overview
+MESSAGE_TYPE_INFO = u'info'
+MESSAGE_TYPE_COMMENT = u'comment'
+MESSAGE_TYPE_EDIT = u'edit'
+
+# the names of layouts, used in jekyll front matter and also in interface text
 CATEGORY_LAYOUT = 'category'
 ARTICLE_LAYOUT = 'article'
 FOLDER_FILE_TYPE = 'folder'
@@ -39,6 +46,7 @@ FOLDER_FILE_TYPE_PLURAL = 'folders'
 FILE_FILE_TYPE_PLURAL = 'files'
 IMAGE_FILE_TYPE_PLURAL = 'images'
 
+# files that match these regex patterns will not be shown in the file explorer
 FILE_FILTERS = [
     r'^\.',
     r'^_',
@@ -590,27 +598,29 @@ def make_activity_history(repo):
     ''' Make an easily-parsable history of an activity since it was created.
     '''
     # see <http://git-scm.com/docs/git-log> for placeholders
-    log_format = '%x00Name: %an\tEmail: %ae\tDate: %ad\tSubject: %s'
-    pattern = re.compile(r'^\x00Name: (.*?)\tEmail: (.*?)\tDate: (.*?)\tSubject: (.*?)$', re.MULTILINE)
+    log_format = '%x00Name: %an\tEmail: %ae\tDate: %ad\tSubject: %s\tBody: %b'
+    pattern = re.compile(r'^\x00Name: (.*?)\tEmail: (.*?)\tDate: (.*?)\tSubject: (.*?)\tBody: (.*?)$', re.MULTILINE)
     log = repo.git.log('--format={}'.format(log_format), '--date=relative')
 
     history = []
-    for (name, email, date, message) in pattern.findall(log):
-        log_item = dict(author_name=name, author_email=email, commit_date=date, commit_message=message, commit_type=get_message_type(message))
+    for (name, email, date, subject, body) in pattern.findall(log):
+        log_item = dict(author_name=name, author_email=email, commit_date=date, commit_subject=subject, commit_body=body, commit_type=get_message_type(subject))
         history.append(log_item)
         # don't get any history beyond the creation of the task metadata file, which is the beginning of the activity
-        if re.search(r'{}$'.format(ACTIVITY_CREATED_MESSAGE), message):
+        if re.search(r'{}$'.format(ACTIVITY_CREATED_MESSAGE), subject):
             break
 
     return history
 
-def get_message_type(message):
-    ''' Figure out what type of history log message this is
+def get_message_type(subject):
+    ''' Figure out what type of history log message this is, based on the subject
     '''
-    if re.search(r'{}$|{}$|{}$'.format(ACTIVITY_CREATED_MESSAGE, ACTIVITY_UPDATED_MESSAGE, ACTIVITY_DELETED_MESSAGE), message):
-        return u'info'
+    if re.search(r'{}$|{}$|{}$'.format(ACTIVITY_CREATED_MESSAGE, ACTIVITY_UPDATED_MESSAGE, ACTIVITY_DELETED_MESSAGE), subject):
+        return MESSAGE_TYPE_INFO
+    elif re.search(r'{}$'.format(COMMENT_COMMIT_PREFIX), subject):
+        return MESSAGE_TYPE_COMMENT
     else:
-        return u'edit'
+        return MESSAGE_TYPE_EDIT
 
 def sorted_paths(repo, branch_name, path=None, showallfiles=False):
     ''' Returns a list of files and their attributes in the passed directory.

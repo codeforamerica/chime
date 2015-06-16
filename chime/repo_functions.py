@@ -19,6 +19,7 @@ DESCRIPTION_MAX_LENGTH = 15
 ACTIVITY_CREATED_MESSAGE = u'activity was created'
 ACTIVITY_UPDATED_MESSAGE = u'activity was updated'
 ACTIVITY_DELETED_MESSAGE = u'activity was deleted'
+COMMENT_COMMIT_PREFIX = u'Provided feedback.'
 
 class MergeConflict (Exception):
     def __init__(self, remote_commit, local_commit):
@@ -580,7 +581,7 @@ def is_peer_rejected(repo, default_branch_name, working_branch_name):
     base_commit = repo.git.merge_base(default_branch_name, working_branch_name)
     last_commit = repo.branches[working_branch_name].commit
 
-    if 'Provided feedback.' not in last_commit.message:
+    if COMMENT_COMMIT_PREFIX not in last_commit.message:
         # TODO: why does "commit: " get prefixed to the message?
         return False
 
@@ -615,10 +616,10 @@ def mark_as_reviewed(clone):
 
     return clone.active_branch.commit
 
-def provide_feedback(clone, comments):
-    ''' Adds a new empty commit with the message "Provided feedback."
+def provide_feedback(clone, comment_text):
+    ''' Adds a new empty commit prefixed with COMMENT_COMMIT_PREFIX
     '''
-    clone.index.commit(u'Provided feedback.\n\n' + comments)
+    clone.index.commit(u'{}\n\n{}'.format(COMMENT_COMMIT_PREFIX, comment_text))
     active_branch_name = clone.active_branch.name
 
     #
@@ -645,7 +646,7 @@ def get_rejection_messages(repo, default_branch_name, working_branch_name):
         if commit.hexsha == base_commit:
             break
 
-        if 'Provided feedback.' in commit.message:
+        if COMMENT_COMMIT_PREFIX in commit.message:
             email = commit.author.email
-            message = commit.message[commit.message.index('Provided feedback.'):][len('Provided feedback.'):]
+            message = commit.message[commit.message.index(COMMENT_COMMIT_PREFIX):][len(COMMENT_COMMIT_PREFIX):]
             yield (email, message)

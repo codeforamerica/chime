@@ -17,12 +17,34 @@
         <p class="activity-overview__description">Below is a timeline of all of the work and discussion around this activity. Any work you do will appear at the the bottom of this list.</p>
 
         <div class="activity-log">
+
+            <div class="activity-log-item activity-log-item--comment">
+                <form action="." method="POST" class="comment comment--new">
+                    <div class="comment__author">{% if email %}{{ email }}{% else %}unknown{% endif %}</div>
+                    <div class="comment__body">
+                        <textarea class="comment__input" name="comment_text" placeholder="Leave your comment here"></textarea>
+                    </div>
+                    <div class="comment__actions toolbar toolbar--right">
+                        <input class="toolbar__item button button--orange" type="submit" name="request_feedback" value="Request Feedback">
+                        <input class="toolbar__item button button" type="submit" name="comment" value="Comment">
+                    </div>
+                </form>
+            </div>
+
             {% for log_item in activity.history %}
             <div class="activity-log-item activity-log-item--{{ log_item.commit_type }}">
+                {% if log_item.commit_type == 'comment' %}
+                <div class="comment">
+                    <div class="comment__author">{{ log_item.author_email }}</div>
+                    <div class="comment__body">{{ log_item.commit_body }}</div>
+                    <div class="comment__datetime">{{ log_item.commit_date }}</div>
+                </div>
+                {% else %}
                 <div class="activity-log-item__content">
-                    <p>{{ log_item.commit_message }} by {{ log_item.author_email }}.</p>
+                    <p>{{ log_item.commit_subject }} by {{ log_item.author_email }}.</p>
                     <div class="activity-log-item__datetime">{{ log_item.commit_date }}</div>
                 </div>
+                {% endif %}
             </div>
             {% endfor %}
 

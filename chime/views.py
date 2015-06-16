@@ -522,7 +522,7 @@ def add_article_or_category(repo, dir_path, request_path, create_what):
             return 'Article "{}" already exists'.format(request_path), file_path, file_path, False
         else:
             file_path = edit_functions.create_new_page(repo, dir_path, name, article_front, body)
-            message = u'"{}" article was created\n\ncreated new file {}'.format(name.split('/')[-2], file_path)
+            message = u'The "{}" article was created\n\ncreated new file {}'.format(name.split('/')[-2], file_path)
             redirect_path = file_path
             return message, file_path, redirect_path, True
     elif create_what == 'category':
@@ -531,7 +531,7 @@ def add_article_or_category(repo, dir_path, request_path, create_what):
             return 'Category "{}" already exists'.format(request_path), file_path, strip_index_file(file_path), False
         else:
             file_path = edit_functions.create_new_page(repo, dir_path, name, cat_front, body)
-            message = u'"{}" category was created\n\ncreated new file {}'.format(name.split('/')[-2], file_path)
+            message = u'The "{}" category was created\n\ncreated new file {}'.format(name.split('/')[-2], file_path)
             redirect_path = strip_index_file(file_path)
             return message, file_path, redirect_path, True
     else:
@@ -597,7 +597,7 @@ def branch_edit_file(branch, path=None):
 
         # finish constructing the commit message
         file_files = u'files' if len(file_paths) > 1 else u'file'
-        commit_message = u'{} {} deleted\n\ndeleted {} "{}"'.format(u'; '.join(message_parts), was_were, file_files, u'", "'.join(file_paths))
+        commit_message = u'The {} {} deleted\n\ndeleted {} "{}"'.format(u'; '.join(message_parts), was_were, file_files, u'", "'.join(file_paths))
 
         # if we're in the path that's been deleted, redirect to the first still-existing directory in the path
         path_dirs = path.split('/')
@@ -622,7 +622,7 @@ def branch_edit_file(branch, path=None):
 @log_application_errors
 @login_required
 @synched_checkout_required
-def activity_overview(branch):
+def show_activity_overview(branch):
     branch = branch_var2name(branch)
     repo = get_repo(current_app)
     safe_branch = branch_name2path(branch)
@@ -653,6 +653,33 @@ def activity_overview(branch):
     kwargs.update(activity=activity, app_authorized=app_authorized, languages=languages)
 
     return render_template('activity-overview.html', **kwargs)
+
+@app.route('/tree/<branch>/', methods=['POST'])
+@log_application_errors
+@login_required
+@synched_checkout_required
+def edit_activity_overview(branch):
+    branch = branch_var2name(branch)
+    repo = get_repo(current_app)
+    safe_branch = branch_name2path(branch_var2name(branch))
+
+    # which submit button was pressed?
+    action = u''
+    possible_actions = ['comment', 'request_feedback', 'endorse', 'publish']
+    for check_action in possible_actions:
+        if check_action in request.form:
+            action = check_action
+
+    comment_text = request.form.get('comment_text', u'').strip()
+
+    # no matter what button was pressed, we'll comment if comment text was sent
+    if comment_text:
+        repo_functions.provide_feedback(repo, comment_text)
+
+    if not action:
+        raise Exception(u'Unrecognized request posted to branch_edit_file()')
+
+    return redirect('/tree/{}/'.format(safe_branch), code=303)
 
 @app.route('/tree/<branch>/history/', methods=['GET'])
 @app.route('/tree/<branch>/history/<path:path>', methods=['GET'])
@@ -755,7 +782,7 @@ def branch_save(branch, path):
     # Try to merge from the master to the current branch.
     #
     try:
-        message = u'"{}" {} was edited\n\nsaved file "{}"'.format(request.form.get('en-title'), request.form.get('layout'), path)
+        message = u'The "{}" {} was edited\n\nsaved file "{}"'.format(request.form.get('en-title'), request.form.get('layout'), path)
         c2 = repo_functions.save_working_file(repo, path, message, commit.hexsha, master_name)
         # they may've renamed the page by editing the URL slug
         original_slug = path
