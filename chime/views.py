@@ -548,39 +548,49 @@ def branch_edit_file(branch, path=None):
     repo = get_repo(current_app)
     commit = repo.commit()
 
+    path = path or u''
     action = request.form.get('action', '').lower()
     create_what = request.form.get('create_what', '').lower()
-    create_path = request.form.get('create_path', path or '')
+    create_path = request.form.get('create_path', path)
     do_save = True
 
+    file_path = path
+    commit_message = u''
     if action == 'upload' and 'file' in request.files:
         file_path = edit_functions.upload_new_file(repo, path, request.files['file'])
-        message = 'Uploaded new file "{}"'.format(file_path)
-        redirect_path = path or ''
+        redirect_path = path
+        commit_message = u'Uploaded file "{}"'.format(file_path)
 
     elif action == 'create' and (create_what == 'article' or create_what == 'category') and create_path is not None:
-        message, file_path, redirect_path, do_save = add_article_or_category(repo, create_path, request.form['path'], create_what)
+        add_message, file_path, redirect_path, do_save = add_article_or_category(repo, create_path, request.form['request_path'], create_what)
         if do_save:
             commit = repo.commit()
+            commit_message = add_message
         else:
-            flash(message, u'notice')
+            flash(add_message, u'notice')
 
-    elif action == 'delete' and 'path' in request.form:
-        request_path = request.form['path']
-        file_path, do_save = edit_functions.delete_file(repo, path, request_path)
-        message = 'Deleted file "{}"'.format(file_path)
-        redirect_path = path or ''
+    elif action == 'delete' and 'request_path' in request.form:
+        candidate_file_paths = edit_functions.list_contained_files(repo, request.form['request_path'])
+        deleted_file_paths, do_save = edit_functions.delete_file(repo, request.form['request_path'])
+        message_subject = u'files' if len(candidate_file_paths) > 1 else u'file'
+        commit_message = u'Deleted {} "{}"'.format(message_subject, u'", "'.join(candidate_file_paths))
+        # if we're in the path that's been deleted, redirect to the first still-existing directory in the path
+        path_dirs = path.split('/')
+        req_dirs = request.form['request_path'].split('/')
+        if len(path_dirs) >= len(req_dirs) and path_dirs[len(req_dirs) - 1] == req_dirs[-1]:
+            redirect_path = u'/'.join(req_dirs[:-1])
+        else:
+            redirect_path = path
 
     else:
-        raise Exception()
+        raise Exception(u'Unrecognized request posted to branch_edit_file()')
 
     if do_save:
         master_name = current_app.config['default_branch']
         Logger.debug('save')
-        repo_functions.save_working_file(repo, file_path, message, commit.hexsha, master_name)
+        repo_functions.save_working_file(repo, file_path, commit_message, commit.hexsha, master_name)
 
     safe_branch = branch_name2path(branch_var2name(branch))
-
     return redirect('/tree/%s/edit/%s' % (safe_branch, redirect_path), code=303)
 
 @app.route('/tree/<branch>/history/', methods=['GET'])

@@ -20,7 +20,6 @@ from chime.repo_functions import ChimeRepo
 repo_root = abspath(join(dirname(__file__), '..'))
 sys.path.insert(0, repo_root)
 
-from git import Repo
 from git.cmd import GitCommandError
 from box.util.rotunicode import RotUnicode
 from httmock import response, HTTMock
@@ -250,8 +249,8 @@ class TestRepo (TestCase):
         branch2 = repo_functions.get_existing_branch(self.clone2, 'master', branch1.name)
 
         self.assertTrue(branch2.name in self.clone2.branches)
-        self.assertEquals(branch2.commit.hexsha, branch1.commit.hexsha)
-        self.assertEquals(branch2.commit.message, message)
+        self.assertEqual(branch2.commit.hexsha, branch1.commit.hexsha)
+        self.assertEqual(branch2.commit.message, message)
 
     def test_get_start_branch_2(self):
         ''' Make a simple edit in a clone, verify that it appears in the other.
@@ -264,8 +263,8 @@ class TestRepo (TestCase):
         self.clone1.branches.master.checkout()
         self.clone2.branches.master.checkout()
 
-        self.assertEquals(self.clone1.refs['master'].commit.hexsha, self.origin.refs['master'].commit.hexsha)
-        self.assertEquals(self.clone1.refs['master'].commit.hexsha, self.clone2.refs['master'].commit.hexsha)
+        self.assertEqual(self.clone1.refs['master'].commit.hexsha, self.origin.refs['master'].commit.hexsha)
+        self.assertEqual(self.clone1.refs['master'].commit.hexsha, self.clone2.refs['master'].commit.hexsha)
 
         #
         # Make a change to the first clone and push it.
@@ -280,7 +279,7 @@ class TestRepo (TestCase):
         #
         # Origin now has the updated master, but the second clone does not.
         #
-        self.assertEquals(self.clone1.refs['master'].commit.hexsha, self.origin.refs['master'].commit.hexsha)
+        self.assertEqual(self.clone1.refs['master'].commit.hexsha, self.origin.refs['master'].commit.hexsha)
         self.assertNotEquals(self.clone1.refs['master'].commit.hexsha, self.clone2.refs['master'].commit.hexsha)
 
         #
@@ -291,7 +290,7 @@ class TestRepo (TestCase):
         self.assertTrue(branch2.name in self.clone2.branches)
         # compare the second-to-last commit on branch2 (by adding ".parents[0]", as
         # the most recent one is the creation of the task metadata file
-        self.assertEquals(branch2.commit.parents[0].hexsha, self.origin.refs['master'].commit.hexsha)
+        self.assertEqual(branch2.commit.parents[0].hexsha, self.origin.refs['master'].commit.hexsha)
 
     def test_delete_missing_branch(self):
         ''' Delete a branch in a clone that's still in origin, see if it can be deleted anyway.
@@ -338,7 +337,7 @@ class TestRepo (TestCase):
         #
         message = str(uuid4())
 
-        edit_functions.delete_file(self.clone1, '', 'index.md')
+        edit_functions.delete_file(self.clone1, 'index.md')
 
         args = self.clone1, 'index.md', message, branch1.commit.hexsha, 'master'
         repo_functions.save_working_file(*args)
@@ -349,23 +348,24 @@ class TestRepo (TestCase):
         branch2 = repo_functions.get_existing_branch(self.clone2, 'master', branch1.name)
 
         self.assertTrue(branch2.name in self.clone2.branches)
-        self.assertEquals(branch2.commit.hexsha, branch1.commit.hexsha)
-        self.assertEquals(branch2.commit.message, message)
-        self.assertEquals(branch2.commit.author.email, self.session['email'])
-        self.assertEquals(branch2.commit.committer.email, self.session['email'])
+        self.assertEqual(branch2.commit.hexsha, branch1.commit.hexsha)
+        self.assertEqual(branch2.commit.message, message)
+        self.assertEqual(branch2.commit.author.email, self.session['email'])
+        self.assertEqual(branch2.commit.committer.email, self.session['email'])
 
         branch2.checkout()
 
         with open(join(self.clone2.working_dir, 'hello.md')) as file:
             front, body = jekyll_functions.load_jekyll_doc(file)
 
-            self.assertEquals(front['title'], 'Hello')
-            self.assertEquals(body, 'Hello hello.')
+            self.assertEqual(front['title'], 'Hello')
+            self.assertEqual(body, 'Hello hello.')
 
         self.assertFalse(exists(join(self.clone2.working_dir, 'index.md')))
 
     def test_try_to_create_existing_category(self):
-
+        ''' Can't create the same category twice
+        '''
         first_result = views.add_article_or_category(self.clone1, 'categories', 'my new category', view_functions.CATEGORY_LAYOUT)
         self.assertEqual('Created new category "categories/my-new-category/index.markdown"', first_result[0])
         self.assertEqual(u'categories/my-new-category/index.markdown', first_result[1])
@@ -378,7 +378,8 @@ class TestRepo (TestCase):
         self.assertEqual(False, second_result[3])
 
     def test_try_to_create_existing_article(self):
-
+        ''' Can't create the same article twice
+        '''
         first_result = views.add_article_or_category(self.clone1, 'categories/example', 'new article', view_functions.ARTICLE_LAYOUT)
         self.assertEqual('Created new article "categories/example/new-article/index.markdown"', first_result[0])
         self.assertEqual(u'categories/example/new-article/index.markdown', first_result[1])
@@ -415,14 +416,14 @@ class TestRepo (TestCase):
         #
         message = str(uuid4())
 
-        edit_functions.delete_file(self.clone1, 'hello/', 'hello.md')
+        edit_functions.delete_file(self.clone1, 'hello/hello.md')
 
         args = self.clone1, 'hello/hello.md', message, branch1.commit.hexsha, 'master'
         repo_functions.save_working_file(*args)
 
         self.assertFalse(exists(join(self.clone1.working_dir, 'hello/hello.md')))
 
-        edit_functions.delete_file(self.clone1, 'hello/', '')
+        edit_functions.delete_file(self.clone1, 'hello/')
 
         self.assertFalse(exists(join(self.clone1.working_dir, 'hello/')))
 
@@ -568,10 +569,10 @@ class TestRepo (TestCase):
         args1 = self.clone1, 'file1.md', '...', branch1.commit.hexsha, 'master'
         commit1 = repo_functions.save_working_file(*args1)
 
-        self.assertEquals(self.origin.branches[branch1_name].commit, commit1)
-        self.assertEquals(self.origin.branches[branch1_name].commit.author.email, self.session['email'])
-        self.assertEquals(self.origin.branches[branch1_name].commit.committer.email, self.session['email'])
-        self.assertEquals(commit1, branch1.commit)
+        self.assertEqual(self.origin.branches[branch1_name].commit, commit1)
+        self.assertEqual(self.origin.branches[branch1_name].commit.author.email, self.session['email'])
+        self.assertEqual(self.origin.branches[branch1_name].commit.committer.email, self.session['email'])
+        self.assertEqual(commit1, branch1.commit)
 
         #
         # Show that the changes from the second branch also made it to origin.
@@ -579,19 +580,19 @@ class TestRepo (TestCase):
         args2 = self.clone2, 'file2.md', '...', branch2.commit.hexsha, 'master'
         commit2 = repo_functions.save_working_file(*args2)
 
-        self.assertEquals(self.origin.branches[branch2_name].commit, commit2)
-        self.assertEquals(self.origin.branches[branch2_name].commit.author.email, self.session['email'])
-        self.assertEquals(self.origin.branches[branch2_name].commit.committer.email, self.session['email'])
-        self.assertEquals(commit2, branch2.commit)
+        self.assertEqual(self.origin.branches[branch2_name].commit, commit2)
+        self.assertEqual(self.origin.branches[branch2_name].commit.author.email, self.session['email'])
+        self.assertEqual(self.origin.branches[branch2_name].commit.committer.email, self.session['email'])
+        self.assertEqual(commit2, branch2.commit)
 
         #
         # Show that the merge from the second branch made it back to the first.
         #
         branch1b = repo_functions.get_existing_branch(self.clone1, 'master', branch2.name)
 
-        self.assertEquals(branch1b.commit, branch2.commit)
-        self.assertEquals(branch1b.commit.author.email, self.session['email'])
-        self.assertEquals(branch1b.commit.committer.email, self.session['email'])
+        self.assertEqual(branch1b.commit, branch2.commit)
+        self.assertEqual(branch1b.commit.author.email, self.session['email'])
+        self.assertEqual(branch1b.commit.committer.email, self.session['email'])
 
     def test_same_branch_conflict(self):
         ''' Test that a conflict in two branches appears at the right spot.
@@ -620,8 +621,8 @@ class TestRepo (TestCase):
         args1 = self.clone1, 'conflict.md', '...', branch1.commit.hexsha, 'master'
         commit1 = repo_functions.save_working_file(*args1)
 
-        self.assertEquals(self.origin.branches[branch1_name].commit, commit1)
-        self.assertEquals(commit1, branch1.commit)
+        self.assertEqual(self.origin.branches[branch1_name].commit, commit1)
+        self.assertEqual(commit1, branch1.commit)
 
         #
         # Show that the changes from the second branch conflict with the first.
@@ -666,8 +667,8 @@ class TestRepo (TestCase):
         args1 = self.clone1, 'conflict.md', '...', branch1.commit.hexsha, 'master'
         commit1 = repo_functions.save_working_file(*args1)
 
-        self.assertEquals(self.origin.branches[branch1_name].commit, commit1)
-        self.assertEquals(commit1, branch1.commit)
+        self.assertEqual(self.origin.branches[branch1_name].commit, commit1)
+        self.assertEqual(commit1, branch1.commit)
 
         #
         # Merge the first branch to master.
@@ -1021,6 +1022,51 @@ class TestRepo (TestCase):
         self.assertEqual(email2, 'reviewer@example.org')
         self.assertTrue('This still sucks.' in message2)
 
+    def test_delete_full_folders(self):
+        ''' Make sure that full folders can be deleted, and that what's reported as deleted matches what's expected.
+        '''
+        # build some nested categories
+        views.add_article_or_category(self.clone1, '', 'quick', view_functions.CATEGORY_LAYOUT)
+        views.add_article_or_category(self.clone1, 'quick', 'brown', view_functions.CATEGORY_LAYOUT)
+        views.add_article_or_category(self.clone1, 'quick/brown', 'fox', view_functions.CATEGORY_LAYOUT)
+        views.add_article_or_category(self.clone1, 'quick', 'red', view_functions.CATEGORY_LAYOUT)
+        views.add_article_or_category(self.clone1, 'quick', 'yellow', view_functions.CATEGORY_LAYOUT)
+        views.add_article_or_category(self.clone1, 'quick/yellow', 'banana', view_functions.CATEGORY_LAYOUT)
+        views.add_article_or_category(self.clone1, 'quick', 'orange', view_functions.CATEGORY_LAYOUT)
+        views.add_article_or_category(self.clone1, 'quick/brown', 'potato', view_functions.CATEGORY_LAYOUT)
+        views.add_article_or_category(self.clone1, 'quick/yellow', 'lemon', view_functions.CATEGORY_LAYOUT)
+        views.add_article_or_category(self.clone1, 'quick/red', 'tomato', view_functions.CATEGORY_LAYOUT)
+        views.add_article_or_category(self.clone1, 'quick/red', 'balloon', view_functions.CATEGORY_LAYOUT)
+        views.add_article_or_category(self.clone1, 'quick/orange', 'peanut', view_functions.CATEGORY_LAYOUT)
+        # add in some articles
+        views.add_article_or_category(self.clone1, 'quick/brown/fox', 'fur', view_functions.ARTICLE_LAYOUT)
+        views.add_article_or_category(self.clone1, 'quick/brown/fox', 'ears', view_functions.ARTICLE_LAYOUT)
+        views.add_article_or_category(self.clone1, 'quick/yellow/lemon', 'rind', view_functions.ARTICLE_LAYOUT)
+        views.add_article_or_category(self.clone1, 'quick/yellow/lemon', 'pulp', view_functions.ARTICLE_LAYOUT)
+        views.add_article_or_category(self.clone1, 'quick/orange/peanut', 'shell', view_functions.ARTICLE_LAYOUT)
+        views.add_article_or_category(self.clone1, 'quick/red/balloon', 'string', view_functions.ARTICLE_LAYOUT)
+
+        # add and commit
+        self.clone1.index.add(['*'])
+        self.clone1.index.commit(u'cats and arts committed for testing purposes')
+
+        # verify that everything's there as expected
+        file_paths = edit_functions.list_contained_files(self.clone1, join(self.clone1.working_dir, 'quick'))
+        file_paths.sort()
+        self.assertEqual(len(file_paths), 18)
+        self.assertTrue(exists(join(self.clone1.working_dir, 'quick')))
+
+        # delete everything, and get a file list back from the git rm command
+        deleted_file_paths, do_save = edit_functions.delete_file(self.clone1, 'quick')
+        deleted_file_paths.sort()
+        self.assertTrue(do_save)
+        self.assertEqual(len(deleted_file_paths), 18)
+        self.assertFalse(exists(join(self.clone1.working_dir, 'quick')))
+
+        # verify that everything in file_paths is in deleted_file_paths
+        for check_index in range(len(file_paths)):
+            self.assertEqual(file_paths[check_index], deleted_file_paths[check_index])
+
     def test_task_metadata_creation(self):
         ''' The task metadata file is created when a branch is started, and contains the expected information.
         '''
@@ -1147,8 +1193,8 @@ class TestRepo (TestCase):
         # Save a task metadata file
         fake_metadata = {'task_description': u'Changed my mind', 'lead_singer': u'Johnny Rotten'}
         commit1 = repo_functions.save_task_metadata_for_branch(self.clone1, 'master', fake_metadata)
-        self.assertEquals(self.origin.branches[branch1_name].commit, commit1)
-        self.assertEquals(commit1, branch1.commit)
+        self.assertEqual(self.origin.branches[branch1_name].commit, commit1)
+        self.assertEqual(commit1, branch1.commit)
 
         # merge the branch to master manually so the task metadata file will be included
         message = 'Manual merge including task metadata'
@@ -1548,7 +1594,7 @@ class TestApp (TestCase):
 
         with HTTMock(self.mock_persona_verify):
             response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
 
         with HTTMock(self.auth_csv_example_disallowed):
             response = self.test_client.get('/')
@@ -1562,14 +1608,14 @@ class TestApp (TestCase):
 
         with HTTMock(self.mock_persona_verify):
             response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
 
         with HTTMock(self.auth_csv_example_allowed):
             response = self.test_client.get('/')
             self.assertTrue('Start' in response.data)
 
             response = self.test_client.post('/sign-out')
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
 
             response = self.test_client.get('/')
             self.assertFalse('Start' in response.data)
@@ -1605,20 +1651,20 @@ class TestApp (TestCase):
         with HTTMock(self.mock_google_analytics):
             # create a new file
             response = self.test_client.post('/tree/{}/edit/'.format(generated_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'path': fake_page_slug},
+                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': fake_page_slug},
                                              follow_redirects=True)
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
             self.assertTrue(fake_page_path in response.data)
 
             # get the index page for the branch and verify that the new file is listed
             response = self.test_client.get('/tree/{}/edit/'.format(generated_branch_name), follow_redirects=True)
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
             self.assertTrue(PATTERN_BRANCH_COMMENT.format(generated_branch_name) in response.data)
             self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": fake_page_slug, "file_title": fake_page_slug, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data)
 
             # get the edit page for the new file and extract the hexsha value
             response = self.test_client.get('/tree/{}/edit/{}'.format(generated_branch_name, fake_page_path))
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
             self.assertTrue(fake_page_path in response.data)
             hexsha = search(r'<input name="hexsha" value="(\w+)"', response.data).group(1)
             # now save the file with new content
@@ -1630,7 +1676,7 @@ class TestApp (TestCase):
                                                    'url-slug': u'{}/index'.format(fake_page_slug)},
                                              follow_redirects=True)
 
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
             self.assertTrue(fake_page_path in response.data)
             self.assertTrue(fake_page_content in response.data)
 
@@ -1659,7 +1705,7 @@ class TestApp (TestCase):
         data.update({button['name']: button['value']})
         with HTTMock(self.auth_csv_example_allowed):
             response = self.test_client.post(form['action'], data=data, follow_redirects=True)
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
             self.assertFalse('Not Allowed' in response.data)
             self.assertFalse(fake_task_description in response.data)
 
@@ -1728,7 +1774,7 @@ class TestApp (TestCase):
             fake_task_beneficiary = u'Nobody'
             fake_author_email = u'erica@example.com'
             fake_branch_name = repo_functions.make_branch_name(fake_task_description, fake_task_beneficiary, fake_author_email)
-            response = self.test_client.post('/tree/{}/edit/'.format(fake_branch_name), data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'path': fake_page_slug}, follow_redirects=True)
+            response = self.test_client.post('/tree/{}/edit/'.format(fake_branch_name), data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': fake_page_slug}, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # the branch name should not be in the returned HTML
             # :TODO: need an assertion for this
@@ -1754,23 +1800,23 @@ class TestApp (TestCase):
                 raise Exception('No match for generated branch name.')
 
             # create a new article
-            response = self.test_client.post('/tree/{}/edit/'.format(generated_branch_name), data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'path': fake_page_slug}, follow_redirects=True)
-            self.assertEquals(response.status_code, 200)
+            response = self.test_client.post('/tree/{}/edit/'.format(generated_branch_name), data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': fake_page_slug}, follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('article-edit') in response.data)
 
             response = self.test_client.get('/tree/{}/edit/'.format(generated_branch_name), follow_redirects=True)
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('articles-list') in response.data)
             self.assertTrue(PATTERN_BRANCH_COMMENT.format(generated_branch_name) in response.data)
             self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": fake_page_slug, "file_title": fake_page_slug, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data)
 
             response = self.test_client.get('/tree/{}/edit/{}'.format(generated_branch_name, fake_page_path))
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
             hexsha = search(r'<input name="hexsha" value="(\w+)"', response.data).group(1)
 
             # delete the branch
             response = self.test_client.post('/merge', data={'action': 'abandon', 'branch': '{}'.format(generated_branch_name)}, follow_redirects=True)
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
             self.assertFalse(generated_branch_name in response.data)
 
             response = self.test_client.post('/tree/{}/save/{}'.format(generated_branch_name, fake_page_path), data={'layout': view_functions.ARTICLE_LAYOUT, 'hexsha': hexsha, 'en-title': 'Greetings', 'en-body': 'Hello world.\n', 'fr-title': '', 'fr-body': '', 'url-slug': 'hello'}, follow_redirects=True)
@@ -1796,7 +1842,7 @@ class TestApp (TestCase):
             disposable_task_description = u'unimportant task'
             disposable_task_beneficiary = u'unimportant person'
             response = self.test_client.post('/start', data={'task_description': disposable_task_description, 'task_beneficiary': disposable_task_beneficiary}, follow_redirects=True)
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('articles-list') in response.data)
             self.assertTrue(PATTERN_TASK_COMMENT.format(disposable_task_description) in response.data)
             self.assertTrue(PATTERN_BENEFICIARY_COMMENT.format(disposable_task_beneficiary) in response.data)
@@ -1954,7 +2000,7 @@ class TestApp (TestCase):
         '''
         with HTTMock(self.mock_persona_verify):
             response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
 
         with HTTMock(self.mock_google_invalid_credentials_response):
             response = self.test_client.get('/setup', follow_redirects=True)
@@ -1969,7 +2015,7 @@ class TestApp (TestCase):
         '''
         with HTTMock(self.mock_persona_verify):
             response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
 
         with HTTMock(self.mock_google_no_properties_response):
             response = self.test_client.get('/setup', follow_redirects=True)
@@ -1986,8 +2032,8 @@ class TestApp (TestCase):
 
         expected_url = urljoin(self.app.config['BROWSERID_URL'], '/not-allowed')
 
-        self.assertEquals(response.status_code, 302)
-        self.assertEquals(response.headers['Location'], expected_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.headers['Location'], expected_url)
 
     def test_create_category(self):
         ''' Creating a new category creates a directory with an appropriate index file inside.
@@ -2011,9 +2057,9 @@ class TestApp (TestCase):
             # create a new category
             page_slug = u'hello'
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'path': page_slug},
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': page_slug},
                                              follow_redirects=True)
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
 
             # pull the changes
             self.clone1.git.pull('origin', working_branch_name)
@@ -2042,17 +2088,17 @@ class TestApp (TestCase):
             working_branch.checkout()
 
             # create a new category
-            request_data = {'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'path': u'hello'}
+            request_data = {'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': u'hello'}
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch.name),
                                              data=request_data,
                                              follow_redirects=True)
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
 
             # now do it again
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch.name),
                                              data=request_data,
                                              follow_redirects=True)
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
             self.assertTrue(u'Category &#34;hello&#34; already exists' in response.data)
 
             # pull the changes
@@ -2066,6 +2112,79 @@ class TestApp (TestCase):
             self.assertTrue(exists(idx_location))
             # the directory and index page pass the category test
             self.assertTrue(view_functions.is_category_dir(dir_location))
+
+    def test_delete_categories_and_articles(self):
+        ''' Non-empty categories and articles can be deleted
+        '''
+        fake_author_email = u'erica@example.com'
+        with HTTMock(self.mock_persona_verify):
+            self.test_client.post('/sign-in', data={'email': fake_author_email})
+
+        with HTTMock(self.auth_csv_example_allowed):
+            # start a new branch via the http interface
+            # invokes view_functions/get_repo which creates a clone
+            task_description = u'vomit digestive fluid onto rotting flesh'
+            task_beneficiary = u'flies'
+
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            self.assertTrue(working_branch.name in self.clone1.branches)
+            self.assertTrue(working_branch.name in self.origin.branches)
+            working_branch_name = working_branch.name
+            working_branch.checkout()
+
+            # create a categories directory
+            categories_slug = u'categories'
+            response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': categories_slug},
+                                             follow_redirects=True)
+
+            # and put a new category inside it
+            cata_title = u'Mouth Parts'
+            cata_slug = u'mouth-parts'
+            response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, categories_slug),
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': cata_title},
+                                             follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+
+            # put another cateogry inside that
+            catb_title = u'Esophagus'
+            catb_slug = u'esophagus'
+            response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, join(categories_slug, cata_slug)),
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': catb_title},
+                                             follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+
+            # and an article inside that
+            art_title = u'Stomach'
+            art_slug = u'stomach'
+            response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, join(categories_slug, cata_slug, catb_slug)),
+                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': art_title},
+                                             follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+
+            # pull the changes
+            self.clone1.git.pull('origin', working_branch_name)
+
+            # verify that the categories and article exist
+            art_location = join(self.clone1.working_dir, categories_slug, cata_slug, catb_slug, art_slug)
+            catb_location = join(self.clone1.working_dir, categories_slug, cata_slug, catb_slug)
+            cata_location = join(self.clone1.working_dir, categories_slug, cata_slug)
+            self.assertTrue(exists(art_location))
+            self.assertTrue(view_functions.is_article_dir(art_location))
+
+            # delete category a while in category b
+            response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, join(categories_slug, cata_slug, catb_slug)),
+                                             data={'action': 'delete', 'request_path': join(categories_slug, cata_slug)},
+                                             follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+
+            # pull the changes
+            self.clone1.git.pull('origin', working_branch_name)
+
+            # verify that the deleted category and article no longer exist
+            self.assertFalse(exists(art_location))
+            self.assertFalse(exists(catb_location))
+            self.assertFalse(exists(cata_location))
 
     def test_new_item_has_name_and_title(self):
         ''' A slugified directory name and display title are created when a new category or article is created.
@@ -2088,17 +2207,17 @@ class TestApp (TestCase):
 
             # create a new category
             cat_title = u'grrowl!! Yeah'
-            cat_title_slugified = u'grrowl-yeah'
+            cat_slug = u'grrowl-yeah'
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'path': cat_title},
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': cat_title},
                                              follow_redirects=True)
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
 
             # pull the changes
             self.clone1.git.pull('origin', working_branch_name)
 
             # a directory was created
-            dir_location = join(self.clone1.working_dir, cat_title_slugified)
+            dir_location = join(self.clone1.working_dir, cat_slug)
             idx_location = u'{}/index.{}'.format(dir_location, view_functions.CONTENT_FILE_EXTENSION)
             self.assertTrue(exists(dir_location) and isdir(dir_location))
             # an index page was created inside
@@ -2110,20 +2229,20 @@ class TestApp (TestCase):
 
             # the title saved in the index front matter is displayed on the article list page
             response = self.test_client.get('/tree/{}/edit/'.format(working_branch_name), follow_redirects=True)
-            self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": cat_title_slugified, "file_title": cat_title, "file_type": view_functions.CATEGORY_LAYOUT}) in response.data)
+            self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": cat_slug, "file_title": cat_title, "file_type": view_functions.CATEGORY_LAYOUT}) in response.data)
 
             # create a new article
             art_title = u'快速狐狸'
-            art_title_slugified = u'kuai-su-hu-li'
-            response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name), data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'path': art_title}, follow_redirects=True)
-            self.assertEquals(response.status_code, 200)
+            art_slug = u'kuai-su-hu-li'
+            response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name), data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': art_title}, follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format(u'article-edit') in response.data.decode('utf-8'))
 
             # pull the changes
             self.clone1.git.pull('origin', working_branch_name)
 
             # a directory was created
-            dir_location = join(self.clone1.working_dir, art_title_slugified)
+            dir_location = join(self.clone1.working_dir, art_slug)
             idx_location = u'{}/index.{}'.format(dir_location, view_functions.CONTENT_FILE_EXTENSION)
             self.assertTrue(exists(dir_location) and isdir(dir_location))
             # an index page was created inside
@@ -2135,10 +2254,10 @@ class TestApp (TestCase):
 
             # the title saved in the index front matter is displayed on the article list page
             response = self.test_client.get('/tree/{}/edit/'.format(working_branch_name), follow_redirects=True)
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format(u'articles-list') in response.data.decode('utf-8'))
             self.assertTrue(PATTERN_BRANCH_COMMENT.format(working_branch) in response.data.decode('utf-8'))
-            self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": art_title_slugified, "file_title": art_title, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data.decode('utf-8'))
+            self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": art_slug, "file_title": art_title, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data.decode('utf-8'))
 
     def test_set_and_retrieve_order_and_description(self):
         ''' Order and description can be set to and retrieved from an article's or category's front matter.
@@ -2162,16 +2281,16 @@ class TestApp (TestCase):
             # create a categories directory
             categories_slug = u'categories'
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'path': categories_slug},
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': categories_slug},
                                              follow_redirects=True)
 
             # and put a new category inside it
             cat_title = u'Small Intestine'
-            cat_title_slugified = u'small-intestine'
+            cat_slug = u'small-intestine'
             response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, categories_slug),
-                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'path': cat_title},
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': cat_title},
                                              follow_redirects=True)
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
 
             # pull the changes
             self.clone1.git.pull('origin', working_branch_name)
@@ -2183,12 +2302,12 @@ class TestApp (TestCase):
             new_cat_title = u'The Small Intestine'
             cat_description = u'The part of the GI tract following the stomach and followed by the large intestine where much of the digestion and absorption of food takes place.'
             cat_order = 3
-            cat_path = join(categories_slug, cat_title_slugified, u'index.{}'.format(view_functions.CONTENT_FILE_EXTENSION))
+            cat_path = join(categories_slug, cat_slug, u'index.{}'.format(view_functions.CONTENT_FILE_EXTENSION))
             response = self.test_client.post('/tree/{}/save/{}'.format(working_branch_name, cat_path),
                                              data={'layout': view_functions.CATEGORY_LAYOUT, 'hexsha': hexsha,
                                                    'en-title': new_cat_title, 'en-description': cat_description, 'order': cat_order},
                                              follow_redirects=True)
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
             # check the returned HTML for the description and order values (format will change as pages are designed)
             self.assertTrue(u'<input name="en-description" type="hidden" value="{}" />'.format(cat_description) in response.data)
             self.assertTrue(u'<input name="order" type="hidden" value="{}" />'.format(cat_order) in response.data)
@@ -2197,7 +2316,7 @@ class TestApp (TestCase):
             self.clone1.git.pull('origin', working_branch_name)
 
             # a directory was created
-            dir_location = join(self.clone1.working_dir, categories_slug, cat_title_slugified)
+            dir_location = join(self.clone1.working_dir, categories_slug, cat_slug)
             idx_location = u'{}/index.{}'.format(dir_location, view_functions.CONTENT_FILE_EXTENSION)
             self.assertTrue(exists(dir_location) and isdir(dir_location))
             # an index page was created inside
@@ -2213,7 +2332,7 @@ class TestApp (TestCase):
 
             # the title saved in the index front matter is displayed on the article list page
             response = self.test_client.get('/tree/{}/edit/{}'.format(working_branch_name, categories_slug), follow_redirects=True)
-            self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": cat_title_slugified, "file_title": new_cat_title, "file_type": view_functions.CATEGORY_LAYOUT}) in response.data)
+            self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": cat_slug, "file_title": new_cat_title, "file_type": view_functions.CATEGORY_LAYOUT}) in response.data)
 
     def test_create_many_categories_with_slash_separated_input(self):
         ''' Entering a slash-separated string into the new article or category
@@ -2238,9 +2357,9 @@ class TestApp (TestCase):
             # create multiple new categories
             page_slug = u'when/the/drum/beat'
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'path': page_slug},
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': page_slug},
                                              follow_redirects=True)
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
 
             # pull the changes
             self.clone1.git.pull('origin', working_branch_name)
@@ -2261,9 +2380,9 @@ class TestApp (TestCase):
             page_slug = u'goes/like/this'
             page_path = u'{}/index.{}'.format(page_slug, view_functions.CONTENT_FILE_EXTENSION)
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'path': page_slug},
+                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': page_slug},
                                              follow_redirects=True)
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
             self.assertTrue(page_path in response.data)
 
             # pull the changes
@@ -2307,27 +2426,27 @@ class TestApp (TestCase):
             # create some nested categories
             slug_hello = u'hello'
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'path': slug_hello},
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': slug_hello},
                                              follow_redirects=True)
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
 
             slug_world = u'world'
             response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, slug_hello),
-                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'path': slug_world},
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': slug_world},
                                              follow_redirects=True)
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
 
             slug_how = u'how'
             response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, sep.join([slug_hello, slug_world])),
-                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'path': slug_how},
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': slug_how},
                                              follow_redirects=True)
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
 
             slug_are = u'are'
             response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, sep.join([slug_hello, slug_world, slug_how])),
-                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'path': slug_are},
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': slug_are},
                                              follow_redirects=True)
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
 
             # pull the changes
             self.clone1.git.pull('origin', working_branch_name)
@@ -2336,8 +2455,8 @@ class TestApp (TestCase):
             dir_columns = view_functions.directory_columns(self.clone1, working_branch_name, sep.join([slug_hello, slug_world, slug_how, slug_are]))
 
             # test that the contents match our expectations
-            self.assertEquals(len(dir_columns), 4)
-            self.assertEquals(len(dir_columns[0]['files']), 5)
+            self.assertEqual(len(dir_columns), 4)
+            self.assertEqual(len(dir_columns[0]['files']), 5)
             expected = {'hello': u'category', 'index.md': u'file', 'other': u'folder', 'other.md': u'file', 'sub': u'folder'}
             for item in dir_columns[0]['files']:
                 self.assertTrue(item['name'] in expected)
@@ -2369,9 +2488,9 @@ class TestApp (TestCase):
             page_slug = u'hello'
             page_path = u'{}/index.{}'.format(page_slug, view_functions.CONTENT_FILE_EXTENSION)
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'path': page_slug},
+                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': page_slug},
                                              follow_redirects=True)
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
             self.assertTrue(page_path in response.data)
 
             # pull the changes
@@ -2409,9 +2528,9 @@ class TestApp (TestCase):
             page_slug = u'hello'
             page_path = u'{}/index.{}'.format(page_slug, view_functions.CONTENT_FILE_EXTENSION)
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'path': page_slug},
+                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': page_slug},
                                              follow_redirects=True)
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
             self.assertTrue(page_path in response.data)
             hexsha = search(r'<input name="hexsha" value="(\w+)"', response.data).group(1)
 
@@ -2426,7 +2545,7 @@ class TestApp (TestCase):
                                                    'url-slug': u'{}'.format(new_page_slug)},
                                              follow_redirects=True)
 
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
             self.assertTrue(new_page_path in response.data)
 
             # pull the changes
@@ -2468,9 +2587,9 @@ class TestApp (TestCase):
             page_slug = u'hello'
             page_path = u'{}/index.{}'.format(page_slug, view_functions.CONTENT_FILE_EXTENSION)
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'path': page_slug},
+                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': page_slug},
                                              follow_redirects=True)
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
             self.assertTrue(page_path in response.data)
             hexsha = search(r'<input name="hexsha" value="(\w+)"', response.data).group(1)
 
@@ -2485,7 +2604,7 @@ class TestApp (TestCase):
                                                    'url-slug': u'{}'.format(new_page_slug)},
                                              follow_redirects=True)
 
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
             # the new page shouldn't have been created
             self.assertFalse(new_page_path in response.data)
             # there shoudld be a flashed error message
@@ -2525,14 +2644,14 @@ class TestApp (TestCase):
             page_slug = u'hello'
             page_path = u'{}/index.{}'.format(page_slug, view_functions.CONTENT_FILE_EXTENSION)
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'path': page_slug},
+                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': page_slug},
                                              follow_redirects=True)
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
             self.assertTrue(page_path in response.data)
 
             # load the index page
             response = self.test_client.get('/tree/{}/edit/'.format(working_branch_name), follow_redirects=True)
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
             # verify that the new folder is represented as a file in the HTML
             self.assertTrue(PATTERN_BRANCH_COMMENT.format(working_branch_name) in response.data)
             self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": page_slug, "file_title": page_slug, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data)

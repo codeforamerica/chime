@@ -74,3 +74,6 @@ PLATFORMS
 DEPENDENCIES
   jekyll
   therubyracer
+
+BUNDLED WITH
+   1.10.3
