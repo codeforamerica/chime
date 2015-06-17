@@ -1535,7 +1535,7 @@ button.button {
 /* line 1, ../sass/components/_markdown-bar.scss */
 .markdown-bar {
   background-color: #f5f5f5;
-  border-bottom: 1px solid #eeeeee;
+  border-bottom: 1px solid #e0e0e0;
   padding: 0.5em 40px;
   font-family: 'FontAwesome';
 }
