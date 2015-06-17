@@ -1055,7 +1055,7 @@ class TestRepo (TestCase):
         self.assertTrue(working_branch.name in self.origin.branches)
         working_branch.checkout()
 
-        # create a category
+        # create an article
         art_title = u'快速狐狸'
         art_slug = u'kuai-su-hu-li'
         add_message, file_path, redirect_path, do_save = views.add_article_or_category(new_clone, u'', art_title, view_functions.ARTICLE_LAYOUT)
@@ -1063,9 +1063,8 @@ class TestRepo (TestCase):
         self.assertEqual(u'{}/index.markdown'.format(art_slug), file_path)
         self.assertEqual(u'{}/index.{}'.format(art_slug, view_functions.CONTENT_FILE_EXTENSION), redirect_path)
         self.assertEqual(True, do_save)
-        # commit the category
+        # commit the article
         repo_functions.save_working_file(new_clone, file_path, add_message, new_clone.commit().hexsha, 'master')
-        pass
 
     def test_task_metadata_creation(self):
         ''' The task metadata file is created when a branch is started, and contains the expected information.
