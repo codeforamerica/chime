@@ -20,7 +20,6 @@ from chime.repo_functions import ChimeRepo
 repo_root = abspath(join(dirname(__file__), '..'))
 sys.path.insert(0, repo_root)
 
-from git import Repo
 from git.cmd import GitCommandError
 from box.util.rotunicode import RotUnicode
 from httmock import response, HTTMock
@@ -365,7 +364,8 @@ class TestRepo (TestCase):
         self.assertFalse(exists(join(self.clone2.working_dir, 'index.md')))
 
     def test_try_to_create_existing_category(self):
-
+        ''' Can't create the same category twice
+        '''
         first_result = views.add_article_or_category(self.clone1, 'categories', 'my new category', view_functions.CATEGORY_LAYOUT)
         self.assertEqual('Created new category "categories/my-new-category/index.markdown"', first_result[0])
         self.assertEqual(u'categories/my-new-category/index.markdown', first_result[1])
@@ -378,7 +378,8 @@ class TestRepo (TestCase):
         self.assertEqual(False, second_result[3])
 
     def test_try_to_create_existing_article(self):
-
+        ''' Can't create the same article twice
+        '''
         first_result = views.add_article_or_category(self.clone1, 'categories/example', 'new article', view_functions.ARTICLE_LAYOUT)
         self.assertEqual('Created new article "categories/example/new-article/index.markdown"', first_result[0])
         self.assertEqual(u'categories/example/new-article/index.markdown', first_result[1])
@@ -1020,6 +1021,51 @@ class TestRepo (TestCase):
         self.assertTrue('This sucks.' in message1)
         self.assertEqual(email2, 'reviewer@example.org')
         self.assertTrue('This still sucks.' in message2)
+
+    def test_delete_full_folders(self):
+        ''' Make sure that full folders can be deleted, and that what's reported as deleted matches what's expected.
+        '''
+        # build some nested categories
+        views.add_article_or_category(self.clone1, '', 'quick', view_functions.CATEGORY_LAYOUT)
+        views.add_article_or_category(self.clone1, 'quick', 'brown', view_functions.CATEGORY_LAYOUT)
+        views.add_article_or_category(self.clone1, 'quick/brown', 'fox', view_functions.CATEGORY_LAYOUT)
+        views.add_article_or_category(self.clone1, 'quick', 'red', view_functions.CATEGORY_LAYOUT)
+        views.add_article_or_category(self.clone1, 'quick', 'yellow', view_functions.CATEGORY_LAYOUT)
+        views.add_article_or_category(self.clone1, 'quick/yellow', 'banana', view_functions.CATEGORY_LAYOUT)
+        views.add_article_or_category(self.clone1, 'quick', 'orange', view_functions.CATEGORY_LAYOUT)
+        views.add_article_or_category(self.clone1, 'quick/brown', 'potato', view_functions.CATEGORY_LAYOUT)
+        views.add_article_or_category(self.clone1, 'quick/yellow', 'lemon', view_functions.CATEGORY_LAYOUT)
+        views.add_article_or_category(self.clone1, 'quick/red', 'tomato', view_functions.CATEGORY_LAYOUT)
+        views.add_article_or_category(self.clone1, 'quick/red', 'balloon', view_functions.CATEGORY_LAYOUT)
+        views.add_article_or_category(self.clone1, 'quick/orange', 'peanut', view_functions.CATEGORY_LAYOUT)
+        # add in some articles
+        views.add_article_or_category(self.clone1, 'quick/brown/fox', 'fur', view_functions.ARTICLE_LAYOUT)
+        views.add_article_or_category(self.clone1, 'quick/brown/fox', 'ears', view_functions.ARTICLE_LAYOUT)
+        views.add_article_or_category(self.clone1, 'quick/yellow/lemon', 'rind', view_functions.ARTICLE_LAYOUT)
+        views.add_article_or_category(self.clone1, 'quick/yellow/lemon', 'pulp', view_functions.ARTICLE_LAYOUT)
+        views.add_article_or_category(self.clone1, 'quick/orange/peanut', 'shell', view_functions.ARTICLE_LAYOUT)
+        views.add_article_or_category(self.clone1, 'quick/red/balloon', 'string', view_functions.ARTICLE_LAYOUT)
+
+        # add and commit
+        self.clone1.index.add(['*'])
+        self.clone1.index.commit(u'cats and arts committed for testing purposes')
+
+        # verify that everything's there as expected
+        file_paths = edit_functions.list_contained_files(self.clone1, join(self.clone1.working_dir, 'quick'))
+        file_paths.sort()
+        self.assertEqual(len(file_paths), 18)
+        self.assertTrue(exists(join(self.clone1.working_dir, 'quick')))
+
+        # delete everything, and get a file list back from the git rm command
+        deleted_file_paths, do_save = edit_functions.delete_file(self.clone1, 'quick')
+        deleted_file_paths.sort()
+        self.assertTrue(do_save)
+        self.assertEqual(len(deleted_file_paths), 18)
+        self.assertFalse(exists(join(self.clone1.working_dir, 'quick')))
+
+        # verify that everything in file_paths is in deleted_file_paths
+        for check_index in range(len(file_paths)):
+            self.assertEqual(file_paths[check_index], deleted_file_paths[check_index])
 
     def test_task_metadata_creation(self):
         ''' The task metadata file is created when a branch is started, and contains the expected information.

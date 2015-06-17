@@ -570,9 +570,10 @@ def branch_edit_file(branch, path=None):
             flash(add_message, u'notice')
 
     elif action == 'delete' and 'request_path' in request.form:
-        file_paths, do_save = edit_functions.delete_file(repo, request.form['request_path'])
-        message_subject = u'files' if len(file_paths) > 1 else u'file'
-        commit_message = u'Deleted {} "{}"'.format(message_subject, u'", "'.join(file_paths))
+        candidate_file_paths = edit_functions.list_contained_files(repo, request.form['request_path'])
+        deleted_file_paths, do_save = edit_functions.delete_file(repo, request.form['request_path'])
+        message_subject = u'files' if len(candidate_file_paths) > 1 else u'file'
+        commit_message = u'Deleted {} "{}"'.format(message_subject, u'", "'.join(candidate_file_paths))
         # if we're in the path that's been deleted, redirect to the first still-existing directory in the path
         path_dirs = path.split('/')
         req_dirs = request.form['request_path'].split('/')
