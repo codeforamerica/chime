@@ -7,8 +7,12 @@
 {% set template_name = 'article-edit' %}
 {% block body_class %}{{template_name}}{% endblock %}
 
-{% block content %}
+{% block scripts %}
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script src="/static/javascript/markdown-bar.js"></script>
+{% endblock %}
 
+{% block content %}
 <!-- template name: {{template_name}} -->
 <form action="/tree/{{safe_branch}}/save/{{edit_path}}" method="POST" class="row col__flex col edit-article__form">
 
@@ -60,7 +64,8 @@
     </div>    
     <div class="edit-article__main row col__flex">
         <div class="edit-article__editor row__left col">
-            <textarea id="{{iso}}-body markItUp" class="col__flex" name="{{iso}}-body" type="text" data-provide="markdown" data-iconlibrary="fa" data-hidden-buttons="cmdPreview">{{form_body}}</textarea>
+            <div class="markdown-bar toolbar toolbar--left"></div>
+            <textarea id="{{iso}}-body" class="col__flex markdown-textarea" name="{{iso}}-body" type="text">{{form_body}}</textarea>
         </div>
     </div>
     <div class="edit-article__footer row">
