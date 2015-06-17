@@ -604,7 +604,8 @@ def make_activity_history(repo):
     log = repo.git.log('--format={}'.format(log_format), '--date=relative')
 
     history = []
-    for (name, email, date, subject, body) in pattern.findall(log):
+    for log_details in pattern.findall(log):
+        name, email, date, subject, body = tuple([item.decode('utf-8') for item in log_details])
         log_item = dict(author_name=name, author_email=email, commit_date=date, commit_subject=subject, commit_body=body, commit_type=get_message_type(subject))
         history.append(log_item)
         # don't get any history beyond the creation of the task metadata file, which is the beginning of the activity
