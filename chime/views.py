@@ -574,6 +574,7 @@ def branch_edit_file(branch, path=None):
         # construct the commit message
         targeted_files = describe_directory_contents(repo, request.form['request_path'])
         message_details = {}
+        root_file = {}
         for file_details in targeted_files:
             display_type = file_details['display_type']
             if display_type not in message_details:
@@ -583,21 +584,25 @@ def branch_edit_file(branch, path=None):
             else:
                 message_details[display_type]['noun'] = file_type_plural(display_type)
             message_details[display_type]['files'].append(file_details)
+            if file_details['is_root']:
+                root_file = file_details
 
-        message_parts = []
-        for detail_key in message_details:
-            detail = message_details[detail_key]
-            file_titles = [item['title'] for item in detail['files']]
-            title_list = u'", "'.join(file_titles[:-2] + [u'" and "'.join(file_titles[-2:])])
-            message_parts.append(u'"{}" {}'.format(title_list, detail['noun']))
-        was_were = u' was ' if len(targeted_files) == 1 else u' were '
+        commit_message = u'The "{}" {}'.format(root_file['title'], root_file['display_type'])
+        if len(targeted_files) > 1:
+            message_counts = []
+            for detail_key in message_details:
+                detail = message_details[detail_key]
+                message_counts.append(u'{} {}'.format(len(detail['files']), detail['noun']))
+            commit_message = commit_message + u' (containing {})'.format(u', '.join(message_counts[:-2] + [u' and '.join(message_counts[-2:])]))
+
+        commit_message = commit_message + u' was deleted'
 
         # delete the file(s)
         file_paths, do_save = edit_functions.delete_file(repo, request.form['request_path'])
 
         # finish constructing the commit message
         file_files = u'files' if len(file_paths) > 1 else u'file'
-        commit_message = u'The {} {} deleted\n\ndeleted {} "{}"'.format(u'; '.join(message_parts), was_were, file_files, u'", "'.join(file_paths))
+        commit_message = commit_message + u'\n\ndeleted {} "{}"'.format(file_files, u'", "'.join(file_paths))
 
         # if we're in the path that's been deleted, redirect to the first still-existing directory in the path
         path_dirs = path.split('/')

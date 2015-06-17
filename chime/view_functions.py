@@ -261,12 +261,13 @@ def describe_directory_contents(clone, file_path):
     '''
     full_path = join(clone.working_dir, file_path)
     described_files = []
-    for (dirpath, dirnames, filenames) in walk(full_path):
-        for file_name in filenames:
-            file_path = join(dirpath, file_name)
-            display_type, title = index_path_display_type_and_title(file_path)
-            short_path = re.sub('{}/'.format(clone.working_dir), '', file_path)
-            described_files.append({"display_type": display_type, "title": title, "short_path": short_path})
+    for (dir_path, dir_names, file_names) in walk(full_path):
+        for check_name in file_names:
+            check_path = join(dir_path, check_name)
+            display_type, title = index_path_display_type_and_title(check_path)
+            short_path = re.sub('{}/'.format(clone.working_dir), '', check_path)
+            is_root = file_path == short_path or file_path == split(short_path)[0]
+            described_files.append({"display_type": display_type, "title": title, "short_path": short_path, "is_root": is_root})
 
     return described_files
 

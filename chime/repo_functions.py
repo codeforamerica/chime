@@ -221,7 +221,7 @@ def delete_task_metadata_for_branch(clone, default_branch_name):
     ''' Delete the task metadata file and return its contents
     '''
     task_metadata = get_task_metadata_for_branch(clone)
-    deleted_paths, do_save = edit_functions.delete_file(clone, TASK_METADATA_FILENAME)
+    _, do_save = edit_functions.delete_file(clone, TASK_METADATA_FILENAME)
     if do_save:
         message = u'The "{}" {}'.format(task_metadata['task_description'], ACTIVITY_DELETED_MESSAGE)
         save_working_file(clone, TASK_METADATA_FILENAME, message, clone.commit().hexsha, default_branch_name)
