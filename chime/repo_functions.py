@@ -619,7 +619,7 @@ def mark_as_reviewed(clone):
 def provide_feedback(clone, comment_text):
     ''' Adds a new empty commit prefixed with COMMENT_COMMIT_PREFIX
     '''
-    clone.index.commit(u'{}\n\n{}'.format(COMMENT_COMMIT_PREFIX, comment_text))
+    clone.index.commit(u'{}\n\n{}'.format(COMMENT_COMMIT_PREFIX, comment_text).encode('utf-8'))
     active_branch_name = clone.active_branch.name
 
     #
