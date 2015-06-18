@@ -595,6 +595,37 @@ def get_relative_date(repo, file_path):
     '''
     return repo.git.log('-1', '--format=%ad', '--date=relative', '--', file_path)
 
+def make_delete_display_commit_message(repo, request_path):
+    ''' Build a commit message about file deletion for display in the activity history
+    '''
+    # construct the commit message
+    targeted_files = describe_directory_contents(repo, request_path)
+    message_details = {}
+    root_file = {}
+    for file_details in targeted_files:
+        display_type = file_details['display_type']
+        if display_type not in message_details:
+            message_details[display_type] = {}
+            message_details[display_type]['noun'] = display_type
+            message_details[display_type]['files'] = []
+        else:
+            message_details[display_type]['noun'] = file_type_plural(display_type)
+        message_details[display_type]['files'].append(file_details)
+        if file_details['is_root']:
+            root_file = file_details
+
+    commit_message = u'The "{}" {}'.format(root_file['title'], root_file['display_type'])
+    if len(targeted_files) > 1:
+        message_counts = []
+        for detail_key in message_details:
+            detail = message_details[detail_key]
+            message_counts.append(u'{} {}'.format(len(detail['files']), detail['noun']))
+        commit_message = commit_message + u' (containing {})'.format(u', '.join(message_counts[:-2] + [u' and '.join(message_counts[-2:])]))
+
+    commit_message = commit_message + u' was deleted'
+
+    return commit_message
+
 def make_activity_history(repo):
     ''' Make an easily-parsable history of an activity since it was created.
     '''

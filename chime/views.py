@@ -22,7 +22,7 @@ from .view_functions import (
     breadcrumb_paths, directory_columns, should_redirect, make_redirect, get_auth_data_file,
     is_allowed_email, common_template_args, log_application_errors,
     is_article_dir, make_activity_history, describe_directory_contents, file_type_plural,
-    CONTENT_FILE_EXTENSION, ARTICLE_LAYOUT, CATEGORY_LAYOUT)
+    make_delete_display_commit_message, CONTENT_FILE_EXTENSION, ARTICLE_LAYOUT, CATEGORY_LAYOUT)
 
 from .google_api_functions import (
     read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens,
@@ -572,36 +572,13 @@ def branch_edit_file(branch, path=None):
 
     elif action == 'delete' and 'request_path' in request.form:
         # construct the commit message
-        targeted_files = describe_directory_contents(repo, request.form['request_path'])
-        message_details = {}
-        root_file = {}
-        for file_details in targeted_files:
-            display_type = file_details['display_type']
-            if display_type not in message_details:
-                message_details[display_type] = {}
-                message_details[display_type]['noun'] = display_type
-                message_details[display_type]['files'] = []
-            else:
-                message_details[display_type]['noun'] = file_type_plural(display_type)
-            message_details[display_type]['files'].append(file_details)
-            if file_details['is_root']:
-                root_file = file_details
-
-        commit_message = u'The "{}" {}'.format(root_file['title'], root_file['display_type'])
-        if len(targeted_files) > 1:
-            message_counts = []
-            for detail_key in message_details:
-                detail = message_details[detail_key]
-                message_counts.append(u'{} {}'.format(len(detail['files']), detail['noun']))
-            commit_message = commit_message + u' (containing {})'.format(u', '.join(message_counts[:-2] + [u' and '.join(message_counts[-2:])]))
-
-        commit_message = commit_message + u' was deleted'
+        commit_message = make_delete_display_commit_message(repo, request.form['request_path'])
 
         # delete the file(s)
         candidate_file_paths = edit_functions.list_contained_files(repo, request.form['request_path'])
         deleted_file_paths, do_save = edit_functions.delete_file(repo, request.form['request_path'])
 
-        # finish constructing the commit message
+        # add details to the commit message
         file_files = u'files' if len(candidate_file_paths) > 1 else u'file'
         commit_message = commit_message + u'\n\ndeleted {} "{}"'.format(file_files, u'", "'.join(candidate_file_paths))
 
@@ -675,6 +652,7 @@ def edit_activity_overview(branch):
     for check_action in possible_actions:
         if check_action in request.form:
             action = check_action
+            break
 
     comment_text = request.form.get('comment_text', u'').strip()
 
