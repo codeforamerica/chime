@@ -191,7 +191,6 @@ mike@teczno.com,Code for America,Mike Migurski
             self.assertFalse(view_functions.is_allowed_email(no_file(), 'mike@teczno.com'))
             self.assertFalse(view_functions.is_allowed_email(no_file(), 'whatever@teczno.com'))
 
-# ;;;
 class TestRepo (TestCase):
 
     def setUp(self):
@@ -1026,9 +1025,8 @@ class TestRepo (TestCase):
         self.assertEqual(email2, 'reviewer@example.org')
         self.assertTrue('This still sucks.' in message2)
 
-    # ;;; TestRepo
     def test_article_creation_with_unicode(self):
-        ''' A category is created and logged as expected.
+        ''' An article with unicode in its title is created and logged as expected.
         '''
         # start a new branch
         fake_author_email = u'erica@example.com'
@@ -1277,16 +1275,16 @@ class TestRepo (TestCase):
 class TestGoogleApiFunctions (TestCase):
 
     def setUp(self):
-        environment = {}
-        environment['BROWSERID_URL'] = 'http://example.com'
-        environment['LIVE_SITE_URL'] = 'http://example.org/'
-        environment['GA_CLIENT_ID'] = 'client_id'
-        environment['GA_CLIENT_SECRET'] = 'meow_secret'
+        create_app_environ = {}
+        create_app_environ['BROWSERID_URL'] = 'http://example.com'
+        create_app_environ['LIVE_SITE_URL'] = 'http://example.org/'
+        create_app_environ['GA_CLIENT_ID'] = 'client_id'
+        create_app_environ['GA_CLIENT_SECRET'] = 'meow_secret'
 
         self.ga_config_dir = mkdtemp(prefix='chime-config-')
-        environment['RUNNING_STATE_DIR'] = self.ga_config_dir
+        create_app_environ['RUNNING_STATE_DIR'] = self.ga_config_dir
 
-        self.app = create_app(environment)
+        self.app = create_app(create_app_environ)
 
         # write a tmp config file
         config_values = {
@@ -1496,15 +1494,14 @@ class TestAppConfig (TestCase):
         self.assertRaises(KeyError, lambda: create_app({}))
 
     def test_present_values(self):
-        environment = {}
-        environment['RUNNING_STATE_DIR'] = 'Yo'
-        environment['GA_CLIENT_ID'] = 'Yo'
-        environment['GA_CLIENT_SECRET'] = 'Yo'
-        environment['LIVE_SITE_URL'] = 'Hey'
-        environment['BROWSERID_URL'] = 'Hey'
-        create_app(environment)
+        create_app_environ = {}
+        create_app_environ['RUNNING_STATE_DIR'] = 'Yo'
+        create_app_environ['GA_CLIENT_ID'] = 'Yo'
+        create_app_environ['GA_CLIENT_SECRET'] = 'Yo'
+        create_app_environ['LIVE_SITE_URL'] = 'Hey'
+        create_app_environ['BROWSERID_URL'] = 'Hey'
+        create_app(create_app_environ)
 
-# ;;;
 class TestApp (TestCase):
 
     def setUp(self):
@@ -1519,21 +1516,21 @@ class TestApp (TestCase):
         self.clone1 = self.origin.clone(mkdtemp(prefix='chime-'))
         repo_functions.ignore_task_metadata_on_merge(self.clone1)
 
-        environment = {}
+        create_app_environ = {}
 
-        environment['SINGLE_USER'] = 'Yes'
-        environment['GA_CLIENT_ID'] = 'client_id'
-        environment['GA_CLIENT_SECRET'] = 'meow_secret'
+        create_app_environ['SINGLE_USER'] = 'Yes'
+        create_app_environ['GA_CLIENT_ID'] = 'client_id'
+        create_app_environ['GA_CLIENT_SECRET'] = 'meow_secret'
 
         self.ga_config_dir = mkdtemp(prefix='chime-config-')
-        environment['RUNNING_STATE_DIR'] = self.ga_config_dir
-        environment['WORK_PATH'] = self.work_path
-        environment['REPO_PATH'] = temp_repo_path
-        environment['AUTH_DATA_HREF'] = 'http://example.com/auth.csv'
-        environment['BROWSERID_URL'] = 'http://localhost'
-        environment['LIVE_SITE_URL'] = 'http://example.org/'
+        create_app_environ['RUNNING_STATE_DIR'] = self.ga_config_dir
+        create_app_environ['WORK_PATH'] = self.work_path
+        create_app_environ['REPO_PATH'] = temp_repo_path
+        create_app_environ['AUTH_DATA_HREF'] = 'http://example.com/auth.csv'
+        create_app_environ['BROWSERID_URL'] = 'http://localhost'
+        create_app_environ['LIVE_SITE_URL'] = 'http://example.org/'
 
-        self.app = create_app(environment)
+        self.app = create_app(create_app_environ)
 
         # write a tmp config file
         config_values = {
@@ -2231,9 +2228,8 @@ class TestApp (TestCase):
             self.assertFalse(exists(catb_location))
             self.assertFalse(exists(cata_location))
 
-    # ;;; TestApp
-    def test_article_creation_with_unicode(self):
-        ''' A slugified directory name and display title are created when a new category or article is created.
+    def test_article_creation_with_unicode_via_web_interface(self):
+        ''' An article with unicode in its title is created and logged as expected.
         '''
         fake_author_email = u'erica@example.com'
         with HTTMock(self.mock_persona_verify):
