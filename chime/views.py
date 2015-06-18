@@ -645,7 +645,6 @@ def edit_activity_overview(branch):
     branch = branch_var2name(branch)
     repo = get_repo(current_app)
     safe_branch = branch_name2path(branch_var2name(branch))
-
     # which submit button was pressed?
     action = u''
     possible_actions = ['comment', 'request_feedback', 'endorse', 'publish']

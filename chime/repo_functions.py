@@ -16,7 +16,7 @@ from .edit_functions import make_slug_path
 TASK_METADATA_FILENAME = u'_task.yml'
 BRANCH_NAME_LENGTH = 7
 DESCRIPTION_MAX_LENGTH = 15
-ACTIVITY_CREATED_MESSAGE = u'activity was created'
+ACTIVITY_CREATED_MESSAGE = u'activity was started'
 ACTIVITY_UPDATED_MESSAGE = u'activity was updated'
 ACTIVITY_DELETED_MESSAGE = u'activity was deleted'
 COMMENT_COMMIT_PREFIX = u'Provided feedback.'

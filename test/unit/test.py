@@ -11,7 +11,7 @@ from urllib import quote
 from os import environ, remove
 from shutil import rmtree, copytree
 from uuid import uuid4
-from re import search
+from re import search, sub
 import random
 from datetime import date, timedelta
 import sys
@@ -46,6 +46,10 @@ PATTERN_TASK_COMMENT = u'<!-- task: {} -->'
 PATTERN_BENEFICIARY_COMMENT = u'<!-- beneficiary: {} -->'
 PATTERN_TEMPLATE_COMMENT = u'<!-- template name: {} -->'
 PATTERN_FILE_COMMENT = u'<!-- file type: {file_type}, file name: {file_name}, file title: {file_title} -->'
+PATTERN_OVERVIEW_ITEM_CREATED = u'<p>The "{created_name}" {created_type} was created by {author_email}.</p>'
+PATTERN_OVERVIEW_ACTIVITY_STARTED = u'<p>The "{activity_name}" activity was started by {author_email}.</p>'
+PATTERN_OVERVIEW_COMMENT_BODY = u'<div class="comment__body">{comment_body}</div>'
+PATTERN_OVERVIEW_ITEM_DELETED = u'<p>The "{deleted_name}" {deleted_type} {deleted_also}was deleted by {author_email}.</p>'
 
 class TestJekyll (TestCase):
 
@@ -1130,7 +1134,7 @@ class TestRepo (TestCase):
 
         # check the creation of the activity
         check_item = activity_history.pop()
-        self.assertEqual(u'The "{}" activity was created'.format(task_description), check_item['commit_subject'])
+        self.assertEqual(u'The "{}" activity was started'.format(task_description), check_item['commit_subject'])
         self.assertEqual(u'Created task metadata file "_task.yml"', check_item['commit_body'])
         self.assertEqual(view_functions.MESSAGE_TYPE_INFO, check_item['commit_type'])
 
@@ -1604,6 +1608,14 @@ class TestApp (TestCase):
         repo_functions.ignore_task_metadata_on_merge(self.origin)
         self.clone1 = self.origin.clone(mkdtemp(prefix='chime-'))
         repo_functions.ignore_task_metadata_on_merge(self.clone1)
+
+        fake_author_email = u'erica@example.com'
+        self.session = dict(email=fake_author_email)
+
+        environ['GIT_AUTHOR_NAME'] = ' '
+        environ['GIT_COMMITTER_NAME'] = ' '
+        environ['GIT_AUTHOR_EMAIL'] = self.session['email']
+        environ['GIT_COMMITTER_EMAIL'] = self.session['email']
 
         create_app_environ = {}
 
@@ -2643,6 +2655,71 @@ class TestApp (TestCase):
             self.assertTrue(dir_columns[2]['files'][0]['name'] == slug_how)
             self.assertTrue(dir_columns[3]['files'][0]['name'] == slug_are)
 
+    def test_activity_history_page_is_accurate(self):
+        ''' The activity history page accurately displays the activity history
+        '''
+        fake_author_email = u'erica@example.com'
+        with HTTMock(self.mock_persona_verify):
+            self.test_client.post('/sign-in', data={'email': fake_author_email})
+
+        with HTTMock(self.auth_csv_example_allowed):
+            # start a new branch via the http interface
+            # invokes view_functions/get_repo which creates a clone
+            task_description = u'deposit eggs in a syconium'
+            task_beneficiary = u'fig wasp larvae'
+
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            self.assertTrue(working_branch.name in self.clone1.branches)
+            self.assertTrue(working_branch.name in self.origin.branches)
+            working_branch_name = working_branch.name
+            working_branch.checkout()
+
+            title_fig_zh = u'无花果'
+            slug_fig_zh = u'wu-hua-guo'
+            title_syconium = u'Syconium'
+            slug_syconium = u'syconium'
+            title_ostiole = u'Ostiole'
+            title_fig_en = u'Fig'
+            title_fig_bn = u'Dumur'
+            create_details = [
+                (u'', title_fig_zh, view_functions.CATEGORY_LAYOUT),
+                (slug_fig_zh, title_syconium, view_functions.CATEGORY_LAYOUT),
+                (u'{}/{}'.format(slug_fig_zh, slug_syconium), title_ostiole, view_functions.ARTICLE_LAYOUT),
+                (u'', title_fig_en, view_functions.CATEGORY_LAYOUT),
+                (u'', title_fig_bn, view_functions.CATEGORY_LAYOUT)
+            ]
+
+            for detail in create_details:
+                response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, detail[0]),
+                                                 data={'action': 'create', 'create_what': detail[2], 'request_path': detail[1]},
+                                                 follow_redirects=True)
+                self.assertEqual(response.status_code, 200)
+
+            # add a comment
+            comment_text = u'The flowers provide a safe haven and nourishment for the next generation of wasps. ᙙᙖ'
+            response = self.test_client.post('/tree/{}/'.format(working_branch_name),
+                                             data={'comment': 'Comment', 'comment_text': comment_text},
+                                             follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+
+            # delete a directory
+            response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
+                                             data={'action': 'delete', 'request_path': slug_fig_zh},
+                                             follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+
+            # get the activity history page
+            response = self.test_client.get('/tree/{}/'.format(working_branch_name), follow_redirects=True)
+            # TODO: for some reason (encoding?) my double-quotes are being replaced by &#34; in the returned HTML
+            response_data = sub('&#34;', '"', response.data.decode('utf-8'))
+            # make sure everything we did above is shown on the activity page
+            self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('activity-overview') in response_data)
+            self.assertTrue(PATTERN_OVERVIEW_ACTIVITY_STARTED.format(**{"activity_name": task_description, "author_email": fake_author_email}) in response_data)
+            self.assertTrue(PATTERN_OVERVIEW_COMMENT_BODY.format(**{"comment_body": comment_text}) in response_data)
+            self.assertTrue(PATTERN_OVERVIEW_ITEM_DELETED.format(**{"deleted_name": title_fig_zh, "deleted_type": view_functions.CATEGORY_LAYOUT, "deleted_also": u'(containing 2 categories and 1 article) ', "author_email": fake_author_email}) in response_data)
+            for detail in create_details:
+                self.assertTrue(PATTERN_OVERVIEW_ITEM_CREATED.format(**{"created_name": detail[1], "created_type": detail[2], "author_email": fake_author_email}), response_data)
+
     def test_create_page_creates_directory_containing_index(self):
         ''' Creating a new page creates a directory with an editable index file inside.
         '''
@@ -2799,8 +2876,8 @@ class TestApp (TestCase):
             new_dir_location = join(self.clone1.working_dir, new_page_slug)
             self.assertFalse(exists(new_dir_location) and isdir(new_dir_location))
 
-    def test_editable_directories_are_shown_as_files(self):
-        ''' Editable directories (directories containing only an editable index file) are displayed as files.
+    def test_editable_directories_are_shown_as_articles(self):
+        ''' Editable directories (directories containing only an editable index file) are displayed as articles.
         '''
         fake_author_email = u'erica@example.com'
         with HTTMock(self.mock_persona_verify):
