@@ -251,7 +251,7 @@ def _server_setup(fqdn=None):
     rsync_code()
     print(green('Running chef setup scripts...'))
     time.sleep(2)
-    run('cd chime && sudo chef/run.sh')
+    run('cd chime && sudo ACCEPTANCE_TEST_MODE=1 chef/run.sh')
 
 @task
 def rsync_code(hostname=None):

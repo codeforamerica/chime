@@ -6,7 +6,9 @@
         <link rel="stylesheet" type="text/css" media="screen" href="/static/javascript/toopaymarkdown/css/bootstrap-markdown.min.css">
         <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
         <meta http-equiv="X-UA-Compatible" content="IE=Edge">
-        {% if not config.get('ACCEPTANCE_TEST_MODE', False) %}
+        {% if config.get('ACCEPTANCE_TEST_MODE', False) %}
+        <script src="http://toolness.github.io/stubbyid/stubbyid.js"></script>
+        {% else %}
         <script src="https://login.persona.org/include.js"></script>
         {% endif %}
         <script type="text/javascript">
