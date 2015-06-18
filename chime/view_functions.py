@@ -453,7 +453,7 @@ def login_required(route_function):
     '''
     @wraps(route_function)
     def decorated_function(*args, **kwargs):
-        email = session.get('email', None)
+        email = session.get('email', '').decode('utf-8')
 
         if not email:
             redirect_url = '/not-allowed'
@@ -467,9 +467,9 @@ def login_required(route_function):
             return redirect(redirect_url)
 
         environ['GIT_AUTHOR_NAME'] = ' '
-        environ['GIT_AUTHOR_EMAIL'] = email
+        environ['GIT_AUTHOR_EMAIL'] = email.encode('utf-8')
         environ['GIT_COMMITTER_NAME'] = ' '
-        environ['GIT_COMMITTER_EMAIL'] = email
+        environ['GIT_COMMITTER_EMAIL'] = email.encode('utf-8')
 
         return route_function(*args, **kwargs)
 
