@@ -5,11 +5,15 @@ from __future__ import with_statement
 import time
 
 import boto.ec2
-from fabric.operations import local
+from fabric.operations import local, open_shell
 from fabric.api import task, env, run, sudo
 from fabric.colors import green, yellow, red
 from fabric.exceptions import NetworkError
 from fabric.contrib.project import rsync_project
+from fabconf import fabconf
+
+def server_host():
+    return _load_hosts()[0]
 
 
 @task
@@ -18,7 +22,6 @@ def spawn_instance():
     Creates a new EC2 instance and stores the
     resulting DNS in a hosts.txt file.
     '''
-    from fabconf import fabconf
     print(green('Spawning new instance...'))
     env.key_filename = fabconf.get('SSH_PRIVATE_KEY_PATH')
     env.host_string = _create_ec2_instance()
@@ -28,9 +31,8 @@ def despawn_instance(public_dns=None):
     '''
     Destroys an EC2 instance.
     '''
-    from fabconf import fabconf
     if public_dns is None:
-        public_dns = _read_hosts_from_file()[0]
+        public_dns = server_host()
         env.key_filename = fabconf.get('SSH_PRIVATE_KEY_PATH')
     print(yellow('Shutting down instance {dns}'.format(
         dns=public_dns
@@ -44,14 +46,13 @@ def boot_chime():
     Installs and boots up chime.
 
     Spawns an EC2 instance if no dns is given and boots
-    up chime on that instance. Can only deploy the master
-    branch.
+    up chime on that instance.
     '''
     from fabconf import fabconf
     # set some login variables
     env.user = fabconf.get('SERVER_USERNAME')
     env.key_filename = fabconf.get('SSH_PRIVATE_KEY_PATH')
-    hosts = _read_hosts_from_file()
+    hosts = _load_hosts()
 
     if len(hosts) == 0:
         public_dns = _create_ec2_instance()
@@ -85,7 +86,7 @@ def test_chime(setup=True, despawn=True, despawn_on_failure=False):
     from fabconf import fabconf
     env.user = fabconf.get('SERVER_USERNAME')
     env.key_filename = fabconf.get('SSH_PRIVATE_KEY_PATH')
-    hosts = _read_hosts_from_file()
+    hosts = _load_hosts()
 
     if len(hosts) == 0:
         public_dns = _create_ec2_instance()
@@ -121,30 +122,29 @@ def _despawn(public_dns):
 def _looks_true(argument):
     return argument in [True, 'True', 'true', 't', 'y']
 
-def _read_hosts_from_file():
-    from fabconf import fabconf
+def _load_hosts():
     hostfile = fabconf.get('FAB_HOSTS_FILE')
     try:
-        with open(hostfile, 'r+') as f:
+        with open(hostfile, 'r') as f:
             hosts = f.read().split(',')
         return [h for h in hosts if h != '']
     except IOError:
         return []
 
 def _write_host_to_file(host):
-    from fabconf import fabconf
-    hostfile = fabconf.get('FAB_HOSTS_FILE')
-    with open(hostfile, 'w+') as f:
-        f.write(host + ',')
+    hosts = _load_hosts()
+    hosts.append(host)
+    _save_hosts(hosts)
 
 def _strip_host_from_file(host):
-    from fabconf import fabconf
-    hostfile = fabconf.get('FAB_HOSTS_FILE')
-    hosts = _read_hosts_from_file()
+    hosts = _load_hosts()
     hosts.remove(host)
-    with open(hostfile, 'w+') as f:
-        for remainder in hosts:
-            f.write(remainder+',')
+    _save_hosts(hosts)
+
+
+def _save_hosts(hosts):
+    with open(fabconf.get('FAB_HOSTS_FILE'), 'w') as f:
+        f.write(",".join(hosts))
 
 def _connect_to_ec2():
     '''
@@ -248,8 +248,18 @@ def _server_setup(fqdn=None):
     time.sleep(2)
     sudo('apt-get -qq update')
     # rsync quietly and don't bother with host keys
-    rsync_project(remote_dir='.', default_opts='-pthrz',
-                  ssh_opts='-o CheckHostIP=no -o UserKnownHostsFile=/dev/null -o StrictHostkeyChecking=no')
+    rsync_code()
     print(green('Running chef setup scripts...'))
     time.sleep(2)
     run('cd chime && sudo chef/run.sh')
+
+@task
+def rsync_code(hostname=None):
+    if not hostname:
+        hostname = server_host()
+    env.host_string = hostname
+    env.user = fabconf.get('SERVER_USERNAME')
+
+    rsync_project(remote_dir='.', default_opts='-pthrz',
+                  ssh_opts='-o CheckHostIP=no -o UserKnownHostsFile=/dev/null -o StrictHostkeyChecking=no')
+
