@@ -5,8 +5,9 @@
 	background-color: $color-grey-300;
 	border: 1px solid $color-grey-300;
 	color: $color-grey-800;
+	font-family: $font-sans;
 	font-size: 12px;
-	font-weight: 300;
+	font-weight: 400;
 	border-radius: $border-radius;
 	padding: .3em .5em;
 
@@ -116,5 +117,6 @@ button.button {
 
 .button--large {
 	font-size: $h4-font-size;
+	font-weight: 300;
 	padding: .5em 1em;
 }

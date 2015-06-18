@@ -8,8 +8,12 @@
 {% block body_class %}{{template_name}}{% endblock %}
 
 {% block scripts %}
+<!--[if !IE]><!-->
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script src="/static/javascript/undo.js"></script>
+<script src="/static/javascript/markdown.min.js"></script>
 <script src="/static/javascript/markdown-bar.js"></script>
+<!--<![endif]-->
 {% endblock %}
 
 {% block content %}

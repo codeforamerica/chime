@@ -3,4 +3,5 @@
 	border-bottom: 1px solid $color-grey-300;
 	padding: .5em $site-margins;
 	font-family: 'FontAwesome';
+	@include user-select(none);
 }

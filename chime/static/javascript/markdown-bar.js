@@ -1,7 +1,64 @@
+// This js library builds the markdown formatting bar in Chime
+// It also implements a custom undo/redo behavior for the markdown textarea using undo.js
+// This is required to capture textarea content changes triggered from the formatting bar 
+// Below is a list of expected behaviors:
+
+// INLINE PATTERN BEHAVIOR
+
+// Single Empty line: insert pattern with filler text
+// Single Non-empty line: insert pattern with filler text
+// Single Line && Selection: replace selection with filler text
+
+// Multiple Lines: Break up into single lines and do same as above for each line.
+
+
+// BLOCK PATTERN BEHAVIOR
+
+// Single Empty line: Create pattern with filler text selected, cursor at selection beginning
+// Single Non-Empty line: Make entire line block pattern with cursor at end
+// Single Line && Selection: Make entire line block pattern with cursor at end
+
+// Multiple Empty Lines: Create pattern with filler text selected, cursor at selection beginning.
+// Multiple Non-Empty Lines: Break up to individual lines and treat each as a single non-empty line
+// Multiple Lines with Partial or Complete Selection: Break up into individual lines and treat as single non-empty lines
+
+// TODO: For mixed multiline selections, keep empty lines as empty lines.
+// TODO: Deal with swapping of block patterns (e.g, turning a list item into a header)
+// TOOD: Format whitespace around block elements.
+// TODO: Implement ideal cursor position behavior after pattern is added
+//	 - this includes preselection of filler text so user can start typing immediately without having to move the cursor.
+// TODO: Make this work with IE.
+
+
 function MarkdownBar(bar, textarea) {
 
+	var self = this;
 	var markdownBar = $(bar);
 	var markdownTextarea = $(textarea);
+
+	// This value is to keep track of where the current value is the textarea is. Used to compare 
+	var startValue;
+
+	//Implement Undo Stack
+	var undoStack = new Undo.Stack();
+	var EditCommand = Undo.Command.extend({
+		constructor: function(textarea, oldValue, newValue) {
+			this.textarea = textarea;
+			this.oldValue = oldValue;
+			this.newValue = newValue;
+		},
+		execute: function() {
+
+		},
+		undo: function() {
+			this.textarea.val(this.oldValue)
+			startValue = this.oldValue;
+		},
+		redo: function() {
+			this.textarea.val(this.newValue)
+			startValue = this.newValue;
+		}
+	})
 
 	//Define Markdown Patterns
 	var PATTERNS = [
@@ -71,8 +128,58 @@ function MarkdownBar(bar, textarea) {
 
 	];
 
+	this.markdownify = function(event, syntax, filler, patternType) {
+		event.preventDefault();
+
+		startValue = markdownTextarea.val();
+
+		//TODO: Fix selectionStart and selectionEnd to work with IE
+		var selectionStart = markdownTextarea.get(0).selectionStart;
+		var selectionEnd =  markdownTextarea.get(0).selectionEnd;
+
+		// If patterntype is block, content should begin at beginning of line and end at the end of line
+		if(patternType == "block") {
+			while(markdownTextarea.val().charAt(selectionStart-1) != '\n' && selectionStart > 0) {
+				selectionStart--;
+			}
+			while(markdownTextarea.val().charAt(selectionEnd) != '\n' && selectionEnd < markdownTextarea.val().length) {
+				selectionEnd++;
+			}
+		}
+
+		// Iterate over each line.
+		var newContent = "";
+		var content = markdownTextarea.val().slice(selectionStart, selectionEnd).split(/\n/);
+		$(content).each(function(index, contentLine) {
+
+			//Add filler text 
+			if(contentLine == "") {
+				contentLine = filler;
+			}
+
+			
+			newContent = newContent + self.interpolate(syntax, {content: contentLine});
+			if(index < content.length-1) {
+				newContent = newContent + '\n';
+			}
+		});
+
+
+		// Replace content in textarea
+		var contentBefore = markdownTextarea.val().slice(0, selectionStart);
+		var contentAfter = markdownTextarea.val().slice(selectionEnd, markdownTextarea.val().length)
+		var newValue = (contentBefore + newContent + contentAfter);
+		markdownTextarea.val(newValue);
+
+		//Add to undo stack
+		undoStack.execute(new EditCommand(markdownTextarea, startValue, newValue));
+		startValue = newValue;
+
+		markdownTextarea.focus();
+	}
+
 	// String interpolation function
-	var interpolate = function(formatString, data) {
+	this.interpolate = function(formatString, data) {
 	    var i, len,
 	        formatChar,
 	        prevFormatChar,
@@ -100,93 +207,84 @@ function MarkdownBar(bar, textarea) {
 	    return finalString;
 	};
 
-
-	var markdownify = function(event, syntax, filler, patternType) {
-		event.preventDefault();
-
-		// Inline Pattern Behavior
-
-		// Single Empty line: insert pattern with filler text with filler text selected, cursor at selection beginning
-		// Single Non-empty line: insert pattern with filler text with filler text selected, cursor at selection beginning
-		// Single Line && Selection: replace selection with filler text, cursor at selection end.
-
-		// Multiple Lines: Break up into single lines and do same as above for each line.
-
-
-		// Block Pattern Behavior
-
-		// Single Empty line: Create pattern (with appropriate whitespace) with filler text selected, cursor at selection beginning
-		// Single Non-Empty line: Make entire line block pattern with cursor at end
-		// Single Line && Selection: Make entire line block pattern with cursor at end
-
-		// Multiple Empty Lines: Create pattern (with appropriate whitespace) with filler text selected, cursor at selection beginning.
-		// Multiple Non-Empty Lines: Break up to individual lines and treat each as a single non-empty line
-		// Multiple Lines with Partial or Complete Selection: Break up into individual lines and treat as single non-empty lines
-
-		// ** For mixed multiline selections, keep empty lines as empty lines.
-
-		//TODO: Fix selectionStart and selectionEnd to work with IE
-		var selectionStart = markdownTextarea.get(0).selectionStart;
-		var selectionEnd =  markdownTextarea.get(0).selectionEnd;
-		
-		var isSelection = selectionStart == selectionEnd ? false : true;
-
-		// If patterntype is block, content should begin at beginning of line and end at the end of line
-		if(patternType == "block") {
-			while(markdownTextarea.val().charAt(selectionStart-1) != '\n' && selectionStart > 0) {
-				selectionStart--;
-			}
-			while(markdownTextarea.val().charAt(selectionEnd) != '\n' && selectionEnd < markdownTextarea.val().length) {
-				selectionEnd++;
-			}
-		}
-
-		// Iterate over each line.
-		// TODO: Deal with swapping of block patterns (turning a list item into a header)
-		var newContent = "";
-		var content = markdownTextarea.val().slice(selectionStart, selectionEnd).split(/\n/);
-		$(content).each(function(index, contentLine) {
-
-			if(contentLine == "") {
-				contentLine = filler;
-			}
-			
-			newContent = newContent + interpolate(syntax, {content: contentLine});
-			if(index < content.length-1) {
-				newContent = newContent + '\n';
-			}
-		});
-
-
-		// Update undo/redo queue is possible with execCommand. Otherwise, replace text in textarea.
-		// TODO: Would mutationObservers be a better way to implement this?
-		if (document.queryCommandSupported('insertText')) {
-			markdownTextarea.focus();
-			//TODO: Fix selectionStart and selectionEnd to work with IE
-			markdownTextarea.get(0).selectionStart = selectionStart;
-			markdownTextarea.get(0).selectionEnd = selectionEnd;
-		    document.execCommand('insertText', false, newContent);
-		}
-		else {
-			var contentBefore = markdownTextarea.val().slice(0, selectionStart);
-			var contentAfter = markdownTextarea.val().slice(selectionEnd, markdownTextarea.val().length)
-			markdownTextarea.val(contentBefore + newContent + contentAfter)
-		}
-	}
-
 	
 	this.init = function() {
+
+		// Bind Textarea to Undo Stack (reimplementing basic undo/redo functionality)
+		var timer;
+		markdownTextarea.bind('keyup', function(event) {
+			// skip if keyup on 'Z' when undoing/redoing (metaKey is held down)
+			if (event.metaKey && event.which == 90) {
+				return false;
+			}
+			// skip if keyup on 'shift key' or 'command/window key'
+			if(event.which == 16 || event.which == 91 || event.which == 93 || event.which == 224) {
+				return false;
+			}
+
+			clearTimeout(timer);
+			timer = setTimeout(function() {
+				var newValue = markdownTextarea.val();
+				// ignore meta key presses
+				if (newValue != startValue) {
+					undoStack.execute(new EditCommand(markdownTextarea, startValue, newValue));
+					startValue = newValue;
+				}
+			}, 150);
+		});
+
 
 		// Add buttons to markdown bar and bind events
 		$(PATTERNS).each(function(index, pattern) {
 			var patternButton = $('<div class="button button--outline toolbar__item">' + pattern['icon'] +'</div>');
 			patternButton.bind('click', function(event) {
-				markdownify(event, pattern['syntax'], pattern['filler'], pattern['type']);
+				self.markdownify(event, pattern['syntax'], pattern['filler'], pattern['type']);
 			});
 			markdownBar.append(patternButton);
 		});
 
-		// TODO: Add undo/redo buttons
+
+		// Create Undo/Redo Keyboard Shortcuts
+		$(document).keydown(function(event) {
+			if (!event.metaKey || event.keyCode != 90) {
+				return;
+			}
+			event.preventDefault();
+			if (event.shiftKey) {
+				undoStack.canRedo() && undoStack.redo()
+			} else {
+				undoStack.canUndo() && undoStack.undo();
+			}
+		});
+
+
+		// Create Undo/redo buttons
+		var undoButton = $('<button href="#" id="undo-button" class="toolbar__item button button--outline">undo</button>'),
+			redoButton = $('<button href="#" id="redo-button" class="toolbar__item button button--outline">redo</button>')
+
+		function updateUndoStackUI() {
+			undoButton.attr("disabled", !undoStack.canUndo());
+			redoButton.attr("disabled", !undoStack.canRedo());
+		}
+
+		undoStack.changed = function() {
+			updateUndoStackUI();
+		};
+
+
+		undoButton.click(function(e) {
+			undoStack['undo']();
+			return false;
+		});
+
+		redoButton.click(function(e) {
+			undoStack['redo']();
+			return false;
+		});
+
+		markdownBar.append(undoButton);
+		markdownBar.append(redoButton);
+		updateUndoStackUI();
 	}
 
 	this.init();
