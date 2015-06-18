@@ -1064,6 +1064,95 @@ class TestRepo (TestCase):
         # commit the article
         repo_functions.save_working_file(new_clone, file_path, add_message, new_clone.commit().hexsha, 'master')
 
+    def test_activity_history_recorded(self):
+        ''' The activity history accurately records activity events.
+        '''
+        # start a new branch
+        fake_author_email = u'erica@example.com'
+        task_description = u'shake trees until coconuts fall off'
+        task_beneficiary = u'castaways'
+
+        source_repo = self.origin
+        first_commit = list(source_repo.iter_commits())[-1].hexsha
+        dir_name = 'repo-{}-{}'.format(first_commit[:8], slugify(fake_author_email))
+        user_dir = realpath(join(self.work_path, quote(dir_name)))
+
+        if isdir(user_dir):
+            new_clone = ChimeRepo(user_dir)
+            new_clone.git.reset(hard=True)
+            new_clone.remotes.origin.fetch()
+        else:
+            new_clone = source_repo.clone(user_dir, bare=False)
+
+        # tell git to ignore merge conflicts on the task metadata file
+        repo_functions.ignore_task_metadata_on_merge(new_clone)
+
+        working_branch = repo_functions.get_start_branch(new_clone, 'master', task_description, task_beneficiary, fake_author_email)
+        self.assertTrue(working_branch.name in new_clone.branches)
+        self.assertTrue(working_branch.name in self.origin.branches)
+        working_branch.checkout()
+
+        # create some category/article structure
+        create_details = [
+            ('', 'Tree', view_functions.CATEGORY_LAYOUT),
+            ('tree', 'Coconut', view_functions.CATEGORY_LAYOUT),
+            ('tree/coconut', 'Coconut Milk', view_functions.ARTICLE_LAYOUT),
+            ('', 'Rock', view_functions.CATEGORY_LAYOUT),
+            ('rock', 'Barnacle', view_functions.CATEGORY_LAYOUT),
+            ('', 'Sand', view_functions.CATEGORY_LAYOUT)
+        ]
+        updated_details = []
+        for detail in create_details:
+            add_message, file_path, redirect_path, do_save = views.add_article_or_category(new_clone, detail[0], detail[1], detail[2])
+            updated_details.append(detail + (file_path,))
+            repo_functions.save_working_file(new_clone, file_path, add_message, new_clone.commit().hexsha, 'master')
+
+        # add a comment
+        funny_comment = u'I like coconuts ᶘ ᵒᴥᵒᶅ'
+        repo_functions.provide_feedback(new_clone, funny_comment)
+
+        # delete a category with stuff in it
+        commit_message = view_functions.make_delete_display_commit_message(new_clone, 'tree')
+        candidate_file_paths = edit_functions.list_contained_files(new_clone, 'tree')
+        deleted_file_paths, do_save = edit_functions.delete_file(new_clone, 'tree')
+        # add details to the commit message
+        file_files = u'files' if len(candidate_file_paths) > 1 else u'file'
+        commit_message = commit_message + u'\n\ndeleted {} "{}"'.format(file_files, u'", "'.join(candidate_file_paths))
+        # commit
+        repo_functions.save_working_file(new_clone, 'tree', commit_message, new_clone.commit().hexsha, 'master')
+
+        # checkout
+        working_branch.checkout()
+
+        # get and check the history
+        activity_history = view_functions.make_activity_history(new_clone)
+        self.assertEqual(len(activity_history), 9)
+
+        # check the creation of the activity
+        check_item = activity_history.pop()
+        self.assertEqual(u'The "{}" activity was created'.format(task_description), check_item['commit_subject'])
+        self.assertEqual(u'Created task metadata file "_task.yml"', check_item['commit_body'])
+        self.assertEqual(view_functions.MESSAGE_TYPE_INFO, check_item['commit_type'])
+
+        # check the delete
+        check_item = activity_history.pop(0)
+        self.assertEqual(u'The "{}" category (containing 2 categories and 1 article) was deleted'.format(updated_details[0][1]), check_item['commit_subject'])
+        self.assertEqual(u'deleted files "{}", "{}", "{}"'.format(updated_details[0][3], updated_details[1][3], updated_details[2][3]), check_item['commit_body'])
+        self.assertEqual(view_functions.MESSAGE_TYPE_EDIT, check_item['commit_type'])
+
+        # check the comment
+        check_item = activity_history.pop(0)
+        self.assertEqual(u'Provided feedback.', check_item['commit_subject'])
+        self.assertEqual(funny_comment, check_item['commit_body'])
+        self.assertEqual(view_functions.MESSAGE_TYPE_COMMENT, check_item['commit_type'])
+
+        # check the category & article creations
+        for pos, check_item in list(enumerate(activity_history)):
+            check_detail = updated_details[len(updated_details) - (pos + 1)]
+            self.assertEqual(u'The "{}" {} was created'.format(check_detail[1], check_detail[2]), check_item['commit_subject'])
+            self.assertEqual(u'created new file {}'.format(check_detail[3]), check_item['commit_body'])
+            self.assertEqual(view_functions.MESSAGE_TYPE_EDIT, check_item['commit_type'])
+
     def test_delete_full_folders(self):
         ''' Make sure that full folders can be deleted, and that what's reported as deleted matches what's expected.
         '''
