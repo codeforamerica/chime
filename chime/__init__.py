@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 from logging import getLogger, INFO, DEBUG
 import logging
-from sys import stderr, stdout
 from .chimelog import SnsHandler, get_filehandler
 
 logger = getLogger('chime')
@@ -22,27 +21,27 @@ class AppShim:
         '''
         self.app = app
         self.config = app.config
-    
+
     def app_context(self, *args, **kwargs):
         ''' Used in tests.
         '''
         return self.app.app_context(*args, **kwargs)
-    
+
     def test_client(self, *args, **kwargs):
         ''' Used in tests.
         '''
         return self.app.test_client(*args, **kwargs)
-    
+
     def test_request_context(self, *args, **kwargs):
         ''' Used in tests.
         '''
         return self.app.test_request_context(*args, **kwargs)
-    
+
     def run(self, *args, **kwargs):
         ''' Used in debug context, typically by run.py.
         '''
         return self.app.run(*args, **kwargs)
-    
+
     def __call__(self, *args, **kwargs):
         ''' Used in WSGI context, typically by gunicorn.
         '''
@@ -62,7 +61,7 @@ def run_apache(running_dir):
         mkdir(doc_root)
     except OSError:
         pass
-    
+
     return run_apache_forever(doc_root, root, port, False)
 
 def create_app(environ):
@@ -82,14 +81,14 @@ def create_app(environ):
     app.config['PUBLISH_SERVICE_URL'] = environ.get('PUBLISH_SERVICE_URL', False)
     app.config['SNS_ALERTS_TOPIC'] = environ.get('SNS_ALERTS_TOPIC')
     app.config['default_branch'] = 'master'
-    
+
     # If no live site URL was provided, we'll use Apache to make our own.
     if 'LIVE_SITE_URL' not in environ:
         run_apache(app.config['RUNNING_STATE_DIR'])
 
     # attach routes and custom error pages here
     app.register_blueprint(chime)
-    
+
     @app.before_first_request
     def before_first_request():
         directories = '/var/log/chime', app.config['WORK_PATH']

@@ -1,4 +1,4 @@
-{% extends "base_new.html" %}
+{% extends "base.html" %}
 
 {% set breadcrumb_items = [{'name': 'Activites', 'url': '/'}, {'name': 'Browse', 'url': task_root_path}] %}
 
@@ -14,17 +14,23 @@
 
     <input name="layout" value="{{front['layout']}}" type="hidden" />
     <input name="hexsha" value="{{hexsha}}" type="hidden" />
-    <input name="url-slug" type="hidden" value="{{url_slug}}" />  
+    <input name="url-slug" type="hidden" value="{{url_slug}}" />
+    <input name="order" type="hidden" value="{{front['order']}}" />
 {% for iso in languages %}
     {% if iso == 'en' %}
         {% set form_title = front['title'] %}
+        {% set form_description = front['description'] %}
         {% set form_body = body %}
         {% set display_class = '' %}
     {% else %}
         {% set form_title = front['title-'+iso] %}
+        {% set form_description = front['description-'+iso] %}
         {% set form_body = front['body-'+iso] %}
         {% set display_class = 'is-hidden' %}
     {% endif %}
+
+    <input name="{{iso}}-description" type="hidden" value="{{form_description}}" />
+
     <div class="edit-article__header row">
         <div class="row__left">
             <div class="selection-box">
@@ -52,9 +58,6 @@
             <input type="submit" class="button button--green toolbar__item" value="Save"/>
         </div>
     </div>    
-    
-    
-
     <div class="edit-article__main row col__flex">
         <div class="edit-article__editor row__left col">
             <textarea id="{{iso}}-body markItUp" class="col__flex" name="{{iso}}-body" type="text" data-provide="markdown" data-iconlibrary="fa" data-hidden-buttons="cmdPreview">{{form_body}}</textarea>
@@ -82,8 +85,8 @@
                 <a href="/setup" class="toolbar__item button button--outline">Connect to Google Analytics</a>
                 {% endif %}
             </div>
-        </div>
-        {% endfor %}
+    </div>
+{% endfor %}
 </form>
 <script type="text/javascript">
     {% for iso in languages %}

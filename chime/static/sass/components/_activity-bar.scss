@@ -1,0 +1,17 @@
+.activity-bar {
+	background-color: #fff;
+	color: $color-grey-800;
+	border-bottom: 1px solid $color-grey-300;
+}
+
+.activity-bar__title {
+	margin: 0;
+	font-weight: normal;
+}
+
+.activity-bar__actions {
+	.button {
+		font-weight: normal;
+		box-shadow: 0 0 3px rgba(0,0,0,.2);
+	}
+}

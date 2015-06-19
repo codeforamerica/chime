@@ -2,14 +2,15 @@ from __future__ import absolute_import
 from logging import getLogger
 Logger = getLogger('chime.view_functions')
 
-from os.path import join, isdir, realpath, basename, exists, split, sep
+from os.path import join, isdir, realpath, basename, exists, sep, split
 from datetime import datetime
-from os import listdir, environ
+from os import listdir, environ, walk
 from urllib import quote, unquote
 from urlparse import urljoin, urlparse, urlunparse
 from mimetypes import guess_type
 from functools import wraps
 from io import BytesIO
+from slugify import slugify
 import csv
 import re
 
@@ -19,16 +20,33 @@ from dateutil.relativedelta import relativedelta
 from flask import request, session, current_app, redirect, flash
 from requests import get
 
-from .repo_functions import get_existing_branch, ignore_task_metadata_on_merge, ChimeRepo
+from .repo_functions import get_existing_branch, ignore_task_metadata_on_merge, ChimeRepo, ACTIVITY_CREATED_MESSAGE, ACTIVITY_UPDATED_MESSAGE, ACTIVITY_DELETED_MESSAGE, COMMENT_COMMIT_PREFIX
 from .jekyll_functions import load_jekyll_doc
 from .href import needs_redirect, get_redirect
 
 from fcntl import flock, LOCK_EX, LOCK_UN, LOCK_SH
 
-# files that match these regex patterns will not be shown in the file explorer
+# when creating a content file, what extension should it have?
 CONTENT_FILE_EXTENSION = u'markdown'
+
+# the different types of messages that can be displayed in the activity overview
+MESSAGE_TYPE_INFO = u'info'
+MESSAGE_TYPE_COMMENT = u'comment'
+MESSAGE_TYPE_EDIT = u'edit'
+
+# the names of layouts, used in jekyll front matter and also in interface text
 CATEGORY_LAYOUT = 'category'
 ARTICLE_LAYOUT = 'article'
+FOLDER_FILE_TYPE = 'folder'
+FILE_FILE_TYPE = 'file'
+IMAGE_FILE_TYPE = 'image'
+CATEGORY_LAYOUT_PLURAL = 'categories'
+ARTICLE_LAYOUT_PLURAL = 'articles'
+FOLDER_FILE_TYPE_PLURAL = 'folders'
+FILE_FILE_TYPE_PLURAL = 'files'
+IMAGE_FILE_TYPE_PLURAL = 'images'
+
+# files that match these regex patterns will not be shown in the file explorer
 FILE_FILTERS = [
     r'^\.',
     r'^_',
@@ -94,7 +112,7 @@ def get_repo(flask_app):
     '''
     source_repo = ChimeRepo(flask_app.config['REPO_PATH'])
     first_commit = list(source_repo.iter_commits())[-1].hexsha
-    dir_name = 'repo-{}-{}'.format(first_commit[:8], session.get('email', 'nobody'))
+    dir_name = 'repo-{}-{}'.format(first_commit[:8], slugify(session.get('email', 'nobody')))
     user_dir = realpath(join(flask_app.config['WORK_PATH'], quote(dir_name)))
 
     if isdir(user_dir):
@@ -139,12 +157,12 @@ def path_type(file_path):
     ''' Returns the type of file at the passed path
     '''
     if isdir(file_path):
-        return 'folder'
+        return FOLDER_FILE_TYPE
 
     if str(guess_type(file_path)[0]).startswith('image/'):
-        return 'image'
+        return IMAGE_FILE_TYPE
 
-    return 'file'
+    return FILE_FILE_TYPE
 
 def path_display_type(file_path):
     ''' Returns a type matching how the file at the passed path should be displayed
@@ -156,6 +174,45 @@ def path_display_type(file_path):
         return CATEGORY_LAYOUT
 
     return path_type(file_path)
+
+def index_path_display_type_and_title(file_path):
+    ''' Works like path_display_type except that when the path is to an index file,
+        it checks the containing directory. Also returns an article or category title if
+        appropriate.
+    '''
+    index_filename = u'index.{}'.format(CONTENT_FILE_EXTENSION)
+    path_split = split(file_path)
+    if path_split[1] == index_filename:
+        folder_type = path_display_type(path_split[0])
+        # if the enclosing folder is just a folder (and not an article or category)
+        # return the type of the index file instead
+        if folder_type == FOLDER_FILE_TYPE:
+            return FILE_FILE_TYPE, u''
+
+        # the enclosing folder is an article or category
+        return folder_type, get_value_from_front_matter('title', file_path)
+
+    # the path was to something other than an index file
+    path_type = path_display_type(file_path)
+    if path_type in (ARTICLE_LAYOUT, CATEGORY_LAYOUT):
+        return path_type, get_value_from_front_matter('title', join(file_path, index_filename))
+
+    return path_type, u''
+
+def file_type_plural(file_type):
+    ''' Get the plural of the passed file type
+    '''
+    plural_lookup = {
+        CATEGORY_LAYOUT: CATEGORY_LAYOUT_PLURAL,
+        ARTICLE_LAYOUT: ARTICLE_LAYOUT_PLURAL,
+        FOLDER_FILE_TYPE: FOLDER_FILE_TYPE_PLURAL,
+        FILE_FILE_TYPE: FILE_FILE_TYPE_PLURAL,
+        IMAGE_FILE_TYPE: IMAGE_FILE_TYPE_PLURAL
+    }
+    if file_type in plural_lookup:
+        return plural_lookup[file_type]
+
+    return file_type
 
 # ONLY CALLED FROM sorted_paths()
 def is_display_editable(file_path):
@@ -198,6 +255,21 @@ def is_editable(file_path, layout=None):
         pass
 
     return False
+
+def describe_directory_contents(clone, file_path):
+    ''' Return a description of the contents of the passed path
+    '''
+    full_path = join(clone.working_dir, file_path)
+    described_files = []
+    for (dir_path, dir_names, file_names) in walk(full_path):
+        for check_name in file_names:
+            check_path = join(dir_path, check_name)
+            display_type, title = index_path_display_type_and_title(check_path)
+            short_path = re.sub('{}/'.format(clone.working_dir), '', check_path)
+            is_root = file_path == short_path or file_path == split(short_path)[0]
+            described_files.append({"display_type": display_type, "title": title, "short_path": short_path, "is_root": is_root})
+
+    return described_files
 
 def get_front_matter(file_path):
     ''' Get the front matter for the file at the passed path if it exists.
@@ -361,7 +433,7 @@ def common_template_args(app_config, session):
 
 def log_application_errors(route_function):
     ''' Error-logging decorator for route functions.
-    
+
         Don't do much, but get an error out to the logger.
     '''
     @wraps(route_function)
@@ -369,7 +441,7 @@ def log_application_errors(route_function):
         try:
             return route_function(*args, **kwargs)
         except Exception as e:
-            Logger.error(e, exc_info=True, extra={'request':request})
+            Logger.error(e, exc_info=True, extra={'request': request})
             raise
 
     return decorated_function
@@ -381,7 +453,7 @@ def login_required(route_function):
     '''
     @wraps(route_function)
     def decorated_function(*args, **kwargs):
-        email = session.get('email', None)
+        email = session.get('email', '').decode('utf-8')
 
         if not email:
             redirect_url = '/not-allowed'
@@ -395,9 +467,9 @@ def login_required(route_function):
             return redirect(redirect_url)
 
         environ['GIT_AUTHOR_NAME'] = ' '
-        environ['GIT_AUTHOR_EMAIL'] = email
+        environ['GIT_AUTHOR_EMAIL'] = email.encode('utf-8')
         environ['GIT_COMMITTER_NAME'] = ' '
-        environ['GIT_COMMITTER_EMAIL'] = email
+        environ['GIT_COMMITTER_EMAIL'] = email.encode('utf-8')
 
         return route_function(*args, **kwargs)
 
@@ -523,6 +595,66 @@ def get_relative_date(repo, file_path):
     '''
     return repo.git.log('-1', '--format=%ad', '--date=relative', '--', file_path)
 
+def make_delete_display_commit_message(repo, request_path):
+    ''' Build a commit message about file deletion for display in the activity history
+    '''
+    # construct the commit message
+    targeted_files = describe_directory_contents(repo, request_path)
+    message_details = {}
+    root_file = {}
+    for file_details in targeted_files:
+        display_type = file_details['display_type']
+        if display_type not in message_details:
+            message_details[display_type] = {}
+            message_details[display_type]['noun'] = display_type
+            message_details[display_type]['files'] = []
+        else:
+            message_details[display_type]['noun'] = file_type_plural(display_type)
+        message_details[display_type]['files'].append(file_details)
+        if file_details['is_root']:
+            root_file = file_details
+
+    commit_message = u'The "{}" {}'.format(root_file['title'], root_file['display_type'])
+    if len(targeted_files) > 1:
+        message_counts = []
+        for detail_key in message_details:
+            detail = message_details[detail_key]
+            message_counts.append(u'{} {}'.format(len(detail['files']), detail['noun']))
+        commit_message = commit_message + u' (containing {})'.format(u', '.join(message_counts[:-2] + [u' and '.join(message_counts[-2:])]))
+
+    commit_message = commit_message + u' was deleted'
+
+    return commit_message
+
+def make_activity_history(repo):
+    ''' Make an easily-parsable history of an activity since it was created.
+    '''
+    # see <http://git-scm.com/docs/git-log> for placeholders
+    log_format = '%x00Name: %an\tEmail: %ae\tDate: %ad\tSubject: %s\tBody: %b'
+    pattern = re.compile(r'^\x00Name: (.*?)\tEmail: (.*?)\tDate: (.*?)\tSubject: (.*?)\tBody: (.*?)$', re.MULTILINE)
+    log = repo.git.log('--format={}'.format(log_format), '--date=relative')
+
+    history = []
+    for log_details in pattern.findall(log):
+        name, email, date, subject, body = tuple([item.decode('utf-8') for item in log_details])
+        log_item = dict(author_name=name, author_email=email, commit_date=date, commit_subject=subject, commit_body=body, commit_type=get_message_type(subject))
+        history.append(log_item)
+        # don't get any history beyond the creation of the task metadata file, which is the beginning of the activity
+        if re.search(r'{}$'.format(ACTIVITY_CREATED_MESSAGE), subject):
+            break
+
+    return history
+
+def get_message_type(subject):
+    ''' Figure out what type of history log message this is, based on the subject
+    '''
+    if re.search(r'{}$|{}$|{}$'.format(ACTIVITY_CREATED_MESSAGE, ACTIVITY_UPDATED_MESSAGE, ACTIVITY_DELETED_MESSAGE), subject):
+        return MESSAGE_TYPE_INFO
+    elif re.search(r'{}$'.format(COMMENT_COMMIT_PREFIX), subject):
+        return MESSAGE_TYPE_COMMENT
+    else:
+        return MESSAGE_TYPE_EDIT
+
 def sorted_paths(repo, branch_name, path=None, showallfiles=False):
     ''' Returns a list of files and their attributes in the passed directory.
     '''
@@ -548,7 +680,7 @@ def sorted_paths(repo, branch_name, path=None, showallfiles=False):
             info['display_type'] = path_display_type(edit_path)
             file_title = get_value_from_front_matter('title', join(edit_path, u'index.{}'.format(CONTENT_FILE_EXTENSION)))
             if not file_title:
-                if info['display_type'] in ('folder', 'image', 'file'):
+                if info['display_type'] in (FOLDER_FILE_TYPE, IMAGE_FILE_TYPE, FILE_FILE_TYPE):
                     file_title = info['name']
                 else:
                     file_title = re.sub('-', ' ', info['name']).title()
@@ -581,18 +713,18 @@ def directory_columns(clone, branch_name, repo_path=None, showallfiles=False):
     ''' Get a list of lists of dicts for the passed path, with file listings for each level.
         example: passing 'hello/world/wide' will return something like:
             [
-                {'path': '',
+                {'base_path': '',
                  'files':
                     [
-                        {'name': 'hello', 'title': 'Hello', 'view_path': '/tree/dfffcd8/view/hello', 'display_type': 'category', 'is_editable': False, 'modified_date': '75 minutes ago', 'current_path': '', 'edit_path': '/tree/8bf27f6/edit/hello', 'selected': True},
-                        {'name': 'goodbye', 'title': 'Goodbye', 'view_path': '/tree/dfffcd8/view/goodbye', 'display_type': 'category', 'is_editable': False, 'modified_date': '2 days ago', 'current_path': '', 'edit_path': '/tree/8bf27f6/edit/goodbye', 'selected': False}
+                        {'name': 'hello', 'title': 'Hello', 'base_path': '', 'file_path': 'hello', 'edit_path': '/tree/8bf27f6/edit/hello', 'view_path': '/tree/dfffcd8/view/hello', 'display_type': 'category', 'is_editable': False, 'modified_date': '75 minutes ago', 'selected': True},
+                        {'name': 'goodbye', 'title': 'Goodbye', 'base_path': '', 'file_path': 'goodbye', 'edit_path': '/tree/8bf27f6/edit/goodbye', 'view_path': '/tree/dfffcd8/view/goodbye', 'display_type': 'category', 'is_editable': False, 'modified_date': '2 days ago', 'selected': False}
                     ]
                 },
-                {'path': 'hello',
+                {'base_path': 'hello',
                  'files':
                     [
-                        {'name': 'world', 'title': 'World', 'view_path': '/tree/dfffcd8/view/hello/world', 'display_type': 'category', 'is_editable': False, 'modified_date': '75 minutes ago', 'current_path': 'hello', 'edit_path': '/tree/8bf27f6/edit/hello/world', 'selected': True},
-                        {'name': 'moon', 'title': 'Moon', 'view_path': '/tree/dfffcd8/view/hello/moon', 'display_type': 'category', 'is_editable': False, 'modified_date': '4 days ago', 'current_path': 'hello', 'edit_path': '/tree/8bf27f6/edit/hello/moon', 'selected': False}
+                        {'name': 'world', 'title': 'World', 'base_path': 'hello', 'file_path': 'hello/world', 'edit_path': '/tree/8bf27f6/edit/hello/world', 'view_path': '/tree/dfffcd8/view/hello/world', 'display_type': 'category', 'is_editable': False, 'modified_date': '75 minutes ago', 'selected': True},
+                        {'name': 'moon', 'title': 'Moon', 'base_path': 'hello', 'file_path': 'hello/moon', 'edit_path': '/tree/8bf27f6/edit/hello/moon', 'view_path': '/tree/dfffcd8/view/hello/moon', 'display_type': 'category', 'is_editable': False, 'modified_date': '4 days ago', 'selected': False}
                     ]
                 }
             ]
@@ -612,19 +744,19 @@ def directory_columns(clone, branch_name, repo_path=None, showallfiles=False):
         except IndexError:
             current_dir = dirs[-1]
 
-        current_path = sep.join(dirs[1:i + 1])
-        current_edit_path = join(edit_path_root, current_path)
-        files = sorted_paths(clone, branch_name, current_path, showallfiles)
-        # name, title, view_path, display_type, is_editable, modified_date
-        listing = [{'name': item['name'], 'title': item['title'], 'view_path': item['view_path'], 'display_type': item['display_type'], 'is_editable': item['is_editable'], 'modified_date': item['modified_date'], 'current_path': current_path, 'edit_path': join(current_edit_path, item['name']), 'selected': (current_dir == item['name'])} for item in files]
-        dir_listings.append({'path': current_path, 'files': listing})
+        base_path = sep.join(dirs[1:i + 1])
+        current_edit_path = join(edit_path_root, base_path)
+        files = sorted_paths(clone, branch_name, base_path, showallfiles)
+        # name, title, base_path, file_path, edit_path, view_path, display_type, is_editable, modified_date, selected
+        listing = [{'name': item['name'], 'title': item['title'], 'base_path': base_path, 'file_path': join(base_path, item['name']), 'edit_path': join(current_edit_path, item['name']), 'view_path': item['view_path'], 'display_type': item['display_type'], 'is_editable': item['is_editable'], 'modified_date': item['modified_date'], 'selected': (current_dir == item['name'])} for item in files]
+        dir_listings.append({'base_path': base_path, 'files': listing})
 
     return dir_listings
 
 def get_directory_path(branch, path, dir_name):
     dir_index = path.find(dir_name + '/')
-    current_path = path[:dir_index] + dir_name + '/'
-    return join('/tree/%s/edit' % branch_name2path(branch), current_path)
+    base_path = path[:dir_index] + dir_name + '/'
+    return join('/tree/{}/edit'.format(branch_name2path(branch)), base_path)
 
 def should_redirect():
     ''' Return True if the current flask.request should redirect.

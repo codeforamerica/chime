@@ -1,8 +1,10 @@
-{% extends "base_new.html" %}
+{% extends "base.html" %}
 {% block title %}Activities{% endblock %}
-{% block body_class %}activities-list{% endblock %}
+{% set template_name = 'activities-list' %}
+{% block body_class %}{{template_name}}{% endblock %}
 
 {% block content %}
+    <!-- template name: {{template_name}} -->
     <div class="activities-list__main grid col__flex">
       <div class="current-tasks grid__item width-two-thirds">
         <h2 class="current-tasks__title">Current Activities</h2>
@@ -18,15 +20,18 @@
             <div class="current-task__details row">
               <p class="current-task__author row__left">Last edited by {{item.last_editor}}</p>
               <div class="current-task__actions row__right toolbar--right">
-                <form action="/merge" method="POST">
+                  <form action="/merge" method="POST" class="toolbar__item">
                   {% if item.needs_peer_review and not item.is_eligible_peer %}
-                    <a href="mailto:?to=&amp;subject={{item.review_subject|urlencode}}&amp;body={{item.review_body|urlencode}}" class="button-review button toolbar__item">Submit Changes for Feedback</a>
-                  {% endif %}
-                  
-                  {% if item.is_peer_approved %}
-                    <button name="action" value="merge" type="submit" class="button button-publish toolbar__item">Publish</button>
+                    <a href="/tree/{{item.path}}" class="button-review button button--orange toolbar__item">Request Feedback</a>
                   {% endif %}
 
+                  {% if item.needs_peer_review and item.is_eligible_peer %}
+                    <a href="/tree/{{item.path}}" class="button-review button button--green toolbar__item">Give Feedback</a>
+                  {% endif %}
+
+                  {% if item.is_peer_approved %}
+                    <button name="action" value="merge" type="submit" class="button button--blue button-publish">Publish</button>
+                  {% endif %}
                     <button name="action" value="abandon" type="submit" class="button button--red toolbar__item">Delete</button>
                     <input type="hidden" name="branch" value="{{item.name}}">
                   </form>
@@ -34,8 +39,8 @@
               </div>
             </li>
           {% endfor %}
+          </ul>
          {% endif %}
-        </table>
         </div>
         <div class="new-task grid__item width-one-third end-row">
           <h2 class="new-task__title">Start a new activity</h2>

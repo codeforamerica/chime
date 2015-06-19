@@ -1,8 +1,9 @@
 
-from os.path import exists, isdir, join, split, sep
-from os import rmdir, remove
+from os.path import exists, join, split, sep, isdir
+from os import walk
 from slugify import slugify
 from .jekyll_functions import dump_jekyll_doc
+from re import search, sub
 
 def update_page(clone, file_path, front, body):
     ''' Update existing Jekyll page in the working directory.
@@ -35,7 +36,7 @@ def create_path_to_page(clone, dir_path, request_path, front, body, filename):
         file_path = create_new_page(clone, dir_path, join(sep.join(dirs[:i + 1]), filename), front, body)
         file_paths.append(file_path)
 
-    return file_paths
+    return file_paths, dirs
 
 def create_new_page(clone, dir_path, request_path, front, body):
     ''' Create a new Jekyll page in the working directory, return its path.
@@ -68,17 +69,34 @@ def upload_new_file(clone, dir_path, upload):
 
     return file_path
 
-def delete_file(clone, path, file_name):
-    ''' Delete a file from the working directory, return its path.
+def list_contained_files(clone, file_path):
+    ''' List the files contained in the directory at file_path
     '''
-    file_path = join(path or '', file_name)
+    full_path = join(clone.working_dir, file_path)
+    if not isdir(full_path):
+        return [file_path]
+
+    contained_files = []
+    for (dir_path, dir_names, file_names) in walk(full_path):
+        for check_name in file_names:
+            check_path = join(dir_path, check_name)
+            short_path = sub('{}/'.format(clone.working_dir), '', check_path)
+            contained_files.append(short_path)
+
+    return contained_files
+
+def delete_file(clone, file_path):
+    ''' Delete files from the working directory, return their paths.
+    '''
     full_path = join(clone.working_dir, file_path)
     do_save = False
 
-    if isdir(full_path):
-        rmdir(full_path)
-    elif exists(full_path):
-        remove(full_path)
-        do_save = True
+    removed_paths = []
+    if exists(full_path):
+        removed_path_notes = clone.git.rm('-r', full_path).splitlines()
+        # paths are returned by git rm in the format: "rm 'path/goes/here'"; extract the paths
+        for note in removed_path_notes:
+            removed_paths.append(search(r"rm '(.+?)'", note).group(1))
+        do_save = len(removed_paths) > 0
 
-    return (file_path, do_save)
+    return (removed_paths, do_save)

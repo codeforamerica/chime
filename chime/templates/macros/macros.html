@@ -1,7 +1,6 @@
-{% macro globalHeader(breadcrumb_items=[], email, task_description, author_email, branch, task_date_updated, task_date_created, needs_peer_review, eligible_peer, is_peer_approved, is_peer_rejected) -%}
+{% macro globalHeader(breadcrumb_items=[], task_description, email, branch) -%}
 <div class="global-header  row">
   <div class="row__left">
-
     <a href="/" class="global-header__title">Chime</a>
     <nav class="breadcrumb">
       {% for item in breadcrumb_items %}
@@ -10,9 +9,29 @@
     </nav>
   </div>
   <nav class="global-header__nav  row__right  toolbar--right">
-    <a class="toolbar__item" href="{{ live_site_url }}">Visit site</a>
+    {% if branch %}
+    <div class="dropdown activity-dropdown toolbar__item global-header__link">
+      <a href="/tree/{{ branch }}" class="dropdown__label activity-dropdown__link">{{ task_description | title }}</a>
+      <div class="dropdown__popup dropdown__popup--right">
+        <p class="activity-dropdown__subtitle">Current Activity</p>
+        <h2 class="activity-dropdown__title">{{ task_description | title }}</h2>
+        <a class="button button--green button--large activity-dropdown__button" href="/tree/{{branch}}">See full history and discussion</a>
+        <form action="/review" class="comment comment--new">
+          <div class="comment__author">norris@codeforamerica.org</div>
+          <div class="comment__body">
+            <textarea class="comment__input" placeholder="Leave your comment here (optional)"></textarea>
+          </div>
+          <div class="comment__actions toolbar toolbar--right">
+            <input class="toolbar__item button button--green" type="button" name="action" value="Looks Good!">
+            <input class="toolbar__item button button" type="button" name="action" value="Comment">
+          </div>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+    <a class="toolbar__item global-header__link" href="{{ live_site_url }}">Visit site</a>
     {% if email %}
-      <a class="toolbar__item" href="#" id="signout">Sign Out</a>
+      <a class="toolbar__item global-header__link" href="#" id="signout">Sign Out</a>
     {% endif %}
   </nav>
 </div>
