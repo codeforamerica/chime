@@ -11,7 +11,6 @@ import yaml
 from re import match
 
 from . import edit_functions
-from .edit_functions import make_slug_path
 
 TASK_METADATA_FILENAME = u'_task.yml'
 BRANCH_NAME_LENGTH = 7
@@ -53,7 +52,7 @@ class ChimeRepo(Repo):
         '''
         result = join((args[0] or '').rstrip('/'), *args[1:])
         split_path = split(result) # also probably belongs up in request handling code
-        result = join(make_slug_path(split_path[0]), split_path[1])
+        result = join(edit_functions.make_slug_path(split_path[0]), split_path[1])
 
         return result
 
