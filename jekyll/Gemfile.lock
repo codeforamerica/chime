@@ -1,3 +1,8 @@
+PATH
+  remote: chime/directory-structure-generator
+  specs:
+    directory-structure-generator (0.0.1)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -72,6 +77,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  directory-structure-generator!
   jekyll
   therubyracer
 
