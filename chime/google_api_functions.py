@@ -78,7 +78,7 @@ def request_new_google_access_and_refresh_tokens(request):
         # Google rejected our request for some reason
         error_message = extract_error_message(access)
         if error_message:
-            error_message = ' ({})'.format(error_message)
+            error_message = u' ({})'.format(error_message)
 
         raise Exception(u'Google rejected authorization request{}, please try again.'.format(error_message), u'error')
 
@@ -170,7 +170,7 @@ def get_google_personal_info(access_token):
     if response.status_code != 200:
         error_message = extract_error_message(whoami)
         if error_message:
-            error_message = ' ({})'.format(error_message)
+            error_message = u' ({})'.format(error_message)
 
         raise Exception('Unable to retrieve personal info from the Google+ API{}'.format(error_message), u'warning')
 

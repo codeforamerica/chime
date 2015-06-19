@@ -21,9 +21,9 @@
       <h2>Categories</h2>
       <div class="selection-box box-add-file-folder">
         <form action="." method="POST" class="form-one-line">
-            <input class="form-one-line__input" name="path" placeholder="Add Category" type="text" />
+            <input class="form-one-line__input" name="request_path" placeholder="Add Category" type="text" />
             <input name="create_what" value="category" type="hidden" />
-            <input name="create_path" value="{{column['path']}}" type="hidden" />
+            <input name="create_path" value="{{column['base_path']}}" type="hidden" />
             <input class="form-one-line__submit button" name="action" type="submit" value="Create" />
         </form>
       </div>
@@ -31,9 +31,9 @@
       <h2>Subcategories</h2>
       <div class="selection-box box-add-file-folder">
         <form action="." method="POST" class="form-one-line">
-            <input class="form-one-line__input" name="path" placeholder="Add Subcategory" type="text" />
+            <input class="form-one-line__input" name="request_path" placeholder="Add Subcategory" type="text" />
             <input name="create_what" value="category" type="hidden" />
-            <input name="create_path" value="{{column['path']}}" type="hidden" />
+            <input name="create_path" value="{{column['base_path']}}" type="hidden" />
             <input class="form-one-line__submit button" name="action" type="submit" value="Create" />
         </form>
       </div>
@@ -41,9 +41,9 @@
       <h2>Articles</h2>
       <div class="selection-box box-add-file-folder">
         <form action="." method="POST" class="form-one-line">
-            <input class="form-one-line__input" name="path" placeholder="Add Article" type="text" />
+            <input class="form-one-line__input" name="request_path" placeholder="Add Article" type="text" />
             <input name="create_what" value="article" type="hidden" />
-            <input name="create_path" value="{{column['path']}}" type="hidden" />
+            <input name="create_path" value="{{column['base_path']}}" type="hidden" />
             <input class="form-one-line__submit button" name="action" type="submit" value="Create" />
         </form>
       </div>
@@ -54,6 +54,10 @@
          <li class="dir-item row {% if file['selected'] == True %}is-selected{% endif %}">
             <a class="dir-item__name {{file['display_type']}} row__left" href="{{file['edit_path']}}"><span class="{{icon_class_lookup[file['display_type']]}}"></span>{{ file['title'] }}</a>
             <div class="dir-item__actions toolbar--right row__right">
+            <form action="." method="POST">
+              <input name="request_path" value="{{file['file_path']}}" type="hidden">
+              <button name="action" type="submit" value="delete" style="background:none!important; border:none; padding:0!important; margin:0!important"><span class="fa fa-trash"></span></button>
+            </form>
               <a href="#"><span class="fa fa-pencil"></span></a>
             </div>
           </li>
@@ -63,6 +67,5 @@
     {% endif %}
     {% endfor %}
 </div>
-
 {% endblock %}
 
