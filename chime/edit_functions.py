@@ -36,7 +36,7 @@ def create_path_to_page(clone, dir_path, request_path, front, body, filename):
         file_path = create_new_page(clone, dir_path, join(sep.join(dirs[:i + 1]), filename), front, body)
         file_paths.append(file_path)
 
-    return file_paths
+    return file_paths, dirs
 
 def create_new_page(clone, dir_path, request_path, front, body):
     ''' Create a new Jekyll page in the working directory, return its path.

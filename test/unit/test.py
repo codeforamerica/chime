@@ -5,17 +5,19 @@ from unittest import main, TestCase
 
 from tempfile import mkdtemp
 from StringIO import StringIO
-from os.path import join, exists, dirname, isdir, abspath, isfile, sep
+from os.path import join, exists, dirname, isdir, abspath, isfile, sep, realpath
 from urlparse import urlparse, urljoin
+from urllib import quote
 from os import environ, remove
 from shutil import rmtree, copytree
 from uuid import uuid4
-from re import search
+from re import search, sub
 import random
 from datetime import date, timedelta
 import sys
 from chime import views
 from chime.repo_functions import ChimeRepo
+from slugify import slugify
 
 repo_root = abspath(join(dirname(__file__), '..'))
 sys.path.insert(0, repo_root)
@@ -44,6 +46,10 @@ PATTERN_TASK_COMMENT = u'<!-- task: {} -->'
 PATTERN_BENEFICIARY_COMMENT = u'<!-- beneficiary: {} -->'
 PATTERN_TEMPLATE_COMMENT = u'<!-- template name: {} -->'
 PATTERN_FILE_COMMENT = u'<!-- file type: {file_type}, file name: {file_name}, file title: {file_title} -->'
+PATTERN_OVERVIEW_ITEM_CREATED = u'<p>The "{created_name}" {created_type} was created by {author_email}.</p>'
+PATTERN_OVERVIEW_ACTIVITY_STARTED = u'<p>The "{activity_name}" activity was started by {author_email}.</p>'
+PATTERN_OVERVIEW_COMMENT_BODY = u'<div class="comment__body">{comment_body}</div>'
+PATTERN_OVERVIEW_ITEM_DELETED = u'<p>The "{deleted_name}" {deleted_type} {deleted_also}was deleted by {author_email}.</p>'
 
 class TestJekyll (TestCase):
 
@@ -100,10 +106,10 @@ class TestViewFunctions (TestCase):
         sorted_list = view_functions.sorted_paths(self.clone, 'master')
 
         expected_list = [
-            {'modified_date': view_functions.get_relative_date(self.clone, 'index.md'), 'name': 'index.md', 'title': 'index.md', 'view_path': '/tree/master/view/index.md', 'is_editable': True, 'display_type': 'file'},
-            {'modified_date': view_functions.get_relative_date(self.clone, 'other'), 'name': 'other', 'title': 'other', 'view_path': '/tree/master/view/other', 'is_editable': False, 'display_type': 'folder'},
-            {'modified_date': view_functions.get_relative_date(self.clone, 'other.md'), 'name': 'other.md', 'title': 'other.md', 'view_path': '/tree/master/view/other.md', 'is_editable': True, 'display_type': 'file'},
-            {'modified_date': view_functions.get_relative_date(self.clone, 'sub'), 'name': 'sub', 'title': 'sub', 'view_path': '/tree/master/view/sub', 'is_editable': False, 'display_type': 'folder'}]
+            {'modified_date': view_functions.get_relative_date(self.clone, 'index.md'), 'name': 'index.md', 'title': 'index.md', 'view_path': '/tree/master/view/index.md', 'is_editable': True, 'display_type': view_functions.FILE_FILE_TYPE},
+            {'modified_date': view_functions.get_relative_date(self.clone, 'other'), 'name': 'other', 'title': 'other', 'view_path': '/tree/master/view/other', 'is_editable': False, 'display_type': view_functions.FOLDER_FILE_TYPE},
+            {'modified_date': view_functions.get_relative_date(self.clone, 'other.md'), 'name': 'other.md', 'title': 'other.md', 'view_path': '/tree/master/view/other.md', 'is_editable': True, 'display_type': view_functions.FILE_FILE_TYPE},
+            {'modified_date': view_functions.get_relative_date(self.clone, 'sub'), 'name': 'sub', 'title': 'sub', 'view_path': '/tree/master/view/sub', 'is_editable': False, 'display_type': view_functions.FOLDER_FILE_TYPE}]
 
         self.assertEqual(sorted_list, expected_list)
 
@@ -192,6 +198,7 @@ mike@teczno.com,Code for America,Mike Migurski
 class TestRepo (TestCase):
 
     def setUp(self):
+        self.work_path = mkdtemp(prefix='chime-repo-clones-')
         repo_path = dirname(abspath(__file__)) + '/../test-app.git'
         temp_repo_dir = mkdtemp(prefix='chime-root')
         temp_repo_path = temp_repo_dir + '/test-app.git'
@@ -364,29 +371,29 @@ class TestRepo (TestCase):
         self.assertFalse(exists(join(self.clone2.working_dir, 'index.md')))
 
     def test_try_to_create_existing_category(self):
-        ''' Can't create the same category twice
+        ''' We can't create a category that exists already.
         '''
-        first_result = views.add_article_or_category(self.clone1, 'categories', 'my new category', view_functions.CATEGORY_LAYOUT)
-        self.assertEqual('Created new category "categories/my-new-category/index.markdown"', first_result[0])
+        first_result = views.add_article_or_category(self.clone1, 'categories', 'My New Category', view_functions.CATEGORY_LAYOUT)
+        self.assertEqual(u'The "My New Category" category was created\n\ncreated new file categories/my-new-category/index.markdown', first_result[0])
         self.assertEqual(u'categories/my-new-category/index.markdown', first_result[1])
         self.assertEqual(u'categories/my-new-category/', first_result[2])
         self.assertEqual(True, first_result[3])
-        second_result = views.add_article_or_category(self.clone1, 'categories', 'my new category', view_functions.CATEGORY_LAYOUT)
-        self.assertEqual('Category "my new category" already exists', second_result[0])
+        second_result = views.add_article_or_category(self.clone1, 'categories', 'My New Category', view_functions.CATEGORY_LAYOUT)
+        self.assertEqual('Category "My New Category" already exists', second_result[0])
         self.assertEqual(u'categories/my-new-category/index.markdown', second_result[1])
         self.assertEqual(u'categories/my-new-category/', second_result[2])
         self.assertEqual(False, second_result[3])
 
     def test_try_to_create_existing_article(self):
-        ''' Can't create the same article twice
+        ''' We can't create an article that exists already
         '''
-        first_result = views.add_article_or_category(self.clone1, 'categories/example', 'new article', view_functions.ARTICLE_LAYOUT)
-        self.assertEqual('Created new article "categories/example/new-article/index.markdown"', first_result[0])
+        first_result = views.add_article_or_category(self.clone1, 'categories/example', 'New Article', view_functions.ARTICLE_LAYOUT)
+        self.assertEqual('The "New Article" article was created\n\ncreated new file categories/example/new-article/index.markdown', first_result[0])
         self.assertEqual(u'categories/example/new-article/index.markdown', first_result[1])
         self.assertEqual(u'categories/example/new-article/index.markdown', first_result[2])
         self.assertEqual(True, first_result[3])
-        second_result = views.add_article_or_category(self.clone1, 'categories/example', 'new article', view_functions.ARTICLE_LAYOUT)
-        self.assertEqual('Article "new article" already exists', second_result[0])
+        second_result = views.add_article_or_category(self.clone1, 'categories/example', 'New Article', view_functions.ARTICLE_LAYOUT)
+        self.assertEqual('Article "New Article" already exists', second_result[0])
         self.assertEqual(u'categories/example/new-article/index.markdown', first_result[1])
         self.assertEqual(u'categories/example/new-article/index.markdown', first_result[2])
         self.assertEqual(False, second_result[3])
@@ -1022,6 +1029,134 @@ class TestRepo (TestCase):
         self.assertEqual(email2, 'reviewer@example.org')
         self.assertTrue('This still sucks.' in message2)
 
+    def test_article_creation_with_unicode(self):
+        ''' An article with unicode in its title is created and logged as expected.
+        '''
+        # start a new branch
+        fake_author_email = u'erica@example.com'
+        task_description = u'suck blood from a mammal'
+        task_beneficiary = u'mosquito larvae'
+
+        source_repo = self.origin
+        first_commit = list(source_repo.iter_commits())[-1].hexsha
+        dir_name = 'repo-{}-{}'.format(first_commit[:8], slugify(fake_author_email))
+        user_dir = realpath(join(self.work_path, quote(dir_name)))
+
+        if isdir(user_dir):
+            new_clone = ChimeRepo(user_dir)
+            new_clone.git.reset(hard=True)
+            new_clone.remotes.origin.fetch()
+        else:
+            new_clone = source_repo.clone(user_dir, bare=False)
+
+        # tell git to ignore merge conflicts on the task metadata file
+        repo_functions.ignore_task_metadata_on_merge(new_clone)
+
+        working_branch = repo_functions.get_start_branch(new_clone, 'master', task_description, task_beneficiary, fake_author_email)
+        self.assertTrue(working_branch.name in new_clone.branches)
+        self.assertTrue(working_branch.name in self.origin.branches)
+        working_branch.checkout()
+
+        # create an article
+        art_title = u'快速狐狸'
+        art_slug = u'kuai-su-hu-li'
+        add_message, file_path, redirect_path, do_save = views.add_article_or_category(new_clone, u'', art_title, view_functions.ARTICLE_LAYOUT)
+        self.assertEqual(u'The "{}" article was created\n\ncreated new file {}/index.markdown'.format(art_title, art_slug), add_message)
+        self.assertEqual(u'{}/index.markdown'.format(art_slug), file_path)
+        self.assertEqual(u'{}/index.{}'.format(art_slug, view_functions.CONTENT_FILE_EXTENSION), redirect_path)
+        self.assertEqual(True, do_save)
+        # commit the article
+        repo_functions.save_working_file(new_clone, file_path, add_message, new_clone.commit().hexsha, 'master')
+
+    def test_activity_history_recorded(self):
+        ''' The activity history accurately records activity events.
+        '''
+        # start a new branch
+        fake_author_email = u'erica@example.com'
+        task_description = u'shake trees until coconuts fall off'
+        task_beneficiary = u'castaways'
+
+        source_repo = self.origin
+        first_commit = list(source_repo.iter_commits())[-1].hexsha
+        dir_name = 'repo-{}-{}'.format(first_commit[:8], slugify(fake_author_email))
+        user_dir = realpath(join(self.work_path, quote(dir_name)))
+
+        if isdir(user_dir):
+            new_clone = ChimeRepo(user_dir)
+            new_clone.git.reset(hard=True)
+            new_clone.remotes.origin.fetch()
+        else:
+            new_clone = source_repo.clone(user_dir, bare=False)
+
+        # tell git to ignore merge conflicts on the task metadata file
+        repo_functions.ignore_task_metadata_on_merge(new_clone)
+
+        working_branch = repo_functions.get_start_branch(new_clone, 'master', task_description, task_beneficiary, fake_author_email)
+        self.assertTrue(working_branch.name in new_clone.branches)
+        self.assertTrue(working_branch.name in self.origin.branches)
+        working_branch.checkout()
+
+        # create some category/article structure
+        create_details = [
+            ('', 'Tree', view_functions.CATEGORY_LAYOUT),
+            ('tree', 'Coconut', view_functions.CATEGORY_LAYOUT),
+            ('tree/coconut', 'Coconut Milk', view_functions.ARTICLE_LAYOUT),
+            ('', 'Rock', view_functions.CATEGORY_LAYOUT),
+            ('rock', 'Barnacle', view_functions.CATEGORY_LAYOUT),
+            ('', 'Sand', view_functions.CATEGORY_LAYOUT)
+        ]
+        updated_details = []
+        for detail in create_details:
+            add_message, file_path, redirect_path, do_save = views.add_article_or_category(new_clone, detail[0], detail[1], detail[2])
+            updated_details.append(detail + (file_path,))
+            repo_functions.save_working_file(new_clone, file_path, add_message, new_clone.commit().hexsha, 'master')
+
+        # add a comment
+        funny_comment = u'I like coconuts ᶘ ᵒᴥᵒᶅ'
+        repo_functions.provide_feedback(new_clone, funny_comment)
+
+        # delete a category with stuff in it
+        commit_message = view_functions.make_delete_display_commit_message(new_clone, 'tree')
+        candidate_file_paths = edit_functions.list_contained_files(new_clone, 'tree')
+        deleted_file_paths, do_save = edit_functions.delete_file(new_clone, 'tree')
+        # add details to the commit message
+        file_files = u'files' if len(candidate_file_paths) > 1 else u'file'
+        commit_message = commit_message + u'\n\ndeleted {} "{}"'.format(file_files, u'", "'.join(candidate_file_paths))
+        # commit
+        repo_functions.save_working_file(new_clone, 'tree', commit_message, new_clone.commit().hexsha, 'master')
+
+        # checkout
+        working_branch.checkout()
+
+        # get and check the history
+        activity_history = view_functions.make_activity_history(new_clone)
+        self.assertEqual(len(activity_history), 9)
+
+        # check the creation of the activity
+        check_item = activity_history.pop()
+        self.assertEqual(u'The "{}" activity was started'.format(task_description), check_item['commit_subject'])
+        self.assertEqual(u'Created task metadata file "_task.yml"', check_item['commit_body'])
+        self.assertEqual(view_functions.MESSAGE_TYPE_INFO, check_item['commit_type'])
+
+        # check the delete
+        check_item = activity_history.pop(0)
+        self.assertEqual(u'The "{}" category (containing 2 categories and 1 article) was deleted'.format(updated_details[0][1]), check_item['commit_subject'])
+        self.assertEqual(u'deleted files "{}", "{}", "{}"'.format(updated_details[0][3], updated_details[1][3], updated_details[2][3]), check_item['commit_body'])
+        self.assertEqual(view_functions.MESSAGE_TYPE_EDIT, check_item['commit_type'])
+
+        # check the comment
+        check_item = activity_history.pop(0)
+        self.assertEqual(u'Provided feedback.', check_item['commit_subject'])
+        self.assertEqual(funny_comment, check_item['commit_body'])
+        self.assertEqual(view_functions.MESSAGE_TYPE_COMMENT, check_item['commit_type'])
+
+        # check the category & article creations
+        for pos, check_item in list(enumerate(activity_history)):
+            check_detail = updated_details[len(updated_details) - (pos + 1)]
+            self.assertEqual(u'The "{}" {} was created'.format(check_detail[1], check_detail[2]), check_item['commit_subject'])
+            self.assertEqual(u'created new file {}'.format(check_detail[3]), check_item['commit_body'])
+            self.assertEqual(view_functions.MESSAGE_TYPE_EDIT, check_item['commit_type'])
+
     def test_delete_full_folders(self):
         ''' Make sure that full folders can be deleted, and that what's reported as deleted matches what's expected.
         '''
@@ -1197,7 +1332,7 @@ class TestRepo (TestCase):
         self.assertEqual(commit1, branch1.commit)
 
         # merge the branch to master manually so the task metadata file will be included
-        message = 'Manual merge including task metadata'
+        message = u'Manual merge including task metadata'
         self.clone1.git.checkout('master')
         self.clone1.git.pull('origin', 'master')
 
@@ -1233,16 +1368,16 @@ class TestRepo (TestCase):
 class TestGoogleApiFunctions (TestCase):
 
     def setUp(self):
-        environment = {}
-        environment['BROWSERID_URL'] = 'http://example.com'
-        environment['LIVE_SITE_URL'] = 'http://example.org/'
-        environment['GA_CLIENT_ID'] = 'client_id'
-        environment['GA_CLIENT_SECRET'] = 'meow_secret'
+        create_app_environ = {}
+        create_app_environ['BROWSERID_URL'] = 'http://example.com'
+        create_app_environ['LIVE_SITE_URL'] = 'http://example.org/'
+        create_app_environ['GA_CLIENT_ID'] = 'client_id'
+        create_app_environ['GA_CLIENT_SECRET'] = 'meow_secret'
 
         self.ga_config_dir = mkdtemp(prefix='chime-config-')
-        environment['RUNNING_STATE_DIR'] = self.ga_config_dir
+        create_app_environ['RUNNING_STATE_DIR'] = self.ga_config_dir
 
-        self.app = create_app(environment)
+        self.app = create_app(create_app_environ)
 
         # write a tmp config file
         config_values = {
@@ -1452,13 +1587,13 @@ class TestAppConfig (TestCase):
         self.assertRaises(KeyError, lambda: create_app({}))
 
     def test_present_values(self):
-        environment = {}
-        environment['RUNNING_STATE_DIR'] = 'Yo'
-        environment['GA_CLIENT_ID'] = 'Yo'
-        environment['GA_CLIENT_SECRET'] = 'Yo'
-        environment['LIVE_SITE_URL'] = 'Hey'
-        environment['BROWSERID_URL'] = 'Hey'
-        create_app(environment)
+        create_app_environ = {}
+        create_app_environ['RUNNING_STATE_DIR'] = 'Yo'
+        create_app_environ['GA_CLIENT_ID'] = 'Yo'
+        create_app_environ['GA_CLIENT_SECRET'] = 'Yo'
+        create_app_environ['LIVE_SITE_URL'] = 'Hey'
+        create_app_environ['BROWSERID_URL'] = 'Hey'
+        create_app(create_app_environ)
 
 class TestApp (TestCase):
 
@@ -1474,21 +1609,29 @@ class TestApp (TestCase):
         self.clone1 = self.origin.clone(mkdtemp(prefix='chime-'))
         repo_functions.ignore_task_metadata_on_merge(self.clone1)
 
-        environment = {}
+        fake_author_email = u'erica@example.com'
+        self.session = dict(email=fake_author_email)
 
-        environment['SINGLE_USER'] = 'Yes'
-        environment['GA_CLIENT_ID'] = 'client_id'
-        environment['GA_CLIENT_SECRET'] = 'meow_secret'
+        environ['GIT_AUTHOR_NAME'] = ' '
+        environ['GIT_COMMITTER_NAME'] = ' '
+        environ['GIT_AUTHOR_EMAIL'] = self.session['email']
+        environ['GIT_COMMITTER_EMAIL'] = self.session['email']
+
+        create_app_environ = {}
+
+        create_app_environ['SINGLE_USER'] = 'Yes'
+        create_app_environ['GA_CLIENT_ID'] = 'client_id'
+        create_app_environ['GA_CLIENT_SECRET'] = 'meow_secret'
 
         self.ga_config_dir = mkdtemp(prefix='chime-config-')
-        environment['RUNNING_STATE_DIR'] = self.ga_config_dir
-        environment['WORK_PATH'] = self.work_path
-        environment['REPO_PATH'] = temp_repo_path
-        environment['AUTH_DATA_HREF'] = 'http://example.com/auth.csv'
-        environment['BROWSERID_URL'] = 'http://localhost'
-        environment['LIVE_SITE_URL'] = 'http://example.org/'
+        create_app_environ['RUNNING_STATE_DIR'] = self.ga_config_dir
+        create_app_environ['WORK_PATH'] = self.work_path
+        create_app_environ['REPO_PATH'] = temp_repo_path
+        create_app_environ['AUTH_DATA_HREF'] = 'http://example.com/auth.csv'
+        create_app_environ['BROWSERID_URL'] = 'http://localhost'
+        create_app_environ['LIVE_SITE_URL'] = 'http://example.org/'
 
-        self.app = create_app(environment)
+        self.app = create_app(create_app_environ)
 
         # write a tmp config file
         config_values = {
@@ -1641,7 +1784,7 @@ class TestApp (TestCase):
             self.assertTrue(PATTERN_AUTHOR_COMMENT.format(fake_author_email) in response.data)
 
             # extract the generated branch name from the returned HTML
-            generated_branch_search = search(r'<input name="branch" value="(.{{{}}})" type="hidden" />'.format(repo_functions.BRANCH_NAME_LENGTH), response.data)
+            generated_branch_search = search(r'<!-- branch: (.{{{}}}) -->'.format(repo_functions.BRANCH_NAME_LENGTH), response.data)
             self.assertIsNotNone(generated_branch_search)
             try:
                 generated_branch_name = generated_branch_search.group(1)
@@ -1792,7 +1935,7 @@ class TestApp (TestCase):
             self.assertTrue(PATTERN_BENEFICIARY_COMMENT.format(fake_task_beneficiary) in response.data)
 
             # extract the generated branch name from the returned HTML
-            generated_branch_search = search(r'<input name="branch" value="(.{{{}}})" type="hidden" />'.format(repo_functions.BRANCH_NAME_LENGTH), response.data)
+            generated_branch_search = search(r'<!-- branch: (.{{{}}}) -->'.format(repo_functions.BRANCH_NAME_LENGTH), response.data)
             self.assertIsNotNone(generated_branch_search)
             try:
                 generated_branch_name = generated_branch_search.group(1)
@@ -2186,6 +2329,53 @@ class TestApp (TestCase):
             self.assertFalse(exists(catb_location))
             self.assertFalse(exists(cata_location))
 
+    def test_article_creation_with_unicode_via_web_interface(self):
+        ''' An article with unicode in its title is created and logged as expected.
+        '''
+        fake_author_email = u'erica@example.com'
+        with HTTMock(self.mock_persona_verify):
+            self.test_client.post('/sign-in', data={'email': fake_author_email})
+
+        with HTTMock(self.auth_csv_example_allowed):
+            # start a new branch via the http interface
+            # invokes view_functions/get_repo which creates a clone
+            task_description = u'eviscerate a salmon'
+            task_beneficiary = u'baby grizzly bears'
+
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            self.assertTrue(working_branch.name in self.clone1.branches)
+            self.assertTrue(working_branch.name in self.origin.branches)
+            working_branch_name = working_branch.name
+            working_branch.checkout()
+
+            # create a new article
+            art_title = u'快速狐狸'
+            art_slug = u'kuai-su-hu-li'
+            response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name), data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': art_title}, follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            self.assertTrue(PATTERN_TEMPLATE_COMMENT.format(u'article-edit') in response.data.decode('utf-8'))
+
+            # pull the changes
+            self.clone1.git.pull('origin', working_branch_name)
+
+            # a directory was created
+            dir_location = join(self.clone1.working_dir, art_slug)
+            idx_location = u'{}/index.{}'.format(dir_location, view_functions.CONTENT_FILE_EXTENSION)
+            self.assertTrue(exists(dir_location) and isdir(dir_location))
+            # an index page was created inside
+            self.assertTrue(exists(idx_location))
+            # the directory and index page pass the article test
+            self.assertTrue(view_functions.is_article_dir(dir_location))
+            # the title saved in the index front matter is the same text that was used to create the article
+            self.assertEqual(view_functions.get_value_from_front_matter('title', idx_location), art_title)
+
+            # the title saved in the index front matter is displayed on the article list page
+            response = self.test_client.get('/tree/{}/edit/'.format(working_branch_name), follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            self.assertTrue(PATTERN_TEMPLATE_COMMENT.format(u'articles-list') in response.data.decode('utf-8'))
+            self.assertTrue(PATTERN_BRANCH_COMMENT.format(working_branch) in response.data.decode('utf-8'))
+            self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": art_slug, "file_title": art_title, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data.decode('utf-8'))
+
     def test_new_item_has_name_and_title(self):
         ''' A slugified directory name and display title are created when a new category or article is created.
         '''
@@ -2465,6 +2655,71 @@ class TestApp (TestCase):
             self.assertTrue(dir_columns[2]['files'][0]['name'] == slug_how)
             self.assertTrue(dir_columns[3]['files'][0]['name'] == slug_are)
 
+    def test_activity_history_page_is_accurate(self):
+        ''' The activity history page accurately displays the activity history
+        '''
+        fake_author_email = u'erica@example.com'
+        with HTTMock(self.mock_persona_verify):
+            self.test_client.post('/sign-in', data={'email': fake_author_email})
+
+        with HTTMock(self.auth_csv_example_allowed):
+            # start a new branch via the http interface
+            # invokes view_functions/get_repo which creates a clone
+            task_description = u'deposit eggs in a syconium'
+            task_beneficiary = u'fig wasp larvae'
+
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            self.assertTrue(working_branch.name in self.clone1.branches)
+            self.assertTrue(working_branch.name in self.origin.branches)
+            working_branch_name = working_branch.name
+            working_branch.checkout()
+
+            title_fig_zh = u'无花果'
+            slug_fig_zh = u'wu-hua-guo'
+            title_syconium = u'Syconium'
+            slug_syconium = u'syconium'
+            title_ostiole = u'Ostiole'
+            title_fig_en = u'Fig'
+            title_fig_bn = u'Dumur'
+            create_details = [
+                (u'', title_fig_zh, view_functions.CATEGORY_LAYOUT),
+                (slug_fig_zh, title_syconium, view_functions.CATEGORY_LAYOUT),
+                (u'{}/{}'.format(slug_fig_zh, slug_syconium), title_ostiole, view_functions.ARTICLE_LAYOUT),
+                (u'', title_fig_en, view_functions.CATEGORY_LAYOUT),
+                (u'', title_fig_bn, view_functions.CATEGORY_LAYOUT)
+            ]
+
+            for detail in create_details:
+                response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, detail[0]),
+                                                 data={'action': 'create', 'create_what': detail[2], 'request_path': detail[1]},
+                                                 follow_redirects=True)
+                self.assertEqual(response.status_code, 200)
+
+            # add a comment
+            comment_text = u'The flowers provide a safe haven and nourishment for the next generation of wasps. ᙙᙖ'
+            response = self.test_client.post('/tree/{}/'.format(working_branch_name),
+                                             data={'comment': 'Comment', 'comment_text': comment_text},
+                                             follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+
+            # delete a directory
+            response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
+                                             data={'action': 'delete', 'request_path': slug_fig_zh},
+                                             follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+
+            # get the activity history page
+            response = self.test_client.get('/tree/{}/'.format(working_branch_name), follow_redirects=True)
+            # TODO: for some reason (encoding?) my double-quotes are being replaced by &#34; in the returned HTML
+            response_data = sub('&#34;', '"', response.data.decode('utf-8'))
+            # make sure everything we did above is shown on the activity page
+            self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('activity-overview') in response_data)
+            self.assertTrue(PATTERN_OVERVIEW_ACTIVITY_STARTED.format(**{"activity_name": task_description, "author_email": fake_author_email}) in response_data)
+            self.assertTrue(PATTERN_OVERVIEW_COMMENT_BODY.format(**{"comment_body": comment_text}) in response_data)
+            self.assertTrue(PATTERN_OVERVIEW_ITEM_DELETED.format(**{"deleted_name": title_fig_zh, "deleted_type": view_functions.CATEGORY_LAYOUT, "deleted_also": u'(containing 2 categories and 1 article) ', "author_email": fake_author_email}) in response_data)
+            for detail in create_details:
+                self.assertTrue(PATTERN_OVERVIEW_ITEM_CREATED.format(**{"created_name": detail[1], "created_type": detail[2], "author_email": fake_author_email}), response_data)
+
     def test_create_page_creates_directory_containing_index(self):
         ''' Creating a new page creates a directory with an editable index file inside.
         '''
@@ -2621,8 +2876,8 @@ class TestApp (TestCase):
             new_dir_location = join(self.clone1.working_dir, new_page_slug)
             self.assertFalse(exists(new_dir_location) and isdir(new_dir_location))
 
-    def test_editable_directories_are_shown_as_files(self):
-        ''' Editable directories (directories containing only an editable index file) are displayed as files.
+    def test_editable_directories_are_shown_as_articles(self):
+        ''' Editable directories (directories containing only an editable index file) are displayed as articles.
         '''
         fake_author_email = u'erica@example.com'
         with HTTMock(self.mock_persona_verify):

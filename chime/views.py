@@ -21,7 +21,8 @@ from .view_functions import (
     login_required, browserid_hostname_required, synch_required, synched_checkout_required,
     breadcrumb_paths, directory_columns, should_redirect, make_redirect, get_auth_data_file,
     is_allowed_email, common_template_args, log_application_errors,
-    is_article_dir, CONTENT_FILE_EXTENSION, ARTICLE_LAYOUT, CATEGORY_LAYOUT)
+    is_article_dir, make_activity_history, describe_directory_contents, file_type_plural,
+    make_delete_display_commit_message, CONTENT_FILE_EXTENSION, ARTICLE_LAYOUT, CATEGORY_LAYOUT)
 
 from .google_api_functions import (
     read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens,
@@ -467,9 +468,9 @@ def render_edit_view(repo, branch, path, file):
 @login_required
 @synched_checkout_required
 def branch_edit(branch, path=None):
+    repo = get_repo(current_app)
     branch = branch_var2name(branch)
 
-    repo = get_repo(current_app)
     full_path = join(repo.working_dir, path or '.').rstrip('/')
 
     if isdir(full_path):
@@ -491,6 +492,7 @@ def branch_edit(branch, path=None):
 def add_article_or_category(repo, dir_path, request_path, create_what):
     ''' Add an article or category
     '''
+    request_path = request_path.rstrip('/')
     article_front = dict(title=u'', description=u'', order=0, layout=ARTICLE_LAYOUT)
     cat_front = dict(title=u'', description=u'', order=0, layout=CATEGORY_LAYOUT)
     body = u''
@@ -520,7 +522,7 @@ def add_article_or_category(repo, dir_path, request_path, create_what):
             return 'Article "{}" already exists'.format(request_path), file_path, file_path, False
         else:
             file_path = edit_functions.create_new_page(repo, dir_path, name, article_front, body)
-            message = 'Created new article "{}"'.format(file_path)
+            message = u'The "{}" article was created\n\ncreated new file {}'.format(name.split('/')[-2], file_path)
             redirect_path = file_path
             return message, file_path, redirect_path, True
     elif create_what == 'category':
@@ -529,15 +531,14 @@ def add_article_or_category(repo, dir_path, request_path, create_what):
             return 'Category "{}" already exists'.format(request_path), file_path, strip_index_file(file_path), False
         else:
             file_path = edit_functions.create_new_page(repo, dir_path, name, cat_front, body)
-            message = 'Created new category "{}"'.format(file_path)
-            return message, file_path, strip_index_file(file_path), True
+            message = u'The "{}" category was created\n\ncreated new file {}'.format(name.split('/')[-2], file_path)
+            redirect_path = strip_index_file(file_path)
+            return message, file_path, redirect_path, True
     else:
-        raise ValueError("Illegal creation request %s " % create_what)
-
+        raise ValueError("Illegal {} creation request in {}".format(create_what, join(dir_path, request_path)))
 
 def strip_index_file(file_path):
     return sub(r'index.{}$'.format(CONTENT_FILE_EXTENSION), '', file_path)
-
 
 @app.route('/tree/<branch>/edit/', methods=['POST'])
 @app.route('/tree/<branch>/edit/<path:path>', methods=['POST'])
@@ -570,10 +571,17 @@ def branch_edit_file(branch, path=None):
             flash(add_message, u'notice')
 
     elif action == 'delete' and 'request_path' in request.form:
+        # construct the commit message
+        commit_message = make_delete_display_commit_message(repo, request.form['request_path'])
+
+        # delete the file(s)
         candidate_file_paths = edit_functions.list_contained_files(repo, request.form['request_path'])
         deleted_file_paths, do_save = edit_functions.delete_file(repo, request.form['request_path'])
-        message_subject = u'files' if len(candidate_file_paths) > 1 else u'file'
-        commit_message = u'Deleted {} "{}"'.format(message_subject, u'", "'.join(candidate_file_paths))
+
+        # add details to the commit message
+        file_files = u'files' if len(candidate_file_paths) > 1 else u'file'
+        commit_message = commit_message + u'\n\ndeleted {} "{}"'.format(file_files, u'", "'.join(candidate_file_paths))
+
         # if we're in the path that's been deleted, redirect to the first still-existing directory in the path
         path_dirs = path.split('/')
         req_dirs = request.form['request_path'].split('/')
@@ -592,6 +600,69 @@ def branch_edit_file(branch, path=None):
 
     safe_branch = branch_name2path(branch_var2name(branch))
     return redirect('/tree/%s/edit/%s' % (safe_branch, redirect_path), code=303)
+
+@app.route('/tree/<branch>/', methods=['GET'])
+@log_application_errors
+@login_required
+@synched_checkout_required
+def show_activity_overview(branch):
+    branch = branch_var2name(branch)
+    repo = get_repo(current_app)
+    safe_branch = branch_name2path(branch)
+
+    # contains 'author_email', 'task_description', 'task_beneficiary'
+    activity = repo_functions.get_task_metadata_for_branch(repo, branch)
+    activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
+    activity['task_description'] = activity['task_description'] if 'task_description' in activity else u''
+    activity['task_beneficiary'] = activity['task_beneficiary'] if 'task_beneficiary' in activity else u''
+
+    languages = load_languages(repo.working_dir)
+
+    app_authorized = False
+    ga_config = read_ga_config(current_app.config['RUNNING_STATE_DIR'])
+    if ga_config.get('access_token'):
+        app_authorized = True
+
+    history = make_activity_history(repo)
+
+    date_created = repo.git.log('--format=%ad', '--date=relative', '--', repo_functions.TASK_METADATA_FILENAME).split('\n')[-1]
+    date_updated = repo.git.log('--format=%ad', '--date=relative').split('\n')[0]
+
+    activity.update(date_created=date_created, date_updated=date_updated,
+                    task_root_path=u'/tree/{}/edit/'.format(branch_name2path(branch)),
+                    safe_branch=safe_branch, history=history)
+
+    kwargs = common_template_args(current_app.config, session)
+    kwargs.update(activity=activity, app_authorized=app_authorized, languages=languages)
+
+    return render_template('activity-overview.html', **kwargs)
+
+@app.route('/tree/<branch>/', methods=['POST'])
+@log_application_errors
+@login_required
+@synched_checkout_required
+def edit_activity_overview(branch):
+    branch = branch_var2name(branch)
+    repo = get_repo(current_app)
+    safe_branch = branch_name2path(branch_var2name(branch))
+    # which submit button was pressed?
+    action = u''
+    possible_actions = ['comment', 'request_feedback', 'endorse', 'publish']
+    for check_action in possible_actions:
+        if check_action in request.form:
+            action = check_action
+            break
+
+    comment_text = request.form.get('comment_text', u'').strip()
+
+    # no matter what button was pressed, we'll comment if comment text was sent
+    if comment_text:
+        repo_functions.provide_feedback(repo, comment_text)
+
+    if not action:
+        raise Exception(u'Unrecognized request posted to branch_edit_file()')
+
+    return redirect('/tree/{}/'.format(safe_branch), code=303)
 
 @app.route('/tree/<branch>/history/', methods=['GET'])
 @app.route('/tree/<branch>/history/<path:path>', methods=['GET'])
@@ -622,6 +693,7 @@ def branch_history(branch, path=None):
     if ga_config.get('access_token'):
         app_authorized = True
 
+    # see <http://git-scm.com/docs/git-log> for placeholders
     log_format = '%x00Name: %an\tEmail: %ae\tDate: %ad\tSubject: %s'
     pattern = compile(r'^\x00Name: (.*?)\tEmail: (.*?)\tDate: (.*?)\tSubject: (.*?)$', MULTILINE)
     log = repo.git.log('-30', '--format={}'.format(log_format), '--date=relative', path)
@@ -640,37 +712,6 @@ def branch_history(branch, path=None):
 
     return render_template('article-history.html', **kwargs)
 
-@app.route('/tree/<branch>/review/', methods=['GET'])
-@log_application_errors
-@login_required
-@synched_checkout_required
-def branch_review(branch):
-    branch = branch_var2name(branch)
-
-    repo = get_repo(current_app)
-    c = repo.commit()
-
-    # contains 'author_email', 'task_description', 'task_beneficiary'
-    task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch)
-    author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
-    task_description = task_metadata['task_description'] if 'task_description' in task_metadata else u''
-    task_beneficiary = task_metadata['task_beneficiary'] if 'task_beneficiary' in task_metadata else u''
-
-    kwargs = common_template_args(current_app.config, session)
-    kwargs.update(branch=branch, safe_branch=branch_name2path(branch),
-                  hexsha=c.hexsha, author_email=author_email, task_description=task_description,
-                  task_beneficiary=task_beneficiary)
-
-    return render_template('activity-review.html', **kwargs)
-
-# Putting a placeholder template for article review here.
-@app.route('/tree/<branch>/review/<path:path>', methods=['GET'])
-@log_application_errors
-@login_required
-@synched_checkout_required
-def branch_file_review(branch, path):
-    kwargs = common_template_args(current_app.config, session)
-    return render_template('article-review.html', **kwargs)
 
 @app.route('/tree/<branch>/save/<path:path>', methods=['POST'])
 @log_application_errors
@@ -724,7 +765,7 @@ def branch_save(branch, path):
     # Try to merge from the master to the current branch.
     #
     try:
-        message = 'Saved file "{}"'.format(path)
+        message = u'The "{}" {} was edited\n\nsaved file "{}"'.format(request.form.get('en-title'), request.form.get('layout'), path)
         c2 = repo_functions.save_working_file(repo, path, message, commit.hexsha, master_name)
         # they may've renamed the page by editing the URL slug
         original_slug = path
@@ -775,6 +816,7 @@ def deploy_key():
             return Response(file.read(), 200, content_type='text/plain')
     except IOError:
         return Response('Not found.', 404, content_type='text/plain')
+
 
 @app.route('/<path:path>')
 @log_application_errors
