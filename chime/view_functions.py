@@ -34,6 +34,14 @@ MESSAGE_TYPE_INFO = u'info'
 MESSAGE_TYPE_COMMENT = u'comment'
 MESSAGE_TYPE_EDIT = u'edit'
 
+# the different review states for an activity
+# there are un-reviewed edits in the activity (or no edits at all)
+REVIEW_STATE_EDITED = u'edited'
+# there are un-reviewed edits in the activity and a review has been requested
+REVIEW_STATE_REQUESTED = u'requested'
+# a review has happened and the site is ready to be published
+REVIEW_STATE_LOOKS_GOOD = u'looks good'
+
 # the names of layouts, used in jekyll front matter and also in interface text
 CATEGORY_LAYOUT = 'category'
 ARTICLE_LAYOUT = 'article'
