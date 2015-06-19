@@ -18,4 +18,4 @@ DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 BUNDLE_GEMFILE="${DIR}/Gemfile"; export BUNDLE_GEMFILE
 
 
-bundle exec jekyll $* --config ${DIR}/_config.yml
+bundle exec jekyll $* --config ./_config.yml,${DIR}/_gem-import.yml
