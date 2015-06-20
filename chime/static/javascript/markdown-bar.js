@@ -37,7 +37,7 @@ function MarkdownBar(bar, textarea) {
 	var markdownTextarea = $(textarea);
 
 	// This value is to keep track of where the current value is the textarea is. Used to compare 
-	var startValue;
+	var startValue = markdownTextarea.val();
 
 	//Implement Undo Stack
 	var undoStack = new Undo.Stack();
@@ -48,80 +48,83 @@ function MarkdownBar(bar, textarea) {
 			this.newValue = newValue;
 		},
 		execute: function() {
-
+			// trigger is required for live preview to update.
+			this.textarea.trigger('change');
 		},
 		undo: function() {
 			this.textarea.val(this.oldValue)
 			startValue = this.oldValue;
+			this.textarea.trigger('change');
 		},
 		redo: function() {
 			this.textarea.val(this.newValue)
 			startValue = this.newValue;
+			this.textarea.trigger('change');
 		}
 	})
 
 	//Define Markdown Patterns
 	var PATTERNS = [
 		{
-			'name': 'h1',
+			'name': 'Bold',
+			'syntax': '**${content}**',
+			'icon': '<span class="fa fa-bold"></span>',
+			'filler': "This is bold text",
+			'type': 'inline'
+		},
+		{
+			'name': 'Italic',
+			'syntax': '_${content}_',
+			'icon': '<span class="fa fa-italic"></span>',
+			'filler': 'This is italicized text',
+			'type': 'inline'
+		},
+		{
+			'name': 'Link',
+			'syntax': '[${content}](http://www.example.com)',
+			'icon': '<span class="fa fa-link"></span>',
+			'filler': "This is a link",
+			'type': 'inline'
+		},
+		{
+			'name': 'Level 1 Heading',
 			'syntax': '# ${content}',
 			'icon': 'h1',
 			'filler': 'This is a level 1 heading',
 			'type': 'block'
 		},
 		{
-			'name': 'h2',
+			'name': 'Level 2 Heading',
 			'syntax': '## ${content}',
 			'icon': 'h2',
 			'filler': 'This is a level 2 heading',
 			'type': 'block'
 		},
 		{
-			'name': 'h3',
+			'name': 'Level 3 Heading',
 			'syntax': '### ${content}',
 			'icon': 'h3',
 			'filler': 'This is a level 3 heading',
 			'type': 'block'
 		},
 		{
-			'name': 'italics',
-			'syntax': '_${content}_',
-			'icon': '<i>i</i>',
-			'filler': 'This is italicized text',
-			'type': 'inline'
-		},
-		{
-			'name': 'bold',
-			'syntax': '**${content}**',
-			'icon': '<b>b</b>',
-			'filler': "This is bold text",
-			'type': 'inline'
-		},
-		{
-			'name': 'link',
-			'syntax': '[${content}](http://www.example.com)',
-			'icon': 'link',
-			'filler': "This is a link",
-			'type': 'inline'
-		},
-		{
-			'name': 'unordered-list',
+			'name': 'Bulleted List',
 			'syntax': '- ${content}',
-			'icon': 'ul',
+			'icon': '<span class="fa fa-list-ul"></span>',
 			'filler': "This is an bulleted list item",
 			'type': 'block'
 		},
 		{
-			'name': 'ordered-list',
+			'name': 'Numbered List',
 			'syntax': '1. ${content}',
-			'icon': 'ol',
+			'icon': '<span class="fa fa-list-ol"></span>',
 			'filler': "This is an numbered list item",
 			'type': 'block'
 		},
 		{
-			'name': 'blockquote',
+			'name': 'Blockquote',
 			'syntax': '> ${content}',
-			'icon': 'blockquote',
+			'icon': '<span class="fa fa-quote-right"></span>',
 			'filler': "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Id blanditiis voluptatem odit nesciunt. Fugit ipsam saepe, quisquam iste mollitia ducimus, recusandae, voluptatum libero eligendi nam sequi hic. Libero, tempore, suscipit!",
 			'type': 'block'
 		},
@@ -236,7 +239,7 @@ function MarkdownBar(bar, textarea) {
 
 		// Add buttons to markdown bar and bind events
 		$(PATTERNS).each(function(index, pattern) {
-			var patternButton = $('<div class="button button--outline toolbar__item">' + pattern['icon'] +'</div>');
+			var patternButton = $('<div class="button button--outline toolbar__item markdown-bar__button">' + pattern['icon'] + '<span class="markdown-bar__tooltip">' + pattern['name'] + '</span></div>');
 			patternButton.bind('click', function(event) {
 				self.markdownify(event, pattern['syntax'], pattern['filler'], pattern['type']);
 			});
@@ -259,8 +262,8 @@ function MarkdownBar(bar, textarea) {
 
 
 		// Create Undo/redo buttons
-		var undoButton = $('<button href="#" id="undo-button" class="toolbar__item button button--outline">undo</button>'),
-			redoButton = $('<button href="#" id="redo-button" class="toolbar__item button button--outline">redo</button>')
+		var undoButton = $('<button href="#" id="undo-button" class="toolbar__item button button--outline markdown-bar__button"><span class="fa fa-undo"></span><span class="markdown-bar__tooltip">Undo</span></button>'),
+			redoButton = $('<button href="#" id="redo-button" class="toolbar__item button button--outline markdown-bar__button"><span class="fa fa-repeat"></span><span class="markdown-bar__tooltip">Redo</span></button>')
 
 		function updateUndoStackUI() {
 			undoButton.attr("disabled", !undoStack.canUndo());
@@ -282,6 +285,7 @@ function MarkdownBar(bar, textarea) {
 			return false;
 		});
 
+		markdownBar.append('<div class="toolbar__item markdown-bar__divider"> </div>');
 		markdownBar.append(undoButton);
 		markdownBar.append(redoButton);
 		updateUndoStackUI();

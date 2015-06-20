@@ -1024,7 +1024,7 @@ input[type="submit"]:disabled:hover {
 }
 /* line 26, ../sass/components/_buttons.scss */
 .button:disabled {
-  opacity: .5;
+  opacity: .4;
   cursor: default;
 }
 
@@ -1550,6 +1550,60 @@ button.button {
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+}
+
+/* line 9, ../sass/components/_markdown-bar.scss */
+.markdown-bar__divider {
+  width: 1px;
+  height: 1em;
+  line-height: 0;
+}
+/* line 13, ../sass/components/_markdown-bar.scss */
+.markdown-bar__divider:before {
+  content: ' ';
+}
+
+/* line 18, ../sass/components/_markdown-bar.scss */
+.markdown-bar__button {
+  position: relative;
+}
+/* line 21, ../sass/components/_markdown-bar.scss */
+.markdown-bar__button:hover .markdown-bar__tooltip {
+  display: inline-block;
+}
+/* line 26, ../sass/components/_markdown-bar.scss */
+.markdown-bar__button:hover:disabled .markdown-bar__tooltip {
+  display: none;
+}
+
+/* line 33, ../sass/components/_markdown-bar.scss */
+.markdown-bar__tooltip {
+  display: none;
+  position: absolute;
+  width: 100px;
+  left: 0;
+  top: 100%;
+  margin-top: 7px;
+  background-color: #212121;
+  color: #f5f5f5;
+  line-height: 2em;
+  padding-left: .5em;
+  padding-right: .5em;
+  border-radius: 3px;
+  text-align: center;
+}
+/* line 50, ../sass/components/_markdown-bar.scss */
+.markdown-bar__tooltip:before {
+  position: absolute;
+  left: 4px;
+  top: -4px;
+  width: 0;
+  height: 0;
+  content: '';
+  z-index: 2;
+  border-bottom: 6px solid #212121;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
 }
 
 /*------------------------------------*\
