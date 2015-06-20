@@ -11,9 +11,11 @@
 <!--[if !IE]><!-->
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 <script src="/static/javascript/undo.js"></script>
-<script src="/static/javascript/markdown.min.js"></script>
 <script src="/static/javascript/markdown-bar.js"></script>
+<script src="/static/javascript/markdown.min.js"></script>
+<script src="/static/javascript/markdown-previewer.js"></script>
 <!--<![endif]-->
+
 {% endblock %}
 
 {% block content %}
@@ -71,6 +73,13 @@
             <div class="markdown-bar toolbar toolbar--left"></div>
             <textarea id="{{iso}}-body" class="col__flex markdown-textarea" name="{{iso}}-body" type="text">{{form_body}}</textarea>
         </div>
+        <!--[if !IE]><!-->
+        <div class="edit-article__previewer row__right col">
+            <div class="col__flex previewer-content">
+                <iframe src="/static/markdown-previewer/markdown-preview.html" class="markdown-previewer"></iframe>
+            </div>
+        </div>
+        <!--<![endif]-->
     </div>
     <div class="edit-article__footer row">
             <div class="translations row__left toolbar--left">

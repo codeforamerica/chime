@@ -1120,7 +1120,7 @@ button.button {
 }
 
 /* line 107, ../sass/components/_buttons.scss */
-.button--outline, .md-editor .md-header .btn {
+.button--outline {
   -webkit-transition: all ease-out 0.2s;
   -moz-transition: all ease-out 0.2s;
   transition: all ease-out 0.2s;
@@ -1129,13 +1129,13 @@ button.button {
   color: #616161;
 }
 /* line 112, ../sass/components/_buttons.scss */
-.button--outline:hover, .md-editor .md-header .btn:hover {
+.button--outline:hover {
   border-color: #bdbdbd;
   background-color: #bdbdbd;
   color: #424242;
 }
 /* line 117, ../sass/components/_buttons.scss */
-.button--outline:active, .md-editor .md-header .btn:active, .button--outline.is-selected, .md-editor .md-header .is-selected.btn {
+.button--outline:active, .button--outline.is-selected {
   border-color: #9e9e9e;
   background-color: #9e9e9e;
 }
@@ -1880,13 +1880,14 @@ button.button {
 
 /* line 25, ../sass/templates/_article-edit.scss */
 .edit-article__editor {
-  width: 100%;
+  width: 50%;
   max-width: 800px;
   background-color: #fafafa;
   border-right: 1px solid #e0e0e0;
 }
-/* line 31, ../sass/templates/_article-edit.scss */
-.edit-article__editor textarea {
+
+/* line 33, ../sass/templates/_article-edit.scss */
+.markdown-textarea {
   -webkit-box-flex: 1;
   -moz-box-flex: 1;
   box-flex: 1;
@@ -1909,82 +1910,56 @@ button.button {
   overflow: auto;
   padding: 2em;
 }
-/* line 48, ../sass/templates/_article-edit.scss */
-.edit-article__editor textarea:focus {
+/* line 50, ../sass/templates/_article-edit.scss */
+.markdown-textarea:focus {
   background-color: transparent;
 }
-/* line 52, ../sass/templates/_article-edit.scss */
-.lt-ie10 .edit-article__editor textarea {
+/* line 54, ../sass/templates/_article-edit.scss */
+.lt-ie10 .markdown-textarea {
   min-height: 300px;
   max-height: 700px;
 }
 
-/* line 59, ../sass/templates/_article-edit.scss */
-.md-editor {
-  display: -webkit-box;
-  display: -moz-box;
-  display: box;
-  display: -webkit-flex;
-  display: -moz-flex;
-  display: -ms-flexbox;
-  display: flex;
-  -webkit-box-orient: vertical;
-  -moz-box-orient: vertical;
-  box-orient: vertical;
-  -webkit-box-direction: normal;
-  -moz-box-direction: normal;
-  box-direction: normal;
-  -webkit-flex-direction: column;
-  -moz-flex-direction: column;
-  flex-direction: column;
-  -ms-flex-direction: column;
-  -webkit-box-flex: 1;
-  -moz-box-flex: 1;
-  box-flex: 1;
-  -webkit-flex: 1;
-  -moz-flex: 1;
-  -ms-flex: 1;
-  flex: 1;
-  border: 0;
-  box-shadow: none;
+/* line 60, ../sass/templates/_article-edit.scss */
+.edit-article__previewer {
+  width: 50%;
 }
-/* line 65, ../sass/templates/_article-edit.scss */
-.md-editor.active {
-  border: 0;
-  box-shadow: none;
+
+/* line 64, ../sass/templates/_article-edit.scss */
+.previewer-content {
+  position: relative;
+  margin: 40px;
+  border: 1px solid #e0e0e0;
 }
 /* line 69, ../sass/templates/_article-edit.scss */
-.md-editor .md-header {
-  -webkit-flex-shrink: 0;
-  -moz-flex-shrink: 0;
-  flex-shrink: 0;
-  -ms-flex-negative: 0;
-  background-color: #f5f5f5;
-  border-bottom: 1px solid #e0e0e0;
-  padding: 0.5em 40px;
+.lt-ie10 .previewer-content {
+  min-height: 300px;
+  max-height: 700px;
 }
 /* line 74, ../sass/templates/_article-edit.scss */
-.md-editor .md-header .btn {
-  border-radius: 3px;
-  margin-right: .5em;
-}
-/* line 80, ../sass/templates/_article-edit.scss */
-.md-editor textarea {
-  -webkit-box-flex: 1;
-  -moz-box-flex: 1;
-  box-flex: 1;
-  -webkit-flex: 1;
-  -moz-flex: 1;
-  -ms-flex: 1;
-  flex: 1;
+.previewer-content iframe {
+  background-color: #fff;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border: 0;
 }
 
 /* line 85, ../sass/templates/_article-edit.scss */
-.edit-article__previewer {
-  display: none;
+.previewer-bar {
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 0.5em 40px;
+  font-family: 'FontAwesome';
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
-/* line 89, ../sass/templates/_article-edit.scss */
+/* line 93, ../sass/templates/_article-edit.scss */
 .edit-article__footer {
   -webkit-flex-shrink: 0;
   -moz-flex-shrink: 0;
@@ -1996,7 +1971,7 @@ button.button {
   border-top: 1px solid #e0e0e0;
 }
 
-/* line 99, ../sass/templates/_article-edit.scss */
+/* line 103, ../sass/templates/_article-edit.scss */
 .statistics {
   color: #616161;
 }
