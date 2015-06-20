@@ -37,7 +37,7 @@ function MarkdownBar(bar, textarea) {
 	var markdownTextarea = $(textarea);
 
 	// This value is to keep track of where the current value is the textarea is. Used to compare 
-	var startValue;
+	var startValue = markdownTextarea.val();
 
 	//Implement Undo Stack
 	var undoStack = new Undo.Stack();
@@ -48,15 +48,18 @@ function MarkdownBar(bar, textarea) {
 			this.newValue = newValue;
 		},
 		execute: function() {
-
+			// trigger is required for live preview to update.
+			this.textarea.trigger('change');
 		},
 		undo: function() {
 			this.textarea.val(this.oldValue)
 			startValue = this.oldValue;
+			this.textarea.trigger('change');
 		},
 		redo: function() {
 			this.textarea.val(this.newValue)
 			startValue = this.newValue;
+			this.textarea.trigger('change');
 		}
 	})
 
