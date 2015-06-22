@@ -8,7 +8,7 @@ from git import Repo
 from git.cmd import GitCommandError
 import hashlib
 import yaml
-from re import match
+from re import match, search
 
 from . import edit_functions
 
@@ -19,6 +19,26 @@ ACTIVITY_CREATED_MESSAGE = u'activity was started'
 ACTIVITY_UPDATED_MESSAGE = u'activity was updated'
 ACTIVITY_DELETED_MESSAGE = u'activity was deleted'
 COMMENT_COMMIT_PREFIX = u'Provided feedback.'
+REVIEW_STATE_COMMIT_PREFIX = u'Updated review state.'
+ACTIVITY_FEEDBACK_MESSAGE = u'requested feedback on this activity.'
+ACTIVITY_ENDORSED_MESSAGE = u'endorsed this activity.'
+ACTIVITY_PUBLISHED_MESSAGE = u'published this activity.'
+
+# the different types of messages that can be displayed in the activity overview
+MESSAGE_TYPE_INFO = u'info'
+MESSAGE_TYPE_COMMENT = u'comment'
+MESSAGE_TYPE_EDIT = u'edit'
+MESSAGE_TYPE_REVIEW_STATE = u'review state'
+
+# the different review states for an activity
+# no changes have yet been made to the activity
+REVIEW_STATE_FRESH = u'fresh'
+# there are un-reviewed edits in the activity (or no edits at all)
+REVIEW_STATE_EDITED = u'edited'
+# there are un-reviewed edits in the activity and a review has been requested
+REVIEW_STATE_REQUESTED = u'requested'
+# a review has happened and the site is ready to be published
+REVIEW_STATE_ENDORSED = u'endorsed'
 
 class MergeConflict (Exception):
     def __init__(self, remote_commit, local_commit):
@@ -270,6 +290,7 @@ def verify_file_exists_in_branch(clone, file_path, working_branch_name=None):
 
 def make_shortened_task_description(task_description):
     ''' Shorten the passed description, cutting on a word boundary if possible
+        :NOTE: not used at the moment
     '''
     if len(task_description) <= DESCRIPTION_MAX_LENGTH:
         return task_description
@@ -528,6 +549,57 @@ def move_existing_file(clone, old_path, new_path, base_sha, default_branch_name)
 
     return clone.active_branch.commit
 
+def get_message_type(subject):
+    ''' Figure out what type of history log message this is, based on the subject
+    '''
+    if search(r'{}$|{}$|{}$'.format(ACTIVITY_CREATED_MESSAGE, ACTIVITY_UPDATED_MESSAGE, ACTIVITY_DELETED_MESSAGE), subject):
+        return MESSAGE_TYPE_INFO
+    elif search(r'{}$'.format(COMMENT_COMMIT_PREFIX), subject):
+        return MESSAGE_TYPE_COMMENT
+    elif search(r'{}$'.format(REVIEW_STATE_COMMIT_PREFIX), subject):
+        return MESSAGE_TYPE_REVIEW_STATE
+    else:
+        return MESSAGE_TYPE_EDIT
+
+def get_commit_message_subject_and_body(commit):
+    ''' split a commit's message into subject and body
+    '''
+    commit_split = commit.message.split('\n')
+    # extract the subject and body of the commit
+    # (subject & body are separated by two '\n's)
+    commit_subject = commit_split[0]
+    commit_body = commit_split[2]
+    return commit_subject, commit_body
+
+def get_review_state_and_author(repo, working_branch_name):
+    ''' Returns the review state and the author who set that state for the passed repo and branch
+    '''
+    last_commit = repo.branches[working_branch_name].commit
+    commit_subject, commit_body = get_commit_message_subject_and_body(last_commit)
+    message_type = get_message_type(commit_subject)
+    # use the last non-comment commit
+    while message_type == MESSAGE_TYPE_COMMENT:
+        last_commit = last_commit.parents[0]
+        commit_subject, commit_body = get_commit_message_subject_and_body(last_commit)
+        message_type = get_message_type(commit_subject)
+
+    author = last_commit.author.email
+    # return the edited state for everything that isn't caught
+    state = REVIEW_STATE_EDITED
+
+    # handle review state updates
+    if message_type == MESSAGE_TYPE_REVIEW_STATE:
+        if ACTIVITY_FEEDBACK_MESSAGE in commit_body:
+            state = REVIEW_STATE_REQUESTED
+        elif ACTIVITY_ENDORSED_MESSAGE in commit_body:
+            state = REVIEW_STATE_ENDORSED
+
+    # if the last commit is the creation of the activity, the state is fresh
+    elif search(r'{}$'.format(ACTIVITY_CREATED_MESSAGE), commit_subject):
+        state = REVIEW_STATE_FRESH
+
+    return state, author
+
 def needs_peer_review(repo, default_branch_name, working_branch_name):
     ''' Returns true if the active branch appears to be in need of review.
     '''
@@ -535,6 +607,7 @@ def needs_peer_review(repo, default_branch_name, working_branch_name):
     last_commit = repo.branches[working_branch_name].commit
     # we don't need peer review if the only change is
     # the commit of the task metadata file
+
     if TASK_METADATA_FILENAME in last_commit.message:
         last_commit = last_commit.parents[0]
 

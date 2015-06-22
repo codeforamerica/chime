@@ -17,12 +17,12 @@ from . import repo_functions, edit_functions
 from . import publish
 from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
 from .view_functions import (
-    branch_name2path, branch_var2name, get_repo, dos2unix,
-    login_required, browserid_hostname_required, synch_required, synched_checkout_required,
-    breadcrumb_paths, directory_columns, should_redirect, make_redirect, get_auth_data_file,
-    is_allowed_email, common_template_args, log_application_errors,
-    is_article_dir, make_activity_history, describe_directory_contents, file_type_plural,
-    make_delete_display_commit_message, CONTENT_FILE_EXTENSION, ARTICLE_LAYOUT, CATEGORY_LAYOUT)
+    branch_name2path, branch_var2name, get_repo, dos2unix, login_required, browserid_hostname_required,
+    synch_required, synched_checkout_required, breadcrumb_paths, directory_columns, should_redirect,
+    make_redirect, get_auth_data_file, is_allowed_email, common_template_args, log_application_errors,
+    is_article_dir, make_activity_history, make_delete_display_commit_message, CONTENT_FILE_EXTENSION,
+    ARTICLE_LAYOUT, CATEGORY_LAYOUT
+)
 
 from .google_api_functions import (
     read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens,

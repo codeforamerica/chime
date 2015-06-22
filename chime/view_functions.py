@@ -20,7 +20,7 @@ from dateutil.relativedelta import relativedelta
 from flask import request, session, current_app, redirect, flash
 from requests import get
 
-from .repo_functions import get_existing_branch, ignore_task_metadata_on_merge, ChimeRepo, ACTIVITY_CREATED_MESSAGE, ACTIVITY_UPDATED_MESSAGE, ACTIVITY_DELETED_MESSAGE, COMMENT_COMMIT_PREFIX
+from .repo_functions import get_existing_branch, ignore_task_metadata_on_merge, get_message_type, ChimeRepo, ACTIVITY_CREATED_MESSAGE
 from .jekyll_functions import load_jekyll_doc
 from .href import needs_redirect, get_redirect
 
@@ -28,19 +28,6 @@ from fcntl import flock, LOCK_EX, LOCK_UN, LOCK_SH
 
 # when creating a content file, what extension should it have?
 CONTENT_FILE_EXTENSION = u'markdown'
-
-# the different types of messages that can be displayed in the activity overview
-MESSAGE_TYPE_INFO = u'info'
-MESSAGE_TYPE_COMMENT = u'comment'
-MESSAGE_TYPE_EDIT = u'edit'
-
-# the different review states for an activity
-# there are un-reviewed edits in the activity (or no edits at all)
-REVIEW_STATE_EDITED = u'edited'
-# there are un-reviewed edits in the activity and a review has been requested
-REVIEW_STATE_REQUESTED = u'requested'
-# a review has happened and the site is ready to be published
-REVIEW_STATE_LOOKS_GOOD = u'looks good'
 
 # the names of layouts, used in jekyll front matter and also in interface text
 CATEGORY_LAYOUT = 'category'
@@ -652,16 +639,6 @@ def make_activity_history(repo):
             break
 
     return history
-
-def get_message_type(subject):
-    ''' Figure out what type of history log message this is, based on the subject
-    '''
-    if re.search(r'{}$|{}$|{}$'.format(ACTIVITY_CREATED_MESSAGE, ACTIVITY_UPDATED_MESSAGE, ACTIVITY_DELETED_MESSAGE), subject):
-        return MESSAGE_TYPE_INFO
-    elif re.search(r'{}$'.format(COMMENT_COMMIT_PREFIX), subject):
-        return MESSAGE_TYPE_COMMENT
-    else:
-        return MESSAGE_TYPE_EDIT
 
 def sorted_paths(repo, branch_name, path=None, showallfiles=False):
     ''' Returns a list of files and their attributes in the passed directory.
