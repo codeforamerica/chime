@@ -62,11 +62,9 @@ def index():
             is_eligible_peer = True
             needs_peer_review = False
             is_peer_approved = True
-            is_peer_rejected = False
         else:
             needs_peer_review = repo_functions.needs_peer_review(repo, master_name, name)
             is_peer_approved = repo_functions.is_peer_approved(repo, master_name, name)
-            is_peer_rejected = repo_functions.is_peer_rejected(repo, master_name, name)
             is_eligible_peer = session['email'] != repo_functions.ineligible_peer(repo, master_name, name)
 
         last_editor = repo_functions.ineligible_peer(repo, master_name, name)
@@ -83,7 +81,6 @@ def index():
         list_items.append(dict(name=name, path=path, behind=behind, ahead=ahead,
                                needs_peer_review=needs_peer_review,
                                is_peer_approved=is_peer_approved,
-                               is_peer_rejected=is_peer_rejected,
                                review_subject=review_subject,
                                review_body=review_body,
                                author_email=author_email, task_description=task_description,
@@ -406,20 +403,16 @@ def render_list_dir(repo, branch_name, path):
                   task_beneficiary=task_beneficiary, task_date_created=task_date_created,
                   task_date_updated=task_date_updated, task_root_path=task_root_path)
     master_name = current_app.config['default_branch']
-    kwargs['rejection_messages'] = list(repo_functions.get_rejection_messages(repo, master_name, branch_name))
+    kwargs['comments'] = list(repo_functions.get_comments(repo, master_name, branch_name))
     # TODO: the above might throw a GitCommandError if branch is an orphan.
     if current_app.config['SINGLE_USER']:
         kwargs['eligible_peer'] = True
         kwargs['needs_peer_review'] = False
         kwargs['is_peer_approved'] = True
-        kwargs['is_peer_rejected'] = False
     else:
         kwargs['eligible_peer'] = session['email'] != repo_functions.ineligible_peer(repo, master_name, branch_name)
         kwargs['needs_peer_review'] = repo_functions.needs_peer_review(repo, master_name, branch_name)
         kwargs['is_peer_approved'] = repo_functions.is_peer_approved(repo, master_name, branch_name)
-        kwargs['is_peer_rejected'] = repo_functions.is_peer_rejected(repo, master_name, branch_name)
-    if kwargs['is_peer_rejected']:
-        kwargs['rejecting_peer'], kwargs['rejection_message'] = kwargs['rejection_messages'].pop(0)
 
     return render_template('articles-list.html', **kwargs)
 

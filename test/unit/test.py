@@ -947,7 +947,7 @@ class TestRepo (TestCase):
         self.assertTrue(repo_functions.is_peer_approved(self.clone1, 'master', branch1_name))
         self.assertEqual(repo_functions.ineligible_peer(self.clone1, 'master', branch1_name), None)
 
-    def test_peer_rejected(self):
+    def test_peer_commented(self):
         ''' Feedback and edits by peers are handled as expected.
         '''
         fake_author_email = u'erica@example.com'
@@ -975,7 +975,6 @@ class TestRepo (TestCase):
 
         self.assertTrue(repo_functions.needs_peer_review(self.clone1, 'master', branch1_name))
         self.assertFalse(repo_functions.is_peer_approved(self.clone1, 'master', branch1_name))
-        self.assertFalse(repo_functions.is_peer_rejected(self.clone1, 'master', branch1_name))
         self.assertEqual(repo_functions.ineligible_peer(self.clone1, 'master', branch1_name), 'creator@example.com')
 
         #
@@ -990,7 +989,6 @@ class TestRepo (TestCase):
 
         self.assertFalse(repo_functions.needs_peer_review(self.clone1, 'master', branch1_name))
         self.assertFalse(repo_functions.is_peer_approved(self.clone1, 'master', branch1_name))
-        self.assertTrue(repo_functions.is_peer_rejected(self.clone1, 'master', branch1_name))
         self.assertEqual(repo_functions.ineligible_peer(self.clone1, 'master', branch1_name), None)
 
         #
@@ -1004,7 +1002,6 @@ class TestRepo (TestCase):
 
         self.assertTrue(repo_functions.needs_peer_review(self.clone1, 'master', branch1_name))
         self.assertFalse(repo_functions.is_peer_approved(self.clone1, 'master', branch1_name))
-        self.assertFalse(repo_functions.is_peer_rejected(self.clone1, 'master', branch1_name))
         self.assertEqual(repo_functions.ineligible_peer(self.clone1, 'master', branch1_name), 'reviewer@example.com')
 
         #
@@ -1019,10 +1016,9 @@ class TestRepo (TestCase):
 
         self.assertFalse(repo_functions.needs_peer_review(self.clone1, 'master', branch1_name))
         self.assertFalse(repo_functions.is_peer_approved(self.clone1, 'master', branch1_name))
-        self.assertTrue(repo_functions.is_peer_rejected(self.clone1, 'master', branch1_name))
         self.assertEqual(repo_functions.ineligible_peer(self.clone1, 'master', branch1_name), None)
 
-        (email2, message2), (email1, message1) = repo_functions.get_rejection_messages(self.clone1, 'master', branch1_name)
+        (email2, message2), (email1, message1) = repo_functions.get_comments(self.clone1, 'master', branch1_name)
 
         self.assertEqual(email1, 'reviewer@example.com')
         self.assertTrue('This sucks.' in message1)
