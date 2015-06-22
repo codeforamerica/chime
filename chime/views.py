@@ -403,7 +403,6 @@ def render_list_dir(repo, branch_name, path):
                   task_beneficiary=task_beneficiary, task_date_created=task_date_created,
                   task_date_updated=task_date_updated, task_root_path=task_root_path)
     master_name = current_app.config['default_branch']
-    kwargs['comments'] = list(repo_functions.get_comments(repo, master_name, branch_name))
     # TODO: the above might throw a GitCommandError if branch is an orphan.
     if current_app.config['SINGLE_USER']:
         kwargs['eligible_peer'] = True
