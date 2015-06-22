@@ -27,7 +27,9 @@
 // TOOD: Format whitespace around block elements.
 // TODO: Implement ideal cursor position behavior after pattern is added
 //	 - this includes preselection of filler text so user can start typing immediately without having to move the cursor.
-// TODO: Make this work with IE.
+// TODO: Make this work with <=IE9?
+// TODO: Make undo/redo keyboard shortcuts specific to platform. Current you can do both CNTL+Z or META+Z on any platform
+//			where META is COMMAND or WINDOWS key.
 
 
 function MarkdownBar(bar, textarea) {
@@ -136,23 +138,22 @@ function MarkdownBar(bar, textarea) {
 
 		startValue = markdownTextarea.val();
 
-		//TODO: Fix selectionStart and selectionEnd to work with IE
-		var selectionStart = markdownTextarea.get(0).selectionStart;
-		var selectionEnd =  markdownTextarea.get(0).selectionEnd;
+		markdownTextarea.get(0).focus();
+		var selection = self.getInputSelection(markdownTextarea.get(0));
 
 		// If patterntype is block, content should begin at beginning of line and end at the end of line
 		if(patternType == "block") {
-			while(markdownTextarea.val().charAt(selectionStart-1) != '\n' && selectionStart > 0) {
-				selectionStart--;
+			while(markdownTextarea.val().charAt(selection.start-1) != '\n' && selection.start > 0) {
+				selection.start--;
 			}
-			while(markdownTextarea.val().charAt(selectionEnd) != '\n' && selectionEnd < markdownTextarea.val().length) {
-				selectionEnd++;
+			while(markdownTextarea.val().charAt(selection.end) != '\n' && selection.end < markdownTextarea.val().length) {
+				selection.end++;
 			}
 		}
 
 		// Iterate over each line.
 		var newContent = "";
-		var content = markdownTextarea.val().slice(selectionStart, selectionEnd).split(/\n/);
+		var content = markdownTextarea.val().slice(selection.start, selection.end).split(/\n/);
 		$(content).each(function(index, contentLine) {
 
 			//Add filler text 
@@ -169,8 +170,8 @@ function MarkdownBar(bar, textarea) {
 
 
 		// Replace content in textarea
-		var contentBefore = markdownTextarea.val().slice(0, selectionStart);
-		var contentAfter = markdownTextarea.val().slice(selectionEnd, markdownTextarea.val().length)
+		var contentBefore = markdownTextarea.val().slice(0, selection.start);
+		var contentAfter = markdownTextarea.val().slice(selection.end, markdownTextarea.val().length)
 		var newValue = (contentBefore + newContent + contentAfter);
 		markdownTextarea.val(newValue);
 
@@ -210,14 +211,63 @@ function MarkdownBar(bar, textarea) {
 	    return finalString;
 	};
 
+	// From: http://stackoverflow.com/questions/235411/is-there-an-internet-explorer-approved-substitute-for-selection.start-and-selecti
+	// Cross-browser implementation of getting selection.
+	this.getInputSelection = function(el) {
+    var start = 0, end = 0, normalizedValue, range,
+        textInputRange, len, endRange;
+
+    if (typeof el.selectionStart == "number" && typeof el.selectionEnd == "number") {
+        start = el.selectionStart;
+        end = el.selectionEnd;
+    } else {
+        range = document.selection.createRange();
+
+        if (range && range.parentElement() == el) {
+            len = el.value.length;
+            normalizedValue = el.value.replace(/\r\n/g, "\n");
+
+            // Create a working TextRange that lives only in the input
+            textInputRange = el.createTextRange();
+            textInputRange.moveToBookmark(range.getBookmark());
+
+            // Check if the start and end of the selection are at the very end
+            // of the input, since moveStart/moveEnd doesn't return what we want
+            // in those cases
+            endRange = el.createTextRange();
+            endRange.collapse(false);
+
+            if (textInputRange.compareEndPoints("StartToEnd", endRange) > -1) {
+                start = end = len;
+            } else {
+                start = -textInputRange.moveStart("character", -len);
+                start += normalizedValue.slice(0, start).split("\n").length - 1;
+
+                if (textInputRange.compareEndPoints("EndToEnd", endRange) > -1) {
+                    end = len;
+                } else {
+                    end = -textInputRange.moveEnd("character", -len);
+                    end += normalizedValue.slice(0, end).split("\n").length - 1;
+                }
+            }
+        }
+    }
+
+    return {
+        start: start,
+        end: end
+    };
+}
+
 	
 	this.init = function() {
 
 		// Bind Textarea to Undo Stack (reimplementing basic undo/redo functionality)
 		var timer;
 		markdownTextarea.bind('keyup', function(event) {
-			// skip if keyup on 'Z' when undoing/redoing (metaKey is held down)
-			if (event.metaKey && event.which == 90) {
+
+			// skip if keyup on 'Z' when undoing/redoing (metaKey or ctrlKey is held down)
+			if (event.metaKey && event.which == 90 || event.ctrlKey && event.which == 90 ) {
 				return false;
 			}
 			// skip if keyup on 'shift key' or 'command/window key'
@@ -249,7 +299,8 @@ function MarkdownBar(bar, textarea) {
 
 		// Create Undo/Redo Keyboard Shortcuts
 		$(document).keydown(function(event) {
-			if (!event.metaKey || event.keyCode != 90) {
+			// Ignore if not keydown on Z, and ignore if there isn't either a metaKey or ctrlKey pressed while keydown on Z
+			if (!(event.metaKey || event.ctrlKey) || event.which != 90) {
 				return;
 			}
 			event.preventDefault();
