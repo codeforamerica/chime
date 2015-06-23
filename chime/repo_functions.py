@@ -568,7 +568,7 @@ def get_commit_message_subject_and_body(commit):
     # extract the subject and body of the commit
     # (subject & body are separated by two '\n's)
     commit_subject = commit_split[0]
-    commit_body = commit_split[2]
+    commit_body = commit_split[2] if len(commit_split) >= 3 else u''
     return commit_subject, commit_body
 
 def get_review_state_and_author(repo, working_branch_name):
