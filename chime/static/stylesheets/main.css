@@ -1759,7 +1759,7 @@ input[type="submit"]:disabled:hover {
   overflow: auto;
 }
 
-/* line 7, ../sass/templates/_directory-modify.scss */
+/* line 10, ../sass/templates/_directory-modify.scss */
 .directory-modify__form {
   background: #fff;
   padding: 20px;
@@ -1781,26 +1781,32 @@ input[type="submit"]:disabled:hover {
 .directory-modify__form:after {
   clear: both;
 }
+/* line 22, ../sass/templates/_directory-modify.scss */
+.lt-ie10 .directory-modify__form {
+  position: static;
+  margin-top: 0;
+  border: 1px solid #e0e0e0;
+}
 
-/* line 21, ../sass/templates/_directory-modify.scss */
+/* line 29, ../sass/templates/_directory-modify.scss */
 .directory-modify__title {
   margin-top: 0;
   border-bottom: 1px solid #e0e0e0;
   padding-bottom: 1em;
 }
 
-/* line 27, ../sass/templates/_directory-modify.scss */
+/* line 35, ../sass/templates/_directory-modify.scss */
 .directory-modify__name, .directory-modify__description {
   margin-bottom: 2em;
 }
 
-/* line 31, ../sass/templates/_directory-modify.scss */
+/* line 39, ../sass/templates/_directory-modify.scss */
 .directory-modify__description {
   height: 100px;
   resize: none;
 }
 
-/* line 36, ../sass/templates/_directory-modify.scss */
+/* line 44, ../sass/templates/_directory-modify.scss */
 .directory-modify__action-bar {
   padding: 0;
 }

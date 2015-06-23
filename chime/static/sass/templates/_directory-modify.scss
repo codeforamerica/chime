@@ -2,6 +2,9 @@
 	padding: $site-margins;
 	position: relative;
 	overflow: auto;
+	.le-ie10 & {
+
+	}
 }
 
 .directory-modify__form {
@@ -16,6 +19,11 @@
 	margin-top: -175px;
 	border-radius: $border-radius;
 	box-shadow: 0 0 5px rgba(0,0,0,.15);
+	.lt-ie10 & {
+		position: static;
+		margin-top: 0;
+		border: 1px solid $color-grey-300;
+	}
 }
 
 .directory-modify__title {

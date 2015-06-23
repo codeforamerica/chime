@@ -54,7 +54,7 @@
     </div>
     {% endif %}
     {% endfor %}
-    <div class="grid__item {% if dir_columns|length == 3 %}width-three-fourths{% elif dir_columns|length == 4 %}width-one-half{% endif %} directory-modify">
+    <div class="grid__item {% if dir_columns|length == 3 %}width-three-fourths{% elif dir_columns|length == 4 %}width-one-half{% endif %} end-row directory-modify">
       {% set dir_title = "Category" %}
       {% if dir_columns|length == 4 %}
         {% set dir_title = "Subcategory" %}
