@@ -571,13 +571,14 @@ def get_commit_message_subject_and_body(commit):
     commit_body = commit_split[2] if len(commit_split) >= 3 else u''
     return commit_subject, commit_body
 
-def get_review_state_and_author(repo, working_branch_name):
+def get_review_state_and_author(repo, default_branch_name, working_branch_name):
     ''' Returns the review state and the author who set that state for the passed repo and branch
     '''
+    base_commit_hexsha = repo.git.merge_base(default_branch_name, working_branch_name)
     last_commit = repo.branches[working_branch_name].commit
     commit_subject, commit_body = get_commit_message_subject_and_body(last_commit)
     message_type = get_message_type(commit_subject)
-    # use the last non-comment commit
+    # use the most recent non-comment commit
     while message_type == MESSAGE_TYPE_COMMENT:
         last_commit = last_commit.parents[0]
         commit_subject, commit_body = get_commit_message_subject_and_body(last_commit)
@@ -594,22 +595,27 @@ def get_review_state_and_author(repo, working_branch_name):
         elif ACTIVITY_ENDORSED_MESSAGE in commit_body:
             state = REVIEW_STATE_ENDORSED
 
-    # if the last commit is the creation of the activity, the state is fresh
-    elif search(r'{}$'.format(ACTIVITY_CREATED_MESSAGE), commit_subject):
+    # if the last commit is the creation of the activity, or if it is the same as the base commit, the state is fresh
+    elif search(r'{}$'.format(ACTIVITY_CREATED_MESSAGE), commit_subject) or last_commit.hexsha == base_commit_hexsha:
         state = REVIEW_STATE_FRESH
+
+    # if the original last commit is the same as the base commit, and we missed it somehow, the state is fresh
+    elif repo.branches[working_branch_name].commit == base_commit_hexsha:
+        state = REVIEW_STATE_FRESH
+        author = repo.branches[working_branch_name].commit.author.email
 
     return state, author
 
 def needs_peer_review(repo, default_branch_name, working_branch_name):
     ''' Returns true if the active branch appears to be in need of review.
     '''
-    review_state, author = get_review_state_and_author(repo, working_branch_name)
+    review_state, _ = get_review_state_and_author(repo, default_branch_name, working_branch_name)
     return (review_state == REVIEW_STATE_REQUESTED)
 
 def ineligible_peer(repo, default_branch_name, working_branch_name):
     ''' Returns the email address of a peer who shouldn't review this branch.
     '''
-    review_state, author = get_review_state_and_author(repo, working_branch_name)
+    review_state, author = get_review_state_and_author(repo, default_branch_name, working_branch_name)
     if review_state == REVIEW_STATE_REQUESTED:
         return author
 
@@ -618,7 +624,7 @@ def ineligible_peer(repo, default_branch_name, working_branch_name):
 def is_peer_approved(repo, default_branch_name, working_branch_name):
     ''' Returns true if the active branch appears peer-reviewed.
     '''
-    review_state, author = get_review_state_and_author(repo, working_branch_name)
+    review_state, _ = get_review_state_and_author(repo, default_branch_name, working_branch_name)
     return (review_state == REVIEW_STATE_ENDORSED)
 
 def mark_as_reviewed(clone):
@@ -662,12 +668,12 @@ def provide_feedback(clone, comment_text):
 def get_comments(repo, default_branch_name, working_branch_name):
     '''
     '''
-    base_commit = repo.git.merge_base(default_branch_name, working_branch_name)
+    base_commit_hexsha = repo.git.merge_base(default_branch_name, working_branch_name)
     last_commit = repo.branches[working_branch_name].commit
     commit_log = chain([last_commit], last_commit.iter_parents())
 
     for commit in commit_log:
-        if commit.hexsha == base_commit:
+        if commit.hexsha == base_commit_hexsha:
             break
 
         if COMMENT_COMMIT_PREFIX in commit.message:
