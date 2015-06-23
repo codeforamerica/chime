@@ -423,6 +423,48 @@ def render_list_dir(repo, branch_name, path):
 
     return render_template('articles-list.html', **kwargs)
 
+def render_modify_dir(repo, branch_name, path):
+    # :NOTE: temporarily turning off filtering if 'showallfiles=true' is in the request
+    showallfiles = request.args.get('showallfiles') == u'true'
+
+    # make the task root path
+    task_root_path = u'/tree/{}/edit/'.format(branch_name2path(branch_name))
+
+    # get the task metadata; contains 'author_email', 'task_description'
+    task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch_name)
+    author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
+    task_description = task_metadata['task_description'] if 'task_description' in task_metadata else u''
+    task_beneficiary = task_metadata['task_beneficiary'] if 'task_beneficiary' in task_metadata else u''
+
+    # get created and modified dates via git logs (relative dates for now)
+    task_date_created = repo.git.log('--format=%ad', '--date=relative', '--', repo_functions.TASK_METADATA_FILENAME).split('\n')[-1]
+    task_date_updated = repo.git.log('--format=%ad', '--date=relative').split('\n')[0]
+
+    kwargs = common_template_args(current_app.config, session)
+    kwargs.update(branch=branch_name, safe_branch=branch_name2path(branch_name),
+                  breadcrumb_paths=breadcrumb_paths(branch_name, path),
+                  dir_columns=directory_columns(repo, branch_name, path, showallfiles),
+                  author_email=author_email, task_description=task_description,
+                  task_beneficiary=task_beneficiary, task_date_created=task_date_created,
+                  task_date_updated=task_date_updated, task_root_path=task_root_path)
+    master_name = current_app.config['default_branch']
+    kwargs['rejection_messages'] = list(repo_functions.get_rejection_messages(repo, master_name, branch_name))
+    # TODO: the above might throw a GitCommandError if branch is an orphan.
+    if current_app.config['SINGLE_USER']:
+        kwargs['eligible_peer'] = True
+        kwargs['needs_peer_review'] = False
+        kwargs['is_peer_approved'] = True
+        kwargs['is_peer_rejected'] = False
+    else:
+        kwargs['eligible_peer'] = session['email'] != repo_functions.ineligible_peer(repo, master_name, branch_name)
+        kwargs['needs_peer_review'] = repo_functions.needs_peer_review(repo, master_name, branch_name)
+        kwargs['is_peer_approved'] = repo_functions.is_peer_approved(repo, master_name, branch_name)
+        kwargs['is_peer_rejected'] = repo_functions.is_peer_rejected(repo, master_name, branch_name)
+    if kwargs['is_peer_rejected']:
+        kwargs['rejecting_peer'], kwargs['rejection_message'] = kwargs['rejection_messages'].pop(0)
+
+    return render_template('directory-modify.html', **kwargs)
+
 def render_edit_view(repo, branch, path, file):
     ''' Render the page that lets you edit a file
     '''
@@ -485,6 +527,33 @@ def branch_edit(branch, path=None):
 
         # render the directory contents
         return render_list_dir(repo, branch, path)
+
+    # it's a file, edit it
+    return render_edit_view(repo, branch, path, open(full_path, 'r'))
+
+@app.route('/tree/<branch>/modify/', methods=['GET'])
+@app.route('/tree/<branch>/modify/<path:path>', methods=['GET'])
+@log_application_errors
+@login_required
+@synched_checkout_required
+def branch_modify(branch, path=None):
+    repo = get_repo(current_app)
+    branch = branch_var2name(branch)
+
+    full_path = join(repo.working_dir, path or '.').rstrip('/')
+
+    if isdir(full_path):
+        # if this is an editable directory (contains only an editable index file), redirect
+        if is_article_dir(full_path):
+            index_path = join(path or u'', u'index.{}'.format(CONTENT_FILE_EXTENSION))
+            return redirect('/tree/{}/edit/{}'.format(branch_name2path(branch), index_path))
+
+        # if the directory path didn't end with a slash, add it
+        if path and not path.endswith('/'):
+            return redirect('/tree/{}/modify/{}/'.format(branch_name2path(branch), path), code=302)
+
+        # render the directory modification view
+        return render_modify_dir(repo, branch, path)
 
     # it's a file, edit it
     return render_edit_view(repo, branch, path, open(full_path, 'r'))

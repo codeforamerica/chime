@@ -1,0 +1,38 @@
+.directory-modify {
+	padding: $site-margins;
+	position: relative;
+	overflow: auto;
+}
+
+.directory-modify__form {
+	@include clearfix();
+	background: #fff;
+	padding: $site-margins/2;
+	position: absolute;
+	left: $site-margins;
+	right: $site-margins;
+	top: 50%;
+	max-width: 500px;
+	margin-top: -175px;
+	border-radius: $border-radius;
+	box-shadow: 0 0 5px rgba(0,0,0,.15);
+}
+
+.directory-modify__title {
+	margin-top: 0;
+	border-bottom: 1px solid $color-grey-300;
+	padding-bottom: 1em;
+}
+
+.directory-modify__name, .directory-modify__description {
+	margin-bottom: 2em;
+}
+
+.directory-modify__description {
+	height: 100px;
+	resize: none;
+}
+
+.directory-modify__action-bar {
+	padding: 0;
+}

@@ -737,6 +737,7 @@ def directory_columns(clone, branch_name, repo_path=None, showallfiles=False):
 
     # Create the listings
     edit_path_root = u'/tree/{}/edit'.format(branch_name)
+    modify_path_root = u'/tree/{}/modify'.format(branch_name)
     dir_listings = []
     for i in range(len(dirs)):
         try:
@@ -746,9 +747,10 @@ def directory_columns(clone, branch_name, repo_path=None, showallfiles=False):
 
         base_path = sep.join(dirs[1:i + 1])
         current_edit_path = join(edit_path_root, base_path)
+        current_modify_path = join(modify_path_root, base_path)
         files = sorted_paths(clone, branch_name, base_path, showallfiles)
         # name, title, base_path, file_path, edit_path, view_path, display_type, is_editable, modified_date, selected
-        listing = [{'name': item['name'], 'title': item['title'], 'base_path': base_path, 'file_path': join(base_path, item['name']), 'edit_path': join(current_edit_path, item['name']), 'view_path': item['view_path'], 'display_type': item['display_type'], 'is_editable': item['is_editable'], 'modified_date': item['modified_date'], 'selected': (current_dir == item['name'])} for item in files]
+        listing = [{'name': item['name'], 'title': item['title'], 'base_path': base_path, 'file_path': join(base_path, item['name']), 'edit_path': join(current_edit_path, item['name']), 'modify_path': join(current_modify_path, item['name']), 'view_path': item['view_path'], 'display_type': item['display_type'], 'is_editable': item['is_editable'], 'modified_date': item['modified_date'], 'selected': (current_dir == item['name'])} for item in files]
         dir_listings.append({'base_path': base_path, 'files': listing})
 
     return dir_listings
