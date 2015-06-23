@@ -1132,26 +1132,26 @@ class TestRepo (TestCase):
         check_item = activity_history.pop()
         self.assertEqual(u'The "{}" activity was started'.format(task_description), check_item['commit_subject'])
         self.assertEqual(u'Created task metadata file "_task.yml"', check_item['commit_body'])
-        self.assertEqual(view_functions.MESSAGE_TYPE_INFO, check_item['commit_type'])
+        self.assertEqual(repo_functions.MESSAGE_TYPE_INFO, check_item['commit_type'])
 
         # check the delete
         check_item = activity_history.pop(0)
         self.assertEqual(u'The "{}" category (containing 2 categories and 1 article) was deleted'.format(updated_details[0][1]), check_item['commit_subject'])
         self.assertEqual(u'deleted files "{}", "{}", "{}"'.format(updated_details[0][3], updated_details[1][3], updated_details[2][3]), check_item['commit_body'])
-        self.assertEqual(view_functions.MESSAGE_TYPE_EDIT, check_item['commit_type'])
+        self.assertEqual(repo_functions.MESSAGE_TYPE_EDIT, check_item['commit_type'])
 
         # check the comment
         check_item = activity_history.pop(0)
         self.assertEqual(u'Provided feedback.', check_item['commit_subject'])
         self.assertEqual(funny_comment, check_item['commit_body'])
-        self.assertEqual(view_functions.MESSAGE_TYPE_COMMENT, check_item['commit_type'])
+        self.assertEqual(repo_functions.MESSAGE_TYPE_COMMENT, check_item['commit_type'])
 
         # check the category & article creations
         for pos, check_item in list(enumerate(activity_history)):
             check_detail = updated_details[len(updated_details) - (pos + 1)]
             self.assertEqual(u'The "{}" {} was created'.format(check_detail[1], check_detail[2]), check_item['commit_subject'])
             self.assertEqual(u'created new file {}'.format(check_detail[3]), check_item['commit_body'])
-            self.assertEqual(view_functions.MESSAGE_TYPE_EDIT, check_item['commit_type'])
+            self.assertEqual(repo_functions.MESSAGE_TYPE_EDIT, check_item['commit_type'])
 
     def test_delete_full_folders(self):
         ''' Make sure that full folders can be deleted, and that what's reported as deleted matches what's expected.
