@@ -38,56 +38,57 @@ def index():
     master_name = current_app.config['default_branch']
     branch_names = [b.name for b in repo.branches if b.name != master_name]
 
-    list_items = []
+    activities = []
 
-    for name in branch_names:
-        path = branch_name2path(name)
+    for branch_name in branch_names:
+        path = branch_name2path(branch_name)
+        safe_branch = branch_name2path(branch_name)
 
         try:
-            base = repo.git.merge_base(master_name, name)
+            base = repo.git.merge_base(master_name, branch_name)
         except GitCommandError:
             # Skip this branch if it looks to be an orphan. Just don't show it.
             continue
 
-        behind_raw = repo.git.log(base + '..' + master_name, format='%H %at %ae')
-        ahead_raw = repo.git.log(base + '..' + name, format='%H %at %ae')
+        # behind_raw = repo.git.log(base + '..' + master_name, format='%H %at %ae')
+        # ahead_raw = repo.git.log(base + '..' + branch_name, format='%H %at %ae')
 
-        pattern = compile(r'^(\w+) (\d+) (.+)$', MULTILINE)
-        # behind = [r.commit(sha) for (sha, t, e) in pattern.findall(behind_raw)]
-        # ahead = [r.commit(sha) for (sha, t, e) in pattern.findall(ahead_raw)]
-        behind = pattern.findall(behind_raw)
-        ahead = pattern.findall(ahead_raw)
-
-        if current_app.config['SINGLE_USER']:
-            is_eligible_peer = True
-            needs_peer_review = False
-            is_peer_approved = True
-        else:
-            needs_peer_review = repo_functions.needs_peer_review(repo, master_name, name)
-            is_peer_approved = repo_functions.is_peer_approved(repo, master_name, name)
-            is_eligible_peer = session['email'] != repo_functions.ineligible_peer(repo, master_name, name)
-
-        last_editor = repo_functions.ineligible_peer(repo, master_name, name)
-
-        review_subject = 'Plz review this thing'
-        review_body = '%s/tree/%s/edit' % (request.url, path)
+        # pattern = compile(r'^(\w+) (\d+) (.+)$', MULTILINE)
+        # # behind = [r.commit(sha) for (sha, t, e) in pattern.findall(behind_raw)]
+        # # ahead = [r.commit(sha) for (sha, t, e) in pattern.findall(ahead_raw)]
+        # behind = pattern.findall(behind_raw)
+        # ahead = pattern.findall(ahead_raw)
 
         # contains 'author_email', 'task_description', 'task_beneficiary'
-        task_metadata = repo_functions.get_task_metadata_for_branch(repo, name)
-        author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
-        task_description = task_metadata['task_description'] if 'task_description' in task_metadata else name
-        task_beneficiary = task_metadata['task_beneficiary'] if 'task_beneficiary' in task_metadata else u''
+        activity = repo_functions.get_task_metadata_for_branch(repo, branch_name)
+        activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
+        activity['task_description'] = activity['task_description'] if 'task_description' in activity else branch_name
+        activity['task_beneficiary'] = activity['task_beneficiary'] if 'task_beneficiary' in activity else u''
 
-        list_items.append(dict(name=name, path=path, behind=behind, ahead=ahead,
-                               needs_peer_review=needs_peer_review,
-                               is_peer_approved=is_peer_approved,
-                               review_subject=review_subject,
-                               review_body=review_body,
-                               author_email=author_email, task_description=task_description,
-                               task_beneficiary=task_beneficiary, is_eligible_peer=is_eligible_peer, last_editor=last_editor))
+        # get the current review state and authorized status
+        review_state, review_authorized = repo_functions.get_review_state_and_authorized(
+            repo=repo, default_branch_name=current_app.config['default_branch'],
+            working_branch_name=branch_name, actor_email=session.get('email', None)
+        )
+
+        date_created = repo.git.log('--format=%ad', '--date=relative', '--', repo_functions.TASK_METADATA_FILENAME).split('\n')[-1]
+        date_updated = repo.git.log('--format=%ad', '--date=relative').split('\n')[0]
+
+        # the email of the last person who edited the activity
+        last_edited_email = repo_functions.get_last_edited_email(
+            repo=repo, default_branch_name=current_app.config['default_branch'],
+            working_branch_name=branch_name
+        )
+
+        activity.update(date_created=date_created, date_updated=date_updated,
+                        task_root_path=u'/tree/{}/edit/'.format(branch_name2path(branch_name)),
+                        safe_branch=safe_branch, review_state=review_state,
+                        review_authorized=review_authorized, last_edited_email=last_edited_email)
+
+        activities.append(activity)
 
     kwargs = common_template_args(current_app.config, session)
-    kwargs.update(items=list_items)
+    kwargs.update(activities=activities)
 
     return render_template('activities-list.html', **kwargs)
 
@@ -603,12 +604,12 @@ def branch_edit_file(branch, path=None):
 @login_required
 @synched_checkout_required
 def show_activity_overview(branch):
-    branch = branch_var2name(branch)
+    branch_name = branch_var2name(branch)
     repo = get_repo(current_app)
-    safe_branch = branch_name2path(branch)
+    safe_branch = branch_name2path(branch_name)
 
     # contains 'author_email', 'task_description', 'task_beneficiary'
-    activity = repo_functions.get_task_metadata_for_branch(repo, branch)
+    activity = repo_functions.get_task_metadata_for_branch(repo, branch_name)
     activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
     activity['task_description'] = activity['task_description'] if 'task_description' in activity else u''
     activity['task_beneficiary'] = activity['task_beneficiary'] if 'task_beneficiary' in activity else u''
@@ -627,14 +628,14 @@ def show_activity_overview(branch):
     # get the current review state and authorized status
     review_state, review_authorized = repo_functions.get_review_state_and_authorized(
         repo=repo, default_branch_name=current_app.config['default_branch'],
-        working_branch_name=branch, actor_email=session.get('email', None)
+        working_branch_name=branch_name, actor_email=session.get('email', None)
     )
 
     date_created = repo.git.log('--format=%ad', '--date=relative', '--', repo_functions.TASK_METADATA_FILENAME).split('\n')[-1]
     date_updated = repo.git.log('--format=%ad', '--date=relative').split('\n')[0]
 
     activity.update(date_created=date_created, date_updated=date_updated,
-                    task_root_path=u'/tree/{}/edit/'.format(branch_name2path(branch)),
+                    task_root_path=u'/tree/{}/edit/'.format(branch_name2path(branch_name)),
                     safe_branch=safe_branch, history=history, review_state=review_state,
                     review_authorized=review_authorized)
 

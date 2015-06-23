@@ -598,6 +598,25 @@ def get_last_review_commit(repo, working_branch_name, base_commit_hexsha):
 
     return last_commit
 
+def get_last_edited_email(repo, default_branch_name, working_branch_name):
+    ''' Returns the email address of the last person to make an edit on this branch,
+        or the person who started the branch if there are no edits.
+    '''
+    base_commit_hexsha = repo.git.merge_base(default_branch_name, working_branch_name)
+    last_commit = repo.branches[working_branch_name].commit
+    if last_commit.hexsha == base_commit_hexsha:
+        return last_commit.author.email
+
+    commit_subject, commit_body = get_commit_message_subject_and_body(last_commit)
+    _, message_type, _ = get_message_classification(commit_subject, commit_body)
+    # use the most recent non-comment commit that's not the base commit
+    while message_type != MESSAGE_TYPE_EDIT and last_commit.hexsha != base_commit_hexsha:
+        last_commit = last_commit.parents[0]
+        commit_subject, commit_body = get_commit_message_subject_and_body(last_commit)
+        _, message_type, _ = get_message_classification(commit_subject, commit_body)
+
+    return last_commit.author.email
+
 def get_review_state_and_authorized(repo, default_branch_name, working_branch_name, actor_email):
     ''' Returns the review state and a boolean indicating whether the passed person is authorized
         to act upon the review state.
