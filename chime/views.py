@@ -255,8 +255,14 @@ def start_branch():
 @login_required
 @synch_required
 def merge_branch():
+    ''' Merge the posted branch (publish, abandon, or clobber it)
+    '''
+    return publish_or_destroy_activity(request.form.get('branch'), request.form.get('action', '').lower())
+
+def publish_or_destroy_activity(branch_name, action):
+    ''' Publish, abandon, or clobber the activity defined by the passed branch name.
+    '''
     repo = get_repo(current_app)
-    branch_name = request.form.get('branch')
     master_name = current_app.config['default_branch']
 
     # contains 'author_email', 'task_description', 'task_beneficiary'
@@ -266,7 +272,6 @@ def merge_branch():
     task_beneficiary = task_metadata['task_beneficiary'] if 'task_beneficiary' in task_metadata else u''
 
     try:
-        action = request.form.get('action', '').lower()
         args = repo, master_name, branch_name
 
         if action == 'merge':
@@ -608,6 +613,8 @@ def show_activity_overview(branch):
     activity['task_description'] = activity['task_description'] if 'task_description' in activity else u''
     activity['task_beneficiary'] = activity['task_beneficiary'] if 'task_beneficiary' in activity else u''
 
+    kwargs = common_template_args(current_app.config, session)
+
     languages = load_languages(repo.working_dir)
 
     app_authorized = False
@@ -617,14 +624,20 @@ def show_activity_overview(branch):
 
     history = make_activity_history(repo)
 
+    # get the current review state and authorized status
+    review_state, review_authorized = repo_functions.get_review_state_and_authorized(
+        repo=repo, default_branch_name=current_app.config['default_branch'],
+        working_branch_name=branch, actor_email=session.get('email', None)
+    )
+
     date_created = repo.git.log('--format=%ad', '--date=relative', '--', repo_functions.TASK_METADATA_FILENAME).split('\n')[-1]
     date_updated = repo.git.log('--format=%ad', '--date=relative').split('\n')[0]
 
     activity.update(date_created=date_created, date_updated=date_updated,
                     task_root_path=u'/tree/{}/edit/'.format(branch_name2path(branch)),
-                    safe_branch=safe_branch, history=history)
+                    safe_branch=safe_branch, history=history, review_state=review_state,
+                    review_authorized=review_authorized)
 
-    kwargs = common_template_args(current_app.config, session)
     kwargs.update(activity=activity, app_authorized=app_authorized, languages=languages)
 
     return render_template('activity-overview.html', **kwargs)
@@ -639,7 +652,7 @@ def edit_activity_overview(branch):
     safe_branch = branch_name2path(branch_var2name(branch))
     # which submit button was pressed?
     action = u''
-    possible_actions = ['comment', 'request_feedback', 'endorse', 'publish']
+    possible_actions = ['comment', 'request_feedback', 'endorse_edits', 'publish']
     for check_action in possible_actions:
         if check_action in request.form:
             action = check_action
@@ -650,6 +663,15 @@ def edit_activity_overview(branch):
     # no matter what button was pressed, we'll comment if comment text was sent
     if comment_text:
         repo_functions.provide_feedback(repo, comment_text)
+
+    # handle a review action
+    if action != 'comment':
+        if action == 'request_feedback':
+            repo_functions.update_review_state(repo, repo_functions.REVIEW_STATE_FEEDBACK)
+        elif action == 'endorse_edits':
+            repo_functions.update_review_state(repo, repo_functions.REVIEW_STATE_ENDORSED)
+        elif action == 'publish':
+            return publish_or_destroy_activity(branch, 'merge')
 
     if not action:
         raise Exception(u'Unrecognized request posted to branch_edit_file()')

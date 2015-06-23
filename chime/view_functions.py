@@ -20,7 +20,7 @@ from dateutil.relativedelta import relativedelta
 from flask import request, session, current_app, redirect, flash
 from requests import get
 
-from .repo_functions import get_existing_branch, ignore_task_metadata_on_merge, get_message_type, ChimeRepo, ACTIVITY_CREATED_MESSAGE
+from .repo_functions import get_existing_branch, ignore_task_metadata_on_merge, get_message_classification, ChimeRepo, ACTIVITY_CREATED_MESSAGE
 from .jekyll_functions import load_jekyll_doc
 from .href import needs_redirect, get_redirect
 
@@ -495,7 +495,7 @@ def browserid_hostname_required(route_function):
         browserid_netloc = urlparse(current_app.config['BROWSERID_URL']).netloc
         request_parsed = urlparse(request.url)
         if request_parsed.netloc != browserid_netloc:
-            Logger.info("Redirecting because request_parsed.netloc != browserid_netloc: %s != %s",request_parsed.netloc,browserid_netloc)
+            Logger.info("Redirecting because request_parsed.netloc != browserid_netloc: %s != %s", request_parsed.netloc, browserid_netloc)
             redirect_url = urlunparse((request_parsed.scheme, browserid_netloc, request_parsed.path, request_parsed.params, request_parsed.query, request_parsed.fragment))
             Logger.info("Redirecting to %s", redirect_url)
             return redirect(redirect_url)
@@ -632,7 +632,10 @@ def make_activity_history(repo):
     history = []
     for log_details in pattern.findall(log):
         name, email, date, subject, body = tuple([item.decode('utf-8') for item in log_details])
-        log_item = dict(author_name=name, author_email=email, commit_date=date, commit_subject=subject, commit_body=body, commit_type=get_message_type(subject))
+        commit_category, commit_type, commit_action = get_message_classification(subject, body)
+        log_item = dict(author_name=name, author_email=email, commit_date=date, commit_subject=subject,
+                        commit_body=body, commit_category=commit_category, commit_type=commit_type,
+                        commit_action=commit_action)
         history.append(log_item)
         # don't get any history beyond the creation of the task metadata file, which is the beginning of the activity
         if re.search(r'{}$'.format(ACTIVITY_CREATED_MESSAGE), subject):

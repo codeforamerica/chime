@@ -27,19 +27,32 @@
                         <textarea class="comment__input" name="comment_text" placeholder="Leave your comment here"></textarea>
                     </div>
                     <div class="comment__actions toolbar toolbar--right">
+                    {% if activity.review_authorized %}
+                        {% if activity.review_state == 'unreviewed edits' %}
                         <input class="toolbar__item button button--orange" type="submit" name="request_feedback" value="Request Feedback">
+                        {% elif activity.review_state == 'feedback requested' %}
+                        <input class="toolbar__item button button--green" type="submit" name="endorse_edits" value="Looks Good!">
+                        {% elif activity.review_state == 'edits endorsed' %}
+                        <input class="toolbar__item button button--blue" type="submit" name="publish" value="Publish">
+                        {% endif %}
+                    {% endif %}
                         <input class="toolbar__item button button" type="submit" name="comment" value="Comment">
                     </div>
                 </form>
             </div>
 
             {% for log_item in activity.history %}
-            <div class="activity-log-item activity-log-item--{{ log_item.commit_type }}">
+            <div class="activity-log-item activity-log-item--{{ log_item.commit_category }}">
                 {% if log_item.commit_type == 'comment' %}
                 <div class="comment">
                     <div class="comment__author">{{ log_item.author_email }}</div>
                     <div class="comment__body">{{ log_item.commit_body }}</div>
                     <div class="comment__datetime">{{ log_item.commit_date }}</div>
+                </div>
+                {% elif log_item.commit_type == 'review update' %}
+                <div class="activity-log-item__content">
+                    <p class="text-{% if log_item.commit_action == 'feedback requested' %}orange{% elif log_item.commit_action == 'edits endorsed' %}green{% else %}blue{% endif %}">{{ log_item.author_email }} {{ log_item.commit_body }}</p>
+                    <div class="activity-log-item__datetime">{{ log_item.commit_date }}</div>
                 </div>
                 {% else %}
                 <div class="activity-log-item__content">

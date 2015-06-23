@@ -1132,7 +1132,7 @@ class TestRepo (TestCase):
         check_item = activity_history.pop()
         self.assertEqual(u'The "{}" activity was started'.format(task_description), check_item['commit_subject'])
         self.assertEqual(u'Created task metadata file "_task.yml"', check_item['commit_body'])
-        self.assertEqual(repo_functions.MESSAGE_TYPE_INFO, check_item['commit_type'])
+        self.assertEqual(repo_functions.MESSAGE_TYPE_ACTIVITY_UPDATE, check_item['commit_type'])
 
         # check the delete
         check_item = activity_history.pop(0)
