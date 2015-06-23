@@ -1,17 +1,20 @@
 $(function() {
 
 	$('.markdown-previewer').load(function() {
-		// Preview Content in Editor
+		// Preview content in Editor
 		var markdownEditor = new Editor($(".markdown-textarea"), $(".markdown-previewer"));
 		$(".markdown-textarea").bind('change keyup', function(e) {
 			markdownEditor.update();
 		});
 
-		// Preview Title
+		// Preview title
 		$('.edit-article__title').bind('keyup change', function(e) {
 			$('.markdown-previewer').contents().find('header h1').html($(this).val());
 		})
 		$('.edit-article__title').trigger('change');
+
+		// Set iFrame height
+		$('.markdown-previewer').height($('.markdown-previewer').contents().height());
 	})
 	
 });

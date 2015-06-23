@@ -61,28 +61,30 @@
 	width: 50%;
 }
 
-.previewer-content {
-	position: relative;
-	margin: $site-margins;
-	border: 1px solid $color-grey-300;
+.previewer__content {
+	overflow: auto;
+	padding: $site-margins;
 
 	.lt-ie10 & {
 		min-height: 300px;
 		max-height: 700px;
 	}
-
-	iframe {
-		background-color: #fff;
-		width: 100%;
-		height: 100%;
-		position: absolute;
-		top: 0;
-		bottom: 0;
-		border: 0;
-	}
 }
 
-.previewer-bar {
+.previewer__iframe-container {
+	width: 100%;
+}
+
+.markdown-previewer {
+	@include appearance(none);
+	outline: none;
+	background-color: #fff;
+	height: 100%;
+	width: 100%;
+	border: 1px solid $color-grey-300;
+}
+
+.previewer__bar {
 	background-color: $color-grey-100;
 	border-bottom: 1px solid $color-grey-300;
 	padding: .5em $site-margins;
