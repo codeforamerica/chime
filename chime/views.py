@@ -653,15 +653,24 @@ def edit_activity_overview(branch):
     safe_branch = branch_name2path(branch_var2name(branch))
     comment_text = request.form.get('comment_text', u'').strip()
     action_list = [item for item in request.form if item != 'comment_text']
-    action = handle_activity_review_status_update(safe_branch, comment_text, action_list)
-    if action == 'publish':
-        return publish_or_destroy_activity(safe_branch, 'merge')
-
+    action, action_authorized = update_activity_review_status(safe_branch, comment_text, action_list)
+    if action_authorized:
+        if action == 'publish':
+            return publish_or_destroy_activity(safe_branch, 'merge')
+        else:
+            return redirect('/tree/{}/'.format(safe_branch), code=303)
     else:
+        action_lookup = {
+            'comment': u'leave a comment',
+            'request_feedback': u'request feedback',
+            'endorse_edits': u'endorse the edits',
+            'publish': u'publish the edits'
+        }
+        flash(u'Something changed behind the scenes and we couldn\'t {}! Please try again.'.format(action_lookup[action]), u'error')
         return redirect('/tree/{}/'.format(safe_branch), code=303)
 
-def handle_activity_review_status_update(branch_name, comment_text, action_list):
-    '''
+def update_activity_review_status(branch_name, comment_text, action_list):
+    ''' Comment and/or update the review state.
     '''
     repo = get_repo(current_app)
     # which submit button was pressed?
@@ -672,23 +681,35 @@ def handle_activity_review_status_update(branch_name, comment_text, action_list)
             action = check_action
             break
 
-    # no matter what button was pressed, we'll comment if comment text was sent
-    if comment_text:
-        repo_functions.provide_feedback(repo, comment_text)
+    # get the current review state and authorized status
+    review_state, review_authorized = repo_functions.get_review_state_and_authorized(
+        repo=repo, default_branch_name=current_app.config['default_branch'],
+        working_branch_name=branch_name, actor_email=session.get('email', None)
+    )
+    action_authorized = (action == 'comment' and comment_text)
 
     # handle a review action
     if action != 'comment':
         if action == 'request_feedback':
-            repo_functions.update_review_state(repo, repo_functions.REVIEW_STATE_FEEDBACK)
+            if review_state == repo_functions.REVIEW_STATE_EDITED and review_authorized:
+                repo_functions.update_review_state(repo, repo_functions.REVIEW_STATE_FEEDBACK)
+                action_authorized = True
         elif action == 'endorse_edits':
-            repo_functions.update_review_state(repo, repo_functions.REVIEW_STATE_ENDORSED)
+            if review_state == repo_functions.REVIEW_STATE_FEEDBACK and review_authorized:
+                repo_functions.update_review_state(repo, repo_functions.REVIEW_STATE_ENDORSED)
+                action_authorized = True
         elif action == 'publish':
-            pass
+            if review_state == repo_functions.REVIEW_STATE_ENDORSED and review_authorized:
+                action_authorized = True
 
     if not action:
-        raise Exception(u'Unrecognized request posted to branch_edit_file()')
+        raise Exception(u'Unrecognized request sent to update_activity_review_status()')
 
-    return action
+    # comment if comment text was sent and the action is authorized
+    if comment_text and action_authorized:
+        repo_functions.provide_feedback(repo, comment_text)
+
+    return action, action_authorized
 
 @app.route('/tree/<branch>/history/', methods=['GET'])
 @app.route('/tree/<branch>/history/<path:path>', methods=['GET'])
