@@ -29,7 +29,7 @@ from .google_api_functions import (
     authorize_google, get_google_personal_info, get_google_analytics_properties,
     fetch_google_analytics_for_page)
 
-@app.route('/')
+@app.route('/', methods=['GET'])
 @log_application_errors
 @login_required
 @synch_required
@@ -41,11 +41,10 @@ def index():
     activities = []
 
     for branch_name in branch_names:
-        path = branch_name2path(branch_name)
         safe_branch = branch_name2path(branch_name)
 
         try:
-            base = repo.git.merge_base(master_name, branch_name)
+            repo.git.merge_base(master_name, branch_name)
         except GitCommandError:
             # Skip this branch if it looks to be an orphan. Just don't show it.
             continue
@@ -251,14 +250,23 @@ def start_branch():
     safe_branch = branch_name2path(branch.name)
     return redirect('/tree/{}/edit/'.format(safe_branch), code=303)
 
-@app.route('/merge', methods=['POST'])
+@app.route('/update', methods=['POST'])
 @log_application_errors
 @login_required
 @synch_required
-def merge_branch():
-    ''' Merge the posted branch (publish, abandon, or clobber it)
+def update_activity():
+    ''' Update the activity review state or merge, abandon, or clobber the posted branch
     '''
-    return publish_or_destroy_activity(request.form.get('branch'), request.form.get('action', '').lower())
+    safe_branch = branch_name2path(branch_var2name(request.form.get('branch')))
+    action_list = [item for item in request.form if item != 'comment_text']
+    action, action_authorized = update_activity_review_status(branch_name=safe_branch, comment_text=u'', action_list=action_list)
+    if action_authorized:
+        if action in ('merge', 'abandon', 'clobber'):
+            return publish_or_destroy_activity(safe_branch, action)
+        else:
+            return redirect('/'.format(safe_branch), code=303)
+    else:
+        return redirect('/'.format(safe_branch), code=303)
 
 def publish_or_destroy_activity(branch_name, action):
     ''' Publish, abandon, or clobber the activity defined by the passed branch name.
@@ -653,10 +661,10 @@ def edit_activity_overview(branch):
     safe_branch = branch_name2path(branch_var2name(branch))
     comment_text = request.form.get('comment_text', u'').strip()
     action_list = [item for item in request.form if item != 'comment_text']
-    action, action_authorized = update_activity_review_status(safe_branch, comment_text, action_list)
+    action, action_authorized = update_activity_review_status(branch_name=safe_branch, comment_text=comment_text, action_list=action_list)
     if action_authorized:
-        if action == 'publish':
-            return publish_or_destroy_activity(safe_branch, 'merge')
+        if action in ('merge', 'abandon', 'clobber'):
+            return publish_or_destroy_activity(safe_branch, action)
         else:
             return redirect('/tree/{}/'.format(safe_branch), code=303)
     else:
@@ -668,7 +676,7 @@ def update_activity_review_status(branch_name, comment_text, action_list):
     repo = get_repo(current_app)
     # which submit button was pressed?
     action = u''
-    possible_actions = ['comment', 'request_feedback', 'endorse_edits', 'publish']
+    possible_actions = ['comment', 'request_feedback', 'endorse_edits', 'merge', 'abandon', 'clobber']
     for check_action in possible_actions:
         if check_action in action_list:
             action = check_action
@@ -691,12 +699,14 @@ def update_activity_review_status(branch_name, comment_text, action_list):
             if review_state == repo_functions.REVIEW_STATE_FEEDBACK and review_authorized:
                 repo_functions.update_review_state(repo, repo_functions.REVIEW_STATE_ENDORSED)
                 action_authorized = True
-        elif action == 'publish':
+        elif action == 'merge':
             if review_state == repo_functions.REVIEW_STATE_ENDORSED and review_authorized:
                 action_authorized = True
+        elif action == 'clobber' or action == 'abandon':
+            action_authorized = True
 
     if not action:
-        raise Exception(u'Unrecognized request sent to update_activity_review_status()')
+        raise Exception(u'Unrecognized request sent to update_activity_review_status')
 
     # comment if comment text was sent and the action is authorized
     if comment_text and action_authorized:
@@ -708,7 +718,7 @@ def update_activity_review_status(branch_name, comment_text, action_list):
             'comment': u'leave a comment',
             'request_feedback': u'request feedback',
             'endorse_edits': u'endorse the edits',
-            'publish': u'publish the edits'
+            'merge': u'publish the edits'
         }
         flash(u'Something changed behind the scenes and we couldn\'t {}! Please try again.'.format(action_lookup[action]), u'error')
 

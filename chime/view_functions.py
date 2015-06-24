@@ -35,11 +35,13 @@ ARTICLE_LAYOUT = 'article'
 FOLDER_FILE_TYPE = 'folder'
 FILE_FILE_TYPE = 'file'
 IMAGE_FILE_TYPE = 'image'
-CATEGORY_LAYOUT_PLURAL = 'categories'
-ARTICLE_LAYOUT_PLURAL = 'articles'
-FOLDER_FILE_TYPE_PLURAL = 'folders'
-FILE_FILE_TYPE_PLURAL = 'files'
-IMAGE_FILE_TYPE_PLURAL = 'images'
+LAYOUT_PLURAL_LOOKUP = {
+    CATEGORY_LAYOUT: 'categories',
+    ARTICLE_LAYOUT: 'articles',
+    FOLDER_FILE_TYPE: 'folders',
+    FILE_FILE_TYPE: 'files',
+    IMAGE_FILE_TYPE: 'images'
+}
 
 # files that match these regex patterns will not be shown in the file explorer
 FILE_FILTERS = [
@@ -197,15 +199,8 @@ def index_path_display_type_and_title(file_path):
 def file_type_plural(file_type):
     ''' Get the plural of the passed file type
     '''
-    plural_lookup = {
-        CATEGORY_LAYOUT: CATEGORY_LAYOUT_PLURAL,
-        ARTICLE_LAYOUT: ARTICLE_LAYOUT_PLURAL,
-        FOLDER_FILE_TYPE: FOLDER_FILE_TYPE_PLURAL,
-        FILE_FILE_TYPE: FILE_FILE_TYPE_PLURAL,
-        IMAGE_FILE_TYPE: IMAGE_FILE_TYPE_PLURAL
-    }
-    if file_type in plural_lookup:
-        return plural_lookup[file_type]
+    if file_type in LAYOUT_PLURAL_LOOKUP:
+        return LAYOUT_PLURAL_LOOKUP[file_type]
 
     return file_type
 

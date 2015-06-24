@@ -20,17 +20,17 @@
             <div class="current-task__details row">
               <p class="current-task__author row__left">Last edited by {{ activity.last_edited_email }}</p>
               <div class="current-task__actions row__right toolbar--right">
-                  <form action="/merge" method="POST" class="toolbar__item">
+                  <form action="/update" method="POST" class="toolbar__item">
                   {% if activity.review_authorized %}
                     {% if activity.review_state == 'unreviewed edits' %}
                     <input class="toolbar__item button button--orange" type="submit" name="request_feedback" value="Request Feedback">
                     {% elif activity.review_state == 'feedback requested' %}
                     <input class="toolbar__item button button--green" type="submit" name="endorse_edits" value="Looks Good!">
                     {% elif activity.review_state == 'edits endorsed' %}
-                    <input class="toolbar__item button button--blue" type="submit" name="publish" value="Publish">
+                    <input class="toolbar__item button button--blue" type="submit" name="merge" value="Publish">
                     {% endif %}
                   {% endif %}
-                    <button name="action" value="abandon" type="submit" class="button button--red toolbar__item">Delete</button>
+                    <input class="toolbar__item button button--red" type="submit" name="abandon" value="Delete">
                     <input type="hidden" name="branch" value="{{activity.safe_branch}}">
                   </form>
                 </div>

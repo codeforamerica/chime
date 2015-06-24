@@ -33,7 +33,7 @@
                         {% elif activity.review_state == 'feedback requested' %}
                         <input class="toolbar__item button button--green" type="submit" name="endorse_edits" value="Looks Good!">
                         {% elif activity.review_state == 'edits endorsed' %}
-                        <input class="toolbar__item button button--blue" type="submit" name="publish" value="Publish">
+                        <input class="toolbar__item button button--blue" type="submit" name="merge" value="Publish">
                         {% endif %}
                     {% endif %}
                         <input class="toolbar__item button button" type="submit" name="comment" value="Comment">
@@ -156,7 +156,7 @@
             </div>
 
             <div class="activity-log-item activity-log-item--comment">
-                <form action="/merge" class="comment comment--new">
+                <form action="/update" class="comment comment--new">
                     <div class="comment__author">norris@codeforamerica.org</div>
                     <div class="comment__body">
                         <textarea class="comment__input" placeholder="Leave your comment here"></textarea>

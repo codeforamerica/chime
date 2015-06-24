@@ -1836,8 +1836,8 @@ class TestApp (TestCase):
 
         # Look for the publish form button.
         inputs = soup.find_all('input', type='hidden', value=generated_branch_name)
-        (form, ) = [input.find_parent('form', action='/merge') for input in inputs]
-        button = form.find('button', text='Publish')
+        (form, ) = [input.find_parent('form', action='/update') for input in inputs]
+        button = form.find('input', value='Publish')
 
         # Punch it, Chewie.
         data = dict([(i['name'], i['value']) for i in form.find_all(['input'])])
@@ -1954,7 +1954,7 @@ class TestApp (TestCase):
             hexsha = search(r'<input name="hexsha" value="(\w+)"', response.data).group(1)
 
             # delete the branch
-            response = self.test_client.post('/merge', data={'action': 'abandon', 'branch': '{}'.format(generated_branch_name)}, follow_redirects=True)
+            response = self.test_client.post('/update', data={'abandon': 'Delete', 'branch': '{}'.format(generated_branch_name)}, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             self.assertFalse(generated_branch_name in response.data)
 
