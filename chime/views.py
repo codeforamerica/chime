@@ -648,18 +648,29 @@ def show_activity_overview(branch):
 @login_required
 @synched_checkout_required
 def edit_activity_overview(branch):
-    branch = branch_var2name(branch)
-    repo = get_repo(current_app)
+    ''' Handle a POST from a form on the activity overview page
+    '''
     safe_branch = branch_name2path(branch_var2name(branch))
+    comment_text = request.form.get('comment_text', u'').strip()
+    action_list = [item for item in request.form if item != 'comment_text']
+    action = handle_activity_review_status_update(safe_branch, comment_text, action_list)
+    if action == 'publish':
+        return publish_or_destroy_activity(safe_branch, 'merge')
+
+    else:
+        return redirect('/tree/{}/'.format(safe_branch), code=303)
+
+def handle_activity_review_status_update(branch_name, comment_text, action_list):
+    '''
+    '''
+    repo = get_repo(current_app)
     # which submit button was pressed?
     action = u''
     possible_actions = ['comment', 'request_feedback', 'endorse_edits', 'publish']
     for check_action in possible_actions:
-        if check_action in request.form:
+        if check_action in action_list:
             action = check_action
             break
-
-    comment_text = request.form.get('comment_text', u'').strip()
 
     # no matter what button was pressed, we'll comment if comment text was sent
     if comment_text:
@@ -672,12 +683,12 @@ def edit_activity_overview(branch):
         elif action == 'endorse_edits':
             repo_functions.update_review_state(repo, repo_functions.REVIEW_STATE_ENDORSED)
         elif action == 'publish':
-            return publish_or_destroy_activity(branch, 'merge')
+            pass
 
     if not action:
         raise Exception(u'Unrecognized request posted to branch_edit_file()')
 
-    return redirect('/tree/{}/'.format(safe_branch), code=303)
+    return action
 
 @app.route('/tree/<branch>/history/', methods=['GET'])
 @app.route('/tree/<branch>/history/<path:path>', methods=['GET'])
