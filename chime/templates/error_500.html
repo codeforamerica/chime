@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Something went wrong{% endblock %}
+
+
+{% set template_name = 'error-500' %}
+{% block body_class %}{{template_name}}{% endblock %}
+
+{% block content %}
+
+<div class="row col__flex message-500">
+  <p>it seems something broke</p>
+  <p>sorry to rain on your day</p>
+  <p><a href="mailto:frances@codeforamerica.org">let us know</a> perhaps</p>
+</div>
+
+{% endblock %}
