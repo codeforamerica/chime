@@ -80,7 +80,8 @@ def index():
         )
 
         activity.update(date_created=date_created, date_updated=date_updated,
-                        task_root_path=u'/tree/{}/edit/'.format(branch_name2path(branch_name)),
+                        root_path=u'/tree/{}/edit/'.format(branch_name2path(branch_name)),
+                        overview_path=u'/tree/{}/'.format(branch_name2path(branch_name)),
                         safe_branch=safe_branch, review_state=review_state,
                         review_authorized=review_authorized, last_edited_email=last_edited_email)
 
@@ -643,7 +644,8 @@ def show_activity_overview(branch):
     date_updated = repo.git.log('--format=%ad', '--date=relative').split('\n')[0]
 
     activity.update(date_created=date_created, date_updated=date_updated,
-                    task_root_path=u'/tree/{}/edit/'.format(branch_name2path(branch_name)),
+                    root_path=u'/tree/{}/edit/'.format(branch_name2path(branch_name)),
+                    overview_path=u'/tree/{}/'.format(branch_name2path(branch_name)),
                     safe_branch=safe_branch, history=history, review_state=review_state,
                     review_authorized=review_authorized)
 
