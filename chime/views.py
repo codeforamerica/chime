@@ -660,13 +660,6 @@ def edit_activity_overview(branch):
         else:
             return redirect('/tree/{}/'.format(safe_branch), code=303)
     else:
-        action_lookup = {
-            'comment': u'leave a comment',
-            'request_feedback': u'request feedback',
-            'endorse_edits': u'endorse the edits',
-            'publish': u'publish the edits'
-        }
-        flash(u'Something changed behind the scenes and we couldn\'t {}! Please try again.'.format(action_lookup[action]), u'error')
         return redirect('/tree/{}/'.format(safe_branch), code=303)
 
 def update_activity_review_status(branch_name, comment_text, action_list):
@@ -708,6 +701,16 @@ def update_activity_review_status(branch_name, comment_text, action_list):
     # comment if comment text was sent and the action is authorized
     if comment_text and action_authorized:
         repo_functions.provide_feedback(repo, comment_text)
+
+    # flash a message if the action wasn't authorized
+    if not action_authorized:
+        action_lookup = {
+            'comment': u'leave a comment',
+            'request_feedback': u'request feedback',
+            'endorse_edits': u'endorse the edits',
+            'publish': u'publish the edits'
+        }
+        flash(u'Something changed behind the scenes and we couldn\'t {}! Please try again.'.format(action_lookup[action]), u'error')
 
     return action, action_authorized
 
