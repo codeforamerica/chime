@@ -24,12 +24,12 @@
                     <div class="comment__author">{% if email %}{{ email }}{% else %}unknown{% endif %}</div>
                     <div class="comment__body">
 
-                        {% set comment_note = "Work is currently in progress. Feel free to leave a comment." %}
+                        {% set comment_note = "Work is currently in progress. Feel free to leave a comment here." %}
                         {% if activity.review_authorized %}
                             {% if activity.review_state == 'unreviewed edits' %}
                                 {% set comment_note = "Looks like you've made some changes. Have someone check your work." %}
                             {% elif activity.review_state == 'feedback requested' %}
-                                {% set comment_note = "Tomas made some changes and is requesting feedback. Provide your comments here and let them know it if looks good." %}
+                                {% set comment_note = "Tomas made some changes and is requesting feedback. Provide your comments here and let them know if everything looks good." %}
                             {% elif activity.review_state == 'edits endorsed' %}
                                 {% set comment_note = "Changes were made and endorsed. They can now be published to the live site." %}
                             {% endif %}
@@ -39,7 +39,9 @@
                             {% endif %}
                         {% endif %}
 
-                        <textarea class="comment__input" name="comment_text" placeholder="{{ comment_note }}"></textarea>
+                    <p class="comment__note"><span class="fa fa-info-circle"></span> {{ comment_note }}</p>
+
+                        <textarea class="comment__input" name="comment_text" placeholder="Leave your comment here"></textarea>
                     </div>
                     <div class="comment__actions toolbar toolbar--right">
                     {% if activity.review_authorized %}
