@@ -969,6 +969,22 @@ class TestRepo (TestCase):
         self.assertEqual(review_state, repo_functions.REVIEW_STATE_ENDORSED)
         self.assertTrue(review_authorized)
 
+        #
+        # Publish the work
+        #
+        # first set & check the state
+        repo_functions.update_review_state(self.clone1, repo_functions.REVIEW_STATE_PUBLISHED)
+        review_state, review_authorized = repo_functions.get_review_state_and_authorized(self.clone1, 'master', branch1_name, fake_nonprofit_email)
+        self.assertEqual(review_state, repo_functions.REVIEW_STATE_PUBLISHED)
+        self.assertFalse(review_authorized)
+        # actually publish
+        merge_commit = repo_functions.complete_branch(self.clone1, 'master', branch1_name)
+        # The commit message is expected
+        self.assertTrue('Merged' in merge_commit.message and branch1_name in merge_commit.message)
+        # The branch is gone
+        self.assertFalse(branch1_name in self.origin.branches)
+        self.assertFalse(branch1_name in self.clone1.branches)
+
     def test_article_creation_with_unicode(self):
         ''' An article with unicode in its title is created and logged as expected.
         '''
