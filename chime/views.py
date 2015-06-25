@@ -312,47 +312,6 @@ def publish_or_destroy_activity(branch_name, action):
     else:
         return redirect('/')
 
-@app.route('/review', methods=['POST'])
-@log_application_errors
-@login_required
-def review_branch():
-    repo = get_repo(current_app)
-    branch_name = request.form.get('branch')
-    branch = repo.branches[branch_name]
-    branch.checkout()
-
-    # contains 'author_email', 'task_description', 'task_beneficiary'
-    activity = repo_functions.get_task_metadata_for_branch(repo, branch_name)
-    activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
-    activity['task_description'] = activity['task_description'] if 'task_description' in activity else u''
-    activity['task_beneficiary'] = activity['task_beneficiary'] if 'task_beneficiary' in activity else u''
-
-    try:
-        action = request.form.get('action', '').lower()
-
-        if action == 'approve':
-            repo_functions.mark_as_reviewed(repo)
-        elif action == 'feedback':
-            comments = request.form.get('comments')
-            repo_functions.provide_feedback(repo, comments)
-        else:
-            raise Exception('I do not know what "%s" means' % action)
-
-    except repo_functions.MergeConflict as conflict:
-        new_files, gone_files, changed_files = conflict.files()
-
-        kwargs = common_template_args(current_app.config, session)
-        kwargs.update(branch=branch_name, new_files=new_files,
-                      gone_files=gone_files, changed_files=changed_files,
-                      activity=activity)
-
-        return render_template('merge-conflict.html', **kwargs)
-
-    else:
-        safe_branch = branch_name2path(branch_name)
-
-        return redirect('/tree/%s/edit/' % safe_branch, code=303)
-
 @app.route('/checkouts/<ref>.zip')
 @log_application_errors
 @login_required
@@ -421,17 +380,6 @@ def render_list_dir(repo, branch_name, path):
                   breadcrumb_paths=breadcrumb_paths(branch_name, path),
                   dir_columns=directory_columns(repo, branch_name, path, showallfiles),
                   activity=activity)
-
-    master_name = current_app.config['default_branch']
-    # TODO: the above might throw a GitCommandError if branch is an orphan.
-    if current_app.config['SINGLE_USER']:
-        kwargs['eligible_peer'] = True
-        kwargs['needs_peer_review'] = False
-        kwargs['is_peer_approved'] = True
-    else:
-        kwargs['eligible_peer'] = session['email'] != repo_functions.ineligible_peer(repo, master_name, branch_name)
-        kwargs['needs_peer_review'] = repo_functions.needs_peer_review(repo, master_name, branch_name)
-        kwargs['is_peer_approved'] = repo_functions.is_peer_approved(repo, master_name, branch_name)
 
     return render_template('articles-list.html', **kwargs)
 

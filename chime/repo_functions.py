@@ -661,46 +661,6 @@ def get_review_state_and_author_email(repo, default_branch_name, working_branch_
 
     return state, author
 
-def needs_peer_review(repo, default_branch_name, working_branch_name):
-    ''' Returns true if the active branch appears to be in need of review.
-    '''
-    review_state, _ = get_review_state_and_author_email(repo, default_branch_name, working_branch_name)
-    return (review_state == REVIEW_STATE_FEEDBACK)
-
-def ineligible_peer(repo, default_branch_name, working_branch_name):
-    ''' Returns the email address of a peer who shouldn't review this branch.
-    '''
-    review_state, author_email = get_review_state_and_author_email(repo, default_branch_name, working_branch_name)
-    if review_state == REVIEW_STATE_FEEDBACK:
-        return author_email
-
-    return None
-
-def is_peer_approved(repo, default_branch_name, working_branch_name):
-    ''' Returns true if the active branch appears peer-reviewed.
-    '''
-    review_state, _ = get_review_state_and_author_email(repo, default_branch_name, working_branch_name)
-    return (review_state == REVIEW_STATE_ENDORSED)
-
-def mark_as_reviewed(clone):
-    ''' Adds a new empty commit with the message "Approved changes."
-    '''
-    clone.index.commit(u'Approved changes.')
-    active_branch_name = clone.active_branch.name
-
-    #
-    # Sync with the default and upstream branches in case someone made a change.
-    #
-    for sync_branch_name in (active_branch_name, ):
-        try:
-            sync_with_default_and_upstream_branches(clone, sync_branch_name)
-        except MergeConflict as conflict:
-            raise conflict
-
-    clone.git.push('origin', active_branch_name)
-
-    return clone.active_branch.commit
-
 def add_empty_commit(clone, subject, body):
     ''' Adds a new empty commit with the passed details
     '''
