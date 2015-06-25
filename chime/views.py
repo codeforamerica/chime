@@ -663,6 +663,7 @@ def update_activity_review_status(branch_name, comment_text, action_list):
                 action_authorized = True
         elif action == 'merge':
             if review_state == repo_functions.REVIEW_STATE_ENDORSED and review_authorized:
+                repo_functions.update_review_state(repo, repo_functions.REVIEW_STATE_PUBLISHED)
                 action_authorized = True
         elif action == 'clobber' or action == 'abandon':
             action_authorized = True

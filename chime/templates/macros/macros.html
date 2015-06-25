@@ -16,6 +16,7 @@
         <p class="activity-dropdown__subtitle">Current Activity</p>
         <h2 class="activity-dropdown__title">{{ activity.task_description | title }}</h2>
         <a class="button button--green button--large activity-dropdown__button" href="/tree/{{branch}}">See full history and discussion</a>
+        {% if activity.review_state != 'changes published' %}
         <form action="{{ activity.overview_path }}" method="POST" class="comment comment--new">
           <div class="comment__author">{% if email %}{{ email }}{% else %}unknown{% endif %}</div>
           <div class="comment__body">
@@ -34,6 +35,7 @@
             <input class="toolbar__item button button" type="submit" name="comment" value="Comment">
           </div>
         </form>
+        {% endif %}
       </div>
     </div>
     {% endif %}

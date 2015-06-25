@@ -20,6 +20,7 @@
 
         <div class="activity-log">
 
+            {% if activity.review_state != 'changes published' %}
             <div class="activity-log-item activity-log-item--comment">
                 <form action="." method="POST" class="comment comment--new">
                     <div class="comment__author">{% if email %}{{ email }}{% else %}unknown{% endif %}</div>
@@ -40,6 +41,7 @@
                     </div>
                 </form>
             </div>
+            {% endif %}
 
             {% for log_item in activity.history %}
             <div class="activity-log-item activity-log-item--{{ log_item.commit_category }}">
