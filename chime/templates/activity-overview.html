@@ -19,12 +19,27 @@
         <p class="activity-overview__description">Below is a timeline of all of the work and discussion around this activity. Any work you do will appear at the the top of this list.</p>
 
         <div class="activity-log">
-
             <div class="activity-log-item activity-log-item--comment">
                 <form action="." method="POST" class="comment comment--new">
                     <div class="comment__author">{% if email %}{{ email }}{% else %}unknown{% endif %}</div>
                     <div class="comment__body">
-                        <textarea class="comment__input" name="comment_text" placeholder="Leave your comment here (optional)"></textarea>
+
+                        {% set comment_note = "Work is currently in progress. Feel free to leave a comment." %}
+                        {% if activity.review_authorized %}
+                            {% if activity.review_state == 'unreviewed edits' %}
+                                {% set comment_note = "Looks like you've made some changes. Have someone check your work." %}
+                            {% elif activity.review_state == 'feedback requested' %}
+                                {% set comment_note = "Tomas made some changes and is requesting feedback. Provide your comments here and let them know it if looks good." %}
+                            {% elif activity.review_state == 'edits endorsed' %}
+                                {% set comment_note = "Changes were made and endorsed. They can now be published to the live site." %}
+                            {% endif %}
+                        {% else %}
+                            {% if activity.review_state == 'feedback requested' %}
+                                {% set comment_note = "Currently awaiting someone to check your work. Feel free to leave a comment here." %}
+                            {% endif %}
+                        {% endif %}
+
+                        <textarea class="comment__input" name="comment_text" placeholder="{{ comment_note }}"></textarea>
                     </div>
                     <div class="comment__actions toolbar toolbar--right">
                     {% if activity.review_authorized %}
@@ -36,7 +51,7 @@
                         <input class="toolbar__item button button--blue" type="submit" name="merge" value="Publish">
                         {% endif %}
                     {% endif %}
-                        <input class="toolbar__item button button" type="submit" name="comment" value="Comment">
+                        <input class="toolbar__item button button" type="submit" name="comment" value="Leave a Comment">
                     </div>
                 </form>
             </div>

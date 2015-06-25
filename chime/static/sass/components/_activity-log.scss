@@ -38,9 +38,6 @@
 		line-height: 2.5em;
 		color: $color-grey-800;
 	}
-	p {
-		margin: 0;
-	}
 }
 
 .activity-log-item--info {
@@ -59,6 +56,12 @@
 	&:before {
 		line-height: 2.25em; //fixes vertical alignment of comment icon for visual balance.
 		content: '\f075';
+	}
+}
+
+.activity-log-item__content {
+	p {
+		margin: 0;
 	}
 }
 
