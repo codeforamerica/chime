@@ -310,6 +310,14 @@ def publish_or_destroy_activity(branch_name, action):
         return render_template('merge-conflict.html', **kwargs)
 
     else:
+        activity_blurb = u'the "{task_description}" activity for {task_beneficiary}'.format(task_description=activity['task_description'], task_beneficiary=activity['task_beneficiary'])
+        if action == 'merge':
+            flash(u'You published the {activity_blurb}!'.format(activity_blurb=activity_blurb), u'notice')
+        elif action == 'abandon':
+            flash(u'You deleted the {activity_blurb}!'.format(activity_blurb=activity_blurb), u'notice')
+        elif action == 'clobber':
+            flash(u'You clobbered the {activity_blurb}!'.format(activity_blurb=activity_blurb), u'notice')
+
         return redirect('/')
 
 @app.route('/checkouts/<ref>.zip')
