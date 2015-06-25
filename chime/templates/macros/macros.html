@@ -1,4 +1,4 @@
-{% macro globalHeader(breadcrumb_items=[], task_description, email, branch) -%}
+{% macro globalHeader(breadcrumb_items=[], email, branch, activity) -%}
 <div class="global-header  row">
   <div class="row__left">
     <a href="/" class="global-header__title">Chime</a>
@@ -11,19 +11,27 @@
   <nav class="global-header__nav  row__right  toolbar--right">
     {% if branch %}
     <div class="dropdown activity-dropdown toolbar__item global-header__link">
-      <a href="/tree/{{ branch }}" class="dropdown__label activity-dropdown__link">{{ task_description | title }}</a>
+      <a href="/tree/{{ branch }}" class="dropdown__label activity-dropdown__link">{{ activity.task_description | title }}</a>
       <div class="dropdown__popup dropdown__popup--right">
         <p class="activity-dropdown__subtitle">Current Activity</p>
-        <h2 class="activity-dropdown__title">{{ task_description | title }}</h2>
+        <h2 class="activity-dropdown__title">{{ activity.task_description | title }}</h2>
         <a class="button button--green button--large activity-dropdown__button" href="/tree/{{branch}}">See full history and discussion</a>
-        <form action="/review" class="comment comment--new">
-          <div class="comment__author">norris@codeforamerica.org</div>
+        <form action="{{ activity.overview_path }}" method="POST" class="comment comment--new">
+          <div class="comment__author">{% if email %}{{ email }}{% else %}unknown{% endif %}</div>
           <div class="comment__body">
-            <textarea class="comment__input" placeholder="Leave your comment here (optional)"></textarea>
+          <textarea class="comment__input" name="comment_text" placeholder="Leave your comment here (optional)"></textarea>
           </div>
           <div class="comment__actions toolbar toolbar--right">
-            <input class="toolbar__item button button--green" type="button" name="action" value="Looks Good!">
-            <input class="toolbar__item button button" type="button" name="action" value="Comment">
+          {% if activity.review_authorized %}
+            {% if activity.review_state == 'unreviewed edits' %}
+            <input class="toolbar__item button button--orange" type="submit" name="request_feedback" value="Request Feedback">
+            {% elif activity.review_state == 'feedback requested' %}
+            <input class="toolbar__item button button--green" type="submit" name="endorse_edits" value="Looks Good!">
+            {% elif activity.review_state == 'edits endorsed' %}
+            <input class="toolbar__item button button--blue" type="submit" name="merge" value="Publish">
+            {% endif %}
+          {% endif %}
+            <input class="toolbar__item button button" type="submit" name="comment" value="Comment">
           </div>
         </form>
       </div>

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% set breadcrumb_items = [{'name': 'Activites', 'url': '/'}, {'name': 'Browse', 'url': task_root_path}, {'name': 'Edit Article', 'url': edit_path }] %}
+{% set breadcrumb_items = [{'name': 'Activites', 'url': '/'}, {'name': 'Browse', 'url': activity.edit_path}, {'name': 'Edit Article', 'url': article_edit_path }] %}
 
 {% block title %}History{% endblock %}
 {% block body_class %}article-history{% endblock %}
@@ -31,4 +31,3 @@
     </table>
 </div>
 {% endblock %}
-
