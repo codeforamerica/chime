@@ -675,7 +675,9 @@ def update_activity_review_status(branch_name, comment_text, action_list):
         repo_functions.provide_feedback(repo, comment_text)
 
     # flash a message if the action wasn't authorized
-    if not action_authorized:
+    if action == 'comment' and not comment_text:
+        flash(u'You can\'t leave an empty comment!', u'error')
+    elif not action_authorized:
         action_lookup = {
             'comment': u'leave a comment',
             'request_feedback': u'request feedback',
