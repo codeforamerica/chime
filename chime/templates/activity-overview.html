@@ -14,7 +14,7 @@
     <div class="activity-overview__main">
         <p class="activity-overview__subtitle">Activity Overview</p>
         <h1 class="activity-overview__header">{{ activity.task_description | title }} For {{ activity.task_beneficiary | title }}</h1>
-        <a href="{{ task_root_path }}edit" class="button button--outline button--large">Continue working</a>
+        <a href="{{ activity.edit_path }}" class="button button--outline button--large">Continue working</a>
 
         <p class="activity-overview__description">Below is a timeline of all of the work and discussion around this activity. Any work you do will appear at the the top of this list.</p>
 
@@ -24,7 +24,7 @@
                 <form action="." method="POST" class="comment comment--new">
                     <div class="comment__author">{% if email %}{{ email }}{% else %}unknown{% endif %}</div>
                     <div class="comment__body">
-                        <textarea class="comment__input" name="comment_text" placeholder="Leave your comment here"></textarea>
+                        <textarea class="comment__input" name="comment_text" placeholder="Leave your comment here (optional)"></textarea>
                     </div>
                     <div class="comment__actions toolbar toolbar--right">
                     {% if activity.review_authorized %}
@@ -62,111 +62,6 @@
                 {% endif %}
             </div>
             {% endfor %}
-
-<!--             <div class="activity-log-item activity-log-item--info">
-                <div class="activity-log-item__content">
-                    <p>This activity was started by {{ activity.author_email }}</p>
-                    <div class="activity-log-item__datetime">{{ activity.date_created }}</div>
-                </div>
-            </div>
-
-            <div class="activity-log-item activity-log-item--edit">
-                <div class="activity-log-item__content">
-                    <p><a href="#">Parking Tickets</a> was created by sally@codeforamerica.</p>
-                    <div class="activity-log-item__datetime">19 hours ago</div>
-                </div>  
-            </div>
-
-            
-            <div class="activity-log-item activity-log-item--edit">
-                <div class="activity-log-item__content">
-                    <p><a href="#">Parking Tickets</a> was edited by sally@codeforamerica.</p>
-                    <div class="activity-log-item__datetime">18 hours ago</div>
-                </div>  
-            </div>
-
-            <div class="activity-log-item activity-log-item--edit">
-                <div class="activity-log-item__content">
-                    <p><a href="#">Parking Tickets</a> was moved from ___ to ___ by sally@codeforamerica.</p>
-                    <div class="activity-log-item__datetime">18 hours ago</div>
-                </div>  
-            </div>
-
-            <div class="activity-log-item activity-log-item--edit">
-                <div class="activity-log-item__content">
-                    <p><a href="#">Parking Tickets</a> was deleted by sally@codeforamerica.</p>
-                    <div class="activity-log-item__datetime">18 hours ago</div>
-                </div>  
-            </div>
-
-            <div class="activity-log-item activity-log-item--comment">
-                <div class="comment">
-                    <div class="comment__author">sally@codeforamerica.org</div>
-                    <div class="comment__body">Added and fixed some articles. Please check!</div>
-                    <div class="comment__datetime">3 days ago</div>
-                </div>
-            </div>
-
-            <div class="activity-log-item activity-log-item--info">
-                <div class="activity-log-item__content">
-                    <p class="text-orange">{{ activity.author_email }} requested feedback on this activity</p>
-                    <div class="activity-log-item__datetime">2 days ago</div>
-                </div>
-            </div>
-
-            <div class="activity-log-item activity-log-item--info">
-                <div class="activity-log-item__content">
-                    <p class="text-green">{{ activity.author_email }} has endorsed this activity.</p>
-                    <div class="activity-log-item__datetime">2 days ago</div>
-                </div>
-            </div>
-
-            <div class="activity-log-item activity-log-item--info">
-                <div class="activity-log-item__content">
-                    <p class="text-blue">{{ activity.author_email }} published this activity.</p>
-                    <div class="activity-log-item__datetime">2 days ago</div>
-                </div>
-            </div>
-
-
-            <div class="activity-log-item activity-log-item--comment">
-                <form action="/review" class="comment comment--new">
-                    <div class="comment__author">norris@codeforamerica.org</div>
-                    <div class="comment__body">
-                        <textarea class="comment__input" placeholder="Leave your comment here"></textarea>
-                    </div>
-                    <div class="comment__actions toolbar toolbar--right">
-                        <input class="toolbar__item button button--green" type="button" name="action" value="Looks Good!">
-                        <input class="toolbar__item button button" type="button" name="action" value="Comment">
-                    </div>
-                </form>
-            </div>
-
-            <div class="activity-log-item activity-log-item--comment">
-                <form action="/review" class="comment comment--new">
-                    <div class="comment__author">norris@codeforamerica.org</div>
-                    <div class="comment__body">
-                        <textarea class="comment__input" placeholder="Leave your comment here"></textarea>
-                    </div>
-                    <div class="comment__actions toolbar toolbar--right">
-                        <input class="toolbar__item button button--orange" type="button" name="action" value="Request Feedback">
-                        <input class="toolbar__item button button" type="button" name="action" value="Comment">
-                    </div>
-                </form>
-            </div>
-
-            <div class="activity-log-item activity-log-item--comment">
-                <form action="/update" class="comment comment--new">
-                    <div class="comment__author">norris@codeforamerica.org</div>
-                    <div class="comment__body">
-                        <textarea class="comment__input" placeholder="Leave your comment here"></textarea>
-                    </div>
-                    <div class="comment__actions toolbar toolbar--right">
-                        <input class="toolbar__item button button--blue" type="button" name="action" value="Publish">
-                        <input class="toolbar__item button button" type="button" name="action" value="Comment">
-                    </div>
-                </form>
-            </div> -->
         </div>
     </div>
 </div>
