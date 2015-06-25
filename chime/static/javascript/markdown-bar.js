@@ -289,7 +289,7 @@ function MarkdownBar(bar, textarea) {
 
 		// Add buttons to markdown bar and bind events
 		$(PATTERNS).each(function(index, pattern) {
-			var patternButton = $('<div class="button button--outline toolbar__item markdown-bar__button">' + pattern['icon'] + '<span class="markdown-bar__tooltip">' + pattern['name'] + '</span></div>');
+			var patternButton = $('<button class="button button--outline toolbar__item markdown-bar__button">' + pattern['icon'] + '<span class="markdown-bar__tooltip">' + pattern['name'] + '</span></button>');
 			patternButton.bind('click', function(event) {
 				self.markdownify(event, pattern['syntax'], pattern['filler'], pattern['type']);
 			});
