@@ -698,19 +698,3 @@ def provide_feedback(clone, comment_text):
     ''' Adds a new empty commit adding a comment
     '''
     return add_empty_commit(clone, COMMENT_COMMIT_PREFIX, comment_text)
-
-def get_comments(repo, default_branch_name, working_branch_name):
-    '''
-    '''
-    base_commit_hexsha = repo.git.merge_base(default_branch_name, working_branch_name)
-    last_commit = repo.branches[working_branch_name].commit
-    commit_log = chain([last_commit], last_commit.iter_parents())
-
-    for commit in commit_log:
-        if commit.hexsha == base_commit_hexsha:
-            break
-
-        if COMMENT_COMMIT_PREFIX in commit.message:
-            email = commit.author.email
-            message = commit.message[commit.message.index(COMMENT_COMMIT_PREFIX):][len(COMMENT_COMMIT_PREFIX):]
-            yield (email, message)
