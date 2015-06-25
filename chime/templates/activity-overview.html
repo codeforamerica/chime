@@ -24,18 +24,18 @@
                     <div class="comment__author">{% if email %}{{ email }}{% else %}unknown{% endif %}</div>
                     <div class="comment__body">
 
-                        {% set comment_note = "Work is currently in progress. Feel free to leave a comment here." %}
+                        {% set comment_note = "Work is currently in progress. Feel free to leave a comment." %}
                         {% if activity.review_authorized %}
                             {% if activity.review_state == 'unreviewed edits' %}
                                 {% set comment_note = "Looks like you've made some changes. Have someone check your work." %}
                             {% elif activity.review_state == 'feedback requested' %}
-                                {% set comment_note = "Tomas made some changes and is requesting feedback. Provide your comments here and let them know if everything looks good." %}
+                                {% set comment_note = activity.last_edited_email + " made some changes and is requesting feedback." %}
                             {% elif activity.review_state == 'edits endorsed' %}
                                 {% set comment_note = "Changes were made and endorsed. They can now be published to the live site." %}
                             {% endif %}
                         {% else %}
                             {% if activity.review_state == 'feedback requested' %}
-                                {% set comment_note = "Currently awaiting someone to check your work. Feel free to leave a comment here." %}
+                                {% set comment_note = "Currently awaiting someone to check your work." %}
                             {% endif %}
                         {% endif %}
 

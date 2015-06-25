@@ -599,6 +599,12 @@ def show_activity_overview(branch):
         working_branch_name=branch_name, actor_email=session.get('email', None)
     )
 
+    # the email of the last person who edited the activity
+    last_edited_email = repo_functions.get_last_edited_email(
+        repo=repo, default_branch_name=current_app.config['default_branch'],
+        working_branch_name=branch_name
+    )
+
     date_created = repo.git.log('--format=%ad', '--date=relative', '--', repo_functions.TASK_METADATA_FILENAME).split('\n')[-1]
     date_updated = repo.git.log('--format=%ad', '--date=relative').split('\n')[0]
 
@@ -606,7 +612,7 @@ def show_activity_overview(branch):
                     edit_path=u'/tree/{}/edit/'.format(branch_name2path(branch_name)),
                     overview_path=u'/tree/{}/'.format(branch_name2path(branch_name)),
                     safe_branch=safe_branch, history=history, review_state=review_state,
-                    review_authorized=review_authorized)
+                    review_authorized=review_authorized, last_edited_email=last_edited_email)
 
     kwargs.update(activity=activity, app_authorized=app_authorized, languages=languages)
 
