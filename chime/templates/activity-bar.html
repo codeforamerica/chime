@@ -8,13 +8,13 @@
   </div>
   <div class="activity-bar__actions row__right toolbar--right">
         {% if needs_peer_review and not eligible_peer %}
-        <form action="/merge" method="POST" class="toolbar__item">
+        <form action="/update" method="POST" class="toolbar__item">
           <input name="branch" value="{{branch}}" type="hidden" />
           <a href="mailto:?to=&amp;subject={{review_subject|urlencode}}&amp;body={{review_body|urlencode}}" class="button button--orange">Request Feedback</a>
         </form>    
 
         {% elif is_peer_approved and eligible_peer %}
-        <form action="/merge" method="POST" class="toolbar__item">
+        <form action="/update" method="POST" class="toolbar__item">
           <input name="branch" value="{{branch}}" type="hidden" />
           <button name="action" value="merge" type="submit" class="button button--blue">Publish</button>
         </form>    

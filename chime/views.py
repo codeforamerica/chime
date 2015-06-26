@@ -17,19 +17,19 @@ from . import repo_functions, edit_functions
 from . import publish
 from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
 from .view_functions import (
-    branch_name2path, branch_var2name, get_repo, dos2unix,
-    login_required, browserid_hostname_required, synch_required, synched_checkout_required,
-    breadcrumb_paths, directory_columns, should_redirect, make_redirect, get_auth_data_file,
-    is_allowed_email, common_template_args, log_application_errors,
-    is_article_dir, make_activity_history, describe_directory_contents, file_type_plural,
-    make_delete_display_commit_message, CONTENT_FILE_EXTENSION, ARTICLE_LAYOUT, CATEGORY_LAYOUT)
+    branch_name2path, branch_var2name, get_repo, dos2unix, login_required, browserid_hostname_required,
+    synch_required, synched_checkout_required, breadcrumb_paths, directory_columns, should_redirect,
+    make_redirect, get_auth_data_file, is_allowed_email, common_template_args, log_application_errors,
+    is_article_dir, make_activity_history, make_delete_display_commit_message, CONTENT_FILE_EXTENSION,
+    ARTICLE_LAYOUT, CATEGORY_LAYOUT
+)
 
 from .google_api_functions import (
     read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens,
     authorize_google, get_google_personal_info, get_google_analytics_properties,
     fetch_google_analytics_for_page)
 
-@app.route('/')
+@app.route('/', methods=['GET'])
 @log_application_errors
 @login_required
 @synch_required
@@ -38,59 +38,57 @@ def index():
     master_name = current_app.config['default_branch']
     branch_names = [b.name for b in repo.branches if b.name != master_name]
 
-    list_items = []
+    activities = []
 
-    for name in branch_names:
-        path = branch_name2path(name)
+    for branch_name in branch_names:
+        safe_branch = branch_name2path(branch_name)
 
         try:
-            base = repo.git.merge_base(master_name, name)
+            repo.git.merge_base(master_name, branch_name)
         except GitCommandError:
             # Skip this branch if it looks to be an orphan. Just don't show it.
             continue
 
-        behind_raw = repo.git.log(base + '..' + master_name, format='%H %at %ae')
-        ahead_raw = repo.git.log(base + '..' + name, format='%H %at %ae')
+        # behind_raw = repo.git.log(base + '..' + master_name, format='%H %at %ae')
+        # ahead_raw = repo.git.log(base + '..' + branch_name, format='%H %at %ae')
 
-        pattern = compile(r'^(\w+) (\d+) (.+)$', MULTILINE)
-        # behind = [r.commit(sha) for (sha, t, e) in pattern.findall(behind_raw)]
-        # ahead = [r.commit(sha) for (sha, t, e) in pattern.findall(ahead_raw)]
-        behind = pattern.findall(behind_raw)
-        ahead = pattern.findall(ahead_raw)
-
-        if current_app.config['SINGLE_USER']:
-            is_eligible_peer = True
-            needs_peer_review = False
-            is_peer_approved = True
-            is_peer_rejected = False
-        else:
-            needs_peer_review = repo_functions.needs_peer_review(repo, master_name, name)
-            is_peer_approved = repo_functions.is_peer_approved(repo, master_name, name)
-            is_peer_rejected = repo_functions.is_peer_rejected(repo, master_name, name)
-            is_eligible_peer = session['email'] != repo_functions.ineligible_peer(repo, master_name, name)
-
-        last_editor = repo_functions.ineligible_peer(repo, master_name, name)
-
-        review_subject = 'Plz review this thing'
-        review_body = '%s/tree/%s/edit' % (request.url, path)
+        # pattern = compile(r'^(\w+) (\d+) (.+)$', MULTILINE)
+        # # behind = [r.commit(sha) for (sha, t, e) in pattern.findall(behind_raw)]
+        # # ahead = [r.commit(sha) for (sha, t, e) in pattern.findall(ahead_raw)]
+        # behind = pattern.findall(behind_raw)
+        # ahead = pattern.findall(ahead_raw)
 
         # contains 'author_email', 'task_description', 'task_beneficiary'
-        task_metadata = repo_functions.get_task_metadata_for_branch(repo, name)
-        author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
-        task_description = task_metadata['task_description'] if 'task_description' in task_metadata else name
-        task_beneficiary = task_metadata['task_beneficiary'] if 'task_beneficiary' in task_metadata else u''
+        activity = repo_functions.get_task_metadata_for_branch(repo, branch_name)
+        activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
+        activity['task_description'] = activity['task_description'] if 'task_description' in activity else branch_name
+        activity['task_beneficiary'] = activity['task_beneficiary'] if 'task_beneficiary' in activity else u''
 
-        list_items.append(dict(name=name, path=path, behind=behind, ahead=ahead,
-                               needs_peer_review=needs_peer_review,
-                               is_peer_approved=is_peer_approved,
-                               is_peer_rejected=is_peer_rejected,
-                               review_subject=review_subject,
-                               review_body=review_body,
-                               author_email=author_email, task_description=task_description,
-                               task_beneficiary=task_beneficiary, is_eligible_peer=is_eligible_peer, last_editor=last_editor))
+        # get the current review state and authorized status
+        review_state, review_authorized = repo_functions.get_review_state_and_authorized(
+            repo=repo, default_branch_name=current_app.config['default_branch'],
+            working_branch_name=branch_name, actor_email=session.get('email', None)
+        )
+
+        date_created = repo.git.log('--format=%ad', '--date=relative', '--', repo_functions.TASK_METADATA_FILENAME).split('\n')[-1]
+        date_updated = repo.git.log('--format=%ad', '--date=relative').split('\n')[0]
+
+        # the email of the last person who edited the activity
+        last_edited_email = repo_functions.get_last_edited_email(
+            repo=repo, default_branch_name=current_app.config['default_branch'],
+            working_branch_name=branch_name
+        )
+
+        activity.update(date_created=date_created, date_updated=date_updated,
+                        edit_path=u'/tree/{}/edit/'.format(branch_name2path(branch_name)),
+                        overview_path=u'/tree/{}/'.format(branch_name2path(branch_name)),
+                        safe_branch=safe_branch, review_state=review_state,
+                        review_authorized=review_authorized, last_edited_email=last_edited_email)
+
+        activities.append(activity)
 
     kwargs = common_template_args(current_app.config, session)
-    kwargs.update(items=list_items)
+    kwargs.update(activities=activities)
 
     return render_template('activities-list.html', **kwargs)
 
@@ -253,23 +251,37 @@ def start_branch():
     safe_branch = branch_name2path(branch.name)
     return redirect('/tree/{}/edit/'.format(safe_branch), code=303)
 
-@app.route('/merge', methods=['POST'])
+@app.route('/update', methods=['POST'])
 @log_application_errors
 @login_required
 @synch_required
-def merge_branch():
+def update_activity():
+    ''' Update the activity review state or merge, abandon, or clobber the posted branch
+    '''
+    safe_branch = branch_name2path(branch_var2name(request.form.get('branch')))
+    action_list = [item for item in request.form if item != 'comment_text']
+    action, action_authorized = update_activity_review_status(branch_name=safe_branch, comment_text=u'', action_list=action_list)
+    if action_authorized:
+        if action in ('merge', 'abandon', 'clobber'):
+            return publish_or_destroy_activity(safe_branch, action)
+        else:
+            return redirect('/'.format(safe_branch), code=303)
+    else:
+        return redirect('/'.format(safe_branch), code=303)
+
+def publish_or_destroy_activity(branch_name, action):
+    ''' Publish, abandon, or clobber the activity defined by the passed branch name.
+    '''
     repo = get_repo(current_app)
-    branch_name = request.form.get('branch')
     master_name = current_app.config['default_branch']
 
     # contains 'author_email', 'task_description', 'task_beneficiary'
-    task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch_name)
-    author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
-    task_description = task_metadata['task_description'] if 'task_description' in task_metadata else u''
-    task_beneficiary = task_metadata['task_beneficiary'] if 'task_beneficiary' in task_metadata else u''
+    activity = repo_functions.get_task_metadata_for_branch(repo, branch_name)
+    activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
+    activity['task_description'] = activity['task_description'] if 'task_description' in activity else u''
+    activity['task_beneficiary'] = activity['task_beneficiary'] if 'task_beneficiary' in activity else u''
 
     try:
-        action = request.form.get('action', '').lower()
         args = repo, master_name, branch_name
 
         if action == 'merge':
@@ -293,55 +305,20 @@ def merge_branch():
         kwargs = common_template_args(current_app.config, session)
         kwargs.update(branch=branch_name, new_files=new_files,
                       gone_files=gone_files, changed_files=changed_files,
-                      author_email=author_email, task_description=task_description,
-                      task_beneficiary=task_beneficiary)
+                      activity=activity)
 
         return render_template('merge-conflict.html', **kwargs)
 
     else:
+        activity_blurb = u'the "{task_description}" activity for {task_beneficiary}'.format(task_description=activity['task_description'], task_beneficiary=activity['task_beneficiary'])
+        if action == 'merge':
+            flash(u'You published the {activity_blurb}!'.format(activity_blurb=activity_blurb), u'notice')
+        elif action == 'abandon':
+            flash(u'You deleted the {activity_blurb}!'.format(activity_blurb=activity_blurb), u'notice')
+        elif action == 'clobber':
+            flash(u'You clobbered the {activity_blurb}!'.format(activity_blurb=activity_blurb), u'notice')
+
         return redirect('/')
-
-@app.route('/review', methods=['POST'])
-@log_application_errors
-@login_required
-def review_branch():
-    repo = get_repo(current_app)
-    branch_name = request.form.get('branch')
-    branch = repo.branches[branch_name]
-    branch.checkout()
-
-    # contains 'author_email', 'task_description', 'task_beneficiary'
-    task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch_name)
-    author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
-    task_description = task_metadata['task_description'] if 'task_description' in task_metadata else u''
-    task_beneficiary = task_metadata['task_beneficiary'] if 'task_beneficiary' in task_metadata else u''
-
-    try:
-        action = request.form.get('action', '').lower()
-
-        if action == 'approve':
-            repo_functions.mark_as_reviewed(repo)
-        elif action == 'feedback':
-            comments = request.form.get('comments')
-            repo_functions.provide_feedback(repo, comments)
-        else:
-            raise Exception('I do not know what "%s" means' % action)
-
-    except repo_functions.MergeConflict as conflict:
-        new_files, gone_files, changed_files = conflict.files()
-
-        kwargs = common_template_args(current_app.config, session)
-        kwargs.update(branch=branch_name, new_files=new_files,
-                      gone_files=gone_files, changed_files=changed_files,
-                      author_email=author_email, task_description=task_description,
-                      task_beneficiary=task_beneficiary)
-
-        return render_template('merge-conflict.html', **kwargs)
-
-    else:
-        safe_branch = branch_name2path(branch_name)
-
-        return redirect('/tree/%s/edit/' % safe_branch, code=303)
 
 @app.route('/checkouts/<ref>.zip')
 @log_application_errors
@@ -385,45 +362,36 @@ def render_list_dir(repo, branch_name, path):
     # :NOTE: temporarily turning off filtering if 'showallfiles=true' is in the request
     showallfiles = request.args.get('showallfiles') == u'true'
 
-    # make the task root path
-    task_root_path = u'/tree/{}/edit/'.format(branch_name2path(branch_name))
-
-    # get the task metadata; contains 'author_email', 'task_description'
-    task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch_name)
-    author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
-    task_description = task_metadata['task_description'] if 'task_description' in task_metadata else u''
-    task_beneficiary = task_metadata['task_beneficiary'] if 'task_beneficiary' in task_metadata else u''
+    # contains 'author_email', 'task_description', 'task_beneficiary'
+    activity = repo_functions.get_task_metadata_for_branch(repo, branch_name)
+    activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
+    activity['task_description'] = activity['task_description'] if 'task_description' in activity else u''
+    activity['task_beneficiary'] = activity['task_beneficiary'] if 'task_beneficiary' in activity else u''
 
     # get created and modified dates via git logs (relative dates for now)
-    task_date_created = repo.git.log('--format=%ad', '--date=relative', '--', repo_functions.TASK_METADATA_FILENAME).split('\n')[-1]
-    task_date_updated = repo.git.log('--format=%ad', '--date=relative').split('\n')[0]
+    date_created = repo.git.log('--format=%ad', '--date=relative', '--', repo_functions.TASK_METADATA_FILENAME).split('\n')[-1]
+    date_updated = repo.git.log('--format=%ad', '--date=relative').split('\n')[0]
+
+    # get the current review state and authorized status
+    review_state, review_authorized = repo_functions.get_review_state_and_authorized(
+        repo=repo, default_branch_name=current_app.config['default_branch'],
+        working_branch_name=branch_name, actor_email=session.get('email', None)
+    )
+
+    activity.update(date_created=date_created, date_updated=date_updated,
+                    edit_path=u'/tree/{}/edit/'.format(branch_name2path(branch_name)),
+                    overview_path=u'/tree/{}/'.format(branch_name2path(branch_name)),
+                    review_state=review_state, review_authorized=review_authorized)
 
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(branch=branch_name, safe_branch=branch_name2path(branch_name),
                   breadcrumb_paths=breadcrumb_paths(branch_name, path),
                   dir_columns=directory_columns(repo, branch_name, path, showallfiles),
-                  author_email=author_email, task_description=task_description,
-                  task_beneficiary=task_beneficiary, task_date_created=task_date_created,
-                  task_date_updated=task_date_updated, task_root_path=task_root_path)
-    master_name = current_app.config['default_branch']
-    kwargs['rejection_messages'] = list(repo_functions.get_rejection_messages(repo, master_name, branch_name))
-    # TODO: the above might throw a GitCommandError if branch is an orphan.
-    if current_app.config['SINGLE_USER']:
-        kwargs['eligible_peer'] = True
-        kwargs['needs_peer_review'] = False
-        kwargs['is_peer_approved'] = True
-        kwargs['is_peer_rejected'] = False
-    else:
-        kwargs['eligible_peer'] = session['email'] != repo_functions.ineligible_peer(repo, master_name, branch_name)
-        kwargs['needs_peer_review'] = repo_functions.needs_peer_review(repo, master_name, branch_name)
-        kwargs['is_peer_approved'] = repo_functions.is_peer_approved(repo, master_name, branch_name)
-        kwargs['is_peer_rejected'] = repo_functions.is_peer_rejected(repo, master_name, branch_name)
-    if kwargs['is_peer_rejected']:
-        kwargs['rejecting_peer'], kwargs['rejection_message'] = kwargs['rejection_messages'].pop(0)
+                  activity=activity)
 
     return render_template('articles-list.html', **kwargs)
 
-def render_edit_view(repo, branch, path, file):
+def render_edit_view(repo, branch_name, path, file):
     ''' Render the page that lets you edit a file
     '''
     front, body = load_jekyll_doc(file)
@@ -431,9 +399,9 @@ def render_edit_view(repo, branch, path, file):
     url_slug = path
     # strip the index file from the slug if appropriate
     url_slug = sub(ur'index.{}$'.format(CONTENT_FILE_EXTENSION), u'', url_slug)
-    view_path = join('/tree/{}/view'.format(branch_name2path(branch)), path)
-    history_path = join('/tree/{}/history'.format(branch_name2path(branch)), path)
-    task_root_path = u'/tree/{}/edit/'.format(branch_name2path(branch))
+    view_path = join('/tree/{}/view'.format(branch_name2path(branch_name)), path)
+    history_path = join('/tree/{}/history'.format(branch_name2path(branch_name)), path)
+    save_path = join('/tree/{}/save'.format(branch_name2path(branch_name)), path)
     folder_root_slug = u'/'.join([item for item in url_slug.split('/') if item][:-1]) + u'/'
     app_authorized = False
     ga_config = read_ga_config(current_app.config['RUNNING_STATE_DIR'])
@@ -443,24 +411,31 @@ def render_edit_view(repo, branch, path, file):
         analytics_dict = fetch_google_analytics_for_page(current_app.config, path, ga_config.get('access_token'))
     commit = repo.commit()
 
-    # get the task metadata; contains 'author_email', 'task_description', 'task_beneficiary'
-    task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch)
-    author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
-    task_description = task_metadata['task_description'] if 'task_description' in task_metadata else u''
-    task_beneficiary = task_metadata['task_beneficiary'] if 'task_beneficiary' in task_metadata else u''
+    # contains 'author_email', 'task_description', 'task_beneficiary'
+    activity = repo_functions.get_task_metadata_for_branch(repo, branch_name)
+    activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
+    activity['task_description'] = activity['task_description'] if 'task_description' in activity else u''
+    activity['task_beneficiary'] = activity['task_beneficiary'] if 'task_beneficiary' in activity else u''
+
+    # get the current review state and authorized status
+    review_state, review_authorized = repo_functions.get_review_state_and_authorized(
+        repo=repo, default_branch_name=current_app.config['default_branch'],
+        working_branch_name=branch_name, actor_email=session.get('email', None)
+    )
+
+    activity.update(edit_path=u'/tree/{}/edit/'.format(branch_name2path(branch_name)),
+                    overview_path=u'/tree/{}/'.format(branch_name2path(branch_name)),
+                    review_state=review_state, review_authorized=review_authorized)
 
     kwargs = common_template_args(current_app.config, session)
-    kwargs.update(branch=branch, safe_branch=branch_name2path(branch),
+    kwargs.update(branch=branch_name, safe_branch=branch_name2path(branch_name),
                   body=body, hexsha=commit.hexsha, url_slug=url_slug,
                   front=front, view_path=view_path, edit_path=path,
-                  history_path=history_path, languages=languages,
-                  task_root_path=task_root_path,
-                  breadcrumb_paths=breadcrumb_paths(branch, folder_root_slug),
-                  app_authorized=app_authorized, author_email=author_email,
-                  task_description=task_description, task_beneficiary=task_beneficiary)
+                  history_path=history_path, save_path=save_path, languages=languages,
+                  breadcrumb_paths=breadcrumb_paths(branch_name, folder_root_slug),
+                  app_authorized=app_authorized, activity=activity)
     kwargs.update(analytics_dict)
     return render_template('article-edit.html', **kwargs)
-
 
 @app.route('/tree/<branch>/edit/', methods=['GET'])
 @app.route('/tree/<branch>/edit/<path:path>', methods=['GET'])
@@ -606,15 +581,17 @@ def branch_edit_file(branch, path=None):
 @login_required
 @synched_checkout_required
 def show_activity_overview(branch):
-    branch = branch_var2name(branch)
+    branch_name = branch_var2name(branch)
     repo = get_repo(current_app)
-    safe_branch = branch_name2path(branch)
+    safe_branch = branch_name2path(branch_name)
 
     # contains 'author_email', 'task_description', 'task_beneficiary'
-    activity = repo_functions.get_task_metadata_for_branch(repo, branch)
+    activity = repo_functions.get_task_metadata_for_branch(repo, branch_name)
     activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
     activity['task_description'] = activity['task_description'] if 'task_description' in activity else u''
     activity['task_beneficiary'] = activity['task_beneficiary'] if 'task_beneficiary' in activity else u''
+
+    kwargs = common_template_args(current_app.config, session)
 
     languages = load_languages(repo.working_dir)
 
@@ -625,14 +602,27 @@ def show_activity_overview(branch):
 
     history = make_activity_history(repo)
 
+    # get the current review state and authorized status
+    review_state, review_authorized = repo_functions.get_review_state_and_authorized(
+        repo=repo, default_branch_name=current_app.config['default_branch'],
+        working_branch_name=branch_name, actor_email=session.get('email', None)
+    )
+
+    # the email of the last person who edited the activity
+    last_edited_email = repo_functions.get_last_edited_email(
+        repo=repo, default_branch_name=current_app.config['default_branch'],
+        working_branch_name=branch_name
+    )
+
     date_created = repo.git.log('--format=%ad', '--date=relative', '--', repo_functions.TASK_METADATA_FILENAME).split('\n')[-1]
     date_updated = repo.git.log('--format=%ad', '--date=relative').split('\n')[0]
 
     activity.update(date_created=date_created, date_updated=date_updated,
-                    task_root_path=u'/tree/{}/edit/'.format(branch_name2path(branch)),
-                    safe_branch=safe_branch, history=history)
+                    edit_path=u'/tree/{}/edit/'.format(branch_name2path(branch_name)),
+                    overview_path=u'/tree/{}/'.format(branch_name2path(branch_name)),
+                    safe_branch=safe_branch, history=history, review_state=review_state,
+                    review_authorized=review_authorized, last_edited_email=last_edited_email)
 
-    kwargs = common_template_args(current_app.config, session)
     kwargs.update(activity=activity, app_authorized=app_authorized, languages=languages)
 
     return render_template('activity-overview.html', **kwargs)
@@ -642,27 +632,76 @@ def show_activity_overview(branch):
 @login_required
 @synched_checkout_required
 def edit_activity_overview(branch):
-    branch = branch_var2name(branch)
-    repo = get_repo(current_app)
+    ''' Handle a POST from a form on the activity overview page
+    '''
     safe_branch = branch_name2path(branch_var2name(branch))
+    comment_text = request.form.get('comment_text', u'').strip()
+    action_list = [item for item in request.form if item != 'comment_text']
+    action, action_authorized = update_activity_review_status(branch_name=safe_branch, comment_text=comment_text, action_list=action_list)
+    if action_authorized:
+        if action in ('merge', 'abandon', 'clobber'):
+            return publish_or_destroy_activity(safe_branch, action)
+        else:
+            return redirect('/tree/{}/'.format(safe_branch), code=303)
+    else:
+        return redirect('/tree/{}/'.format(safe_branch), code=303)
+
+def update_activity_review_status(branch_name, comment_text, action_list):
+    ''' Comment and/or update the review state.
+    '''
+    repo = get_repo(current_app)
     # which submit button was pressed?
     action = u''
-    possible_actions = ['comment', 'request_feedback', 'endorse', 'publish']
+    possible_actions = ['comment', 'request_feedback', 'endorse_edits', 'merge', 'abandon', 'clobber']
     for check_action in possible_actions:
-        if check_action in request.form:
+        if check_action in action_list:
             action = check_action
             break
 
-    comment_text = request.form.get('comment_text', u'').strip()
+    # get the current review state and authorized status
+    review_state, review_authorized = repo_functions.get_review_state_and_authorized(
+        repo=repo, default_branch_name=current_app.config['default_branch'],
+        working_branch_name=branch_name, actor_email=session.get('email', None)
+    )
+    action_authorized = (action == 'comment' and comment_text)
 
-    # no matter what button was pressed, we'll comment if comment text was sent
-    if comment_text:
-        repo_functions.provide_feedback(repo, comment_text)
+    # handle a review action
+    if action != 'comment':
+        if action == 'request_feedback':
+            if review_state == repo_functions.REVIEW_STATE_EDITED and review_authorized:
+                repo_functions.update_review_state(repo, repo_functions.REVIEW_STATE_FEEDBACK)
+                action_authorized = True
+        elif action == 'endorse_edits':
+            if review_state == repo_functions.REVIEW_STATE_FEEDBACK and review_authorized:
+                repo_functions.update_review_state(repo, repo_functions.REVIEW_STATE_ENDORSED)
+                action_authorized = True
+        elif action == 'merge':
+            if review_state == repo_functions.REVIEW_STATE_ENDORSED and review_authorized:
+                repo_functions.update_review_state(repo, repo_functions.REVIEW_STATE_PUBLISHED)
+                action_authorized = True
+        elif action == 'clobber' or action == 'abandon':
+            action_authorized = True
 
     if not action:
-        raise Exception(u'Unrecognized request posted to branch_edit_file()')
+        raise Exception(u'Unrecognized request sent to update_activity_review_status')
 
-    return redirect('/tree/{}/'.format(safe_branch), code=303)
+    # comment if comment text was sent and the action is authorized
+    if comment_text and action_authorized:
+        repo_functions.provide_feedback(repo, comment_text)
+
+    # flash a message if the action wasn't authorized
+    if action == 'comment' and not comment_text:
+        flash(u'You can\'t leave an empty comment!', u'error')
+    elif not action_authorized:
+        action_lookup = {
+            'comment': u'leave a comment',
+            'request_feedback': u'request feedback',
+            'endorse_edits': u'endorse the edits',
+            'merge': u'publish the edits'
+        }
+        flash(u'Something changed behind the scenes and we couldn\'t {}! Please try again.'.format(action_lookup[action]), u'error')
+
+    return action, action_authorized
 
 @app.route('/tree/<branch>/history/', methods=['GET'])
 @app.route('/tree/<branch>/history/<path:path>', methods=['GET'])
@@ -670,21 +709,24 @@ def edit_activity_overview(branch):
 @login_required
 @synched_checkout_required
 def branch_history(branch, path=None):
-    branch = branch_var2name(branch)
+    branch_name = branch_var2name(branch)
 
     repo = get_repo(current_app)
 
-    safe_branch = branch_name2path(branch)
+    safe_branch = branch_name2path(branch_name)
 
     # contains 'author_email', 'task_description', 'task_beneficiary'
-    task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch)
-    author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
-    task_description = task_metadata['task_description'] if 'task_description' in task_metadata else u''
-    task_beneficiary = task_metadata['task_beneficiary'] if 'task_beneficiary' in task_metadata else u''
+    activity = repo_functions.get_task_metadata_for_branch(repo, branch_name)
+    activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
+    activity['task_description'] = activity['task_description'] if 'task_description' in activity else u''
+    activity['task_beneficiary'] = activity['task_beneficiary'] if 'task_beneficiary' in activity else u''
 
-    view_path = join('/tree/%s/view' % branch_name2path(branch), path)
-    edit_path = join('/tree/%s/edit' % branch_name2path(branch), path)
-    task_root_path = u'/tree/{}/edit/'.format(branch_name2path(branch))
+    article_edit_path = join('/tree/{}/edit'.format(branch_name2path(branch_name)), path)
+
+    activity.update(edit_path=u'/tree/{}/edit/'.format(branch_name2path(branch_name)),
+                    overview_path=u'/tree/{}/'.format(branch_name2path(branch_name)),
+                    view_path=u'/tree/{}/view/'.format(branch_name2path(branch_name)))
+
     languages = load_languages(repo.working_dir)
 
     app_authorized = False
@@ -704,14 +746,12 @@ def branch_history(branch, path=None):
         history.append(dict(name=name, email=email, date=date, subject=subject))
 
     kwargs = common_template_args(current_app.config, session)
-    kwargs.update(branch=branch, safe_branch=safe_branch,
-                  history=history, view_path=view_path, edit_path=edit_path,
-                  path=path, languages=languages, app_authorized=app_authorized,
-                  author_email=author_email, task_description=task_description,
-                  task_beneficiary=task_beneficiary, task_root_path=task_root_path)
+    kwargs.update(branch=branch_name, safe_branch=safe_branch,
+                  history=history, path=path, languages=languages,
+                  app_authorized=app_authorized, article_edit_path=article_edit_path,
+                  activity=activity)
 
     return render_template('article-history.html', **kwargs)
-
 
 @app.route('/tree/<branch>/save/<path:path>', methods=['POST'])
 @log_application_errors
