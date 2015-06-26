@@ -7,8 +7,16 @@
 {% set template_name = 'article-edit' %}
 {% block body_class %}{{ template_name }}{% endblock %}
 
-{% block content %}
+{% block scripts %}
+<!--[if !IE]><!-->
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script src="/static/javascript/undo.js"></script>
+<script src="/static/javascript/markdown.min.js"></script>
+<script src="/static/javascript/markdown-bar.js"></script>
+<!--<![endif]-->
+{% endblock %}
 
+{% block content %}
 <!-- template name: {{ template_name }} -->
 <form action="{{ save_path }}" method="POST" class="row col__flex col edit-article__form">
 
@@ -39,7 +47,7 @@
             </div>
         </div>
         <div class="row__right toolbar--right">
-            <div class="selection-box toolbar__item">
+<!--             <div class="selection-box toolbar__item">
                 <label>Category</label>
                 <select>
                     <option value="public-safety">Public Safety</option>
@@ -52,6 +60,7 @@
                     <option value="public-safety">Crime Reporting and Statistics</option>
                     <option value="parks">Emergency Services</option>
                 </select>   
+            </div> -->
             </div>
             <a href="{{ history_path }}" class="button button--green toolbar__item">History</a>
             <a href="{{ view_path }}" target="_blank" class="button button--green toolbar__item">Preview</a>
@@ -60,7 +69,10 @@
     </div>    
     <div class="edit-article__main row col__flex">
         <div class="edit-article__editor row__left col">
-            <textarea id="{{ iso }}-body markItUp" class="col__flex" name="{{ iso }}-body" type="text" data-provide="markdown" data-iconlibrary="fa" data-hidden-buttons="cmdPreview">{{ form_body }}</textarea>
+            <!--[if !IE]><!-->
+            <div class="markdown-bar toolbar toolbar--left"></div>
+            <!--<![endif]-->
+            <textarea id="{{ iso }}-body" class="col__flex markdown-textarea" name="{{iso}}-body" type="text">{{ form_body }}</textarea>
         </div>
     </div>
     <div class="edit-article__footer row">

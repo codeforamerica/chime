@@ -1,0 +1,56 @@
+.markdown-bar {
+	background-color: $color-grey-100;
+	border-bottom: 1px solid $color-grey-300;
+	padding: .5em $site-margins;
+	font-family: 'FontAwesome';
+	@include user-select(none);
+}
+
+.markdown-bar__divider {
+	width: 1px;
+	height: 1em;
+	line-height: 0;
+	&:before {
+		content: ' ';
+	}
+}
+
+.markdown-bar__button {
+	position: relative;
+	&:hover {
+		.markdown-bar__tooltip {
+			display: inline-block;
+		}
+
+		&:disabled {
+			.markdown-bar__tooltip {
+				display: none;
+			}
+		}
+	}
+}
+
+.markdown-bar__tooltip {
+	display: none;
+	position: absolute;
+	width: 100px;
+	left: 0;
+	top: 100%;
+	margin-top: 7px;
+	background-color: $color-grey-900;
+	color: $color-grey-100;
+	line-height: 2em;
+	padding: {
+		left: .5em;
+		right: .5em;
+	}
+	border-radius: $border-radius;
+	text-align: center;
+
+	&:before {
+		position: absolute;
+		left: 4px;
+		top: -4px;
+		@include triangle(top, $color-grey-900, 4px);
+	}
+}
