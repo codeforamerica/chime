@@ -9,9 +9,9 @@
 
 {% block content %}
 
-<!-- task: {% if task_description %}{{task_description}}{% elif task %}{{task}}{% else %}{{name}}{% endif %} -->
-<!-- beneficiary: {% if task_beneficiary %}{{task_beneficiary}}{% endif %} -->
-<!-- template name: {{template_name}} -->
+<!-- task: {{ activity.task_description }} -->
+<!-- beneficiary: {{ activity.task_beneficiary }} -->
+<!-- template name: {{ template_name }} -->
 {% set icon_class_lookup = {'folder': 'fa fa-folder-o', 'file': 'fa fa-file-text-o', 'category': 'fa fa-folder', 'article': 'fa fa-file-text'} %}
 <div class="articles-list__main grid col__flex">
     {% for column in dir_columns %}
@@ -70,7 +70,7 @@
               <button name="action" type="submit" value="delete" class="button button--red toolbar__item"><span class="fa fa-trash"></span> Delete</button>
             </div>
             <div class="row__right toolbar toolbar--right">
-              <a href="{{task_root_path}}{{ dir_columns[dir_columns|length-1]['base_path'] }}" class="button toolbar__item">Cancel</a>
+              <a href="{{ activity.edit_path }}{{ dir_columns[dir_columns|length-1]['base_path'] }}" class="button toolbar__item">Cancel</a>
               <button type="submit" class="button button--green toolbar__item">Save</button>
             </div>
 
