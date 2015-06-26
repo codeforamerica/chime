@@ -28,8 +28,9 @@
 
 
 .dir-item {
+	position: relative;
 	padding: 1em .5em;
-	font-size: $h4-font-size;
+	font-size: $h5-font-size;
 	margin: {
 		left: -.5em;
 		right: -.5em;
@@ -53,8 +54,7 @@
 	}
 
 	&.is-selected {
-		background-color: $color-blue-100;
-		border-bottom: 1px solid transparent;
+		background-color: $color-grey-300;
 		.dir-item__name {
 			color: #000;
 		}
@@ -64,14 +64,27 @@
 
 .dir-item__name {
 	color: $color-grey-600;
-	max-width: 80%;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
+	display: block;
+	width: auto;
+	margin-right: 2.5em;
+	.lt-ie10 & {
+		text-overflow: clip;
+		-ms-text-overflow: clip;
+	}
 }
 
 .dir-item__actions {
 	opacity: 0;
+	position: absolute;
+	right: 0;
+	top: 50%;
+	margin-top: -.5em;
+	a {
+		color: $color-grey-600;
+	}
 }
 
 .articles {
