@@ -97,7 +97,7 @@ class TestSelenium(TestCase):
         # go back to the main page
         self.driver.get(main_url)
         # delete our branch
-        self.driver.find_element_by_xpath("//form[@action='/merge']/button[@value='abandon']").click()
+        self.driver.find_element_by_xpath("//form[@action='/update']/button[@name='abandon']").click()
 
     def tearDown(self):
         self.driver.close()

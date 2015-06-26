@@ -9,8 +9,19 @@
 
 .comment--new {
 	background-color: $color-grey-50;
+	border: 1px solid $color-grey-300;
+	box-shadow: none;
 	.comment__author {
 		color: $color-grey-600;
+	}
+}
+
+.comment__note {
+	font-size: $base-font-size;
+	color: #000;
+	margin-bottom: 1em;
+	.fa-info-circle {
+		margin-right: .5em;
 	}
 }
 

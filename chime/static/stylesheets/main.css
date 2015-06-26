@@ -1451,28 +1451,29 @@ button.button {
   line-height: 2.5em;
   color: #424242;
 }
-/* line 41, ../sass/components/_activity-log.scss */
-.activity-log-item p {
-  margin: 0;
-}
 
-/* line 47, ../sass/components/_activity-log.scss */
+/* line 44, ../sass/components/_activity-log.scss */
 .activity-log-item--info:before {
   content: '\f129';
 }
 
-/* line 53, ../sass/components/_activity-log.scss */
+/* line 50, ../sass/components/_activity-log.scss */
 .activity-log-item--edit:before {
   content: '\f040';
 }
 
-/* line 59, ../sass/components/_activity-log.scss */
+/* line 56, ../sass/components/_activity-log.scss */
 .activity-log-item--comment:before {
   line-height: 2.25em;
   content: '\f075';
 }
 
-/* line 65, ../sass/components/_activity-log.scss */
+/* line 63, ../sass/components/_activity-log.scss */
+.activity-log-item__content p {
+  margin: 0;
+}
+
+/* line 68, ../sass/components/_activity-log.scss */
 .activity-log-item__datetime {
   margin-top: .5em;
   font-size: 12px;
@@ -1500,13 +1501,26 @@ button.button {
 /* line 10, ../sass/components/_comment.scss */
 .comment--new {
   background-color: #fafafa;
+  border: 1px solid #e0e0e0;
+  box-shadow: none;
 }
-/* line 12, ../sass/components/_comment.scss */
+/* line 14, ../sass/components/_comment.scss */
 .comment--new .comment__author {
   color: #757575;
 }
 
-/* line 17, ../sass/components/_comment.scss */
+/* line 19, ../sass/components/_comment.scss */
+.comment__note {
+  font-size: 14px;
+  color: #000;
+  margin-bottom: 1em;
+}
+/* line 23, ../sass/components/_comment.scss */
+.comment__note .fa-info-circle {
+  margin-right: .5em;
+}
+
+/* line 28, ../sass/components/_comment.scss */
 .comment__author {
   color: #757575;
   border-bottom: 1px solid #eeeeee;
@@ -1514,27 +1528,27 @@ button.button {
   margin-bottom: 1em;
 }
 
-/* line 24, ../sass/components/_comment.scss */
+/* line 35, ../sass/components/_comment.scss */
 .comment__body {
   font-size: 18px;
   font-weight: normal;
 }
 
-/* line 29, ../sass/components/_comment.scss */
+/* line 40, ../sass/components/_comment.scss */
 .comment__datetime {
   color: #757575;
   font-size: 12px;
   margin-top: 1em;
 }
 
-/* line 35, ../sass/components/_comment.scss */
+/* line 46, ../sass/components/_comment.scss */
 .comment__input {
   border: 1px solid #eeeeee;
   height: 70px;
   padding: .5em;
 }
 
-/* line 41, ../sass/components/_comment.scss */
+/* line 52, ../sass/components/_comment.scss */
 .comment__actions {
   margin-top: 1em;
   padding: 0;
@@ -1722,7 +1736,7 @@ button.button {
 /* line 72, ../sass/templates/_activities-list.scss */
 .new-task__form {
   margin-top: 2em;
-  background-color: #eeeeee;
+  background-color: #f5f5f5;
   border: 1px solid #e0e0e0;
   border-radius: 3px;
   padding: 1em;

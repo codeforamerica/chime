@@ -15,18 +15,19 @@
         <script src="{{ url_for('static', filename='script.js') }}"></script>
         <title>{% block title %}{% endblock %} | Chime</title>
         <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+        {% if activity %}
         <!-- branch: {{branch}} -->
-        <!-- author: {% if author_email %}{{author_email}}{% elif name and task %}{{name}}{% else %}unknown{% endif %} -->
+        <!-- author: {% if activity.author_email %}{{activity.author_email}}{% else %}unknown{% endif %} -->
+        {% endif %}
     </head>
     <body class="{% block body_class %}{% endblock %} col">
 
     {% block global_header %}
       {% from 'macros/macros.html' import globalHeader as globalHeader %}
-      {{ globalHeader(breadcrumb_items = breadcrumb_items, email=email, task_description=task_description, branch=branch) }}
+      {{ globalHeader(breadcrumb_items = breadcrumb_items, email=email, branch=branch, activity=activity) }}
     {% endblock %}
 
     {% include 'includes/feedback-messages.html' %}
-
 
      <!-- content -->
         {% block content %}{% endblock %}
@@ -34,6 +35,7 @@
 
       {% block scripts %}{% endblock %}
 
+        <script src="/static/javascript/placeholders.min.js"></script>
     </body>
 
     <script type="text/javascript">
