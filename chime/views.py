@@ -358,7 +358,7 @@ def branch_view(branch, path=None):
 
     return Response(open(local_path).read(), 200, {'Content-Type': mime_type})
 
-def render_activity_files_page(repo, branch_name, path, template_filename):
+def make_kwargs_for_activity_files_page(repo, branch_name, path):
     ''' Render a page that shows an activity's files.
     '''
     # :NOTE: temporarily turning off filtering if 'showallfiles=true' is in the request
@@ -391,17 +391,19 @@ def render_activity_files_page(repo, branch_name, path, template_filename):
                   dir_columns=directory_columns(repo, branch_name, path, showallfiles),
                   activity=activity)
 
-    return render_template(template_filename, **kwargs)
+    return kwargs
 
 def render_list_dir(repo, branch_name, path):
     ''' Render a page showing an activity's files
     '''
-    return render_activity_files_page(repo, branch_name, path, 'articles-list.html')
+    kwargs = make_kwargs_for_activity_files_page(repo, branch_name, path)
+    return render_template('articles-list.html', **kwargs)
 
 def render_modify_dir(repo, branch_name, path):
     ''' Render a page showing an activity's files with an edit form for the selected file.
     '''
-    return render_activity_files_page(repo, branch_name, path, 'directory-modify.html')
+    kwargs = make_kwargs_for_activity_files_page(repo, branch_name, path)
+    return render_template('directory-modify.html', **kwargs)
 
 def render_edit_view(repo, branch_name, path, file):
     ''' Render the page that lets you edit a file
