@@ -3,7 +3,6 @@ from __future__ import absolute_import
 import logging
 from os import mkdir
 from os.path import join, split, exists, isdir, sep
-from itertools import chain
 from git import Repo
 from git.cmd import GitCommandError
 import hashlib
@@ -44,6 +43,8 @@ REVIEW_STATE_EDITED = u'unreviewed edits'
 REVIEW_STATE_FEEDBACK = u'feedback requested'
 # a review has happened and the site is ready to be published
 REVIEW_STATE_ENDORSED = u'edits endorsed'
+# the site has been published
+REVIEW_STATE_PUBLISHED = u'changes published'
 
 class MergeConflict (Exception):
     def __init__(self, remote_commit, local_commit):
@@ -567,6 +568,8 @@ def get_message_classification(subject, body):
             message_action = REVIEW_STATE_FEEDBACK
         elif ACTIVITY_ENDORSED_MESSAGE in body:
             message_action = REVIEW_STATE_ENDORSED
+        elif ACTIVITY_PUBLISHED_MESSAGE in body:
+            message_action = REVIEW_STATE_PUBLISHED
         return MESSAGE_CATEGORY_INFO, MESSAGE_TYPE_REVIEW_UPDATE, message_action
     else:
         return MESSAGE_CATEGORY_EDIT, MESSAGE_TYPE_EDIT, None
@@ -634,6 +637,10 @@ def get_review_state_and_authorized(repo, default_branch_name, working_branch_na
     if state == REVIEW_STATE_ENDORSED:
         return state, True
 
+    # nobody should be able to do anything if the site's published
+    if state == REVIEW_STATE_PUBLISHED:
+        return state, False
+
     # no other restrictions
     return state, True
 
@@ -654,6 +661,8 @@ def get_review_state_and_author_email(repo, default_branch_name, working_branch_
             state = REVIEW_STATE_FEEDBACK
         elif ACTIVITY_ENDORSED_MESSAGE in commit_body:
             state = REVIEW_STATE_ENDORSED
+        elif ACTIVITY_PUBLISHED_MESSAGE in commit_body:
+            state = REVIEW_STATE_PUBLISHED
 
     # if the last commit is the creation of the activity, or if it is the same as the base commit, the state is fresh
     elif search(r'{}$'.format(ACTIVITY_CREATED_MESSAGE), commit_subject) or last_commit.hexsha == base_commit_hexsha:
@@ -683,7 +692,7 @@ def add_empty_commit(clone, subject, body):
 def update_review_state(clone, new_state):
     ''' Adds a new empty commit changing the review state
     '''
-    if new_state not in (REVIEW_STATE_FEEDBACK, REVIEW_STATE_ENDORSED):
+    if new_state not in (REVIEW_STATE_FEEDBACK, REVIEW_STATE_ENDORSED, REVIEW_STATE_PUBLISHED):
         raise Exception(u'Can\'t set review state to {}'.format(new_state))
 
     message_text = u''
@@ -691,6 +700,8 @@ def update_review_state(clone, new_state):
         message_text = ACTIVITY_FEEDBACK_MESSAGE
     elif new_state == REVIEW_STATE_ENDORSED:
         message_text = ACTIVITY_ENDORSED_MESSAGE
+    elif new_state == REVIEW_STATE_PUBLISHED:
+        message_text = ACTIVITY_PUBLISHED_MESSAGE
 
     return add_empty_commit(clone, REVIEW_STATE_COMMIT_PREFIX, message_text)
 
@@ -698,19 +709,3 @@ def provide_feedback(clone, comment_text):
     ''' Adds a new empty commit adding a comment
     '''
     return add_empty_commit(clone, COMMENT_COMMIT_PREFIX, comment_text)
-
-def get_comments(repo, default_branch_name, working_branch_name):
-    '''
-    '''
-    base_commit_hexsha = repo.git.merge_base(default_branch_name, working_branch_name)
-    last_commit = repo.branches[working_branch_name].commit
-    commit_log = chain([last_commit], last_commit.iter_parents())
-
-    for commit in commit_log:
-        if commit.hexsha == base_commit_hexsha:
-            break
-
-        if COMMENT_COMMIT_PREFIX in commit.message:
-            email = commit.author.email
-            message = commit.message[commit.message.index(COMMENT_COMMIT_PREFIX):][len(COMMENT_COMMIT_PREFIX):]
-            yield (email, message)

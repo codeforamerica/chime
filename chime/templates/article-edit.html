@@ -10,7 +10,7 @@
 {% block content %}
 
 <!-- template name: {{ template_name }} -->
-<form action="/tree/{{ safe_branch }}/save/{{ activity.edit_path }}" method="POST" class="row col__flex col edit-article__form">
+<form action="{{ save_path }}" method="POST" class="row col__flex col edit-article__form">
 
     <input name="layout" value="{{ front['layout'] }}" type="hidden" />
     <input name="hexsha" value="{{ hexsha }}" type="hidden" />

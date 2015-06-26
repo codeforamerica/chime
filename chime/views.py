@@ -310,6 +310,14 @@ def publish_or_destroy_activity(branch_name, action):
         return render_template('merge-conflict.html', **kwargs)
 
     else:
+        activity_blurb = u'the "{task_description}" activity for {task_beneficiary}'.format(task_description=activity['task_description'], task_beneficiary=activity['task_beneficiary'])
+        if action == 'merge':
+            flash(u'You published the {activity_blurb}!'.format(activity_blurb=activity_blurb), u'notice')
+        elif action == 'abandon':
+            flash(u'You deleted the {activity_blurb}!'.format(activity_blurb=activity_blurb), u'notice')
+        elif action == 'clobber':
+            flash(u'You clobbered the {activity_blurb}!'.format(activity_blurb=activity_blurb), u'notice')
+
         return redirect('/')
 
 @app.route('/checkouts/<ref>.zip')
@@ -393,6 +401,7 @@ def render_edit_view(repo, branch_name, path, file):
     url_slug = sub(ur'index.{}$'.format(CONTENT_FILE_EXTENSION), u'', url_slug)
     view_path = join('/tree/{}/view'.format(branch_name2path(branch_name)), path)
     history_path = join('/tree/{}/history'.format(branch_name2path(branch_name)), path)
+    save_path = join('/tree/{}/save'.format(branch_name2path(branch_name)), path)
     folder_root_slug = u'/'.join([item for item in url_slug.split('/') if item][:-1]) + u'/'
     app_authorized = False
     ga_config = read_ga_config(current_app.config['RUNNING_STATE_DIR'])
@@ -422,7 +431,7 @@ def render_edit_view(repo, branch_name, path, file):
     kwargs.update(branch=branch_name, safe_branch=branch_name2path(branch_name),
                   body=body, hexsha=commit.hexsha, url_slug=url_slug,
                   front=front, view_path=view_path, edit_path=path,
-                  history_path=history_path, languages=languages,
+                  history_path=history_path, save_path=save_path, languages=languages,
                   breadcrumb_paths=breadcrumb_paths(branch_name, folder_root_slug),
                   app_authorized=app_authorized, activity=activity)
     kwargs.update(analytics_dict)
@@ -668,6 +677,7 @@ def update_activity_review_status(branch_name, comment_text, action_list):
                 action_authorized = True
         elif action == 'merge':
             if review_state == repo_functions.REVIEW_STATE_ENDORSED and review_authorized:
+                repo_functions.update_review_state(repo, repo_functions.REVIEW_STATE_PUBLISHED)
                 action_authorized = True
         elif action == 'clobber' or action == 'abandon':
             action_authorized = True
@@ -680,7 +690,9 @@ def update_activity_review_status(branch_name, comment_text, action_list):
         repo_functions.provide_feedback(repo, comment_text)
 
     # flash a message if the action wasn't authorized
-    if not action_authorized:
+    if action == 'comment' and not comment_text:
+        flash(u'You can\'t leave an empty comment!', u'error')
+    elif not action_authorized:
         action_lookup = {
             'comment': u'leave a comment',
             'request_feedback': u'request feedback',

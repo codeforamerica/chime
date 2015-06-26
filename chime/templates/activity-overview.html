@@ -19,6 +19,7 @@
         <p class="activity-overview__description">Below is a timeline of all of the work and discussion around this activity. Any work you do will appear at the the top of this list.</p>
 
         <div class="activity-log">
+            {% if activity.review_state != 'changes published' %}
             <div class="activity-log-item activity-log-item--comment">
                 <form action="." method="POST" class="comment comment--new">
                     <div class="comment__author">{% if email %}{{ email }}{% else %}unknown{% endif %}</div>
@@ -39,7 +40,7 @@
                             {% endif %}
                         {% endif %}
 
-                    <p class="comment__note"><span class="fa fa-info-circle"></span> {{ comment_note }}</p>
+                        <p class="comment__note"><span class="fa fa-info-circle"></span> {{ comment_note }}</p>
 
                         <textarea class="comment__input" name="comment_text" placeholder="Leave your comment here"></textarea>
                     </div>
@@ -57,6 +58,7 @@
                     </div>
                 </form>
             </div>
+            {% endif %}
 
             {% for log_item in activity.history %}
             <div class="activity-log-item activity-log-item--{{ log_item.commit_category }}">

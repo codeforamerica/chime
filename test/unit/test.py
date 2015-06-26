@@ -50,6 +50,14 @@ PATTERN_OVERVIEW_ACTIVITY_STARTED = u'<p>The "{activity_name}" activity was star
 PATTERN_OVERVIEW_COMMENT_BODY = u'<div class="comment__body">{comment_body}</div>'
 PATTERN_OVERVIEW_ITEM_DELETED = u'<p>The "{deleted_name}" {deleted_type} {deleted_also}was deleted by {author_email}.</p>'
 
+# review stuff
+PATTERN_REQUEST_FEEDBACK_BUTTON = u'<input class="toolbar__item button button--orange" type="submit" name="request_feedback" value="Request Feedback">'
+PATTERN_UNREVIEWED_EDITS_LINK = u'<a href="/tree/{branch_name}/" class="toolbar__item button button--outline">Unreviewed Edits</a>'
+PATTERN_ENDORSE_BUTTON = u'<input class="toolbar__item button button--green" type="submit" name="endorse_edits" value="Looks Good!">'
+PATTERN_FEEDBACK_REQUESTED_LINK = u'<a href="/tree/{branch_name}/" class="toolbar__item button button--outline">Feedback requested</a>'
+PATTERN_PUBLISH_BUTTON = u'<input class="toolbar__item button button--blue" type="submit" name="merge" value="Publish">'
+PATTERN_READY_TO_PUBLISH_LINK = u'<a href="/tree/{branch_name}/" class="toolbar__item button button--outline">Ready to publish</a>'
+
 class TestJekyll (TestCase):
 
     def test_good_files(self):
@@ -969,89 +977,21 @@ class TestRepo (TestCase):
         self.assertEqual(review_state, repo_functions.REVIEW_STATE_ENDORSED)
         self.assertTrue(review_authorized)
 
-    def test_peer_commented(self):
-        ''' Feedback and edits by peers are handled as expected.
-        '''
-        fake_author_email = u'erica@example.com'
-        task_description, task_beneficiary = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
-        branch1_name = branch1.name
-
         #
-        # Make a commit.
+        # Publish the work
         #
-        fake_creator_email = u'creator@example.com'
-        environ['GIT_AUTHOR_NAME'] = 'Jim Content Creator'
-        environ['GIT_COMMITTER_NAME'] = 'Jim Content Creator'
-        environ['GIT_AUTHOR_EMAIL'] = fake_creator_email
-        environ['GIT_COMMITTER_EMAIL'] = fake_creator_email
-        branch1.checkout()
-
-        # verify that the activity is fresh and that fake is authorized to edit it
-        review_state, review_authorized = repo_functions.get_review_state_and_authorized(self.clone1, 'master', branch1_name, fake_author_email)
-        self.assertEqual(review_state, repo_functions.REVIEW_STATE_FRESH)
-        self.assertTrue(review_authorized)
-
-        edit_functions.update_page(self.clone1, 'index.md',
-                                   dict(title=task_description), 'Hello you-all.')
-
-        repo_functions.save_working_file(self.clone1, 'index.md', 'I made a change',
-                                         self.clone1.commit().hexsha, 'master')
-
-        # verify that the activity has unreviewed edits and that fake is not authorized to request feedback
-        review_state, review_authorized = repo_functions.get_review_state_and_authorized(self.clone1, 'master', branch1_name, fake_author_email)
-        self.assertEqual(review_state, repo_functions.REVIEW_STATE_EDITED)
+        # first set & check the state
+        repo_functions.update_review_state(self.clone1, repo_functions.REVIEW_STATE_PUBLISHED)
+        review_state, review_authorized = repo_functions.get_review_state_and_authorized(self.clone1, 'master', branch1_name, fake_nonprofit_email)
+        self.assertEqual(review_state, repo_functions.REVIEW_STATE_PUBLISHED)
         self.assertFalse(review_authorized)
-        # Jim Content Creator is authorized to request feedback
-        review_state, review_authorized = repo_functions.get_review_state_and_authorized(self.clone1, 'master', branch1_name, fake_creator_email)
-        self.assertTrue(review_authorized)
-
-        # request feedback
-        repo_functions.update_review_state(self.clone1, repo_functions.REVIEW_STATE_FEEDBACK)
-        # verify that the activity has feedback requested and that fake is authorized to endorse
-        review_state, review_authorized = repo_functions.get_review_state_and_authorized(self.clone1, 'master', branch1_name, fake_author_email)
-        self.assertEqual(review_state, repo_functions.REVIEW_STATE_FEEDBACK)
-        self.assertTrue(review_authorized)
-        # Jim Content Creator is not authorized to endorse
-        review_state, review_authorized = repo_functions.get_review_state_and_authorized(self.clone1, 'master', branch1_name, fake_creator_email)
-        self.assertFalse(review_authorized)
-
-        # endorse and comment
-        repo_functions.update_review_state(self.clone1, repo_functions.REVIEW_STATE_ENDORSED)
-        repo_functions.provide_feedback(self.clone1, u'This sucks.')
-        # verify that the activity has been endorsed and that fake is authorized to publish
-        review_state, review_authorized = repo_functions.get_review_state_and_authorized(self.clone1, 'master', branch1_name, fake_author_email)
-        self.assertEqual(review_state, repo_functions.REVIEW_STATE_ENDORSED)
-        self.assertTrue(review_authorized)
-        # Jim Content Creator is also authorized to publish
-        review_state, review_authorized = repo_functions.get_review_state_and_authorized(self.clone1, 'master', branch1_name, fake_creator_email)
-        self.assertTrue(review_authorized)
-
-        #
-        # Provide feedback on the work as someone else.
-        #
-        fake_reviewer_email = u'reviewer@example.com'
-        environ['GIT_AUTHOR_NAME'] = 'Joe Reviewer'
-        environ['GIT_COMMITTER_NAME'] = 'Joe Reviewer'
-        environ['GIT_AUTHOR_EMAIL'] = fake_reviewer_email
-        environ['GIT_COMMITTER_EMAIL'] = fake_reviewer_email
-
-        #
-        # Make another commit as the reviewer.
-        #
-        edit_functions.update_page(self.clone1, 'index.md',
-                                   dict(title=task_description), 'Hello you there.')
-
-        repo_functions.save_working_file(self.clone1, 'index.md', 'I made a change',
-                                         self.clone1.commit().hexsha, 'master')
-
-        # again, the activity has unreviewed edits and fake is not authorized to request feedback
-        review_state, review_authorized = repo_functions.get_review_state_and_authorized(self.clone1, 'master', branch1_name, fake_author_email)
-        self.assertEqual(review_state, repo_functions.REVIEW_STATE_EDITED)
-        self.assertFalse(review_authorized)
-        # and Joe Reviewer is authorized to request feedback
-        review_state, review_authorized = repo_functions.get_review_state_and_authorized(self.clone1, 'master', branch1_name, fake_reviewer_email)
-        self.assertTrue(review_authorized)
+        # actually publish
+        merge_commit = repo_functions.complete_branch(self.clone1, 'master', branch1_name)
+        # The commit message is expected
+        self.assertTrue('Merged' in merge_commit.message and branch1_name in merge_commit.message)
+        # The branch is gone
+        self.assertFalse(branch1_name in self.origin.branches)
+        self.assertFalse(branch1_name in self.clone1.branches)
 
     def test_article_creation_with_unicode(self):
         ''' An article with unicode in its title is created and logged as expected.
@@ -1879,6 +1819,126 @@ class TestApp (TestCase):
             response = self.test_client.post('/tree/{}/'.format(generated_branch_name), data={'comment_text': u'', 'endorse_edits': 'Looks Good!'}, follow_redirects=True)
         self.assertEqual(response.status_code, 200)
         self.assertTrue(u'{} {}'.format(fake_endorser_email, repo_functions.ACTIVITY_ENDORSED_MESSAGE) in response.data)
+
+        # And publish the change!
+        with HTTMock(self.auth_csv_example_allowed):
+            response = self.test_client.post('/tree/{}/'.format(generated_branch_name), data={'comment_text': u'', 'merge': 'Publish'}, follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        # should've been redirected to the front page
+        self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('activities-list') in response.data)
+        # the activity we just published shouldn't be listed on the page
+        self.assertTrue(generated_branch_name not in response.data)
+
+    def test_review_process(self):
+        ''' Check the review process
+        '''
+        fake_task_description = u'groom pets'
+        fake_task_beneficiary = u'pet owners'
+        fake_author_email = u'erica@example.com'
+        fake_endorser_email = u'tomas@example.com'
+        fake_page_slug = u'hello'
+
+        # log in
+        with HTTMock(self.mock_persona_verify):
+            self.test_client.post('/sign-in', data={'email': fake_author_email})
+
+        with HTTMock(self.auth_csv_example_allowed):
+            # create a new branch
+            response = self.test_client.post('/start', data={'task_description': fake_task_description, 'task_beneficiary': fake_task_beneficiary}, follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('articles-list') in response.data)
+
+            # extract the generated branch name from the returned HTML
+            generated_branch_search = search(r'<!-- branch: (.{{{}}}) -->'.format(repo_functions.BRANCH_NAME_LENGTH), response.data)
+            self.assertIsNotNone(generated_branch_search)
+            try:
+                generated_branch_name = generated_branch_search.group(1)
+            except AttributeError:
+                raise Exception('No match for generated branch name.')
+
+            # create a new file
+            response = self.test_client.post('/tree/{}/edit/'.format(generated_branch_name),
+                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': fake_page_slug},
+                                             follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+
+            # get the edit page for the branch
+            response = self.test_client.get('/tree/{}/edit/'.format(generated_branch_name), follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            # verify that there's a 'request feedback' button
+            self.assertTrue(PATTERN_REQUEST_FEEDBACK_BUTTON in response.data)
+
+            # get the overview page for the branch
+            response = self.test_client.get('/tree/{}/'.format(generated_branch_name), follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            # verify that there's a 'request feedback' button
+            self.assertTrue(PATTERN_REQUEST_FEEDBACK_BUTTON in response.data)
+
+            # get the activity list page
+            response = self.test_client.get('/', follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            # verify that there's an 'unreviewed edits' link
+            self.assertTrue(PATTERN_UNREVIEWED_EDITS_LINK.format(branch_name=generated_branch_name) in response.data)
+
+        # Request feedback on the change
+        with HTTMock(self.auth_csv_example_allowed):
+            response = self.test_client.post('/tree/{}/'.format(generated_branch_name), data={'comment_text': u'', 'request_feedback': u'Request Feedback'}, follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            self.assertTrue(u'{} {}'.format(fake_author_email, repo_functions.ACTIVITY_FEEDBACK_MESSAGE) in response.data)
+
+        #
+        #
+        # Log in as a different person
+        with HTTMock(self.mock_other_persona_verify):
+            self.test_client.post('/sign-in', data={'email': fake_endorser_email})
+
+        with HTTMock(self.auth_csv_example_allowed):
+            # get the edit page for the branch
+            response = self.test_client.get('/tree/{}/edit/'.format(generated_branch_name), follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            # verify that there's a 'looks good!' button
+            self.assertTrue(PATTERN_ENDORSE_BUTTON in response.data)
+
+            # get the overview page for the branch
+            response = self.test_client.get('/tree/{}/'.format(generated_branch_name), follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            # verify that there's a 'looks good!' button
+            self.assertTrue(PATTERN_ENDORSE_BUTTON in response.data)
+
+            # get the activity list page
+            response = self.test_client.get('/', follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            # verify that there's an 'feedback requested' link
+            self.assertTrue(PATTERN_FEEDBACK_REQUESTED_LINK.format(branch_name=generated_branch_name) in response.data)
+
+        # Endorse the change
+        with HTTMock(self.auth_csv_example_allowed):
+            response = self.test_client.post('/tree/{}/'.format(generated_branch_name), data={'comment_text': u'', 'endorse_edits': 'Looks Good!'}, follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            self.assertTrue(u'{} {}'.format(fake_endorser_email, repo_functions.ACTIVITY_ENDORSED_MESSAGE) in response.data)
+
+        # log back in as the original editor
+        with HTTMock(self.mock_persona_verify):
+            self.test_client.post('/sign-in', data={'email': fake_author_email})
+
+        with HTTMock(self.auth_csv_example_allowed):
+            # get the edit page for the branch
+            response = self.test_client.get('/tree/{}/edit/'.format(generated_branch_name), follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            # verify that there's a 'publish' button
+            self.assertTrue(PATTERN_PUBLISH_BUTTON in response.data)
+
+            # get the overview page for the branch
+            response = self.test_client.get('/tree/{}/'.format(generated_branch_name), follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            # verify that there's a 'publish' button
+            self.assertTrue(PATTERN_PUBLISH_BUTTON in response.data)
+
+            # get the activity list page
+            response = self.test_client.get('/', follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            # verify that there's an 'ready to publish' link
+            self.assertTrue(PATTERN_READY_TO_PUBLISH_LINK.format(branch_name=generated_branch_name) in response.data)
 
         # And publish the change!
         with HTTMock(self.auth_csv_example_allowed):
