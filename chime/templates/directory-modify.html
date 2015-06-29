@@ -68,11 +68,11 @@
           <textarea class="directory-modify__description">{{ category.description }}</textarea>
           <div class="directory-modify__action-bar row">
             <div class="row__left toolbar toolbar--left">
-              <button name="action" type="submit" value="delete" class="button button--red toolbar__item"><span class="fa fa-trash"></span> Delete</button>
+              <button name="delete" type="submit" class="button button--red toolbar__item"><span class="fa fa-trash"></span> Delete</button>
             </div>
             <div class="row__right toolbar toolbar--right">
-              <a href="{{ activity.edit_path }}{{ dir_columns[dir_columns|length-1]['base_path'] }}" class="button toolbar__item">Cancel</a>
-              <button type="submit" class="button button--green toolbar__item">Save</button>
+              <a href="{{ category.cancel_path }}" class="button toolbar__item">Cancel</a>
+              <button name="save" type="submit" class="button button--green toolbar__item">Save</button>
             </div>
 
           </div>

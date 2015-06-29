@@ -402,18 +402,24 @@ def render_list_dir(repo, branch_name, path):
 def render_modify_dir(repo, branch_name, path):
     ''' Render a page showing an activity's files with an edit form for the selected category directory.
     '''
-    full_path = join(repo.working_dir, path or '.').rstrip('/')
-    full_index_path = join(full_path, u'index.{}'.format(CONTENT_FILE_EXTENSION)).rstrip('/')
-    front_matter = get_front_matter(full_index_path)
+    path = path or '.'
+    full_path = join(repo.working_dir, path).rstrip('/')
+    full_index_path = join(full_path, u'index.{}'.format(CONTENT_FILE_EXTENSION))
+    # init a category object with the contents of the category's front matter
+    category = get_front_matter(full_index_path)
 
-    if 'layout' not in front_matter:
+    if 'layout' not in category:
         raise Exception(u'No layout found in front-matter for {}.'.format(full_path))
-    if front_matter['layout'] != CATEGORY_LAYOUT:
-        raise Exception(u'Can\'t modify {}s, only categories.'.format(front_matter['layout']))
+    if category['layout'] != CATEGORY_LAYOUT:
+        raise Exception(u'Can\'t modify {}s, only categories.'.format(category['layout']))
+
+    languages = load_languages(repo.working_dir)
 
     kwargs = make_kwargs_for_activity_files_page(repo, branch_name, path)
-    # add the front matter to kwargs as 'category'
-    kwargs.update(category=front_matter)
+    # cancel redirects to the edit page for that category
+    category['cancel_path'] = join(kwargs['activity']['edit_path'], path)
+
+    kwargs.update(category=category, languages=languages)
 
     return render_template('directory-modify.html', **kwargs)
 
