@@ -59,8 +59,9 @@ describe("The markdown bar", function() {
     expect(button.length).toEqual(1);
   });
 });
-describe("When the bold button is pressed", function() {
+/*describe("When the bold button is pressed", function() {
     it("should add placeholder text with the correct punctuation to the textarea", function(){
+      $(".fa-bold").click();
       expect( ).toEqual();
 
     });
@@ -68,6 +69,6 @@ describe("When the bold button is pressed", function() {
       expect( ).toEqual();
 
     });
-});
+});*/
 
 
