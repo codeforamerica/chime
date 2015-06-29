@@ -692,7 +692,7 @@ def make_breadcrumb_paths(branch_name, path=None):
                        for dir_name in directory_list]
     return root_dir_with_path + dirs_with_paths
 
-def directory_columns(clone, branch_name, repo_path=None, showallfiles=False):
+def make_directory_columns(clone, branch_name, repo_path=None, showallfiles=False):
     ''' Get a list of lists of dicts for the passed path, with file listings for each level.
         example: passing 'hello/world/wide' will return something like:
             [

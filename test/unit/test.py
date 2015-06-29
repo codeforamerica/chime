@@ -2729,7 +2729,7 @@ class TestApp (TestCase):
             self.clone1.git.pull('origin', working_branch_name)
 
             # get the columns
-            dir_columns = view_functions.directory_columns(self.clone1, working_branch_name, sep.join([slug_hello, slug_world, slug_how, slug_are]))
+            dir_columns = view_functions.make_directory_columns(self.clone1, working_branch_name, sep.join([slug_hello, slug_world, slug_how, slug_are]))
 
             # test that the contents match our expectations
             self.assertEqual(len(dir_columns), 4)
