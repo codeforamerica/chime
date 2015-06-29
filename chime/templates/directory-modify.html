@@ -61,11 +61,21 @@
       {% endif %}
       <form action="." method="POST" class="directory-modify__form">
           <input name="order" type="hidden" value="{{ category.order }}" />
+      {% for iso in languages %}
+          {% if iso == 'en' %}
+              {% set category_title = category['title'] %}
+              {% set category_description = category['description'] %}
+              {% set display_class = '' %}
+          {% else %}
+              {% set category_title = category['title-'+iso] %}
+              {% set category_description = category['description-'+iso] %}
+              {% set display_class = 'is-hidden' %}
+          {% endif %}
           <h3 class="directory-modify__title">{{ dir_title }} Details</h3>
           <label>{{ dir_title }} Name</label>
-          <input type="text" value="{{ category.title }}" class="directory-modify__name">
+          <input name="{{ iso }}-title" type="text" value="{{ category_title }}" class="directory-modify__name">
           <label>{{ dir_title }} Description</label>
-          <textarea class="directory-modify__description">{{ category.description }}</textarea>
+          <textarea name="{{ iso }}-description" class="directory-modify__description">{{ category_description }}</textarea>
           <div class="directory-modify__action-bar row">
             <div class="row__left toolbar toolbar--left">
               <button name="delete" type="submit" class="button button--red toolbar__item"><span class="fa fa-trash"></span> Delete</button>
@@ -76,7 +86,7 @@
             </div>
 
           </div>
-
+      {% endfor %}
       </form>
     </div>
 </div>
