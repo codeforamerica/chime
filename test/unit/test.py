@@ -1861,6 +1861,11 @@ class TestApp (TestCase):
                     new_clone = view_functions.get_repo(self.app)
                     self.assertFalse(check_branch.name in new_clone.branches)
 
+            # load the activity list and verify that the branch is visible there
+            response = self.test_client.get('/', follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            self.assertTrue(check_branch.name in response.data)
+
             # Delete the activity
             response = self.test_client.post('/update', data={'abandon': 'Delete', 'branch': '{}'.format(check_branch.name)}, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
