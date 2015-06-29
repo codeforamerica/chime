@@ -688,9 +688,16 @@ def make_breadcrumb_paths(branch_name, path=None):
     directory_list = [dir_name for dir_name in path.split('/')
                       if dir_name and not dir_name.startswith('.')]
 
-    dirs_with_paths = [(dir_name, get_directory_path(branch_name, path, dir_name))
+    dirs_with_paths = [(dir_name, make_edit_path(branch_name, path, dir_name))
                        for dir_name in directory_list]
     return root_dir_with_path + dirs_with_paths
+
+def make_edit_path(branch, path, dir_name):
+    ''' Return the path to edit the object at the passed location
+    '''
+    dir_index = path.find(dir_name + '/')
+    base_path = path[:dir_index] + dir_name + '/'
+    return join('/tree/{}/edit'.format(branch_name2path(branch)), base_path)
 
 def make_directory_columns(clone, branch_name, repo_path=None, showallfiles=False):
     ''' Get a list of lists of dicts for the passed path, with file listings for each level.
@@ -737,11 +744,6 @@ def make_directory_columns(clone, branch_name, repo_path=None, showallfiles=Fals
         dir_listings.append({'base_path': base_path, 'files': listing})
 
     return dir_listings
-
-def get_directory_path(branch, path, dir_name):
-    dir_index = path.find(dir_name + '/')
-    base_path = path[:dir_index] + dir_name + '/'
-    return join('/tree/{}/edit'.format(branch_name2path(branch)), base_path)
 
 def should_redirect():
     ''' Return True if the current flask.request should redirect.
