@@ -20,7 +20,7 @@ from .view_functions import (
     branch_name2path, branch_var2name, get_repo, dos2unix, login_required, browserid_hostname_required,
     synch_required, synched_checkout_required, make_breadcrumb_paths, make_directory_columns, should_redirect,
     make_redirect, get_auth_data_file, is_allowed_email, common_template_args, log_application_errors,
-    is_article_dir, is_category_dir, make_activity_history, make_delete_display_commit_message,
+    is_article_dir, is_category_dir, make_activity_history, make_delete_display_commit_message, get_front_matter,
     CONTENT_FILE_EXTENSION, ARTICLE_LAYOUT, CATEGORY_LAYOUT
 )
 
@@ -333,12 +333,12 @@ def get_checkout(ref):
 
     return Response(bytes.getvalue(), mimetype='application/zip')
 
-@app.route('/tree/<branch>/view/', methods=['GET'])
-@app.route('/tree/<branch>/view/<path:path>', methods=['GET'])
+@app.route('/tree/<branch_name>/view/', methods=['GET'])
+@app.route('/tree/<branch_name>/view/<path:path>', methods=['GET'])
 @log_application_errors
 @login_required
 @synched_checkout_required
-def branch_view(branch, path=None):
+def branch_view(branch_name, path=None):
     r = get_repo(current_app)
 
     build_jekyll_site(r.working_dir)
@@ -451,14 +451,14 @@ def render_edit_view(repo, branch_name, path, file):
     kwargs.update(analytics_dict)
     return render_template('article-edit.html', **kwargs)
 
-@app.route('/tree/<branch>/edit/', methods=['GET'])
-@app.route('/tree/<branch>/edit/<path:path>', methods=['GET'])
+@app.route('/tree/<branch_name>/edit/', methods=['GET'])
+@app.route('/tree/<branch_name>/edit/<path:path>', methods=['GET'])
 @log_application_errors
 @login_required
 @synched_checkout_required
-def branch_edit(branch, path=None):
+def branch_edit(branch_name, path=None):
     repo = get_repo(current_app)
-    branch = branch_var2name(branch)
+    branch_name = branch_var2name(branch_name)
 
     full_path = join(repo.working_dir, path or '.').rstrip('/')
 
@@ -466,20 +466,20 @@ def branch_edit(branch, path=None):
         # if this is a directory representing an article, redirect to edit
         if is_article_dir(full_path):
             index_path = join(path or u'', u'index.{}'.format(CONTENT_FILE_EXTENSION))
-            return redirect('/tree/{}/edit/{}'.format(branch_name2path(branch), index_path))
+            return redirect('/tree/{}/edit/{}'.format(branch_name2path(branch_name), index_path))
 
         # if the directory path didn't end with a slash, add it
         if path and not path.endswith('/'):
-            return redirect('/tree/{}/edit/{}/'.format(branch_name2path(branch), path), code=302)
+            return redirect('/tree/{}/edit/{}/'.format(branch_name2path(branch_name), path), code=302)
 
         # render the directory contents
-        return render_list_dir(repo, branch, path)
+        return render_list_dir(repo, branch_name, path)
 
     # it's a file, edit it
-    return render_edit_view(repo, branch, path, open(full_path, 'r'))
+    return render_edit_view(repo, branch_name, path, open(full_path, 'r'))
 
-@app.route('/tree/<branch>/modify/', methods=['GET'])
-@app.route('/tree/<branch>/modify/<path:path>', methods=['GET'])
+@app.route('/tree/<branch_name>/modify/', methods=['GET'])
+@app.route('/tree/<branch_name>/modify/<path:path>', methods=['GET'])
 @log_application_errors
 @login_required
 @synched_checkout_required
@@ -555,12 +555,12 @@ def add_article_or_category(repo, dir_path, request_path, create_what):
 def strip_index_file(file_path):
     return sub(r'index.{}$'.format(CONTENT_FILE_EXTENSION), '', file_path)
 
-@app.route('/tree/<branch>/edit/', methods=['POST'])
-@app.route('/tree/<branch>/edit/<path:path>', methods=['POST'])
+@app.route('/tree/<branch_name>/edit/', methods=['POST'])
+@app.route('/tree/<branch_name>/edit/<path:path>', methods=['POST'])
 @log_application_errors
 @login_required
 @synched_checkout_required
-def branch_edit_file(branch, path=None):
+def branch_edit_file(branch_name, path=None):
     repo = get_repo(current_app)
     commit = repo.commit()
 
@@ -613,15 +613,15 @@ def branch_edit_file(branch, path=None):
         Logger.debug('save')
         repo_functions.save_working_file(repo, file_path, commit_message, commit.hexsha, master_name)
 
-    safe_branch = branch_name2path(branch_var2name(branch))
+    safe_branch = branch_name2path(branch_var2name(branch_name))
     return redirect('/tree/%s/edit/%s' % (safe_branch, redirect_path), code=303)
 
-@app.route('/tree/<branch>/', methods=['GET'])
+@app.route('/tree/<branch_name>/', methods=['GET'])
 @log_application_errors
 @login_required
 @synched_checkout_required
-def show_activity_overview(branch):
-    branch_name = branch_var2name(branch)
+def show_activity_overview(branch_name):
+    branch_name = branch_var2name(branch_name)
     repo = get_repo(current_app)
     safe_branch = branch_name2path(branch_name)
 
@@ -667,14 +667,14 @@ def show_activity_overview(branch):
 
     return render_template('activity-overview.html', **kwargs)
 
-@app.route('/tree/<branch>/', methods=['POST'])
+@app.route('/tree/<branch_name>/', methods=['POST'])
 @log_application_errors
 @login_required
 @synched_checkout_required
-def edit_activity_overview(branch):
+def edit_activity_overview(branch_name):
     ''' Handle a POST from a form on the activity overview page
     '''
-    safe_branch = branch_name2path(branch_var2name(branch))
+    safe_branch = branch_name2path(branch_var2name(branch_name))
     comment_text = request.form.get('comment_text', u'').strip()
     action_list = [item for item in request.form if item != 'comment_text']
     action, action_authorized = update_activity_review_status(branch_name=safe_branch, comment_text=comment_text, action_list=action_list)
@@ -743,13 +743,13 @@ def update_activity_review_status(branch_name, comment_text, action_list):
 
     return action, action_authorized
 
-@app.route('/tree/<branch>/history/', methods=['GET'])
-@app.route('/tree/<branch>/history/<path:path>', methods=['GET'])
+@app.route('/tree/<branch_name>/history/', methods=['GET'])
+@app.route('/tree/<branch_name>/history/<path:path>', methods=['GET'])
 @log_application_errors
 @login_required
 @synched_checkout_required
-def branch_history(branch, path=None):
-    branch_name = branch_var2name(branch)
+def branch_history(branch_name, path=None):
+    branch_name = branch_var2name(branch_name)
 
     repo = get_repo(current_app)
 
@@ -793,20 +793,20 @@ def branch_history(branch, path=None):
 
     return render_template('article-history.html', **kwargs)
 
-@app.route('/tree/<branch>/save/<path:path>', methods=['POST'])
+@app.route('/tree/<branch_name>/save/<path:path>', methods=['POST'])
 @log_application_errors
 @login_required
 @synch_required
-def branch_save(branch, path):
-    branch = branch_var2name(branch)
-    safe_branch = branch_name2path(branch)
+def branch_save(branch_name, path):
+    branch_name = branch_var2name(branch_name)
+    safe_branch = branch_name2path(branch_name)
     master_name = current_app.config['default_branch']
 
     repo = get_repo(current_app)
-    existing_branch = repo_functions.get_existing_branch(repo, master_name, branch)
+    existing_branch = repo_functions.get_existing_branch(repo, master_name, branch_name)
 
     if not existing_branch:
-        flash(u'There is no {} branch!'.format(branch), u'warning')
+        flash(u'There is no {} branch!'.format(branch_name), u'warning')
         return redirect('/')
 
     commit = existing_branch.commit

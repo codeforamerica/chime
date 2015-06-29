@@ -549,14 +549,14 @@ def synched_checkout_required(route_function):
             repo.git.fetch('origin', with_exceptions=True)
 
         checkout = get_repo(current_app)
-        branch_name = branch_var2name(kwargs['branch'])
+        branch_name = branch_var2name(kwargs['branch_name'])
         master_name = current_app.config['default_branch']
         branch = get_existing_branch(checkout, master_name, branch_name)
 
         if not branch:
             # redirect and flash an error
-            Logger.debug('  branch {} does not exist, redirecting'.format(kwargs['branch']))
-            flash(u'There is no {} branch!'.format(kwargs['branch']), u'warning')
+            Logger.debug('  branch {} does not exist, redirecting'.format(kwargs['branch_name']))
+            flash(u'There is no {} branch!'.format(kwargs['branch_name']), u'warning')
             return redirect('/')
 
         branch.checkout()
