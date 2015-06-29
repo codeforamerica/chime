@@ -60,6 +60,7 @@
         {% set dir_title = "Subcategory" %}
       {% endif %}
       <form action="." method="POST" class="directory-modify__form">
+          <input name="order" type="hidden" value="{{ category.order }}" />
           <h3 class="directory-modify__title">{{ dir_title }} Details</h3>
           <label>{{ dir_title }} Name</label>
           <input type="text" value="{{ category.title }}" class="directory-modify__name">
