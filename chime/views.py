@@ -20,8 +20,8 @@ from .view_functions import (
     branch_name2path, branch_var2name, get_repo, dos2unix, login_required, browserid_hostname_required,
     synch_required, synched_checkout_required, make_breadcrumb_paths, make_directory_columns, should_redirect,
     make_redirect, get_auth_data_file, is_allowed_email, common_template_args, log_application_errors,
-    is_article_dir, make_activity_history, make_delete_display_commit_message, CONTENT_FILE_EXTENSION,
-    ARTICLE_LAYOUT, CATEGORY_LAYOUT
+    is_article_dir, is_category_dir, make_activity_history, make_delete_display_commit_message,
+    CONTENT_FILE_EXTENSION, ARTICLE_LAYOUT, CATEGORY_LAYOUT
 )
 
 from .google_api_functions import (
@@ -463,7 +463,7 @@ def branch_edit(branch, path=None):
     full_path = join(repo.working_dir, path or '.').rstrip('/')
 
     if isdir(full_path):
-        # if this is an editable directory (contains only an editable index file), redirect
+        # if this is a directory representing an article, redirect to edit
         if is_article_dir(full_path):
             index_path = join(path or u'', u'index.{}'.format(CONTENT_FILE_EXTENSION))
             return redirect('/tree/{}/edit/{}'.format(branch_name2path(branch), index_path))
@@ -486,24 +486,23 @@ def branch_edit(branch, path=None):
 def branch_modify(branch, path=None):
     repo = get_repo(current_app)
     branch = branch_var2name(branch)
-
     full_path = join(repo.working_dir, path or '.').rstrip('/')
 
-    if isdir(full_path):
-        # if this is an editable directory (contains only an editable index file), redirect
-        if is_article_dir(full_path):
-            index_path = join(path or u'', u'index.{}'.format(CONTENT_FILE_EXTENSION))
-            return redirect('/tree/{}/edit/{}'.format(branch_name2path(branch), index_path))
+    # if the directory path didn't end with a slash, add it
+    if isdir(full_path) and path and not path.endswith('/'):
+        return redirect('/tree/{}/modify/{}/'.format(branch_name2path(branch), path), code=302)
 
-        # if the directory path didn't end with a slash, add it
-        if path and not path.endswith('/'):
-            return redirect('/tree/{}/modify/{}/'.format(branch_name2path(branch), path), code=302)
-
+    if is_category_dir(full_path):
         # render the directory modification view
         return render_modify_dir(repo, branch, path)
 
-    # it's a file, edit it
-    return render_edit_view(repo, branch, path, open(full_path, 'r'))
+    # if this is an article directory, redirect to edit
+    if is_article_dir(full_path):
+        index_path = join(path or u'', u'index.{}'.format(CONTENT_FILE_EXTENSION))
+        return redirect('/tree/{}/edit/{}'.format(branch_name2path(branch), index_path))
+
+    # this is not a category or article directory; redirect to edit
+    return redirect('/tree/{}/edit/{}'.format(branch, path))
 
 def add_article_or_category(repo, dir_path, request_path, create_what):
     ''' Add an article or category
