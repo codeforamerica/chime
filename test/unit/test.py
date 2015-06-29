@@ -1829,6 +1829,43 @@ class TestApp (TestCase):
         # the activity we just published shouldn't be listed on the page
         self.assertTrue(generated_branch_name not in response.data)
 
+    def test_delete_strange_tasks(self):
+        ''' Delete a task that you can see on the activity list but haven't viewed or edited.
+        '''
+        fake_author_email = u'erica@example.com'
+        with HTTMock(self.mock_persona_verify):
+            self.test_client.post('/sign-in', data={'email': fake_author_email})
+
+        with HTTMock(self.auth_csv_example_allowed):
+            # start a new branch via the http interface
+            # invokes view_functions/get_repo which creates a clone
+            disposable_task_description = u'unimportant task'
+            disposable_task_beneficiary = u'unimportant person'
+            response = self.test_client.post('/start', data={'task_description': disposable_task_description, 'task_beneficiary': disposable_task_beneficiary}, follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('articles-list') in response.data)
+            self.assertTrue(PATTERN_TASK_COMMENT.format(disposable_task_description) in response.data)
+            self.assertTrue(PATTERN_BENEFICIARY_COMMENT.format(disposable_task_beneficiary) in response.data)
+
+            # create a branch programmatically on our pre-made clone
+            check_task_description = u'Creating a Star Child'
+            check_task_beneficiary = u'Ancient Aliens'
+            check_branch = repo_functions.get_start_branch(self.clone1, 'master', check_task_description, check_task_beneficiary, fake_author_email)
+            self.assertTrue(check_branch.name in self.clone1.branches)
+            self.assertTrue(check_branch.name in self.origin.branches)
+            # verify that the branch doesn't exist in our new clone
+            with self.app.app_context():
+                with self.app.test_request_context():
+                    from flask import session
+                    session['email'] = fake_author_email
+                    new_clone = view_functions.get_repo(self.app)
+                    self.assertFalse(check_branch.name in new_clone.branches)
+
+            # Delete the activity
+            response = self.test_client.post('/update', data={'abandon': 'Delete', 'branch': '{}'.format(check_branch.name)}, follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            self.assertFalse(check_branch.name in response.data)
+
     def test_review_process(self):
         ''' Check the review process
         '''
