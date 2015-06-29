@@ -483,26 +483,26 @@ def branch_edit(branch, path=None):
 @log_application_errors
 @login_required
 @synched_checkout_required
-def branch_modify(branch, path=None):
+def branch_modify(branch_name, path=None):
     repo = get_repo(current_app)
-    branch = branch_var2name(branch)
+    branch_name = branch_var2name(branch_name)
     full_path = join(repo.working_dir, path or '.').rstrip('/')
 
     # if the directory path didn't end with a slash, add it
     if isdir(full_path) and path and not path.endswith('/'):
-        return redirect('/tree/{}/modify/{}/'.format(branch_name2path(branch), path), code=302)
+        return redirect('/tree/{}/modify/{}/'.format(branch_name2path(branch_name), path), code=302)
 
     if is_category_dir(full_path):
         # render the directory modification view
-        return render_modify_dir(repo, branch, path)
+        return render_modify_dir(repo, branch_name, path)
 
     # if this is an article directory, redirect to edit
     if is_article_dir(full_path):
         index_path = join(path or u'', u'index.{}'.format(CONTENT_FILE_EXTENSION))
-        return redirect('/tree/{}/edit/{}'.format(branch_name2path(branch), index_path))
+        return redirect('/tree/{}/edit/{}'.format(branch_name2path(branch_name), index_path))
 
     # this is not a category or article directory; redirect to edit
-    return redirect('/tree/{}/edit/{}'.format(branch, path))
+    return redirect('/tree/{}/edit/{}'.format(branch_name, path))
 
 def add_article_or_category(repo, dir_path, request_path, create_what):
     ''' Add an article or category
