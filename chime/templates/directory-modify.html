@@ -62,9 +62,9 @@
       <form action="." method="POST" class="directory-modify__form">
           <h3 class="directory-modify__title">{{ dir_title }} Details</h3>
           <label>{{ dir_title }} Name</label>
-          <input type="text" value="{{ dir_columns[dir_columns|length-1]['base_path'] }}" class="directory-modify__name">
+          <input type="text" value="{{ category.title }}" class="directory-modify__name">
           <label>{{ dir_title }} Description</label>
-          <textarea class="directory-modify__description"></textarea>
+          <textarea class="directory-modify__description">{{ category.description }}</textarea>
           <div class="directory-modify__action-bar row">
             <div class="row__left toolbar toolbar--left">
               <button name="action" type="submit" value="delete" class="button button--red toolbar__item"><span class="fa fa-trash"></span> Delete</button>
