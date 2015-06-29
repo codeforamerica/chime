@@ -18,7 +18,7 @@ from . import publish
 from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
 from .view_functions import (
     branch_name2path, branch_var2name, get_repo, dos2unix, login_required, browserid_hostname_required,
-    synch_required, synched_checkout_required, breadcrumb_paths, directory_columns, should_redirect,
+    synch_required, synched_checkout_required, make_breadcrumb_paths, directory_columns, should_redirect,
     make_redirect, get_auth_data_file, is_allowed_email, common_template_args, log_application_errors,
     is_article_dir, make_activity_history, make_delete_display_commit_message, CONTENT_FILE_EXTENSION,
     ARTICLE_LAYOUT, CATEGORY_LAYOUT
@@ -387,7 +387,7 @@ def make_kwargs_for_activity_files_page(repo, branch_name, path):
 
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(branch=branch_name, safe_branch=branch_name2path(branch_name),
-                  breadcrumb_paths=breadcrumb_paths(branch_name, path),
+                  breadcrumb_paths=make_breadcrumb_paths(branch_name, path),
                   dir_columns=directory_columns(repo, branch_name, path, showallfiles),
                   activity=activity)
 
@@ -446,7 +446,7 @@ def render_edit_view(repo, branch_name, path, file):
                   body=body, hexsha=commit.hexsha, url_slug=url_slug,
                   front=front, view_path=view_path, edit_path=path,
                   history_path=history_path, save_path=save_path, languages=languages,
-                  breadcrumb_paths=breadcrumb_paths(branch_name, folder_root_slug),
+                  breadcrumb_paths=make_breadcrumb_paths(branch_name, folder_root_slug),
                   app_authorized=app_authorized, activity=activity)
     kwargs.update(analytics_dict)
     return render_template('article-edit.html', **kwargs)

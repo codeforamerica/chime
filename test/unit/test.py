@@ -124,14 +124,14 @@ class TestViewFunctions (TestCase):
         ''' Ensure that a list with pairs of a sub-directory and the absolute path
             to that directory is returned for all sub-directories in a path
         '''
-        breadcrumb_paths = view_functions.breadcrumb_paths('my-branch')
+        breadcrumb_paths = view_functions.make_breadcrumb_paths('my-branch')
         self.assertEqual(breadcrumb_paths, [('root', '/tree/my-branch/edit')])
 
     def test_breadcrumb_paths_with_relative_path(self):
         ''' Ensure that a list with pairs of a sub-directory and the absolute path
             to that directory is returned for all sub-directories in a path
         '''
-        breadcrumb_paths = view_functions.breadcrumb_paths('my-branch', 'blah/foo/')
+        breadcrumb_paths = view_functions.make_breadcrumb_paths('my-branch', 'blah/foo/')
         self.assertEqual(breadcrumb_paths, [('root', '/tree/my-branch/edit'),
                                             ('blah', '/tree/my-branch/edit/blah/'),
                                             ('foo', '/tree/my-branch/edit/blah/foo/')])

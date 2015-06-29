@@ -675,7 +675,7 @@ def sorted_paths(repo, branch_name, path=None, showallfiles=False):
 
     return path_details
 
-def breadcrumb_paths(branch_name, path=None):
+def make_breadcrumb_paths(branch_name, path=None):
     ''' Get a list of tuples (directory name, edit path) for the passed path
         example: passing 'hello/world' will return something like:
             [
