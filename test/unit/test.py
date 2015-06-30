@@ -15,7 +15,6 @@ from re import search, sub
 import random
 from datetime import date, timedelta
 import sys
-from chime import views
 from chime.repo_functions import ChimeRepo
 from slugify import slugify
 
@@ -106,6 +105,7 @@ class TestViewFunctions (TestCase):
         rmtree(self.origin.git_dir)
         rmtree(self.clone.working_dir)
 
+    # in TestViewFunctions
     def test_sorted_paths(self):
         ''' Ensure files/directories are sorted in alphabetical order, and that
             we get the expected values back from the sorted_paths method
@@ -120,6 +120,7 @@ class TestViewFunctions (TestCase):
 
         self.assertEqual(sorted_list, expected_list)
 
+    # in TestViewFunctions
     def test_breadcrumb_paths_with_no_relative_path(self):
         ''' Ensure that a list with pairs of a sub-directory and the absolute path
             to that directory is returned for all sub-directories in a path
@@ -127,6 +128,7 @@ class TestViewFunctions (TestCase):
         breadcrumb_paths = view_functions.make_breadcrumb_paths('my-branch')
         self.assertEqual(breadcrumb_paths, [('root', '/tree/my-branch/edit')])
 
+    # in TestViewFunctions
     def test_breadcrumb_paths_with_relative_path(self):
         ''' Ensure that a list with pairs of a sub-directory and the absolute path
             to that directory is returned for all sub-directories in a path
@@ -136,6 +138,7 @@ class TestViewFunctions (TestCase):
                                             ('blah', '/tree/my-branch/edit/blah/'),
                                             ('foo', '/tree/my-branch/edit/blah/foo/')])
 
+    # in TestViewFunctions
     def test_auth_url(self):
         '''
         '''
@@ -147,6 +150,7 @@ class TestViewFunctions (TestCase):
         csv_url = view_functions.get_auth_csv_url(auth_url)
         self.assertEqual(csv_url, 'https://docs.google.com/spreadsheets/d/12jUfaRBd-CU1_6BGeLFG1_qoi7Fw_vRC_SXv36eDzM0/export?format=csv')
 
+    # in TestViewFunctions
     def test_is_allowed_email(self):
         '''
         '''
@@ -230,12 +234,14 @@ class TestRepo (TestCase):
         rmtree(self.clone1.working_dir)
         rmtree(self.clone2.working_dir)
 
+    # in TestRepo
     def test_repo_features(self):
         self.assertTrue(self.origin.bare)
 
         branch_names = [b.name for b in self.origin.branches]
         self.assertEqual(set(branch_names), set(['master', 'title', 'body']))
 
+    # in TestRepo
     def test_get_start_branch(self):
         ''' Make a simple edit in a clone, verify that it appears in the other.
         '''
@@ -266,6 +272,7 @@ class TestRepo (TestCase):
         self.assertEqual(branch2.commit.hexsha, branch1.commit.hexsha)
         self.assertEqual(branch2.commit.message, message)
 
+    # in TestRepo
     def test_get_start_branch_2(self):
         ''' Make a simple edit in a clone, verify that it appears in the other.
         '''
@@ -306,6 +313,7 @@ class TestRepo (TestCase):
         # the most recent one is the creation of the task metadata file
         self.assertEqual(branch2.commit.parents[0].hexsha, self.origin.refs['master'].commit.hexsha)
 
+    # in TestRepo
     def test_delete_missing_branch(self):
         ''' Delete a branch in a clone that's still in origin, see if it can be deleted anyway.
         '''
@@ -326,6 +334,7 @@ class TestRepo (TestCase):
         self.assertFalse('origin/' + branch1.name in self.clone2.refs)
         self.assertFalse(branch1.name in self.clone2.branches)
 
+    # in TestRepo
     def test_new_file(self):
         ''' Make a new file and delete an old file in a clone, verify that the changes appear in the other.
         '''
@@ -377,6 +386,7 @@ class TestRepo (TestCase):
 
         self.assertFalse(exists(join(self.clone2.working_dir, 'index.md')))
 
+    # in TestRepo
     def test_try_to_create_existing_category(self):
         ''' We can't create a category that exists already.
         '''
@@ -391,6 +401,7 @@ class TestRepo (TestCase):
         self.assertEqual(u'categories/my-new-category/', second_result[2])
         self.assertEqual(False, second_result[3])
 
+    # in TestRepo
     def test_try_to_create_existing_article(self):
         ''' We can't create an article that exists already
         '''
@@ -405,6 +416,7 @@ class TestRepo (TestCase):
         self.assertEqual(u'categories/example/new-article/index.markdown', first_result[2])
         self.assertEqual(False, second_result[3])
 
+    # in TestRepo
     def test_delete_directory(self):
         ''' Make a new file and directory and delete them.
         '''
@@ -441,6 +453,7 @@ class TestRepo (TestCase):
 
         self.assertFalse(exists(join(self.clone1.working_dir, 'hello/')))
 
+    # in TestRepo
     def test_move_file(self):
         ''' Change the path of a file.
         '''
@@ -467,6 +480,7 @@ class TestRepo (TestCase):
         self.assertTrue(exists(join(self.clone2.working_dir, 'hello/world.md')))
         self.assertFalse(exists(join(self.clone2.working_dir, 'index.md')))
 
+    # in TestRepo
     def test_content_merge(self):
         ''' Test that non-conflicting changes on the same file merge cleanly.
         '''
@@ -508,6 +522,7 @@ class TestRepo (TestCase):
         self.assertEqual(body2b, body2)
         self.assertTrue(self.clone2.commit().message.startswith('Merged work from'))
 
+    # in TestRepo
     def test_content_merge_extra_change(self):
         ''' Test that non-conflicting changes on the same file merge cleanly.
         '''
@@ -556,6 +571,7 @@ class TestRepo (TestCase):
         self.assertEqual(body2b.strip(), 'Another change to the body')
         self.assertTrue(self.clone2.commit().message.startswith('Merged work from'))
 
+    # in TestRepo
     def test_multifile_merge(self):
         ''' Test that two non-conflicting new files merge cleanly.
         '''
@@ -608,6 +624,7 @@ class TestRepo (TestCase):
         self.assertEqual(branch1b.commit.author.email, self.session['email'])
         self.assertEqual(branch1b.commit.committer.email, self.session['email'])
 
+    # in TestRepo
     def test_same_branch_conflict(self):
         ''' Test that a conflict in two branches appears at the right spot.
         '''
@@ -653,6 +670,7 @@ class TestRepo (TestCase):
         self.assertEqual(diffs[0].a_blob.name, 'conflict.md')
         self.assertEqual(diffs[0].b_blob.name, 'conflict.md')
 
+    # in TestRepo
     def test_upstream_pull_conflict(self):
         ''' Test that a conflict in two branches appears at the right spot.
         '''
@@ -709,6 +727,7 @@ class TestRepo (TestCase):
         self.assertEqual(diffs[1].a_blob.name, 'conflict.md')
         self.assertEqual(diffs[1].b_blob.name, 'conflict.md')
 
+    # in TestRepo
     def test_upstream_push_conflict(self):
         ''' Test that a conflict in two branches appears at the right spot.
         '''
@@ -759,6 +778,7 @@ class TestRepo (TestCase):
         self.assertEqual(changed_files[0], 'conflict.md')
         self.assertEqual(changed_files[0], 'conflict.md')
 
+    # in TestRepo
     def test_conflict_resolution_clobber(self):
         ''' Test that a conflict in two branches can be clobbered.
         '''
@@ -824,6 +844,7 @@ class TestRepo (TestCase):
         self.assertFalse(exists(join(self.clone2.working_dir, 'goner.md')))
         self.assertTrue(self.clone2.commit().message.startswith('Clobbered with work from'))
 
+    # in TestRepo
     def test_conflict_resolution_abandon(self):
         ''' Test that a conflict in two branches can be abandoned.
         '''
@@ -884,6 +905,7 @@ class TestRepo (TestCase):
         self.assertFalse(exists(join(self.clone2.working_dir, 'goner.md')))
         self.assertTrue(self.clone2.commit().message.startswith('Abandoned work from'))
 
+    # in TestRepo
     def test_peer_review(self):
         ''' Exercise the review process
         '''
@@ -993,6 +1015,7 @@ class TestRepo (TestCase):
         self.assertFalse(branch1_name in self.origin.branches)
         self.assertFalse(branch1_name in self.clone1.branches)
 
+    # in TestRepo
     def test_article_creation_with_unicode(self):
         ''' An article with unicode in its title is created and logged as expected.
         '''
@@ -1032,6 +1055,7 @@ class TestRepo (TestCase):
         # commit the article
         repo_functions.save_working_file(new_clone, file_path, add_message, new_clone.commit().hexsha, 'master')
 
+    # in TestRepo
     def test_activity_history_recorded(self):
         ''' The activity history accurately records activity events.
         '''
@@ -1121,6 +1145,7 @@ class TestRepo (TestCase):
             self.assertEqual(u'created new file {}'.format(check_detail[3]), check_item['commit_body'])
             self.assertEqual(repo_functions.MESSAGE_TYPE_EDIT, check_item['commit_type'])
 
+    # in TestRepo
     def test_delete_full_folders(self):
         ''' Make sure that full folders can be deleted, and that what's reported as deleted matches what's expected.
         '''
@@ -1166,6 +1191,7 @@ class TestRepo (TestCase):
         for check_index in range(len(file_paths)):
             self.assertEqual(file_paths[check_index], deleted_file_paths[check_index])
 
+    # in TestRepo
     def test_task_metadata_creation(self):
         ''' The task metadata file is created when a branch is started, and contains the expected information.
         '''
@@ -1189,6 +1215,7 @@ class TestRepo (TestCase):
         self.assertEqual(task_metadata['task_description'], task_description)
         self.assertEqual(task_metadata['task_beneficiary'], task_beneficiary)
 
+    # in TestRepo
     def test_task_metadata_creation_with_unicode(self):
         ''' The task metadata file is created when a branch is started, and contains the expected information.
         '''
@@ -1213,6 +1240,7 @@ class TestRepo (TestCase):
         self.assertEqual(task_metadata['task_description'], task_description)
         self.assertEqual(task_metadata['task_beneficiary'], task_beneficiary)
 
+    # in TestRepo
     def test_task_metadata_update(self):
         ''' The task metadata file can be updated
         '''
@@ -1247,6 +1275,7 @@ class TestRepo (TestCase):
         self.assertEqual(new_task_metadata['task_description'], metadata_update['task_description'])
         self.assertEqual(new_task_metadata['lead_singer'], metadata_update['lead_singer'])
 
+    # in TestRepo
     def test_task_metadata_deletion(self):
         ''' The task metadata file is deleted when a branch is completed, and isn't merged.
         '''
@@ -1274,6 +1303,7 @@ class TestRepo (TestCase):
         self.assertFalse(repo_functions.verify_file_exists_in_branch(self.clone1, repo_functions.TASK_METADATA_FILENAME, 'master'))
         self.assertFalse(repo_functions.verify_file_exists_in_branch(self.origin, repo_functions.TASK_METADATA_FILENAME, 'master'))
 
+    # in TestRepo
     def test_task_metadata_merge_conflict(self):
         ''' Task metadata file merge conflict is handled correctly
         '''
@@ -1372,6 +1402,7 @@ class TestGoogleApiFunctions (TestCase):
         if 'https://www.googleapis.com/analytics/' in url.geturl():
             return response(200, '''{"totalsForAllResults": {"ga:pageViews": "24", "ga:avgTimeOnPage": "67.36363636363636"}}''')
 
+    # in TestGoogleApiFunctions
     def test_successful_request_new_google_access_token(self):
         with self.app.test_request_context():
             with HTTMock(self.mock_successful_request_new_google_access_token):
@@ -1381,12 +1412,14 @@ class TestGoogleApiFunctions (TestCase):
                     ga_config = google_api_functions.read_ga_config(self.app.config['RUNNING_STATE_DIR'])
                 self.assertEqual(ga_config['access_token'], 'meowser_access_token')
 
+    # in TestGoogleApiFunctions
     def test_failure_to_request_new_google_access_token(self):
         with self.app.test_request_context():
             with HTTMock(self.mock_failed_request_new_google_access_token):
                 with self.assertRaises(Exception):
                     google_api_functions.request_new_google_access_token('meowser_refresh_token', self.app.config['RUNNING_STATE_DIR'], self.app.config['GA_CLIENT_ID'], self.app.config['GA_CLIENT_SECRET'])
 
+    # in TestGoogleApiFunctions
     def test_read_missing_config_file(self):
         ''' Make sure that reading from a missing google analytics config file doesn't raise errors.
         '''
@@ -1413,6 +1446,7 @@ class TestGoogleApiFunctions (TestCase):
             self.assertEqual(ga_config['project_domain'], u'')
             self.assertEqual(ga_config['profile_id'], u'')
 
+    # in TestGoogleApiFunctions
     def test_write_missing_config_file(self):
         ''' Make sure that writing to a missing google analytics config file doesn't raise errors.
         '''
@@ -1450,6 +1484,7 @@ class TestGoogleApiFunctions (TestCase):
             self.assertEqual(ga_config['profile_id'], u'12345678')
             self.assertEqual(ga_config['project_domain'], u'example.com')
 
+    # in TestGoogleApiFunctions
     def test_get_malformed_config_file(self):
         ''' Make sure that a malformed google analytics config file doesn't raise errors.
         '''
@@ -1485,6 +1520,7 @@ class TestGoogleApiFunctions (TestCase):
             # verify that the file exists again
             self.assertTrue(isfile(ga_config_path))
 
+    # in TestGoogleApiFunctions
     def test_write_unexpected_values_to_config(self):
         ''' Make sure that we can't write unexpected values to the google analytics config file.
         '''
@@ -1514,6 +1550,7 @@ class TestGoogleApiFunctions (TestCase):
             self.assertEqual(ga_config['profile_id'], u'12345678')
             self.assertEqual(ga_config['project_domain'], u'example.com')
 
+    # in TestGoogleApiFunctions
     def test_get_analytics_page_path_pattern(self):
         ''' Verify that we're getting good page path patterns for querying google analytics
         '''
@@ -1531,6 +1568,7 @@ class TestGoogleApiFunctions (TestCase):
         pattern_out = google_api_functions.get_ga_page_path_pattern(path_in, ga_domain)
         self.assertEqual(pattern_out, u'{ga_domain}/people/michal-migurski/(index.html|index|)'.format(**locals()))
 
+    # in TestGoogleApiFunctions
     def test_handle_good_analytics_response(self):
         ''' Verify that an authorized analytics response is handled correctly
         '''
@@ -1540,6 +1578,7 @@ class TestGoogleApiFunctions (TestCase):
             self.assertEqual(analytics_dict['page_views'], u'24')
             self.assertEqual(analytics_dict['average_time_page'], u'67')
 
+    # in TestGoogleApiFunctions
     def test_google_access_token_functions(self):
         ''' makes sure that the file loads properly
         '''
@@ -1547,9 +1586,11 @@ class TestGoogleApiFunctions (TestCase):
 
 class TestAppConfig (TestCase):
 
+    # in TestAppConfig
     def test_missing_values(self):
         self.assertRaises(KeyError, lambda: create_app({}))
 
+    # in TestAppConfig
     def test_present_values(self):
         create_app_environ = {}
         create_app_environ['RUNNING_STATE_DIR'] = 'Yo'
@@ -1700,6 +1741,7 @@ class TestApp (TestCase):
         else:
             return self.auth_csv_example_allowed(url, request)
 
+    # in TestApp
     def test_bad_login(self):
         ''' Check basic log in / log out flow without talking to Persona.
         '''
@@ -1714,6 +1756,7 @@ class TestApp (TestCase):
             response = self.test_client.get('/')
             self.assertFalse('Create' in response.data)
 
+    # in TestApp
     def test_login(self):
         ''' Check basic log in / log out flow without talking to Persona.
         '''
@@ -1734,6 +1777,7 @@ class TestApp (TestCase):
             response = self.test_client.get('/')
             self.assertFalse('Start' in response.data)
 
+    # in TestApp
     def test_branches(self):
         ''' Check basic branching functionality.
         '''
@@ -1829,6 +1873,7 @@ class TestApp (TestCase):
         # the activity we just published shouldn't be listed on the page
         self.assertTrue(generated_branch_name not in response.data)
 
+    # in TestApp
     def test_delete_strange_tasks(self):
         ''' Delete a task that you can see on the activity list but haven't viewed or edited.
         '''
@@ -1871,6 +1916,7 @@ class TestApp (TestCase):
             self.assertEqual(response.status_code, 200)
             self.assertFalse(check_branch.name in response.data)
 
+    # in TestApp
     def test_review_process(self):
         ''' Check the review process
         '''
@@ -1991,6 +2037,7 @@ class TestApp (TestCase):
         # the activity we just published shouldn't be listed on the page
         self.assertTrue(generated_branch_name not in response.data)
 
+    # in TestApp
     def test_get_request_does_not_create_branch(self):
         ''' Navigating to a made-up URL should not create a branch
         '''
@@ -2029,6 +2076,7 @@ class TestApp (TestCase):
             # the branch name should not be in the origin's branches list
             self.assertFalse(fake_branch_name in self.origin.branches)
 
+    # in TestApp
     def test_post_request_does_not_create_branch(self):
         ''' Certain POSTs to a made-up URL should not create a branch
         '''
@@ -2100,6 +2148,7 @@ class TestApp (TestCase):
             # the branch name should not be in the origin's branches list
             self.assertFalse('{}'.format(generated_branch_name) in self.origin.branches)
 
+    # in TestApp
     def test_accessing_local_branch_fetches_remote(self):
         ''' GETting or POSTing to a URL that indicates a branch that exists remotely but not locally
             fetches the remote branch and allows access
@@ -2144,6 +2193,7 @@ class TestApp (TestCase):
             # the branch name should now be in the original repo's branches list
             self.assertTrue(check_branch.name in new_clone.branches)
 
+    # in TestApp
     def test_git_merge_strategy_implemented(self):
         ''' The Git merge strategy has been implmemented for a new clone.
         '''
@@ -2169,6 +2219,7 @@ class TestApp (TestCase):
                 content = file.read().decode("utf-8")
             self.assertEqual(content, u'{} merge=ignored'.format(repo_functions.TASK_METADATA_FILENAME))
 
+    # in TestApp
     def test_task_metadata_should_exist(self):
         ''' Task metadata file should exist but doesn't
         '''
@@ -2204,6 +2255,7 @@ class TestApp (TestCase):
             # the 'Started by' should be 'Unknown' for now
             self.assertTrue(PATTERN_AUTHOR_COMMENT.format(u'unknown') in response.data)
 
+    # in TestApp
     def test_google_callback_is_successful(self):
         ''' Ensure we get a successful page load on callback from Google authentication
         '''
@@ -2224,6 +2276,7 @@ class TestApp (TestCase):
 
         self.assertTrue('/setup' in response.location)
 
+    # in TestApp
     def test_analytics_setup_is_successful(self):
         with HTTMock(self.mock_persona_verify):
             self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
@@ -2243,6 +2296,7 @@ class TestApp (TestCase):
         self.assertEqual(ga_config['project_domain'], 'propertyone.example.com')
         self.assertEqual(ga_config['profile_id'], '12345678')
 
+    # in TestApp
     def test_handle_bad_analytics_response(self):
         ''' Verify that an unauthorized analytics response is handled correctly
         '''
@@ -2251,6 +2305,7 @@ class TestApp (TestCase):
                 analytics_dict = google_api_functions.fetch_google_analytics_for_page(self.app.config, u'index.html', 'meowser_token')
             self.assertEqual(analytics_dict, {})
 
+    # in TestApp
     def test_google_callback_fails(self):
         ''' Ensure that we get an appropriate error flashed when we fail to auth with google
         '''
@@ -2267,6 +2322,7 @@ class TestApp (TestCase):
         # find the flashed error message in the returned HTML
         self.assertTrue('Google rejected authorization request' in response.data)
 
+    # in TestApp
     def test_invalid_access_token(self):
         ''' Ensure that we get an appropriate error flashed when we have an invalid access token
         '''
@@ -2281,6 +2337,7 @@ class TestApp (TestCase):
         # find the flashed error message in the returned HTML
         self.assertTrue('Invalid Credentials' in response.data)
 
+    # in TestApp
     def test_no_properties_found(self):
         ''' Ensure that we get an appropriate error flashed when no analytics properties are
             associated with the authorized Google account
@@ -2296,6 +2353,7 @@ class TestApp (TestCase):
         # find the flashed error message in the returned HTML
         self.assertTrue('Your Google Account is not associated with any Google Analytics properties' in response.data)
 
+    # in TestApp
     def test_redirect(self):
         ''' Check redirect to BROWSERID_URL.
         '''
@@ -2307,6 +2365,7 @@ class TestApp (TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.headers['Location'], expected_url)
 
+    # in TestApp
     def test_create_category(self):
         ''' Creating a new category creates a directory with an appropriate index file inside.
         '''
@@ -2345,6 +2404,7 @@ class TestApp (TestCase):
             # the directory and index page pass the category test
             self.assertTrue(view_functions.is_category_dir(dir_location))
 
+    # in TestApp
     def test_create_duplicate_category(self):
         ''' If we ask to create a category that exists, let's not and say we did.
         '''
@@ -2385,6 +2445,7 @@ class TestApp (TestCase):
             # the directory and index page pass the category test
             self.assertTrue(view_functions.is_category_dir(dir_location))
 
+    # in TestApp
     def test_delete_categories_and_articles(self):
         ''' Non-empty categories and articles can be deleted
         '''
@@ -2458,6 +2519,7 @@ class TestApp (TestCase):
             self.assertFalse(exists(catb_location))
             self.assertFalse(exists(cata_location))
 
+    # in TestApp
     def test_article_creation_with_unicode_via_web_interface(self):
         ''' An article with unicode in its title is created and logged as expected.
         '''
@@ -2505,6 +2567,7 @@ class TestApp (TestCase):
             self.assertTrue(PATTERN_BRANCH_COMMENT.format(working_branch) in response.data.decode('utf-8'))
             self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": art_slug, "file_title": art_title, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data.decode('utf-8'))
 
+    # in TestApp
     def test_new_item_has_name_and_title(self):
         ''' A slugified directory name and display title are created when a new category or article is created.
         '''
@@ -2578,6 +2641,7 @@ class TestApp (TestCase):
             self.assertTrue(PATTERN_BRANCH_COMMENT.format(working_branch) in response.data.decode('utf-8'))
             self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": art_slug, "file_title": art_title, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data.decode('utf-8'))
 
+    # in TestApp
     def test_set_and_retrieve_order_and_description(self):
         ''' Order and description can be set to and retrieved from an article's or category's front matter.
         '''
@@ -2653,6 +2717,7 @@ class TestApp (TestCase):
             response = self.test_client.get('/tree/{}/edit/{}'.format(working_branch_name, categories_slug), follow_redirects=True)
             self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": cat_slug, "file_title": new_cat_title, "file_type": view_functions.CATEGORY_LAYOUT}) in response.data)
 
+    # in TestApp
     def test_create_many_categories_with_slash_separated_input(self):
         ''' Entering a slash-separated string into the new article or category
             field will create category folders where folders don't already exist
@@ -2723,6 +2788,7 @@ class TestApp (TestCase):
                     # the directory and index page pass the article test
                     self.assertTrue(view_functions.is_article_dir(dir_location))
 
+    # in TestApp
     def test_column_navigation_structure(self):
         ''' The column navigation structure matches the structure of the site.
         '''
@@ -2784,6 +2850,7 @@ class TestApp (TestCase):
             self.assertTrue(dir_columns[2]['files'][0]['name'] == slug_how)
             self.assertTrue(dir_columns[3]['files'][0]['name'] == slug_are)
 
+    # in TestApp
     def test_activity_history_page_is_accurate(self):
         ''' The activity history page accurately displays the activity history
         '''
@@ -2849,6 +2916,7 @@ class TestApp (TestCase):
             for detail in create_details:
                 self.assertTrue(PATTERN_OVERVIEW_ITEM_CREATED.format(**{"created_name": detail[1], "created_type": detail[2], "author_email": fake_author_email}), response_data)
 
+    # in TestApp
     def test_create_page_creates_directory_containing_index(self):
         ''' Creating a new page creates a directory with an editable index file inside.
         '''
@@ -2889,6 +2957,7 @@ class TestApp (TestCase):
             # the directory and index page pass the article test
             self.assertTrue(view_functions.is_article_dir(dir_location))
 
+    # in TestApp
     def test_can_rename_editable_directories(self):
         ''' Can rename an editable directory.
         '''
@@ -2948,6 +3017,7 @@ class TestApp (TestCase):
             # the directory and index page pass the editable test
             self.assertTrue(view_functions.is_article_dir(new_dir_location))
 
+    # in TestApp
     def test_cannot_move_a_directory_inside_iteslf(self):
         ''' Can't rename an editable directory in a way which moves it inside itself
         '''
@@ -3005,6 +3075,7 @@ class TestApp (TestCase):
             new_dir_location = join(self.clone1.working_dir, new_page_slug)
             self.assertFalse(exists(new_dir_location) and isdir(new_dir_location))
 
+    # in TestApp
     def test_editable_directories_are_shown_as_articles(self):
         ''' Editable directories (directories containing only an editable index file) are displayed as articles.
         '''
@@ -3067,6 +3138,7 @@ class TestPublishApp (TestCase):
 
         raise Exception('Unknown URL {}'.format(url.geturl()))
 
+    # in TestPublishApp
     def test_webhook_post(self):
         ''' Check basic webhook flow.
         '''
@@ -3095,6 +3167,7 @@ class TestPublishApp (TestCase):
 
         self.assertTrue(response.status_code in range(200, 299))
 
+    # in TestPublishApp
     def test_load(self):
         from chime import publish
         ''' makes sure that the file loads properly
