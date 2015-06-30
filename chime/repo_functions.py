@@ -613,7 +613,7 @@ def get_last_edited_email(repo, default_branch_name, working_branch_name):
     commit_subject, commit_body = get_commit_message_subject_and_body(last_commit)
     _, message_type, _ = get_message_classification(commit_subject, commit_body)
     # use the most recent non-comment commit that's not the base commit
-    while message_type != MESSAGE_TYPE_EDIT and last_commit.hexsha != base_commit_hexsha:
+    while message_type == MESSAGE_TYPE_COMMENT and last_commit.hexsha != base_commit_hexsha:
         last_commit = last_commit.parents[0]
         commit_subject, commit_body = get_commit_message_subject_and_body(last_commit)
         _, message_type, _ = get_message_classification(commit_subject, commit_body)
