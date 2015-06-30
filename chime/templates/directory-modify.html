@@ -60,6 +60,9 @@
         {% set dir_title = "Subcategory" %}
       {% endif %}
       <form action="." method="POST" class="directory-modify__form">
+          <input name="layout" value="{{ category.layout }}" type="hidden" />
+          <input name="hexsha" value="{{ hexsha }}" type="hidden" />
+          <input name="url-slug" type="hidden" value="{{ url_slug }}" />
           <input name="order" type="hidden" value="{{ category.order }}" />
       {% for iso in languages %}
           {% if iso == 'en' %}

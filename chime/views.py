@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from logging import getLogger
 Logger = getLogger('chime.views')
 
-from os.path import join, isdir, splitext, sep
+from os.path import join, isdir, splitext, sep, exists
 from re import compile, MULTILINE, sub, search
 from mimetypes import guess_type
 from glob import glob
@@ -418,8 +418,9 @@ def render_modify_dir(repo, branch_name, path):
     kwargs = make_kwargs_for_activity_files_page(repo, branch_name, path)
     # cancel redirects to the edit page for that category
     category['cancel_path'] = join(kwargs['activity']['edit_path'], path)
+    url_slug = sub(ur'index.{}$'.format(CONTENT_FILE_EXTENSION), u'', path)
 
-    kwargs.update(category=category, languages=languages)
+    kwargs.update(category=category, languages=languages, hexsha=repo.commit().hexsha, url_slug=url_slug)
 
     return render_template('directory-modify.html', **kwargs)
 
@@ -501,7 +502,7 @@ def branch_edit(branch_name, path=None):
 @log_application_errors
 @login_required
 @synched_checkout_required
-def branch_modify(branch_name, path=None):
+def branch_show_category_form(branch_name, path=None):
     repo = get_repo(current_app)
     branch_name = branch_var2name(branch_name)
     full_path = join(repo.working_dir, path or '.').rstrip('/')
@@ -521,6 +522,77 @@ def branch_modify(branch_name, path=None):
 
     # this is not a category or article directory; redirect to edit
     return redirect('/tree/{}/edit/{}'.format(branch_name, path))
+
+@app.route('/tree/<branch_name>/modify/', methods=['POST'])
+@app.route('/tree/<branch_name>/modify/<path:path>', methods=['POST'])
+@log_application_errors
+@login_required
+@synched_checkout_required
+def branch_modify_category(branch_name, path=u''):
+    ''' Save edits to a category's title or description or delete a category and its contents.
+    '''
+    repo = get_repo(current_app)
+    # get a path to the category's index file
+    path = path.rstrip('/')
+    index_slug = path
+    dir_path = join(repo.working_dir, index_slug)
+    index_path = dir_path
+    if not search(r'\/index.{}$'.format(CONTENT_FILE_EXTENSION), path):
+        index_slug = join(path, u'index.{}'.format(CONTENT_FILE_EXTENSION))
+        index_path = join(dir_path, u'index.{}'.format(CONTENT_FILE_EXTENSION))
+
+    # delete the passed category
+    if 'delete' in request.form:
+        # delete the page
+        redirect_path, do_save, commit_message = delete_page(repo, path, path)
+        # save and redirect
+        if do_save:
+            master_name = current_app.config['default_branch']
+            Logger.debug('save')
+            repo_functions.save_working_file(repo, path, commit_message, repo.commit().hexsha, master_name)
+
+        safe_branch = branch_name2path(branch_var2name(branch_name))
+        return redirect('/tree/{}/edit/{}'.format(safe_branch, redirect_path), code=303)
+
+    # save the passed category
+    elif 'save' in request.form:
+        # verify that it exists
+        if isdir(index_path) or not exists(index_path):
+            raise Exception(u'No writable file exists at {}!'.format(index_path))
+
+        # get the form values
+        new_values = {}
+        for key in request.form:
+            # ImmutableMultiDicts can have multiple values assigned to the same key
+            values = request.form.getlist(key)
+            new_values[key] = values[0] if len(values) == 1 else values
+
+        # get the current contents of the file
+        with open(index_path) as file:
+            front_matter, en_body = load_jekyll_doc(file)
+
+        # add en_body to the front matter
+        front_matter['en_body'] = en_body
+        check_front_matter = dict(front_matter)
+
+        # now update the file description with the values from the form
+        try:
+            front_matter.update(new_values)
+        except ValueError:
+            raise Exception(u'Unable to update file at {}!'.format(index_path))
+
+        # only write if there are changes
+        safe_branch = branch_name2path(branch_var2name(branch_name))
+        new_path = path
+        if check_front_matter != front_matter:
+            new_path, did_save = save_page(branch_name, index_slug, new_values)
+            if not did_save:
+                flash(u'Unable to save changes to the file {}!'.format(front_matter['title']), u'error')
+
+        return redirect('/tree/{}/modify/{}'.format(safe_branch, strip_index_file(new_path)), code=303)
+
+    else:
+        raise Exception(u'Unrecognized request posted to branch_modify_category()')
 
 def add_article_or_category(repo, dir_path, request_path, create_what):
     ''' Add an article or category
@@ -604,24 +676,7 @@ def branch_edit_file(branch_name, path=None):
             flash(add_message, u'notice')
 
     elif action == 'delete' and 'request_path' in request.form:
-        # construct the commit message
-        commit_message = make_delete_display_commit_message(repo, request.form['request_path'])
-
-        # delete the file(s)
-        candidate_file_paths = edit_functions.list_contained_files(repo, request.form['request_path'])
-        deleted_file_paths, do_save = edit_functions.delete_file(repo, request.form['request_path'])
-
-        # add details to the commit message
-        file_files = u'files' if len(candidate_file_paths) > 1 else u'file'
-        commit_message = commit_message + u'\n\ndeleted {} "{}"'.format(file_files, u'", "'.join(candidate_file_paths))
-
-        # if we're in the path that's been deleted, redirect to the first still-existing directory in the path
-        path_dirs = path.split('/')
-        req_dirs = request.form['request_path'].split('/')
-        if len(path_dirs) >= len(req_dirs) and path_dirs[len(req_dirs) - 1] == req_dirs[-1]:
-            redirect_path = u'/'.join(req_dirs[:-1])
-        else:
-            redirect_path = path
+        redirect_path, do_save, commit_message = delete_page(repo, path, request.form['request_path'])
 
     else:
         raise Exception(u'Unrecognized request posted to branch_edit_file()')
@@ -632,7 +687,31 @@ def branch_edit_file(branch_name, path=None):
         repo_functions.save_working_file(repo, file_path, commit_message, commit.hexsha, master_name)
 
     safe_branch = branch_name2path(branch_var2name(branch_name))
-    return redirect('/tree/%s/edit/%s' % (safe_branch, redirect_path), code=303)
+    return redirect('/tree/{}/edit/{}'.format(safe_branch, redirect_path), code=303)
+
+def delete_page(repo, path, request_path):
+    ''' Delete a category or article
+    '''
+    # construct the commit message
+    commit_message = make_delete_display_commit_message(repo, request_path)
+
+    # delete the file(s)
+    candidate_file_paths = edit_functions.list_contained_files(repo, request_path)
+    deleted_file_paths, do_save = edit_functions.delete_file(repo, request_path)
+
+    # add details to the commit message
+    file_files = u'files' if len(candidate_file_paths) > 1 else u'file'
+    commit_message = commit_message + u'\n\ndeleted {} "{}"'.format(file_files, u'", "'.join(candidate_file_paths))
+
+    # if we're in the path that's been deleted, redirect to the first still-existing directory in the path
+    path_dirs = path.split('/')
+    req_dirs = request_path.split('/')
+    if len(path_dirs) >= len(req_dirs) and path_dirs[len(req_dirs) - 1] == req_dirs[-1]:
+        redirect_path = u'/'.join(req_dirs[:-1])
+    else:
+        redirect_path = path
+
+    return redirect_path, do_save, commit_message
 
 @app.route('/tree/<branch_name>/', methods=['GET'])
 @log_application_errors
@@ -816,8 +895,16 @@ def branch_history(branch_name, path=None):
 @login_required
 @synch_required
 def branch_save(branch_name, path):
+    ''' Handle a submission from the article-edit form.
+    '''
+    safe_branch = branch_name2path(branch_var2name(branch_name))
+    new_path, did_save = save_page(branch_name, path, request.form)
+    return redirect('/tree/{}/edit/{}'.format(safe_branch, new_path), code=303)
+
+def save_page(branch_name, path, new_values):
+    ''' Save the page with the passed values
+    '''
     branch_name = branch_var2name(branch_name)
-    safe_branch = branch_name2path(branch_name)
     master_name = current_app.config['default_branch']
 
     repo = get_repo(current_app)
@@ -825,12 +912,12 @@ def branch_save(branch_name, path):
 
     if not existing_branch:
         flash(u'There is no {} branch!'.format(branch_name), u'warning')
-        return redirect('/')
+        return path, False
 
     commit = existing_branch.commit
 
-    if commit.hexsha != request.form.get('hexsha'):
-        raise Exception('Out of date SHA: %s' % request.form.get('hexsha'))
+    if commit.hexsha != new_values.get('hexsha'):
+        raise Exception('Out of date SHA: %s' % new_values.get('hexsha'))
 
     #
     # Write changes.
@@ -839,31 +926,31 @@ def branch_save(branch_name, path):
 
     # make sure order is an integer; otherwise default to 0
     try:
-        order = int(dos2unix(request.form.get('order', '0')))
+        order = int(dos2unix(new_values.get('order', '0')))
     except ValueError:
         order = 0
 
     front = {
-        'layout': dos2unix(request.form.get('layout')),
+        'layout': dos2unix(new_values.get('layout')),
         'order': order,
-        'title': dos2unix(request.form.get('en-title', '')),
-        'description': dos2unix(request.form.get('en-description', ''))
+        'title': dos2unix(new_values.get('en-title', '')),
+        'description': dos2unix(new_values.get('en-description', ''))
     }
 
     for iso in load_languages(repo.working_dir):
         if iso != 'en':
-            front['title-' + iso] = dos2unix(request.form.get(iso + '-title', ''))
-            front['description-' + iso] = dos2unix(request.form.get(iso + '-description', ''))
-            front['body-' + iso] = dos2unix(request.form.get(iso + '-body', ''))
+            front['title-' + iso] = dos2unix(new_values.get(iso + '-title', ''))
+            front['description-' + iso] = dos2unix(new_values.get(iso + '-description', ''))
+            front['body-' + iso] = dos2unix(new_values.get(iso + '-body', ''))
 
-    body = dos2unix(request.form.get('en-body', ''))
+    body = dos2unix(new_values.get('en-body', ''))
     edit_functions.update_page(repo, path, front, body)
 
     #
     # Try to merge from the master to the current branch.
     #
     try:
-        message = u'The "{}" {} was edited\n\nsaved file "{}"'.format(request.form.get('en-title'), request.form.get('layout'), path)
+        message = u'The "{}" {} was edited\n\nsaved file "{}"'.format(new_values.get('en-title'), new_values.get('layout'), path)
         c2 = repo_functions.save_working_file(repo, path, message, commit.hexsha, master_name)
         # they may've renamed the page by editing the URL slug
         original_slug = path
@@ -871,7 +958,7 @@ def branch_save(branch_name, path):
             original_slug = sub(ur'index.{}$'.format(CONTENT_FILE_EXTENSION), u'', path)
 
         # do some simple input cleaning
-        new_slug = request.form.get('url-slug')
+        new_slug = new_values.get('url-slug')
         if new_slug:
             new_slug = sub(r'\/+', '/', new_slug)
 
@@ -884,7 +971,7 @@ def branch_save(branch_name, path):
                     # let unexpected errors raise normally
                     if error_type:
                         flash(error_message, error_type)
-                        return redirect('/tree/{}/edit/{}'.format(safe_branch, path), code=303)
+                        return path, True
                     else:
                         raise
 
@@ -902,7 +989,7 @@ def branch_save(branch_name, path):
         Logger.debug('  {}'.format(repr(conflict.local_commit.tree[path].data_stream.read())))
         raise
 
-    return redirect('/tree/{}/edit/{}'.format(safe_branch, path), code=303)
+    return path, True
 
 @app.route('/.well-known/deploy-key.txt')
 @log_application_errors
