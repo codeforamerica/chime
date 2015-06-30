@@ -254,7 +254,7 @@ def start_branch():
 @app.route('/update', methods=['POST'])
 @log_application_errors
 @login_required
-@synch_required
+@synched_checkout_required
 def update_activity():
     ''' Update the activity review state or merge, abandon, or clobber the posted branch
     '''
