@@ -357,7 +357,7 @@ def branch_show_category_form(branch_name, path=None):
 @login_required
 @synched_checkout_required
 def branch_modify_category(branch_name, path=u''):
-    ''' Save edits to a category's title or description or delete a category and its contents.
+    ''' Save edits to a category's title and description or delete a category and its contents.
     '''
     repo = get_repo(current_app)
     # get a path to the category's index file
@@ -378,6 +378,8 @@ def branch_modify_category(branch_name, path=u''):
             master_name = current_app.config['default_branch']
             Logger.debug('save')
             repo_functions.save_working_file(repo, path, commit_message, repo.commit().hexsha, master_name)
+            # flash the human-readable part of the commit message
+            flash(commit_message.split('\n')[0], u'notice')
 
         safe_branch = branch_name2path(branch_var2name(branch_name))
         return redirect('/tree/{}/edit/{}'.format(safe_branch, redirect_path), code=303)
@@ -416,6 +418,8 @@ def branch_modify_category(branch_name, path=u''):
             new_path, did_save = save_page(branch_name, index_slug, new_values)
             if not did_save:
                 flash(u'Unable to save changes to the file {}!'.format(front_matter['title']), u'error')
+            else:
+                flash(u'Saved changes to the file {}!'.format(front_matter['title']), u'notice')
 
         return redirect('/tree/{}/modify/{}'.format(safe_branch, strip_index_file(new_path)), code=303)
 
