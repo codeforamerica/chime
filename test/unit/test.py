@@ -380,12 +380,12 @@ class TestRepo (TestCase):
     def test_try_to_create_existing_category(self):
         ''' We can't create a category that exists already.
         '''
-        first_result = views.add_article_or_category(self.clone1, 'categories', 'My New Category', view_functions.CATEGORY_LAYOUT)
+        first_result = view_functions.add_article_or_category(self.clone1, 'categories', 'My New Category', view_functions.CATEGORY_LAYOUT)
         self.assertEqual(u'The "My New Category" category was created\n\ncreated new file categories/my-new-category/index.markdown', first_result[0])
         self.assertEqual(u'categories/my-new-category/index.markdown', first_result[1])
         self.assertEqual(u'categories/my-new-category/', first_result[2])
         self.assertEqual(True, first_result[3])
-        second_result = views.add_article_or_category(self.clone1, 'categories', 'My New Category', view_functions.CATEGORY_LAYOUT)
+        second_result = view_functions.add_article_or_category(self.clone1, 'categories', 'My New Category', view_functions.CATEGORY_LAYOUT)
         self.assertEqual('Category "My New Category" already exists', second_result[0])
         self.assertEqual(u'categories/my-new-category/index.markdown', second_result[1])
         self.assertEqual(u'categories/my-new-category/', second_result[2])
@@ -394,12 +394,12 @@ class TestRepo (TestCase):
     def test_try_to_create_existing_article(self):
         ''' We can't create an article that exists already
         '''
-        first_result = views.add_article_or_category(self.clone1, 'categories/example', 'New Article', view_functions.ARTICLE_LAYOUT)
+        first_result = view_functions.add_article_or_category(self.clone1, 'categories/example', 'New Article', view_functions.ARTICLE_LAYOUT)
         self.assertEqual('The "New Article" article was created\n\ncreated new file categories/example/new-article/index.markdown', first_result[0])
         self.assertEqual(u'categories/example/new-article/index.markdown', first_result[1])
         self.assertEqual(u'categories/example/new-article/index.markdown', first_result[2])
         self.assertEqual(True, first_result[3])
-        second_result = views.add_article_or_category(self.clone1, 'categories/example', 'New Article', view_functions.ARTICLE_LAYOUT)
+        second_result = view_functions.add_article_or_category(self.clone1, 'categories/example', 'New Article', view_functions.ARTICLE_LAYOUT)
         self.assertEqual('Article "New Article" already exists', second_result[0])
         self.assertEqual(u'categories/example/new-article/index.markdown', first_result[1])
         self.assertEqual(u'categories/example/new-article/index.markdown', first_result[2])
@@ -1024,7 +1024,7 @@ class TestRepo (TestCase):
         # create an article
         art_title = u'快速狐狸'
         art_slug = u'kuai-su-hu-li'
-        add_message, file_path, redirect_path, do_save = views.add_article_or_category(new_clone, u'', art_title, view_functions.ARTICLE_LAYOUT)
+        add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, u'', art_title, view_functions.ARTICLE_LAYOUT)
         self.assertEqual(u'The "{}" article was created\n\ncreated new file {}/index.markdown'.format(art_title, art_slug), add_message)
         self.assertEqual(u'{}/index.markdown'.format(art_slug), file_path)
         self.assertEqual(u'{}/index.{}'.format(art_slug, view_functions.CONTENT_FILE_EXTENSION), redirect_path)
@@ -1071,7 +1071,7 @@ class TestRepo (TestCase):
         ]
         updated_details = []
         for detail in create_details:
-            add_message, file_path, redirect_path, do_save = views.add_article_or_category(new_clone, detail[0], detail[1], detail[2])
+            add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, detail[0], detail[1], detail[2])
             updated_details.append(detail + (file_path,))
             repo_functions.save_working_file(new_clone, file_path, add_message, new_clone.commit().hexsha, 'master')
 
@@ -1125,25 +1125,25 @@ class TestRepo (TestCase):
         ''' Make sure that full folders can be deleted, and that what's reported as deleted matches what's expected.
         '''
         # build some nested categories
-        views.add_article_or_category(self.clone1, '', 'quick', view_functions.CATEGORY_LAYOUT)
-        views.add_article_or_category(self.clone1, 'quick', 'brown', view_functions.CATEGORY_LAYOUT)
-        views.add_article_or_category(self.clone1, 'quick/brown', 'fox', view_functions.CATEGORY_LAYOUT)
-        views.add_article_or_category(self.clone1, 'quick', 'red', view_functions.CATEGORY_LAYOUT)
-        views.add_article_or_category(self.clone1, 'quick', 'yellow', view_functions.CATEGORY_LAYOUT)
-        views.add_article_or_category(self.clone1, 'quick/yellow', 'banana', view_functions.CATEGORY_LAYOUT)
-        views.add_article_or_category(self.clone1, 'quick', 'orange', view_functions.CATEGORY_LAYOUT)
-        views.add_article_or_category(self.clone1, 'quick/brown', 'potato', view_functions.CATEGORY_LAYOUT)
-        views.add_article_or_category(self.clone1, 'quick/yellow', 'lemon', view_functions.CATEGORY_LAYOUT)
-        views.add_article_or_category(self.clone1, 'quick/red', 'tomato', view_functions.CATEGORY_LAYOUT)
-        views.add_article_or_category(self.clone1, 'quick/red', 'balloon', view_functions.CATEGORY_LAYOUT)
-        views.add_article_or_category(self.clone1, 'quick/orange', 'peanut', view_functions.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, '', 'quick', view_functions.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, 'quick', 'brown', view_functions.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, 'quick/brown', 'fox', view_functions.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, 'quick', 'red', view_functions.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, 'quick', 'yellow', view_functions.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, 'quick/yellow', 'banana', view_functions.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, 'quick', 'orange', view_functions.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, 'quick/brown', 'potato', view_functions.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, 'quick/yellow', 'lemon', view_functions.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, 'quick/red', 'tomato', view_functions.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, 'quick/red', 'balloon', view_functions.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, 'quick/orange', 'peanut', view_functions.CATEGORY_LAYOUT)
         # add in some articles
-        views.add_article_or_category(self.clone1, 'quick/brown/fox', 'fur', view_functions.ARTICLE_LAYOUT)
-        views.add_article_or_category(self.clone1, 'quick/brown/fox', 'ears', view_functions.ARTICLE_LAYOUT)
-        views.add_article_or_category(self.clone1, 'quick/yellow/lemon', 'rind', view_functions.ARTICLE_LAYOUT)
-        views.add_article_or_category(self.clone1, 'quick/yellow/lemon', 'pulp', view_functions.ARTICLE_LAYOUT)
-        views.add_article_or_category(self.clone1, 'quick/orange/peanut', 'shell', view_functions.ARTICLE_LAYOUT)
-        views.add_article_or_category(self.clone1, 'quick/red/balloon', 'string', view_functions.ARTICLE_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, 'quick/brown/fox', 'fur', view_functions.ARTICLE_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, 'quick/brown/fox', 'ears', view_functions.ARTICLE_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, 'quick/yellow/lemon', 'rind', view_functions.ARTICLE_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, 'quick/yellow/lemon', 'pulp', view_functions.ARTICLE_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, 'quick/orange/peanut', 'shell', view_functions.ARTICLE_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, 'quick/red/balloon', 'string', view_functions.ARTICLE_LAYOUT)
 
         # add and commit
         self.clone1.index.add(['*'])
@@ -1462,7 +1462,7 @@ class TestGoogleApiFunctions (TestCase):
             # verify that the file's gone
             self.assertFalse(isfile(ga_config_path))
             # write some garbage to the file
-            with view_functions.WriteLocked(ga_config_path) as iofile:
+            with google_api_functions.WriteLocked(ga_config_path) as iofile:
                 iofile.seek(0)
                 iofile.truncate(0)
                 iofile.write('{"access_token": "meowser_access_token", "refresh_token": "meowser_refre')

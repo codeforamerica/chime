@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from logging import getLogger
 Logger = getLogger('chime.view_functions')
 
-from os.path import join, isdir, realpath, basename, exists, sep, split
+from os.path import join, isdir, realpath, basename, exists, sep, split, splitext
 from datetime import datetime
 from os import listdir, environ, walk
 from urllib import quote, unquote
@@ -17,14 +17,16 @@ import re
 from git import Repo
 from dateutil import parser, tz
 from dateutil.relativedelta import relativedelta
-from flask import request, session, current_app, redirect, flash
+from flask import request, session, current_app, redirect, flash, render_template
 from requests import get
 
-from .repo_functions import get_existing_branch, ignore_task_metadata_on_merge, get_message_classification, ChimeRepo, ACTIVITY_CREATED_MESSAGE
-from .jekyll_functions import load_jekyll_doc
-from .href import needs_redirect, get_redirect
+from . import publish
+from .edit_functions import create_new_page, delete_file, list_contained_files, update_page
+from .repo_functions import get_existing_branch, ignore_task_metadata_on_merge, get_message_classification, ChimeRepo, ACTIVITY_CREATED_MESSAGE, get_task_metadata_for_branch, complete_branch, abandon_branch, clobber_default_branch, MergeConflict, get_review_state_and_authorized, save_working_file, update_review_state, provide_feedback, move_existing_file, TASK_METADATA_FILENAME, REVIEW_STATE_EDITED, REVIEW_STATE_FEEDBACK, REVIEW_STATE_ENDORSED, REVIEW_STATE_PUBLISHED
+from .jekyll_functions import load_jekyll_doc, load_languages
+from .google_api_functions import read_ga_config, fetch_google_analytics_for_page
 
-from fcntl import flock, LOCK_EX, LOCK_UN, LOCK_SH
+from .href import needs_redirect, get_redirect
 
 # when creating a content file, what extension should it have?
 CONTENT_FILE_EXTENSION = u'markdown'
@@ -61,39 +63,6 @@ FILE_FILTERS = [
     r'^about\.markdown',
 ]
 FILE_FILTERS_COMPILED = re.compile('(' + '|'.join(FILE_FILTERS) + ')')
-
-class WriteLocked:
-    ''' Context manager for a locked file open in a+ mode, seek(0).
-    '''
-    def __init__(self, fname):
-        self.fname = fname
-        self.file = None
-
-    def __enter__(self):
-        self.file = open(self.fname, 'a+')
-        flock(self.file, LOCK_EX)
-        self.file.seek(0)
-        return self.file
-
-    def __exit__(self, *args):
-        flock(self.file, LOCK_UN)
-        self.file.close()
-
-class ReadLocked:
-    ''' Context manager for a locked file open in r mode, seek(0).
-    '''
-    def __init__(self, fname):
-        self.fname = fname
-        self.file = None
-
-    def __enter__(self):
-        self.file = open(self.fname, 'r')
-        flock(self.file, LOCK_SH)
-        return self.file
-
-    def __exit__(self, *args):
-        flock(self.file, LOCK_UN)
-        self.file.close()
 
 def dos2unix(string):
     ''' Returns a copy of the strings with line-endings corrected.
@@ -749,6 +718,392 @@ def make_directory_columns(clone, branch_name, repo_path=None, showallfiles=Fals
         dir_listings.append({'base_path': base_path, 'files': listing})
 
     return dir_listings
+
+
+def publish_or_destroy_activity(branch_name, action):
+    ''' Publish, abandon, or clobber the activity defined by the passed branch name.
+    '''
+    repo = get_repo(current_app)
+    master_name = current_app.config['default_branch']
+
+    # contains 'author_email', 'task_description', 'task_beneficiary'
+    activity = get_task_metadata_for_branch(repo, branch_name)
+    activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
+    activity['task_description'] = activity['task_description'] if 'task_description' in activity else u''
+    activity['task_beneficiary'] = activity['task_beneficiary'] if 'task_beneficiary' in activity else u''
+
+    try:
+        args = repo, master_name, branch_name
+
+        if action == 'merge':
+            complete_branch(*args)
+        elif action == 'abandon':
+            abandon_branch(*args)
+        elif action == 'clobber':
+            clobber_default_branch(*args)
+        else:
+            raise Exception('I do not know what "%s" means' % action)
+
+        if current_app.config['PUBLISH_SERVICE_URL']:
+            publish.announce_commit(current_app.config['BROWSERID_URL'], repo, repo.commit().hexsha)
+
+        else:
+            publish.release_commit(current_app.config['RUNNING_STATE_DIR'], repo, repo.commit().hexsha)
+
+    except MergeConflict as conflict:
+        new_files, gone_files, changed_files = conflict.files()
+
+        kwargs = common_template_args(current_app.config, session)
+        kwargs.update(branch=branch_name, new_files=new_files,
+                      gone_files=gone_files, changed_files=changed_files,
+                      activity=activity)
+
+        return render_template('merge-conflict.html', **kwargs)
+
+    else:
+        activity_blurb = u'the "{task_description}" activity for {task_beneficiary}'.format(task_description=activity['task_description'], task_beneficiary=activity['task_beneficiary'])
+        if action == 'merge':
+            flash(u'You published the {activity_blurb}!'.format(activity_blurb=activity_blurb), u'notice')
+        elif action == 'abandon':
+            flash(u'You deleted the {activity_blurb}!'.format(activity_blurb=activity_blurb), u'notice')
+        elif action == 'clobber':
+            flash(u'You clobbered the {activity_blurb}!'.format(activity_blurb=activity_blurb), u'notice')
+
+        return redirect('/')
+
+def make_kwargs_for_activity_files_page(repo, branch_name, path):
+    ''' Render a page that shows an activity's files.
+    '''
+    # :NOTE: temporarily turning off filtering if 'showallfiles=true' is in the request
+    showallfiles = request.args.get('showallfiles') == u'true'
+
+    # contains 'author_email', 'task_description', 'task_beneficiary'
+    activity = get_task_metadata_for_branch(repo, branch_name)
+    activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
+    activity['task_description'] = activity['task_description'] if 'task_description' in activity else u''
+    activity['task_beneficiary'] = activity['task_beneficiary'] if 'task_beneficiary' in activity else u''
+
+    # get created and modified dates via git logs (relative dates for now)
+    date_created = repo.git.log('--format=%ad', '--date=relative', '--', TASK_METADATA_FILENAME).split('\n')[-1]
+    date_updated = repo.git.log('--format=%ad', '--date=relative').split('\n')[0]
+
+    # get the current review state and authorized status
+    review_state, review_authorized = get_review_state_and_authorized(
+        repo=repo, default_branch_name=current_app.config['default_branch'],
+        working_branch_name=branch_name, actor_email=session.get('email', None)
+    )
+
+    activity.update(date_created=date_created, date_updated=date_updated,
+                    edit_path=u'/tree/{}/edit/'.format(branch_name2path(branch_name)),
+                    overview_path=u'/tree/{}/'.format(branch_name2path(branch_name)),
+                    review_state=review_state, review_authorized=review_authorized)
+
+    kwargs = common_template_args(current_app.config, session)
+    kwargs.update(branch=branch_name, safe_branch=branch_name2path(branch_name),
+                  breadcrumb_paths=make_breadcrumb_paths(branch_name, path),
+                  dir_columns=make_directory_columns(repo, branch_name, path, showallfiles),
+                  activity=activity)
+
+    return kwargs
+
+def render_list_dir(repo, branch_name, path):
+    ''' Render a page showing an activity's files
+    '''
+    kwargs = make_kwargs_for_activity_files_page(repo, branch_name, path)
+    return render_template('articles-list.html', **kwargs)
+
+def render_modify_dir(repo, branch_name, path):
+    ''' Render a page showing an activity's files with an edit form for the selected category directory.
+    '''
+    path = path or '.'
+    full_path = join(repo.working_dir, path).rstrip('/')
+    full_index_path = join(full_path, u'index.{}'.format(CONTENT_FILE_EXTENSION))
+    # init a category object with the contents of the category's front matter
+    category = get_front_matter(full_index_path)
+
+    if 'layout' not in category:
+        raise Exception(u'No layout found in front-matter for {}.'.format(full_path))
+    if category['layout'] != CATEGORY_LAYOUT:
+        raise Exception(u'Can\'t modify {}s, only categories.'.format(category['layout']))
+
+    languages = load_languages(repo.working_dir)
+
+    kwargs = make_kwargs_for_activity_files_page(repo, branch_name, path)
+    # cancel redirects to the edit page for that category
+    category['cancel_path'] = join(kwargs['activity']['edit_path'], path)
+    url_slug = re.sub(ur'index.{}$'.format(CONTENT_FILE_EXTENSION), u'', path)
+
+    kwargs.update(category=category, languages=languages, hexsha=repo.commit().hexsha, url_slug=url_slug)
+
+    return render_template('directory-modify.html', **kwargs)
+
+def render_edit_view(repo, branch_name, path, file):
+    ''' Render the page that lets you edit a file
+    '''
+    front, body = load_jekyll_doc(file)
+    languages = load_languages(repo.working_dir)
+    url_slug = path
+    # strip the index file from the slug if appropriate
+    url_slug = re.sub(ur'index.{}$'.format(CONTENT_FILE_EXTENSION), u'', url_slug)
+    view_path = join('/tree/{}/view'.format(branch_name2path(branch_name)), path)
+    history_path = join('/tree/{}/history'.format(branch_name2path(branch_name)), path)
+    save_path = join('/tree/{}/save'.format(branch_name2path(branch_name)), path)
+    folder_root_slug = u'/'.join([item for item in url_slug.split('/') if item][:-1]) + u'/'
+    app_authorized = False
+    ga_config = read_ga_config(current_app.config['RUNNING_STATE_DIR'])
+    analytics_dict = {}
+    if ga_config.get('access_token'):
+        app_authorized = True
+        analytics_dict = fetch_google_analytics_for_page(current_app.config, path, ga_config.get('access_token'))
+    commit = repo.commit()
+
+    # contains 'author_email', 'task_description', 'task_beneficiary'
+    activity = get_task_metadata_for_branch(repo, branch_name)
+    activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
+    activity['task_description'] = activity['task_description'] if 'task_description' in activity else u''
+    activity['task_beneficiary'] = activity['task_beneficiary'] if 'task_beneficiary' in activity else u''
+
+    # get the current review state and authorized status
+    review_state, review_authorized = get_review_state_and_authorized(
+        repo=repo, default_branch_name=current_app.config['default_branch'],
+        working_branch_name=branch_name, actor_email=session.get('email', None)
+    )
+
+    activity.update(edit_path=u'/tree/{}/edit/'.format(branch_name2path(branch_name)),
+                    overview_path=u'/tree/{}/'.format(branch_name2path(branch_name)),
+                    review_state=review_state, review_authorized=review_authorized)
+
+    kwargs = common_template_args(current_app.config, session)
+    kwargs.update(branch=branch_name, safe_branch=branch_name2path(branch_name),
+                  body=body, hexsha=commit.hexsha, url_slug=url_slug,
+                  front=front, view_path=view_path, edit_path=path,
+                  history_path=history_path, save_path=save_path, languages=languages,
+                  breadcrumb_paths=make_breadcrumb_paths(branch_name, folder_root_slug),
+                  app_authorized=app_authorized, activity=activity)
+    kwargs.update(analytics_dict)
+    return render_template('article-edit.html', **kwargs)
+
+def add_article_or_category(repo, dir_path, request_path, create_what):
+    ''' Add an article or category
+    '''
+    request_path = request_path.rstrip('/')
+    article_front = dict(title=u'', description=u'', order=0, layout=ARTICLE_LAYOUT)
+    cat_front = dict(title=u'', description=u'', order=0, layout=CATEGORY_LAYOUT)
+    body = u''
+
+    # create and commit intermediate categories recursively
+    if u'/' in request_path:
+        cat_paths = repo.dirs_for_path(request_path)
+        flash_messages = []
+        for i in range(len(cat_paths)):
+            cat_path = cat_paths[i]
+            dir_cat_path = join(dir_path, sep.join(cat_paths[:i]))
+            message, file_path, _, do_save = add_article_or_category(repo, dir_cat_path, cat_path, CATEGORY_LAYOUT)
+            if do_save:
+                Logger.debug('save')
+                save_working_file(repo, file_path, message, repo.commit().hexsha, current_app.config['default_branch'])
+            else:
+                flash_messages.append(message)
+
+        if len(flash_messages):
+            flash(', '.join(flash_messages), u'notice')
+
+    name = u'{}/index.{}'.format(splitext(request_path)[0], CONTENT_FILE_EXTENSION)
+
+    if create_what == 'article':
+        file_path = repo.canonicalize_path(dir_path, name)
+        if repo.exists(file_path):
+            return 'Article "{}" already exists'.format(request_path), file_path, file_path, False
+        else:
+            file_path = create_new_page(repo, dir_path, name, article_front, body)
+            message = u'The "{}" article was created\n\ncreated new file {}'.format(name.split('/')[-2], file_path)
+            redirect_path = file_path
+            return message, file_path, redirect_path, True
+    elif create_what == 'category':
+        file_path = repo.canonicalize_path(dir_path, name)
+        if repo.exists(file_path):
+            return 'Category "{}" already exists'.format(request_path), file_path, strip_index_file(file_path), False
+        else:
+            file_path = create_new_page(repo, dir_path, name, cat_front, body)
+            message = u'The "{}" category was created\n\ncreated new file {}'.format(name.split('/')[-2], file_path)
+            redirect_path = strip_index_file(file_path)
+            return message, file_path, redirect_path, True
+    else:
+        raise ValueError("Illegal {} creation request in {}".format(create_what, join(dir_path, request_path)))
+
+def strip_index_file(file_path):
+    return re.sub(r'index.{}$'.format(CONTENT_FILE_EXTENSION), '', file_path)
+
+def delete_page(repo, path, request_path):
+    ''' Delete a category or article
+    '''
+    # construct the commit message
+    commit_message = make_delete_display_commit_message(repo, request_path)
+
+    # delete the file(s)
+    candidate_file_paths = list_contained_files(repo, request_path)
+    deleted_file_paths, do_save = delete_file(repo, request_path)
+
+    # add details to the commit message
+    file_files = u'files' if len(candidate_file_paths) > 1 else u'file'
+    commit_message = commit_message + u'\n\ndeleted {} "{}"'.format(file_files, u'", "'.join(candidate_file_paths))
+
+    # if we're in the path that's been deleted, redirect to the first still-existing directory in the path
+    path_dirs = path.split('/')
+    req_dirs = request_path.split('/')
+    if len(path_dirs) >= len(req_dirs) and path_dirs[len(req_dirs) - 1] == req_dirs[-1]:
+        redirect_path = u'/'.join(req_dirs[:-1])
+    else:
+        redirect_path = path
+
+    return redirect_path, do_save, commit_message
+
+def update_activity_review_status(branch_name, comment_text, action_list):
+    ''' Comment and/or update the review state.
+    '''
+    repo = get_repo(current_app)
+    # which submit button was pressed?
+    action = u''
+    possible_actions = ['comment', 'request_feedback', 'endorse_edits', 'merge', 'abandon', 'clobber']
+    for check_action in possible_actions:
+        if check_action in action_list:
+            action = check_action
+            break
+
+    # get the current review state and authorized status
+    review_state, review_authorized = get_review_state_and_authorized(
+        repo=repo, default_branch_name=current_app.config['default_branch'],
+        working_branch_name=branch_name, actor_email=session.get('email', None)
+    )
+    action_authorized = (action == 'comment' and comment_text)
+
+    # handle a review action
+    if action != 'comment':
+        if action == 'request_feedback':
+            if review_state == REVIEW_STATE_EDITED and review_authorized:
+                update_review_state(repo, REVIEW_STATE_FEEDBACK)
+                action_authorized = True
+        elif action == 'endorse_edits':
+            if review_state == REVIEW_STATE_FEEDBACK and review_authorized:
+                update_review_state(repo, REVIEW_STATE_ENDORSED)
+                action_authorized = True
+        elif action == 'merge':
+            if review_state == REVIEW_STATE_ENDORSED and review_authorized:
+                update_review_state(repo, REVIEW_STATE_PUBLISHED)
+                action_authorized = True
+        elif action == 'clobber' or action == 'abandon':
+            action_authorized = True
+
+    if not action:
+        raise Exception(u'Unrecognized request sent to update_activity_review_status')
+
+    # comment if comment text was sent and the action is authorized
+    if comment_text and action_authorized:
+        provide_feedback(repo, comment_text)
+
+    # flash a message if the action wasn't authorized
+    if action == 'comment' and not comment_text:
+        flash(u'You can\'t leave an empty comment!', u'error')
+    elif not action_authorized:
+        action_lookup = {
+            'comment': u'leave a comment',
+            'request_feedback': u'request feedback',
+            'endorse_edits': u'endorse the edits',
+            'merge': u'publish the edits'
+        }
+        flash(u'Something changed behind the scenes and we couldn\'t {}! Please try again.'.format(action_lookup[action]), u'error')
+
+    return action, action_authorized
+
+def save_page(branch_name, path, new_values):
+    ''' Save the page with the passed values
+    '''
+    branch_name = branch_var2name(branch_name)
+    master_name = current_app.config['default_branch']
+
+    repo = get_repo(current_app)
+    existing_branch = get_existing_branch(repo, master_name, branch_name)
+
+    if not existing_branch:
+        flash(u'There is no {} branch!'.format(branch_name), u'warning')
+        return path, False
+
+    commit = existing_branch.commit
+
+    if commit.hexsha != new_values.get('hexsha'):
+        raise Exception('Out of date SHA: %s' % new_values.get('hexsha'))
+
+    #
+    # Write changes.
+    #
+    existing_branch.checkout()
+
+    # make sure order is an integer; otherwise default to 0
+    try:
+        order = int(dos2unix(new_values.get('order', '0')))
+    except ValueError:
+        order = 0
+
+    front = {
+        'layout': dos2unix(new_values.get('layout')),
+        'order': order,
+        'title': dos2unix(new_values.get('en-title', '')),
+        'description': dos2unix(new_values.get('en-description', ''))
+    }
+
+    for iso in load_languages(repo.working_dir):
+        if iso != 'en':
+            front['title-' + iso] = dos2unix(new_values.get(iso + '-title', ''))
+            front['description-' + iso] = dos2unix(new_values.get(iso + '-description', ''))
+            front['body-' + iso] = dos2unix(new_values.get(iso + '-body', ''))
+
+    body = dos2unix(new_values.get('en-body', ''))
+    update_page(repo, path, front, body)
+
+    #
+    # Try to merge from the master to the current branch.
+    #
+    try:
+        message = u'The "{}" {} was edited\n\nsaved file "{}"'.format(new_values.get('en-title'), new_values.get('layout'), path)
+        c2 = save_working_file(repo, path, message, commit.hexsha, master_name)
+        # they may've renamed the page by editing the URL slug
+        original_slug = path
+        if re.search(r'\/index.{}$'.format(CONTENT_FILE_EXTENSION), path):
+            original_slug = re.sub(ur'index.{}$'.format(CONTENT_FILE_EXTENSION), u'', path)
+
+        # do some simple input cleaning
+        new_slug = new_values.get('url-slug')
+        if new_slug:
+            new_slug = re.sub(r'\/+', '/', new_slug)
+
+            if new_slug != original_slug:
+                try:
+                    move_existing_file(repo, original_slug, new_slug, c2.hexsha, master_name)
+                except Exception as e:
+                    error_message = e.args[0]
+                    error_type = e.args[1] if len(e.args) > 1 else None
+                    # let unexpected errors raise normally
+                    if error_type:
+                        flash(error_message, error_type)
+                        return path, True
+                    else:
+                        raise
+
+                path = new_slug
+                # append the index file if it's an editable directory
+                if is_article_dir(join(repo.working_dir, new_slug)):
+                    path = join(new_slug, u'index.{}'.format(CONTENT_FILE_EXTENSION))
+
+    except MergeConflict as conflict:
+        repo.git.reset(commit.hexsha, hard=True)
+
+        Logger.debug('1 {}'.format(conflict.remote_commit))
+        Logger.debug('  {}'.format(repr(conflict.remote_commit.tree[path].data_stream.read())))
+        Logger.debug('2 {}'.format(conflict.local_commit))
+        Logger.debug('  {}'.format(repr(conflict.local_commit.tree[path].data_stream.read())))
+        raise
+
+    return path, True
 
 def should_redirect():
     ''' Return True if the current flask.request should redirect.
