@@ -550,7 +550,7 @@ def synched_checkout_required(route_function):
 
         checkout = get_repo(current_app)
         # get the branch name from request.form if it's not in kwargs
-        branch_name_raw = kwargs['branch'] if 'branch' in kwargs else None
+        branch_name_raw = kwargs['branch_name'] if 'branch_name' in kwargs else None
         if not branch_name_raw:
             branch_name_raw = request.form.get('branch', None)
 
