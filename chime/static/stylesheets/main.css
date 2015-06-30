@@ -461,6 +461,10 @@ th {
 
 /* line 10, ../sass/core/_layout.scss */
 .row {
+  -webkit-flex-shrink: 0;
+  -moz-flex-shrink: 0;
+  flex-shrink: 0;
+  -ms-flex-negative: 0;
   width: 100%;
   position: relative;
   padding-top: 1em;
@@ -477,28 +481,28 @@ th {
 .row:after {
   clear: both;
 }
-/* line 21, ../sass/core/_layout.scss */
+/* line 22, ../sass/core/_layout.scss */
 .lt-ie10 .row {
   display: block;
 }
 
-/* line 26, ../sass/core/_layout.scss */
+/* line 27, ../sass/core/_layout.scss */
 .row__left {
   float: left;
 }
 
-/* line 30, ../sass/core/_layout.scss */
+/* line 31, ../sass/core/_layout.scss */
 .row__right {
   float: right;
 }
 
-/* line 34, ../sass/core/_layout.scss */
+/* line 35, ../sass/core/_layout.scss */
 .row__center {
   margin-left: auto;
   margin-right: auto;
 }
 
-/* line 41, ../sass/core/_layout.scss */
+/* line 42, ../sass/core/_layout.scss */
 .col {
   display: -webkit-box;
   display: -moz-box;
@@ -527,12 +531,12 @@ th {
   justify-content: stretch;
   -ms-flex-pack: stretch;
 }
-/* line 45, ../sass/core/_layout.scss */
+/* line 46, ../sass/core/_layout.scss */
 .lt-ie10 .col {
   display: block;
 }
 
-/* line 50, ../sass/core/_layout.scss */
+/* line 51, ../sass/core/_layout.scss */
 .col__flex {
   -webkit-box-flex: 1;
   -moz-box-flex: 1;
