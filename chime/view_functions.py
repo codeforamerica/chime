@@ -830,7 +830,7 @@ def render_modify_dir(repo, branch_name, path):
 
     kwargs = make_kwargs_for_activity_files_page(repo, branch_name, path)
     # cancel redirects to the edit page for that category
-    category['cancel_path'] = join(kwargs['activity']['edit_path'], path)
+    category['edit_path'] = join(kwargs['activity']['edit_path'], path)
     url_slug = re.sub(ur'index.{}$'.format(CONTENT_FILE_EXTENSION), u'', path)
 
     kwargs.update(category=category, languages=languages, hexsha=repo.commit().hexsha, url_slug=url_slug)

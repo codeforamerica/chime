@@ -20,7 +20,7 @@
       {% if loop.index == 2 %}
       <h2>Categories</h2>
       <div class="selection-box box-add-file-folder">
-        <form action="." method="POST" class="form-one-line">
+        <form action="{{ category.edit_path }}" method="POST" class="form-one-line">
             <input class="form-one-line__input" name="request_path" placeholder="Add Category" type="text" />
             <input name="create_what" value="category" type="hidden" />
             <input name="create_path" value="{{column['base_path']}}" type="hidden" />
@@ -30,7 +30,7 @@
       {% elif loop.index == 3 %}
       <h2>Subcategories</h2>
       <div class="selection-box box-add-file-folder">
-        <form action="." method="POST" class="form-one-line">
+        <form action="{{ category.edit_path }}" method="POST" class="form-one-line">
             <input class="form-one-line__input" name="request_path" placeholder="Add Subcategory" type="text" />
             <input name="create_what" value="category" type="hidden" />
             <input name="create_path" value="{{column['base_path']}}" type="hidden" />
@@ -84,7 +84,7 @@
               <button name="delete" type="submit" class="button button--red toolbar__item"><span class="fa fa-trash"></span> Delete</button>
             </div>
             <div class="row__right toolbar toolbar--right">
-              <a href="{{ category.cancel_path }}" class="button toolbar__item">Cancel</a>
+              <a href="{{ category.edit_path }}" class="button toolbar__item">Cancel</a>
               <button name="save" type="submit" class="button button--green toolbar__item">Save</button>
             </div>
 
