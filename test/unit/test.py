@@ -1046,7 +1046,7 @@ class TestRepo (TestCase):
 
         # create an article
         art_title = u'快速狐狸'
-        art_slug = u'kuai-su-hu-li'
+        art_slug = slugify(art_title)
         add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, u'', art_title, view_functions.ARTICLE_LAYOUT)
         self.assertEqual(u'The "{}" article was created\n\ncreated new file {}/index.markdown'.format(art_title, art_slug), add_message)
         self.assertEqual(u'{}/index.markdown'.format(art_slug), file_path)
@@ -2535,7 +2535,7 @@ class TestApp (TestCase):
 
             # and put a new category inside it
             cata_title = u'Mouth Parts'
-            cata_slug = u'mouth-parts'
+            cata_slug = slugify(cata_title)
             response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, categories_slug),
                                              data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': cata_title},
                                              follow_redirects=True)
@@ -2543,7 +2543,7 @@ class TestApp (TestCase):
 
             # put another cateogry inside that
             catb_title = u'Esophagus'
-            catb_slug = u'esophagus'
+            catb_slug = slugify(catb_title)
             response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, join(categories_slug, cata_slug)),
                                              data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': catb_title},
                                              follow_redirects=True)
@@ -2551,7 +2551,7 @@ class TestApp (TestCase):
 
             # and an article inside that
             art_title = u'Stomach'
-            art_slug = u'stomach'
+            art_slug = slugify(art_title)
             response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, join(categories_slug, cata_slug, catb_slug)),
                                              data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': art_title},
                                              follow_redirects=True)
@@ -2603,7 +2603,7 @@ class TestApp (TestCase):
 
             # create a new article
             art_title = u'快速狐狸'
-            art_slug = u'kuai-su-hu-li'
+            art_slug = slugify(art_title)
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name), data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': art_title}, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format(u'article-edit') in response.data.decode('utf-8'))
@@ -2651,7 +2651,7 @@ class TestApp (TestCase):
 
             # create a new category
             cat_title = u'grrowl!! Yeah'
-            cat_slug = u'grrowl-yeah'
+            cat_slug = slugify(cat_title)
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
                                              data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': cat_title},
                                              follow_redirects=True)
@@ -2677,7 +2677,7 @@ class TestApp (TestCase):
 
             # create a new article
             art_title = u'快速狐狸'
-            art_slug = u'kuai-su-hu-li'
+            art_slug = slugify(art_title)
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name), data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': art_title}, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format(u'article-edit') in response.data.decode('utf-8'))
@@ -2731,7 +2731,7 @@ class TestApp (TestCase):
 
             # and put a new category inside it
             cat_title = u'Small Intestine'
-            cat_slug = u'small-intestine'
+            cat_slug = slugify(cat_title)
             response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, categories_slug),
                                              data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': cat_title},
                                              follow_redirects=True)
