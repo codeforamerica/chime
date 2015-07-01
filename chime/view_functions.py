@@ -1015,23 +1015,21 @@ def update_activity_review_status(branch_name, comment_text, action_list):
 
     return action, action_authorized
 
-def save_page(branch_name, path, new_values):
+def save_page(repo, default_branch_name, working_branch_name, path, new_values):
     ''' Save the page with the passed values
     '''
-    branch_name = branch_var2name(branch_name)
-    master_name = current_app.config['default_branch']
+    working_branch_name = branch_var2name(working_branch_name)
 
-    repo = get_repo(current_app)
-    existing_branch = get_existing_branch(repo, master_name, branch_name)
+    existing_branch = get_existing_branch(repo, default_branch_name, working_branch_name)
 
     if not existing_branch:
-        flash(u'There is no {} branch!'.format(branch_name), u'warning')
+        flash(u'There is no {} branch!'.format(working_branch_name), u'warning')
         return path, False
 
     commit = existing_branch.commit
 
     if commit.hexsha != new_values.get('hexsha'):
-        raise Exception('Out of date SHA: %s' % new_values.get('hexsha'))
+        raise Exception('Out of date SHA: {}'.format(new_values.get('hexsha')))
 
     #
     # Write changes.
@@ -1065,7 +1063,7 @@ def save_page(branch_name, path, new_values):
     #
     try:
         message = u'The "{}" {} was edited\n\nsaved file "{}"'.format(new_values.get('en-title'), new_values.get('layout'), path)
-        c2 = save_working_file(repo, path, message, commit.hexsha, master_name)
+        c2 = save_working_file(repo, path, message, commit.hexsha, default_branch_name)
         # they may've renamed the page by editing the URL slug
         original_slug = path
         if re.search(r'\/index.{}$'.format(CONTENT_FILE_EXTENSION), path):
@@ -1078,7 +1076,7 @@ def save_page(branch_name, path, new_values):
 
             if new_slug != original_slug:
                 try:
-                    move_existing_file(repo, original_slug, new_slug, c2.hexsha, master_name)
+                    move_existing_file(repo, original_slug, new_slug, c2.hexsha, default_branch_name)
                 except Exception as e:
                     error_message = e.args[0]
                     error_type = e.args[1] if len(e.args) > 1 else None

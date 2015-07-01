@@ -1056,6 +1056,68 @@ class TestRepo (TestCase):
         repo_functions.save_working_file(new_clone, file_path, add_message, new_clone.commit().hexsha, 'master')
 
     # in TestRepo
+    def test_edit_category_title_and_description(self):
+        ''' Edits to category details are saved
+        '''
+        # start a new branch
+        fake_author_email = u'erica@example.com'
+        task_description = u'squeezing lemons'
+        task_beneficiary = u'lemonade'
+
+        source_repo = self.origin
+        first_commit = list(source_repo.iter_commits())[-1].hexsha
+        dir_name = 'repo-{}-{}'.format(first_commit[:8], slugify(fake_author_email))
+        user_dir = realpath(join(self.work_path, quote(dir_name)))
+
+        if isdir(user_dir):
+            new_clone = ChimeRepo(user_dir)
+            new_clone.git.reset(hard=True)
+            new_clone.remotes.origin.fetch()
+        else:
+            new_clone = source_repo.clone(user_dir, bare=False)
+
+        # tell git to ignore merge conflicts on the task metadata file
+        repo_functions.ignore_task_metadata_on_merge(new_clone)
+
+        working_branch = repo_functions.get_start_branch(new_clone, 'master', task_description, task_beneficiary, fake_author_email)
+        self.assertTrue(working_branch.name in new_clone.branches)
+        self.assertTrue(working_branch.name in self.origin.branches)
+        working_branch.checkout()
+
+        # create an article
+        cat_title = u'快速狐狸'
+        cat_slug = slugify(cat_title)
+        add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, u'', cat_title, view_functions.CATEGORY_LAYOUT)
+        self.assertEqual(u'The "{}" category was created\n\ncreated new file {}/index.markdown'.format(cat_title, cat_slug), add_message)
+        self.assertEqual(u'{}/index.markdown'.format(cat_slug), file_path)
+        self.assertEqual(u'{}/'.format(cat_slug), redirect_path)
+        self.assertEqual(True, do_save)
+        # commit the article
+        repo_functions.save_working_file(new_clone, file_path, add_message, new_clone.commit().hexsha, 'master')
+
+        index_path = join(new_clone.working_dir, file_path)
+
+        # verify the values
+        with open(index_path) as file:
+            front_matter, body = jekyll_functions.load_jekyll_doc(file)
+        self.assertEqual(front_matter['title'], cat_title)
+        self.assertEqual(front_matter['description'], u'')
+        self.assertEqual(body, u'')
+
+        # change the values
+        fake_changes = {'en-title': u'Drink Craw', 'en-description': u'Pink Straw', 'en-body': u'', 'hexsha': new_clone.commit().hexsha}
+        new_values = dict(front_matter)
+        new_values.update(fake_changes)
+        new_path, did_save = view_functions.save_page(repo=new_clone, default_branch_name='master', working_branch_name=working_branch.name, path=file_path, new_values=new_values)
+
+        # check for the new values!
+        with open(index_path) as file:
+            front_matter, body = jekyll_functions.load_jekyll_doc(file)
+        self.assertEqual(front_matter['title'], new_values['en-title'])
+        self.assertEqual(front_matter['description'], new_values['en-description'])
+        self.assertEqual(body, u'')
+
+    # in TestRepo
     def test_activity_history_recorded(self):
         ''' The activity history accurately records activity events.
         '''

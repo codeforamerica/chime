@@ -487,7 +487,7 @@ def save_working_file(clone, path, message, base_sha, default_branch_name):
         merge problems early. Might raise a MergeConflict.
     '''
     if clone.active_branch.commit.hexsha != base_sha:
-        raise Exception('Out of date SHA: %s' % base_sha)
+        raise Exception('Out of date SHA: {}'.format(base_sha))
 
     if exists(join(clone.working_dir, path)):
         clone.index.add([path])
@@ -518,7 +518,7 @@ def move_existing_file(clone, old_path, new_path, base_sha, default_branch_name)
         merge problems early. Might raise a MergeConflict.
     '''
     if clone.active_branch.commit.hexsha != base_sha:
-        raise Exception('Out of date SHA: %s' % base_sha)
+        raise Exception('Out of date SHA: {}'.format(base_sha))
 
     # check whether we're being asked to move a dir
     if not isdir(join(clone.working_dir, old_path)):

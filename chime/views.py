@@ -415,7 +415,7 @@ def branch_modify_category(branch_name, path=u''):
         safe_branch = branch_name2path(branch_var2name(branch_name))
         new_path = path
         if check_front_matter != front_matter:
-            new_path, did_save = save_page(branch_name, index_slug, new_values)
+            new_path, did_save = save_page(repo, current_app.config['default_branch'], branch_name, index_slug, new_values)
             if not did_save:
                 flash(u'Unable to save changes to the file {}!'.format(front_matter['title']), u'error')
             else:
@@ -597,8 +597,9 @@ def branch_history(branch_name, path=None):
 def branch_save(branch_name, path):
     ''' Handle a submission from the article-edit form.
     '''
+    repo = get_repo(current_app)
     safe_branch = branch_name2path(branch_var2name(branch_name))
-    new_path, did_save = save_page(branch_name, path, request.form)
+    new_path, did_save = save_page(repo, current_app.config['default_branch'], branch_name, path, request.form)
     return redirect('/tree/{}/edit/{}'.format(safe_branch, new_path), code=303)
 
 @app.route('/.well-known/deploy-key.txt')
