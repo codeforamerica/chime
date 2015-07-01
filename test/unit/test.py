@@ -2591,7 +2591,7 @@ class TestApp (TestCase):
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             response_data = sub('&#34;', '"', response.data.decode('utf-8'))
-            self.assertTrue(u'Category "hello"; already exists' in response_data)
+            self.assertTrue(u'Category "hello" already exists' in response_data)
 
             # pull the changes
             self.clone1.git.pull('origin', working_branch.name)
