@@ -2845,7 +2845,6 @@ class TestApp (TestCase):
             cat_path = join(categories_slug, cat_slug, u'index.{}'.format(view_functions.CONTENT_FILE_EXTENSION))
             response = self.test_client.get('/tree/{}/modify/{}'.format(working_branch_name, view_functions.strip_index_file(cat_path)), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
-            self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('directory-modify') in response.data)
             self.assertTrue(PATTERN_FORM_CATEGORY_TITLE.format(title=cat_title) in response.data)
             self.assertTrue(PATTERN_FORM_CATEGORY_DESCRIPTION.format(description=u'') in response.data)
 
