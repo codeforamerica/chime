@@ -2797,6 +2797,81 @@ class TestApp (TestCase):
             self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": art_slug, "file_title": art_title, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data.decode('utf-8'))
 
     # in TestApp
+    def test_edit_category_title_and_description(self):
+        ''' A category's title and description can be edited.
+        '''
+        fake_author_email = u'erica@example.com'
+        with HTTMock(self.mock_persona_verify):
+            self.test_client.post('/sign-in', data={'email': fake_author_email})
+
+        with HTTMock(self.auth_csv_example_allowed):
+            # start a new branch via the http interface
+            # invokes view_functions/get_repo which creates a clone
+            task_description = u'rapidly discharge black ink into the mantle cavity'
+            task_beneficiary = u'squids'
+
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            self.assertTrue(working_branch.name in self.clone1.branches)
+            self.assertTrue(working_branch.name in self.origin.branches)
+            working_branch_name = working_branch.name
+            working_branch.checkout()
+
+            # create a categories directory
+            categories_slug = u'categories'
+            response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': categories_slug},
+                                             follow_redirects=True)
+
+            # and put a new category inside it
+            cat_title = u'Bolus'
+            cat_slug = slugify(cat_title)
+            response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, categories_slug),
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': cat_title},
+                                             follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+
+            # pull the changes
+            self.clone1.git.pull('origin', working_branch_name)
+
+            # get the hexsha
+            hexsha = self.clone1.commit().hexsha
+
+            # now save a new title and description for the category
+            new_cat_title = u'Caecum'
+            cat_description = u'An intraperitoneal pouch, that is considered to be the beginning of the large intestine.'
+            cat_path = join(categories_slug, cat_slug, u'index.{}'.format(view_functions.CONTENT_FILE_EXTENSION))
+            # [('hexsha', u'cc2e205f50cdef9804b5202c65d9026b5046f2c2'), ('layout', u'category'), ('url-slug', u'categories/duh/fluh/'), ('en-description', u'Stinkle stoop shower fantasy clock dip.'), ('save', u''), ('en-title', u'Storple Stan Frond'), ('order', u'0')]
+
+            response = self.test_client.post('/tree/{}/modify/{}'.format(working_branch_name, cat_path),
+                                             data={'layout': view_functions.CATEGORY_LAYOUT, 'hexsha': hexsha, 'url-slug': u'{}/{}/'.format(categories_slug, cat_slug),
+                                                   'en-title': new_cat_title, 'en-description': cat_description, 'order': u'0', 'save': u''},
+                                             follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            # check the returned HTML for the description and title values (format will change as pages are designed)
+            self.assertTrue(u'<li class="flash flash--notice">Saved changes to the file {}!</li>'.format(new_cat_title) in response.data)
+            self.assertTrue(u'<textarea name="en-description" class="directory-modify__description">{}</textarea>'.format(cat_description) in response.data)
+            self.assertTrue(u'<input name="en-title" type="text" value="Caecum" class="directory-modify__name">'.format(new_cat_title) in response.data)
+
+            # pull the changes
+            self.clone1.git.pull('origin', working_branch_name)
+
+            # a directory was created
+            dir_location = join(self.clone1.working_dir, categories_slug, cat_slug)
+            idx_location = u'{}/index.{}'.format(dir_location, view_functions.CONTENT_FILE_EXTENSION)
+            self.assertTrue(exists(dir_location) and isdir(dir_location))
+            # an index page was created inside
+            self.assertTrue(exists(idx_location))
+            # the directory and index page pass the category test
+            self.assertTrue(view_functions.is_category_dir(dir_location))
+            # the title and description saved in the index front matter is the same text that was used to create the category
+            self.assertEqual(view_functions.get_value_from_front_matter('title', idx_location), new_cat_title)
+            self.assertEqual(view_functions.get_value_from_front_matter('description', idx_location), cat_description)
+
+            # the title saved in the index front matter is displayed on the article list page
+            response = self.test_client.get('/tree/{}/edit/{}'.format(working_branch_name, categories_slug), follow_redirects=True)
+            self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": cat_slug, "file_title": new_cat_title, "file_type": view_functions.CATEGORY_LAYOUT}) in response.data)
+
+    # in TestApp
     def test_set_and_retrieve_order_and_description(self):
         ''' Order and description can be set to and retrieved from an article's or category's front matter.
         '''
