@@ -96,9 +96,12 @@ def create_app(environ):
         logger.setLevel(DEBUG if app.debug else INFO)
 
         if app.config.get('SNS_ALERTS_TOPIC'):
-            sns_handler = SnsHandler(app.config['SNS_ALERTS_TOPIC'])
-            sns_handler.setLevel(logging.ERROR)
-            logger.addHandler(sns_handler)
+            try:
+                sns_handler = SnsHandler(app.config['SNS_ALERTS_TOPIC'])
+                sns_handler.setLevel(logging.ERROR)
+                logger.addHandler(sns_handler)
+            except Exception as e:
+                logger.exception("Unexpected failure setting up SNS logging")
 
         logger.info("app config before_first_request: %s" % app.config)
 
