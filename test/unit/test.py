@@ -1048,8 +1048,8 @@ class TestRepo (TestCase):
         art_title = u'快速狐狸'
         art_slug = slugify(art_title)
         add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, u'', art_title, view_functions.ARTICLE_LAYOUT)
-        self.assertEqual(u'The "{}" article was created\n\ncreated new file {}/index.markdown'.format(art_title, art_slug), add_message)
-        self.assertEqual(u'{}/index.markdown'.format(art_slug), file_path)
+        self.assertEqual(u'{}/index.{}'.format(art_slug, view_functions.CONTENT_FILE_EXTENSION), file_path)
+        self.assertEqual(u'The "{}" article was created\n\ncreated new file {}'.format(art_title, file_path), add_message)
         self.assertEqual(u'{}/index.{}'.format(art_slug, view_functions.CONTENT_FILE_EXTENSION), redirect_path)
         self.assertEqual(True, do_save)
         # commit the article
@@ -1062,7 +1062,7 @@ class TestRepo (TestCase):
         # start a new branch
         fake_author_email = u'erica@example.com'
         task_description = u'squeezing lemons'
-        task_beneficiary = u'lemonade'
+        task_beneficiary = u'lemonade lovers'
 
         source_repo = self.origin
         first_commit = list(source_repo.iter_commits())[-1].hexsha
@@ -1084,15 +1084,15 @@ class TestRepo (TestCase):
         self.assertTrue(working_branch.name in self.origin.branches)
         working_branch.checkout()
 
-        # create an article
+        # create a category
         cat_title = u'快速狐狸'
         cat_slug = slugify(cat_title)
         add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, u'', cat_title, view_functions.CATEGORY_LAYOUT)
-        self.assertEqual(u'The "{}" category was created\n\ncreated new file {}/index.markdown'.format(cat_title, cat_slug), add_message)
-        self.assertEqual(u'{}/index.markdown'.format(cat_slug), file_path)
+        self.assertEqual(u'{}/index.{}'.format(cat_slug, view_functions.CONTENT_FILE_EXTENSION), file_path)
+        self.assertEqual(u'The "{}" category was created\n\ncreated new file {}'.format(cat_title, file_path), add_message)
         self.assertEqual(u'{}/'.format(cat_slug), redirect_path)
         self.assertEqual(True, do_save)
-        # commit the article
+        # commit the category
         repo_functions.save_working_file(new_clone, file_path, add_message, new_clone.commit().hexsha, 'master')
 
         index_path = join(new_clone.working_dir, file_path)
@@ -1116,6 +1116,99 @@ class TestRepo (TestCase):
         self.assertEqual(front_matter['title'], new_values['en-title'])
         self.assertEqual(front_matter['description'], new_values['en-description'])
         self.assertEqual(body, u'')
+
+    # in TestRepo
+    def test_delete_category(self):
+        ''' Create and delete a category
+        '''
+        # start a new branch
+        fake_author_email = u'erica@example.com'
+        task_description = u'grating lemons'
+        task_beneficiary = u'zest lovers'
+
+        source_repo = self.origin
+        first_commit = list(source_repo.iter_commits())[-1].hexsha
+        dir_name = 'repo-{}-{}'.format(first_commit[:8], slugify(fake_author_email))
+        user_dir = realpath(join(self.work_path, quote(dir_name)))
+
+        if isdir(user_dir):
+            new_clone = ChimeRepo(user_dir)
+            new_clone.git.reset(hard=True)
+            new_clone.remotes.origin.fetch()
+        else:
+            new_clone = source_repo.clone(user_dir, bare=False)
+
+        # tell git to ignore merge conflicts on the task metadata file
+        repo_functions.ignore_task_metadata_on_merge(new_clone)
+
+        working_branch = repo_functions.get_start_branch(new_clone, 'master', task_description, task_beneficiary, fake_author_email)
+        self.assertTrue(working_branch.name in new_clone.branches)
+        self.assertTrue(working_branch.name in self.origin.branches)
+        working_branch.checkout()
+
+        # create a category
+        cat_title = u'Daffodils and Drop Cloths'
+        cat_slug = slugify(cat_title)
+        add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, u'', cat_title, view_functions.CATEGORY_LAYOUT)
+        self.assertEqual(u'{}/index.{}'.format(cat_slug, view_functions.CONTENT_FILE_EXTENSION), file_path)
+        self.assertEqual(u'The "{}" category was created\n\ncreated new file {}'.format(cat_title, file_path), add_message)
+        self.assertEqual(u'{}/'.format(cat_slug), redirect_path)
+        self.assertEqual(True, do_save)
+        # commit the category
+        repo_functions.save_working_file(new_clone, file_path, add_message, new_clone.commit().hexsha, 'master')
+
+        # verify that the directory and index file exist
+        cat_index_path = join(new_clone.working_dir, file_path)
+        self.assertTrue(exists(cat_index_path))
+        self.assertTrue(exists(view_functions.strip_index_file(cat_index_path)))
+
+        # create a category inside that
+        cat2_title = u'Drain Bawlers'
+        cat2_slug = slugify(cat2_title)
+        add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, cat_slug, cat2_title, view_functions.CATEGORY_LAYOUT)
+        self.assertEqual(u'{}/{}/index.{}'.format(cat_slug, cat2_slug, view_functions.CONTENT_FILE_EXTENSION), file_path)
+        self.assertEqual(u'The "{}" category was created\n\ncreated new file {}'.format(cat2_title, file_path), add_message)
+        self.assertEqual(u'{}/{}/'.format(cat_slug, cat2_slug), redirect_path)
+        self.assertEqual(True, do_save)
+        # commit the category
+        repo_functions.save_working_file(new_clone, file_path, add_message, new_clone.commit().hexsha, 'master')
+
+        # verify that the directory and index file exist
+        cat2_index_path = join(new_clone.working_dir, file_path)
+        self.assertTrue(exists(cat2_index_path))
+        self.assertTrue(exists(view_functions.strip_index_file(cat2_index_path)))
+
+        # and an article inside that
+        art_title = u'သံပုရာဖျော်ရည်'
+        art_slug = slugify(art_title)
+        dir_path = redirect_path.rstrip('/')
+        add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, dir_path, art_title, view_functions.ARTICLE_LAYOUT)
+        self.assertEqual(u'{}/{}/{}/index.{}'.format(cat_slug, cat2_slug, art_slug, view_functions.CONTENT_FILE_EXTENSION), file_path)
+        self.assertEqual(u'The "{}" article was created\n\ncreated new file {}'.format(art_title, file_path), add_message)
+        self.assertEqual(u'{}/{}/{}/index.{}'.format(cat_slug, cat2_slug, art_slug, view_functions.CONTENT_FILE_EXTENSION), redirect_path)
+        self.assertEqual(True, do_save)
+        # commit the article
+        repo_functions.save_working_file(new_clone, file_path, add_message, new_clone.commit().hexsha, 'master')
+
+        # verify that the directory and index file exist
+        art_index_path = join(new_clone.working_dir, file_path)
+        self.assertTrue(exists(art_index_path))
+        self.assertTrue(exists(view_functions.strip_index_file(art_index_path)))
+
+        # now delete the second category
+        browse_path = view_functions.strip_index_file(file_path)
+        redirect_path, do_save, commit_message = view_functions.delete_page(repo=new_clone, browse_path=browse_path, target_path=dir_path)
+        self.assertEqual(cat_slug, redirect_path)
+        self.assertEqual(True, do_save)
+        self.assertEqual(u'The "{cat2_title}" category (containing 1 category and 1 article) was deleted\n\ndeleted files "{cat_slug}/{cat2_slug}/index.{content_file_extension}", "{cat_slug}/{cat2_slug}/{art_slug}/index.{content_file_extension}"'.format(cat2_title=cat2_title, cat_slug=cat_slug, cat2_slug=cat2_slug, content_file_extension=view_functions.CONTENT_FILE_EXTENSION, art_slug=art_slug), commit_message)
+
+        repo_functions.save_working_file(clone=new_clone, path=dir_path, message=commit_message, base_sha=new_clone.commit().hexsha, default_branch_name='master')
+
+        # verify that the files are gone
+        self.assertFalse(exists(cat2_index_path))
+        self.assertFalse(exists(view_functions.strip_index_file(cat2_index_path)))
+        self.assertFalse(exists(art_index_path))
+        self.assertFalse(exists(view_functions.strip_index_file(art_index_path)))
 
     # in TestRepo
     def test_activity_history_recorded(self):

@@ -372,12 +372,12 @@ def branch_modify_category(branch_name, path=u''):
     # delete the passed category
     if 'delete' in request.form:
         # delete the page
-        redirect_path, do_save, commit_message = delete_page(repo, path, path)
+        redirect_path, do_save, commit_message = delete_page(repo=repo, browse_path=path, target_path=path)
         # save and redirect
         if do_save:
             master_name = current_app.config['default_branch']
             Logger.debug('save')
-            repo_functions.save_working_file(repo, path, commit_message, repo.commit().hexsha, master_name)
+            repo_functions.save_working_file(clone=repo, path=path, message=commit_message, base_sha=repo.commit().hexsha, default_branch_name=master_name)
             # flash the human-readable part of the commit message
             flash(commit_message.split('\n')[0], u'notice')
 
@@ -457,7 +457,7 @@ def branch_edit_file(branch_name, path=None):
             flash(add_message, u'notice')
 
     elif action == 'delete' and 'request_path' in request.form:
-        redirect_path, do_save, commit_message = delete_page(repo, path, request.form['request_path'])
+        redirect_path, do_save, commit_message = delete_page(repo=repo, browse_path=path, target_path=request.form['request_path'])
 
     else:
         raise Exception(u'Unrecognized request posted to branch_edit_file()')
@@ -465,7 +465,7 @@ def branch_edit_file(branch_name, path=None):
     if do_save:
         master_name = current_app.config['default_branch']
         Logger.debug('save')
-        repo_functions.save_working_file(repo, file_path, commit_message, commit.hexsha, master_name)
+        repo_functions.save_working_file(clone=repo, path=file_path, message=commit_message, base_sha=commit.hexsha, default_branch_name=master_name)
 
     safe_branch = branch_name2path(branch_var2name(branch_name))
     return redirect('/tree/{}/edit/{}'.format(safe_branch, redirect_path), code=303)

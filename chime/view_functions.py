@@ -190,7 +190,6 @@ def is_category_dir(file_path):
     '''
     return is_dir_with_layout(file_path, CATEGORY_LAYOUT, False)
 
-# ONLY CALLED FROM THE TWO FUNCTIONS ABOVE
 def is_editable(file_path, layout=None):
     ''' Returns True if the file at the passed path is not a directory, and has jekyll
         front matter with the passed layout.
@@ -719,7 +718,6 @@ def make_directory_columns(clone, branch_name, repo_path=None, showallfiles=Fals
 
     return dir_listings
 
-
 def publish_or_destroy_activity(branch_name, action):
     ''' Publish, abandon, or clobber the activity defined by the passed branch name.
     '''
@@ -772,7 +770,7 @@ def publish_or_destroy_activity(branch_name, action):
         return redirect('/')
 
 def make_kwargs_for_activity_files_page(repo, branch_name, path):
-    ''' Render a page that shows an activity's files.
+    ''' Assemble the kwargs for a page that shows an activity's files.
     '''
     # :NOTE: temporarily turning off filtering if 'showallfiles=true' is in the request
     showallfiles = request.args.get('showallfiles') == u'true'
@@ -934,27 +932,33 @@ def add_article_or_category(repo, dir_path, request_path, create_what):
 def strip_index_file(file_path):
     return re.sub(r'index.{}$'.format(CONTENT_FILE_EXTENSION), '', file_path)
 
-def delete_page(repo, path, request_path):
-    ''' Delete a category or article
+def delete_page(repo, browse_path, target_path):
+    ''' Delete a category or article.
+
+        browse_path is where you are when issuing the deletion request; it's
+                    used to figure out where to redirect if you're deleting
+                    the directory you're in.
+
+        target_path is the location of the object that needs to be deleted.
     '''
     # construct the commit message
-    commit_message = make_delete_display_commit_message(repo, request_path)
+    commit_message = make_delete_display_commit_message(repo, target_path)
 
     # delete the file(s)
-    candidate_file_paths = list_contained_files(repo, request_path)
-    deleted_file_paths, do_save = delete_file(repo, request_path)
+    candidate_file_paths = list_contained_files(repo, target_path)
+    deleted_file_paths, do_save = delete_file(repo, target_path)
 
     # add details to the commit message
     file_files = u'files' if len(candidate_file_paths) > 1 else u'file'
     commit_message = commit_message + u'\n\ndeleted {} "{}"'.format(file_files, u'", "'.join(candidate_file_paths))
 
     # if we're in the path that's been deleted, redirect to the first still-existing directory in the path
-    path_dirs = path.split('/')
-    req_dirs = request_path.split('/')
+    path_dirs = browse_path.split('/')
+    req_dirs = target_path.split('/')
     if len(path_dirs) >= len(req_dirs) and path_dirs[len(req_dirs) - 1] == req_dirs[-1]:
         redirect_path = u'/'.join(req_dirs[:-1])
     else:
-        redirect_path = path
+        redirect_path = browse_path
 
     return redirect_path, do_save, commit_message
 
