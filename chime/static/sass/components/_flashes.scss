@@ -1,15 +1,43 @@
 .flash-holder {
-	.flashes {
-		padding: .5em 1em;
-	}
+	padding: 0;
+	margin: 0;
+}
+
+.flashes {
+	margin: 0;
 }
 
 .flash {
-	padding: .5em 1em;
+	padding: 1em $site-margins;
+	font-size: $text-font-size;
+	color: #fff;
+	&:before {
+		content: '';
+		font-family: "FontAwesome";
+		display: inline-block;
+		margin-right: 1em;
+	}
+}
+
+.flash--notice {
+	background-color: $color-green-400;
+	&:before {
+		content: '\f05a';
+	}
 }
 
 .flash--warning {
-	background-color: $color-red-100;
-	border: 1px solid $color-red-200;
-	color: $color-red-400;
+	background-color: $color-orange-400;
+
+	&:before {
+		content: '\f06a';
+	}
+}
+
+.flash--error {
+	background-color: $color-red-400;
+
+	&:before {
+		content: '\f057';
+	}
 }

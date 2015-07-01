@@ -461,6 +461,10 @@ th {
 
 /* line 10, ../sass/core/_layout.scss */
 .row {
+  -webkit-flex-shrink: 0;
+  -moz-flex-shrink: 0;
+  flex-shrink: 0;
+  -ms-flex-negative: 0;
   width: 100%;
   position: relative;
   padding-top: 1em;
@@ -477,28 +481,28 @@ th {
 .row:after {
   clear: both;
 }
-/* line 21, ../sass/core/_layout.scss */
+/* line 22, ../sass/core/_layout.scss */
 .lt-ie10 .row {
   display: block;
 }
 
-/* line 26, ../sass/core/_layout.scss */
+/* line 27, ../sass/core/_layout.scss */
 .row__left {
   float: left;
 }
 
-/* line 30, ../sass/core/_layout.scss */
+/* line 31, ../sass/core/_layout.scss */
 .row__right {
   float: right;
 }
 
-/* line 34, ../sass/core/_layout.scss */
+/* line 35, ../sass/core/_layout.scss */
 .row__center {
   margin-left: auto;
   margin-right: auto;
 }
 
-/* line 41, ../sass/core/_layout.scss */
+/* line 42, ../sass/core/_layout.scss */
 .col {
   display: -webkit-box;
   display: -moz-box;
@@ -527,12 +531,12 @@ th {
   justify-content: stretch;
   -ms-flex-pack: stretch;
 }
-/* line 45, ../sass/core/_layout.scss */
+/* line 46, ../sass/core/_layout.scss */
 .lt-ie10 .col {
   display: block;
 }
 
-/* line 50, ../sass/core/_layout.scss */
+/* line 51, ../sass/core/_layout.scss */
 .col__flex {
   -webkit-box-flex: 1;
   -moz-box-flex: 1;
@@ -1289,21 +1293,56 @@ button.button {
   right: 2em;
 }
 
-/* line 2, ../sass/components/_flashes.scss */
-.flash-holder .flashes {
-  padding: .5em 1em;
+/* line 1, ../sass/components/_flashes.scss */
+.flash-holder {
+  padding: 0;
+  margin: 0;
 }
 
-/* line 7, ../sass/components/_flashes.scss */
+/* line 6, ../sass/components/_flashes.scss */
+.flashes {
+  margin: 0;
+}
+
+/* line 10, ../sass/components/_flashes.scss */
 .flash {
-  padding: .5em 1em;
+  padding: 1em 40px;
+  font-size: 16px;
+  color: #fff;
+}
+/* line 14, ../sass/components/_flashes.scss */
+.flash:before {
+  content: '';
+  font-family: "FontAwesome";
+  display: inline-block;
+  margin-right: 1em;
 }
 
-/* line 11, ../sass/components/_flashes.scss */
+/* line 22, ../sass/components/_flashes.scss */
+.flash--notice {
+  background-color: #33b390;
+}
+/* line 24, ../sass/components/_flashes.scss */
+.flash--notice:before {
+  content: '\f05a';
+}
+
+/* line 29, ../sass/components/_flashes.scss */
 .flash--warning {
-  background-color: #eed1d7;
-  border: 1px solid #dda4b0;
-  color: #bb4961;
+  background-color: #ec9755;
+}
+/* line 32, ../sass/components/_flashes.scss */
+.flash--warning:before {
+  content: '\f06a';
+}
+
+/* line 37, ../sass/components/_flashes.scss */
+.flash--error {
+  background-color: #bb4961;
+}
+/* line 40, ../sass/components/_flashes.scss */
+.flash--error:before {
+  content: '\f057';
 }
 
 /* line 1, ../sass/components/_global-header.scss */
