@@ -49,6 +49,10 @@ PATTERN_OVERVIEW_ACTIVITY_STARTED = u'<p>The "{activity_name}" activity was star
 PATTERN_OVERVIEW_COMMENT_BODY = u'<div class="comment__body">{comment_body}</div>'
 PATTERN_OVERVIEW_ITEM_DELETED = u'<p>The "{deleted_name}" {deleted_type} {deleted_also}was deleted by {author_email}.</p>'
 
+PATTERN_FLASH_SAVED_CHANGES = u'<li class="flash flash--notice">Saved changes to the file {title}!</li>'
+PATTERN_FORM_CATEGORY_TITLE = u'<input name="en-title" type="text" value="{title}" class="directory-modify__name">'
+PATTERN_FORM_CATEGORY_DESCRIPTION = u'<textarea name="en-description" class="directory-modify__description">{description}</textarea>'
+
 # review stuff
 PATTERN_REQUEST_FEEDBACK_BUTTON = u'<input class="toolbar__item button button--orange" type="submit" name="request_feedback" value="Request Feedback">'
 PATTERN_UNREVIEWED_EDITS_LINK = u'<a href="/tree/{branch_name}/" class="toolbar__item button button--outline">Unreviewed Edits</a>'
@@ -2586,7 +2590,8 @@ class TestApp (TestCase):
                                              data=request_data,
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
-            self.assertTrue(u'Category &#34;hello&#34; already exists' in response.data)
+            response_data = sub('&#34;', '"', response.data.decode('utf-8'))
+            self.assertTrue(u'Category "hello"; already exists' in response_data)
 
             # pull the changes
             self.clone1.git.pull('origin', working_branch.name)
@@ -2836,21 +2841,27 @@ class TestApp (TestCase):
             # get the hexsha
             hexsha = self.clone1.commit().hexsha
 
+            # get the modify page and verify that the form renders with the correct values
+            cat_path = join(categories_slug, cat_slug, u'index.{}'.format(view_functions.CONTENT_FILE_EXTENSION))
+            response = self.test_client.get('/tree/{}/modify/{}'.format(working_branch_name, view_functions.strip_index_file(cat_path)), follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('directory-modify') in response.data)
+            self.assertTrue(PATTERN_FORM_CATEGORY_TITLE.format(title=cat_title) in response.data)
+            self.assertTrue(PATTERN_FORM_CATEGORY_DESCRIPTION.format(description=u'') in response.data)
+
             # now save a new title and description for the category
             new_cat_title = u'Caecum'
             cat_description = u'An intraperitoneal pouch, that is considered to be the beginning of the large intestine.'
-            cat_path = join(categories_slug, cat_slug, u'index.{}'.format(view_functions.CONTENT_FILE_EXTENSION))
-            # [('hexsha', u'cc2e205f50cdef9804b5202c65d9026b5046f2c2'), ('layout', u'category'), ('url-slug', u'categories/duh/fluh/'), ('en-description', u'Stinkle stoop shower fantasy clock dip.'), ('save', u''), ('en-title', u'Storple Stan Frond'), ('order', u'0')]
-
             response = self.test_client.post('/tree/{}/modify/{}'.format(working_branch_name, cat_path),
                                              data={'layout': view_functions.CATEGORY_LAYOUT, 'hexsha': hexsha, 'url-slug': u'{}/{}/'.format(categories_slug, cat_slug),
                                                    'en-title': new_cat_title, 'en-description': cat_description, 'order': u'0', 'save': u''},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # check the returned HTML for the description and title values (format will change as pages are designed)
-            self.assertTrue(u'<li class="flash flash--notice">Saved changes to the file {}!</li>'.format(new_cat_title) in response.data)
-            self.assertTrue(u'<textarea name="en-description" class="directory-modify__description">{}</textarea>'.format(cat_description) in response.data)
-            self.assertTrue(u'<input name="en-title" type="text" value="Caecum" class="directory-modify__name">'.format(new_cat_title) in response.data)
+
+            self.assertTrue(PATTERN_FLASH_SAVED_CHANGES.format(title=new_cat_title) in response.data)
+            self.assertTrue(PATTERN_FORM_CATEGORY_DESCRIPTION.format(description=cat_description) in response.data)
+            self.assertTrue(PATTERN_FORM_CATEGORY_TITLE.format(title=new_cat_title) in response.data)
 
             # pull the changes
             self.clone1.git.pull('origin', working_branch_name)
@@ -2870,6 +2881,69 @@ class TestApp (TestCase):
             # the title saved in the index front matter is displayed on the article list page
             response = self.test_client.get('/tree/{}/edit/{}'.format(working_branch_name, categories_slug), follow_redirects=True)
             self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": cat_slug, "file_title": new_cat_title, "file_type": view_functions.CATEGORY_LAYOUT}) in response.data)
+
+    # in TestApp
+    def test_delete_category(self):
+        ''' A category can be deleted
+        '''
+        fake_author_email = u'erica@example.com'
+        with HTTMock(self.mock_persona_verify):
+            self.test_client.post('/sign-in', data={'email': fake_author_email})
+
+        with HTTMock(self.auth_csv_example_allowed):
+            # start a new branch via the http interface
+            # invokes view_functions/get_repo which creates a clone
+            task_description = u'clasp with front legs and draw up the hind end'
+            task_beneficiary = u'geometridae'
+
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            self.assertTrue(working_branch.name in self.clone1.branches)
+            self.assertTrue(working_branch.name in self.origin.branches)
+            working_branch_name = working_branch.name
+            working_branch.checkout()
+
+            # create a categories directory
+            categories_slug = u'categories'
+            response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': categories_slug},
+                                             follow_redirects=True)
+
+            # and put a new category inside it
+            cat_title = u'Soybean Looper'
+            cat_slug = slugify(cat_title)
+            response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, categories_slug),
+                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': cat_title},
+                                             follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+
+            # pull the changes
+            self.clone1.git.pull('origin', working_branch_name)
+
+            # get the hexsha
+            hexsha = self.clone1.commit().hexsha
+
+            # now delete the category
+            cat_description = u''
+            url_slug = u'{}/{}/'.format(categories_slug, cat_slug)
+            response = self.test_client.post('/tree/{}/modify/{}'.format(working_branch_name, url_slug.rstrip('/')),
+                                             data={'layout': view_functions.CATEGORY_LAYOUT, 'hexsha': hexsha, 'url-slug': url_slug,
+                                                   'en-title': cat_title, 'en-description': cat_description, 'order': u'0', 'delete': u''},
+                                             follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            # check the returned HTML for the description and title values (format will change as pages are designed)
+            response_data = sub('&#34;', '"', response.data.decode('utf-8'))
+            self.assertTrue(u'<li class="flash flash--notice">The "{}" category was deleted</li>'.format(cat_title) in response_data)
+
+            # pull the changes
+            self.clone1.git.pull('origin', working_branch_name)
+
+            # the directory was deleted
+            dir_location = join(self.clone1.working_dir, categories_slug, cat_slug)
+            self.assertFalse(exists(dir_location) and isdir(dir_location))
+
+            # the title is not displayed on the article list page
+            response = self.test_client.get('/tree/{}/edit/{}'.format(working_branch_name, categories_slug), follow_redirects=True)
+            self.assertFalse(PATTERN_FILE_COMMENT.format(**{"file_name": cat_slug, "file_title": cat_title, "file_type": view_functions.CATEGORY_LAYOUT}) in response.data)
 
     # in TestApp
     def test_set_and_retrieve_order_and_description(self):

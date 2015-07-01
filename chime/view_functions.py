@@ -576,7 +576,6 @@ def make_delete_display_commit_message(repo, request_path):
         message_details[display_type]['files'].append(file_details)
         if file_details['is_root']:
             root_file = file_details
-
     commit_message = u'The "{}" {}'.format(root_file['title'], root_file['display_type'])
     if len(targeted_files) > 1:
         message_counts = []
