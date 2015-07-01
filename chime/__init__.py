@@ -101,7 +101,7 @@ def create_app(environ):
                 sns_handler.setLevel(logging.ERROR)
                 logger.addHandler(sns_handler)
             except Exception as e:
-                logger.error("Unexpected failure setting up SNS logging", e)
+                logger.exception("Unexpected failure setting up SNS logging")
 
         logger.info("app config before_first_request: %s" % app.config)
 
