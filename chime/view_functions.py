@@ -20,7 +20,7 @@ from dateutil.relativedelta import relativedelta
 from flask import request, session, current_app, redirect, flash
 from requests import get
 
-from .repo_functions import get_existing_branch, ignore_task_metadata_on_merge, ChimeRepo, ACTIVITY_CREATED_MESSAGE, ACTIVITY_UPDATED_MESSAGE, ACTIVITY_DELETED_MESSAGE, COMMENT_COMMIT_PREFIX
+from .repo_functions import get_existing_branch, ignore_task_metadata_on_merge, get_message_classification, ChimeRepo, ACTIVITY_CREATED_MESSAGE
 from .jekyll_functions import load_jekyll_doc
 from .href import needs_redirect, get_redirect
 
@@ -29,22 +29,19 @@ from fcntl import flock, LOCK_EX, LOCK_UN, LOCK_SH
 # when creating a content file, what extension should it have?
 CONTENT_FILE_EXTENSION = u'markdown'
 
-# the different types of messages that can be displayed in the activity overview
-MESSAGE_TYPE_INFO = u'info'
-MESSAGE_TYPE_COMMENT = u'comment'
-MESSAGE_TYPE_EDIT = u'edit'
-
 # the names of layouts, used in jekyll front matter and also in interface text
 CATEGORY_LAYOUT = 'category'
 ARTICLE_LAYOUT = 'article'
 FOLDER_FILE_TYPE = 'folder'
 FILE_FILE_TYPE = 'file'
 IMAGE_FILE_TYPE = 'image'
-CATEGORY_LAYOUT_PLURAL = 'categories'
-ARTICLE_LAYOUT_PLURAL = 'articles'
-FOLDER_FILE_TYPE_PLURAL = 'folders'
-FILE_FILE_TYPE_PLURAL = 'files'
-IMAGE_FILE_TYPE_PLURAL = 'images'
+LAYOUT_PLURAL_LOOKUP = {
+    CATEGORY_LAYOUT: 'categories',
+    ARTICLE_LAYOUT: 'articles',
+    FOLDER_FILE_TYPE: 'folders',
+    FILE_FILE_TYPE: 'files',
+    IMAGE_FILE_TYPE: 'images'
+}
 
 # files that match these regex patterns will not be shown in the file explorer
 FILE_FILTERS = [
@@ -202,15 +199,8 @@ def index_path_display_type_and_title(file_path):
 def file_type_plural(file_type):
     ''' Get the plural of the passed file type
     '''
-    plural_lookup = {
-        CATEGORY_LAYOUT: CATEGORY_LAYOUT_PLURAL,
-        ARTICLE_LAYOUT: ARTICLE_LAYOUT_PLURAL,
-        FOLDER_FILE_TYPE: FOLDER_FILE_TYPE_PLURAL,
-        FILE_FILE_TYPE: FILE_FILE_TYPE_PLURAL,
-        IMAGE_FILE_TYPE: IMAGE_FILE_TYPE_PLURAL
-    }
-    if file_type in plural_lookup:
-        return plural_lookup[file_type]
+    if file_type in LAYOUT_PLURAL_LOOKUP:
+        return LAYOUT_PLURAL_LOOKUP[file_type]
 
     return file_type
 
@@ -500,7 +490,7 @@ def browserid_hostname_required(route_function):
         browserid_netloc = urlparse(current_app.config['BROWSERID_URL']).netloc
         request_parsed = urlparse(request.url)
         if request_parsed.netloc != browserid_netloc:
-            Logger.info("Redirecting because request_parsed.netloc != browserid_netloc: %s != %s",request_parsed.netloc,browserid_netloc)
+            Logger.info("Redirecting because request_parsed.netloc != browserid_netloc: %s != %s", request_parsed.netloc, browserid_netloc)
             redirect_url = urlunparse((request_parsed.scheme, browserid_netloc, request_parsed.path, request_parsed.params, request_parsed.query, request_parsed.fragment))
             Logger.info("Redirecting to %s", redirect_url)
             return redirect(redirect_url)
@@ -559,14 +549,20 @@ def synched_checkout_required(route_function):
             repo.git.fetch('origin', with_exceptions=True)
 
         checkout = get_repo(current_app)
-        branch_name = branch_var2name(kwargs['branch'])
+
+        # get the branch name from request.form if it's not in kwargs
+        branch_name_raw = kwargs['branch'] if 'branch' in kwargs else None
+        if not branch_name_raw:
+            branch_name_raw = request.form.get('branch', None)
+
+        branch_name = branch_var2name(branch_name_raw)
         master_name = current_app.config['default_branch']
         branch = get_existing_branch(checkout, master_name, branch_name)
 
         if not branch:
             # redirect and flash an error
-            Logger.debug('  branch {} does not exist, redirecting'.format(kwargs['branch']))
-            flash(u'There is no {} branch!'.format(kwargs['branch']), u'warning')
+            Logger.debug('  branch {} does not exist, redirecting'.format(branch_name_raw))
+            flash(u'There is no {} branch!'.format(branch_name_raw), u'warning')
             return redirect('/')
 
         branch.checkout()
@@ -637,23 +633,16 @@ def make_activity_history(repo):
     history = []
     for log_details in pattern.findall(log):
         name, email, date, subject, body = tuple([item.decode('utf-8') for item in log_details])
-        log_item = dict(author_name=name, author_email=email, commit_date=date, commit_subject=subject, commit_body=body, commit_type=get_message_type(subject))
+        commit_category, commit_type, commit_action = get_message_classification(subject, body)
+        log_item = dict(author_name=name, author_email=email, commit_date=date, commit_subject=subject,
+                        commit_body=body, commit_category=commit_category, commit_type=commit_type,
+                        commit_action=commit_action)
         history.append(log_item)
         # don't get any history beyond the creation of the task metadata file, which is the beginning of the activity
         if re.search(r'{}$'.format(ACTIVITY_CREATED_MESSAGE), subject):
             break
 
     return history
-
-def get_message_type(subject):
-    ''' Figure out what type of history log message this is, based on the subject
-    '''
-    if re.search(r'{}$|{}$|{}$'.format(ACTIVITY_CREATED_MESSAGE, ACTIVITY_UPDATED_MESSAGE, ACTIVITY_DELETED_MESSAGE), subject):
-        return MESSAGE_TYPE_INFO
-    elif re.search(r'{}$'.format(COMMENT_COMMIT_PREFIX), subject):
-        return MESSAGE_TYPE_COMMENT
-    else:
-        return MESSAGE_TYPE_EDIT
 
 def sorted_paths(repo, branch_name, path=None, showallfiles=False):
     ''' Returns a list of files and their attributes in the passed directory.

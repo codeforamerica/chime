@@ -4,36 +4,36 @@
 {% block body_class %}{{template_name}}{% endblock %}
 
 {% block content %}
-    <!-- template name: {{template_name}} -->
+    <!-- template name: {{ template_name }} -->
     <div class="activities-list__main grid col__flex">
       <div class="current-tasks grid__item width-two-thirds">
         <h2 class="current-tasks__title">Current Activities</h2>
-        {% if items | length == 0 %}
+        {% if activities | length == 0 %}
 
           <p class="current-tasks__empty-description">Doesn't look like anyone's working on anything at the moment. You should hop to it!</p>
         {% else %}
           <p class="current-tasks__description">Work that's already underway by you and your colleagues.</p>
           <ul class="current-tasks__list">
-          {% for item in items %}
+          {% for activity in activities %}
            <li class="current-task">
-            <p class="current-task__title"><a href="/tree/{{item.path}}/edit/">{{item.task_description}}{% if item.task_beneficiary %} for {{item.task_beneficiary}}{% endif %}</a></p>
+            <p class="current-task__title"><a href="{{ activity.edit_path }}">{{ activity.task_description }}{% if activity.task_beneficiary %} for {{ activity.task_beneficiary }}{% endif %}</a></p>
             <div class="current-task__details row">
-              <p class="current-task__author row__left">Last edited by {{item.last_editor}}</p>
+              <p class="current-task__author row__left">Last edited by {{ activity.last_edited_email }}</p>
               <div class="current-task__actions row__right toolbar--right">
-                  <form action="/merge" method="POST" class="toolbar__item">
-                  {% if item.needs_peer_review and not item.is_eligible_peer %}
-                    <a href="/tree/{{item.path}}" class="button-review button button--orange toolbar__item">Request Feedback</a>
+                  {% if activity.review_authorized %}
+                    {% if activity.review_state == 'unreviewed edits' %}
+                    <a href="{{ activity.overview_path }}" class="toolbar__item button button--outline">Unreviewed Edits</a>
+                    {% elif activity.review_state == 'feedback requested' %}
+                    <a href="{{ activity.overview_path }}" class="toolbar__item button button--outline">Feedback requested</a>
+                    {% elif activity.review_state == 'edits endorsed' %}
+                    <a href="{{ activity.overview_path }}" class="toolbar__item button button--outline">Ready to publish</a>
+                    {% elif activity.review_state == 'changes published' %}
+                    <a href="{{ activity.overview_path }}" class="toolbar__item button button--outline">Published</a>
+                    {% endif %}
                   {% endif %}
-
-                  {% if item.needs_peer_review and item.is_eligible_peer %}
-                    <a href="/tree/{{item.path}}" class="button-review button button--green toolbar__item">Give Feedback</a>
-                  {% endif %}
-
-                  {% if item.is_peer_approved %}
-                    <button name="action" value="merge" type="submit" class="button button--blue button-publish">Publish</button>
-                  {% endif %}
-                    <button name="action" value="abandon" type="submit" class="button button--red toolbar__item">Delete</button>
-                    <input type="hidden" name="branch" value="{{item.name}}">
+                  <form action="/update" method="POST" class="toolbar__item">
+                    <input class="toolbar__item button button--red" type="submit" name="abandon" value="Delete">
+                    <input type="hidden" name="branch" value="{{ activity.safe_branch }}">
                   </form>
                 </div>
               </div>

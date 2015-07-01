@@ -17,5 +17,5 @@ export PATH="$HOME/.rbenv/bin:$PATH"
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 BUNDLE_GEMFILE="${DIR}/Gemfile"; export BUNDLE_GEMFILE
 
-
-bundle exec jekyll $*
+# assumes that the site being built will have a _config.yml file at its root
+bundle exec jekyll $* --config ./_config.yml,${DIR}/_gem-import.yml

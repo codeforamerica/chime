@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
-{% set breadcrumb_items = [{'name': 'Activites', 'url': '/'}, {'name': 'Browse', 'url': task_root_path}] %}
+{% set breadcrumb_items = [{'name': 'Activites', 'url': '/'}, {'name': 'Browse', 'url': activity.edit_path}] %}
 
 {% block title %}Edit Article{% endblock %}
 
 {% set template_name = 'article-edit' %}
-{% block body_class %}{{template_name}}{% endblock %}
+{% block body_class %}{{ template_name }}{% endblock %}
 
 {% block scripts %}
 <!--[if !IE]><!-->
@@ -19,13 +19,13 @@
 {% endblock %}
 
 {% block content %}
-<!-- template name: {{template_name}} -->
-<form action="/tree/{{safe_branch}}/save/{{edit_path}}" method="POST" class="row col__flex col edit-article__form">
+<!-- template name: {{ template_name }} -->
+<form action="{{ save_path }}" method="POST" class="row col__flex col edit-article__form">
 
-    <input name="layout" value="{{front['layout']}}" type="hidden" />
-    <input name="hexsha" value="{{hexsha}}" type="hidden" />
-    <input name="url-slug" type="hidden" value="{{url_slug}}" />
-    <input name="order" type="hidden" value="{{front['order']}}" />
+    <input name="layout" value="{{ front['layout'] }}" type="hidden" />
+    <input name="hexsha" value="{{ hexsha }}" type="hidden" />
+    <input name="url-slug" type="hidden" value="{{ url_slug }}" />
+    <input name="order" type="hidden" value="{{ front['order'] }}" />
 {% for iso in languages %}
     {% if iso == 'en' %}
         {% set form_title = front['title'] %}
@@ -39,32 +39,18 @@
         {% set display_class = 'is-hidden' %}
     {% endif %}
 
-    <input name="{{iso}}-description" type="hidden" value="{{form_description}}" />
+    <input name="{{ iso }}-description" type="hidden" value="{{ form_description }}" />
 
     <div class="edit-article__header row">
         <div class="row__left">
             <div class="selection-box">
                 <label>Article Title</label>
-                <input name="{{iso}}-title" value="{{form_title}}" type="text" class="edit-article__title">
+                <input name="{{ iso }}-title" value="{{ form_title }}" type="text" class="edit-article__title">
             </div>
         </div>
         <div class="row__right toolbar--right">
-<!--             <div class="selection-box toolbar__item">
-                <label>Category</label>
-                <select>
-                    <option value="public-safety">Public Safety</option>
-                    <option value="parks">Parks and Recreation</option>
-                </select>   
-            </div>
-            <div class="selection-box toolbar__item">
-                <label>Subcategory</label>
-                <select>
-                    <option value="public-safety">Crime Reporting and Statistics</option>
-                    <option value="parks">Emergency Services</option>
-                </select>   
-            </div> -->
-            <a href="{{history_path}}" class="button button--green toolbar__item">History</a>
-            <a href="{{view_path}}" target="_blank" class="button button--green toolbar__item">Preview</a>
+            <a href="{{ history_path }}" class="button button--green toolbar__item">History</a>
+            <a href="{{ view_path }}" target="_blank" class="button button--green toolbar__item">Preview</a>
             <input type="submit" class="button button--green toolbar__item" value="Save"/>
         </div>
     </div>    
@@ -73,7 +59,7 @@
             <!--[if !IE]><!-->
             <div class="markdown-bar toolbar toolbar--left"></div>
             <!--<![endif]-->
-            <textarea id="{{iso}}-body" class="col__flex markdown-textarea" name="{{iso}}-body" type="text">{{form_body}}</textarea>
+            <textarea id="{{ iso }}-body" class="col__flex markdown-textarea" name="{{iso}}-body" type="text">{{ form_body }}</textarea>
         </div>
         <!--[if !IE]><!-->
         <div class="edit-article__previewer row__right col">
@@ -96,13 +82,13 @@
                     {% else %}
                         {% set class = 'button' %}
                     {% endif %}
-                    <a href="#" id="{{iso}}-nav" class="{{class}}" onclick="return show{{lang}}Form()">{{lang}}</a>
+                    <a href="#" id="{{ iso }}-nav" class="{{ class }}" onclick="return show{{ lang }}Form()">{{ lang }}</a>
                 {% endfor %}
             {% endif %}
             </div>
             <div class="statistics row__right toolbar--right">
                 {% if app_authorized %}
-                <span class="toolbar__item">This week, <b>{{page_views}} people</b> spent an average of <b>{{average_time_page}} secs</b> on this page.</span>
+                <span class="toolbar__item">This week, <b>{{ page_views }} people</b> spent an average of <b>{{ average_time_page }} secs</b> on this page.</span>
                 {% else %}
                 <a href="/setup" class="toolbar__item button button--outline">Connect to Google Analytics</a>
                 {% endif %}
@@ -114,16 +100,16 @@
     {% for iso in languages %}
         {% set lang = languages[iso] %}
     
-        function show{{lang}}Form()
+        function show{{ lang }}Form()
         {
             {% for other_iso in languages %}
                 {% set other_lang = languages[other_iso] %}
-                document.getElementById('{{other_lang}}-form').style.display = 'none';
-                document.getElementById("{{other_iso}}-nav").className = "nav-tab";
+                document.getElementById('{{ other_lang }}-form').style.display = 'none';
+                document.getElementById("{{ other_iso }}-nav").className = "nav-tab";
             {% endfor %}
 
-            document.getElementById('{{lang}}-form').style.display = 'block';
-            var d = document.getElementById("{{iso}}-nav");
+            document.getElementById('{{ lang }}-form').style.display = 'block';
+            var d = document.getElementById("{{ iso }}-nav");
             d.className = d.className + " state-active";
             return false;
         }

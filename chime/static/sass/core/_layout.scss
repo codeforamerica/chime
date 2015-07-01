@@ -1,4 +1,4 @@
-// This mixin stretches content to fill col__flew containers
+// This mixin stretches content to fill col__flex containers
 @mixin stretch-content() {
 	@include display(flex);
 	@include align-items(stretch);
@@ -9,6 +9,7 @@
 
 .row {
 	@include clearfix();
+	@include flex-shrink(0);
 	width: 100%;
 	position: relative;
 	padding: {
