@@ -626,11 +626,11 @@ def make_activity_history(repo):
     ''' Make an easily-parsable history of an activity since it was created.
     '''
     # see <http://git-scm.com/docs/git-log> for placeholders
-    log_format = '%x00Name: %an\tEmail: %ae\tDate: %ad\tSubject: %s\tBody: %b'
-    pattern = re.compile(r'^\x00Name: (.*?)\tEmail: (.*?)\tDate: (.*?)\tSubject: (.*?)\tBody: (.*?)$', re.MULTILINE)
+    log_format = '%x00Name: %an\tEmail: %ae\tDate: %ad\tSubject: %s\tBody: %b%x00'
     log = repo.git.log('--format={}'.format(log_format), '--date=relative')
 
     history = []
+    pattern = re.compile(r'\x00Name: (.*?)\tEmail: (.*?)\tDate: (.*?)\tSubject: (.*?)\tBody: (.*?)\x00', re.DOTALL)
     for log_details in pattern.findall(log):
         name, email, date, subject, body = tuple([item.decode('utf-8') for item in log_details])
         commit_category, commit_type, commit_action = get_message_classification(subject, body)
