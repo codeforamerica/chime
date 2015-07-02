@@ -11,7 +11,7 @@ def update_page(clone, file_path, front, body):
     full_path = join(clone.working_dir, file_path)
 
     if not exists(full_path):
-        raise Exception()
+        raise Exception(u'Path does not exist: {}'.format(full_path))
 
     with open(full_path, 'w') as file:
         dump_jekyll_doc(front, body, file)
