@@ -1262,6 +1262,10 @@ class TestRepo (TestCase):
         funny_comment = u'I like coconuts ᶘ ᵒᴥᵒᶅ'
         repo_functions.provide_feedback(new_clone, funny_comment)
 
+        # add another comment with newlines
+        newline_comment = u'You wound me sir.\n\nI thought we were friends\nBut I guess we are not.'
+        repo_functions.provide_feedback(new_clone, newline_comment)
+
         # delete a category with stuff in it
         commit_message = view_functions.make_delete_display_commit_message(new_clone, 'tree')
         candidate_file_paths = edit_functions.list_contained_files(new_clone, 'tree')
@@ -1277,12 +1281,12 @@ class TestRepo (TestCase):
 
         # get and check the history
         activity_history = view_functions.make_activity_history(new_clone)
-        self.assertEqual(len(activity_history), 9)
+        self.assertEqual(len(activity_history), 10)
 
         # check the creation of the activity
         check_item = activity_history.pop()
         self.assertEqual(u'The "{}" activity was started'.format(task_description), check_item['commit_subject'])
-        self.assertEqual(u'Created task metadata file "_task.yml"', check_item['commit_body'])
+        self.assertEqual(u'Created task metadata file "{}"\nSet author_email to {}\nSet task_description to {}\nSet task_beneficiary to {}'.format(repo_functions.TASK_METADATA_FILENAME, fake_author_email, task_description, task_beneficiary), check_item['commit_body'])
         self.assertEqual(repo_functions.MESSAGE_TYPE_ACTIVITY_UPDATE, check_item['commit_type'])
 
         # check the delete
@@ -1291,7 +1295,12 @@ class TestRepo (TestCase):
         self.assertEqual(u'deleted files "{}", "{}", "{}"'.format(updated_details[0][3], updated_details[1][3], updated_details[2][3]), check_item['commit_body'])
         self.assertEqual(repo_functions.MESSAGE_TYPE_EDIT, check_item['commit_type'])
 
-        # check the comment
+        # check the comments
+        check_item = activity_history.pop(0)
+        self.assertEqual(u'Provided feedback.', check_item['commit_subject'])
+        self.assertEqual(newline_comment, check_item['commit_body'])
+        self.assertEqual(repo_functions.MESSAGE_TYPE_COMMENT, check_item['commit_type'])
+
         check_item = activity_history.pop(0)
         self.assertEqual(u'Provided feedback.', check_item['commit_subject'])
         self.assertEqual(funny_comment, check_item['commit_body'])
@@ -1303,6 +1312,51 @@ class TestRepo (TestCase):
             self.assertEqual(u'The "{}" {} was created'.format(check_detail[1], check_detail[2]), check_item['commit_subject'])
             self.assertEqual(u'created new file {}'.format(check_detail[3]), check_item['commit_body'])
             self.assertEqual(repo_functions.MESSAGE_TYPE_EDIT, check_item['commit_type'])
+
+    # in TestRepo
+    def test_newlines_in_commit_message_body(self):
+        ''' Newlines in the commit message body are preserved.
+        '''
+        # start a new branch
+        fake_author_email = u'erica@example.com'
+        task_description = u'cling to a rock and scrape bacteria and algae off of it with a radula'
+        task_beneficiary = u'mollusks'
+
+        source_repo = self.origin
+        first_commit = list(source_repo.iter_commits())[-1].hexsha
+        dir_name = 'repo-{}-{}'.format(first_commit[:8], slugify(fake_author_email))
+        user_dir = realpath(join(self.work_path, quote(dir_name)))
+
+        if isdir(user_dir):
+            new_clone = ChimeRepo(user_dir)
+            new_clone.git.reset(hard=True)
+            new_clone.remotes.origin.fetch()
+        else:
+            new_clone = source_repo.clone(user_dir, bare=False)
+
+        # tell git to ignore merge conflicts on the task metadata file
+        repo_functions.ignore_task_metadata_on_merge(new_clone)
+
+        working_branch = repo_functions.get_start_branch(new_clone, 'master', task_description, task_beneficiary, fake_author_email)
+        self.assertTrue(working_branch.name in new_clone.branches)
+        self.assertTrue(working_branch.name in self.origin.branches)
+        working_branch.checkout()
+
+        # add some comments with newlines
+        striking_comment = u'A striking feature of molluscs is the use of the same organ for multiple functions.\n(و ˃̵ᴗ˂̵)و\n\nFor example, the heart and nephridia ("kidneys") are important parts of the reproductive system, as well as the circulatory and excretory systems\nᶘ ᵒᴥᵒᶅ'
+        repo_functions.provide_feedback(new_clone, striking_comment)
+
+        universal_comment = u'The three most universal features defining modern molluscs are:\n\n1. A mantle with a significant cavity used for breathing and excretion,\n\n2. the presence of a radula, and\n\n3. the structure of the nervous system.'
+        repo_functions.provide_feedback(new_clone, universal_comment)
+
+        # checkout
+        working_branch.checkout()
+
+        _, universal_body = repo_functions.get_commit_message_subject_and_body(working_branch.commit)
+        _, striking_body = repo_functions.get_commit_message_subject_and_body(working_branch.commit.parents[0])
+
+        self.assertEqual(universal_comment, universal_body)
+        self.assertEqual(striking_comment, striking_body)
 
     # in TestRepo
     def test_delete_full_folders(self):

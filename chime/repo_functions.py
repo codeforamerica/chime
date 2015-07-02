@@ -577,11 +577,11 @@ def get_message_classification(subject, body):
 def get_commit_message_subject_and_body(commit):
     ''' split a commit's message into subject and body
     '''
-    commit_split = commit.message.split('\n')
+    commit_split = commit.message.split('\n\n', 1)
     # extract the subject and body of the commit
     # (subject & body are separated by two '\n's)
     commit_subject = commit_split[0]
-    commit_body = commit_split[2] if len(commit_split) >= 3 else u''
+    commit_body = commit_split[1] if len(commit_split) > 1 else u''
     return commit_subject, commit_body
 
 def get_last_review_commit(repo, working_branch_name, base_commit_hexsha):
