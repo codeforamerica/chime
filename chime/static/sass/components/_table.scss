@@ -12,4 +12,9 @@ table {
 		color: $color-grey-800;
 		border-bottom: 1px solid $color-grey-300;
 	}
+	tr:last-of-type {
+		td {
+			border-bottom: 0;
+		}
+	}
 }

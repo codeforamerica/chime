@@ -120,6 +120,18 @@ button.button {
 	}
 }
 
+.button--text {
+	background-color: transparent;
+	border: 1px solid transparent;
+	border-radius: 0;
+	&:hover, &:active, &.is-selected {
+		background-color: transparent;
+		border-color: transparent;
+		border-bottom: 1px solid #000;
+		color: #000;
+	}
+}
+
 .button--large {
 	font-size: $h4-font-size;
 	font-weight: 300;

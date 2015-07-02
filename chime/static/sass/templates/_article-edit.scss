@@ -24,7 +24,6 @@
 
 .edit-article__editor {
 	width: 50%;
-	max-width: 800px;
 	background-color: $color-grey-50;
 	border-right: 1px solid $color-grey-300;
 
@@ -59,6 +58,7 @@
 
 .edit-article__previewer {
 	width: 50%;
+	background-color: $color-grey-100;
 }
 
 .previewer__content {
@@ -70,6 +70,13 @@
 		max-height: 700px;
 	}
 }
+
+.previewer__hints {
+	font-weight: 400;
+	padding: $site-margins*1.5;
+	overflow: auto;
+}
+
 
 .previewer__iframe-container {
 	width: 100%;

@@ -8,8 +8,10 @@
 {% block body_class %}{{ template_name }}{% endblock %}
 
 {% block scripts %}
-<!--[if !IE]><!-->
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script src="/static/javascript/markdown-hints.js"></script>
+
+<!--[if !IE]><!-->
 <script src="/static/javascript/undo.js"></script>
 <script src="/static/javascript/markdown-bar.js"></script>
 <script src="/static/javascript/markdown.min.js"></script>
@@ -49,8 +51,8 @@
             </div>
         </div>
         <div class="row__right toolbar--right">
-            <a href="{{ history_path }}" class="button button--green toolbar__item">History</a>
-            <a href="{{ view_path }}" target="_blank" class="button button--green toolbar__item">Preview</a>
+            <a href="{{ history_path }}" class="button button--outline toolbar__item">History</a>
+            <a href="{{ view_path }}" target="_blank" class="button button--outline toolbar__item">Preview</a>
             <input type="submit" class="button button--green toolbar__item" value="Save"/>
         </div>
     </div>    
@@ -61,15 +63,91 @@
             <!--<![endif]-->
             <textarea id="{{ iso }}-body" class="col__flex markdown-textarea" name="{{iso}}-body" type="text">{{ form_body }}</textarea>
         </div>
-        <!--[if !IE]><!-->
         <div class="edit-article__previewer row__right col">
+            <div class="previewer__bar col__item">
+                <div class="toolbar toolbar--right">
+                    <a href="#" class="button button--outline" id="toggle-hints">Formatting Hints</a>
+                </div>
+            </div>
+            <!--[if !IE]><!-->
             <div class="col__flex previewer__content">
                 <div class="previewer__iframe-container">
                     <iframe src="/static/markdown-previewer/markdown-preview.html" class="markdown-previewer"></iframe>
                 </div>
             </div>
+            <!--<![endif]-->
+
+            <div class="col__flex previewer__hints">
+                <table class="hint-table">
+                    <thead>
+                        <tr>
+                            <th>Formatting Syntax</th>
+                            <th>Output</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="hint">
+                            <td class="hint__code">**bold text**</td>
+                            <td class="hint__preview"><b>bold text</b></td>
+                        </tr>
+                        <tr class="hint">
+                            <td class="hint__code">_italic text_</td>
+                            <td class="hint__preview"><i>italic text</i></td>
+                        </tr>
+                        <tr class="hint">
+                            <td class="hint__code">(link text)[url]</td>
+                            <td class="hint__preview"><a href="#">link text</a></td>
+                        </tr>
+                        <tr class="hint">
+                            <td class="hint__code"># Level 1 Heading</td>
+                            <td class="hint__preview"><h1>Level 1 Heading</h1></td>
+                        </tr>
+                        <tr class="hint">
+                            <td class="hint__code">## Level 2 Heading</td>
+                            <td class="hint__preview"><h2>Level 2 Heading</h2></td>
+                        </tr>
+                        <tr class="hint">
+                            <td class="hint__code">### Level 3 Heading</td>
+                            <td class="hint__preview"><h3>Level 3 Heading</h3></td>
+                        </tr>
+                        <tr class="hint">
+                            <td class="hint__code">
+                                <p>- bulleted list item</p>
+                                <p>- bulleted list item</p>
+                                <p>- bulleted list item</p>
+                            </td>
+                            <td class="hint__preview">
+                                <ul>
+                                    <li>bulleted list item</li>
+                                    <li>bulleted list item</li>
+                                    <li>bulleted list item</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr class="hint">
+                            <td class="hint__code">
+                                <p>1. numbered list item</p>
+                                <p>1. numbered list item</p>
+                                <p>1. numbered list item</p>
+                            </td>
+                            <td class="hint__preview">
+                                <ol>
+                                    <li>numbered list item</li>
+                                    <li>numbered list item</li>
+                                    <li>numbered list item</li>
+                                </ol>
+                            </td>
+                        </tr>
+                        <tr class="hint">
+                            <td class="hint__code">> blockquote text</td>
+                            <td class="hint__preview">
+                                <blockquote>Blockquote Text</blockquote>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
-        <!--<![endif]-->
     </div>
     <div class="edit-article__footer row">
             <div class="translations row__left toolbar--left">

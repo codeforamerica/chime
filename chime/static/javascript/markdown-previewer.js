@@ -3,7 +3,7 @@ function Editor(title, content, preview) {
 	var self = this;
 
 	this.updatePreviewHeight = function() {
-		$(preview).height($(preview).contents().find('html').height());
+		$(preview).height($(preview).contents().height());
 	}
 
   this.updateContent = function() {
@@ -38,4 +38,8 @@ function Editor(title, content, preview) {
 
 $(function() {
 		var markdownEditor = new Editor($('.edit-article__title'), $(".markdown-textarea"), $(".markdown-previewer"));
+
+    // If markdown previewer is loaded, hide hints by default.
+    $('.previewer__hints').addClass('is-hidden');
+    $('#toggle-hints').removeClass('is-selected');
 });

@@ -450,11 +450,16 @@ th {
 }
 
 /* line 42, ../sass/core/_utilities.scss */
+.is-hidden {
+  display: none;
+}
+
+/* line 46, ../sass/core/_utilities.scss */
 .text-red {
   color: #aa1c3a !important;
 }
 
-/* line 46, ../sass/core/_utilities.scss */
+/* line 50, ../sass/core/_utilities.scss */
 .text-green {
   color: #00a175 !important;
 }
@@ -537,6 +542,23 @@ th {
 }
 
 /* line 51, ../sass/core/_layout.scss */
+.col__item {
+  -webkit-flex-shrink: 0;
+  -moz-flex-shrink: 0;
+  flex-shrink: 0;
+  -ms-flex-negative: 0;
+}
+/* line 7, ../sass/core/_utilities.scss */
+.col__item:before, .col__item:after {
+  content: " ";
+  display: table;
+}
+/* line 11, ../sass/core/_utilities.scss */
+.col__item:after {
+  clear: both;
+}
+
+/* line 57, ../sass/core/_layout.scss */
 .col__flex {
   -webkit-box-flex: 1;
   -moz-box-flex: 1;
@@ -845,6 +867,10 @@ table td {
   color: #424242;
   border-bottom: 1px solid #e0e0e0;
 }
+/* line 16, ../sass/components/_table.scss */
+table tr:last-of-type td {
+  border-bottom: 0;
+}
 
 /* line 2, ../sass/components/_forms.scss */
 input[type="text"],
@@ -1145,6 +1171,20 @@ button.button {
 }
 
 /* line 123, ../sass/components/_buttons.scss */
+.button--text {
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-radius: 0;
+}
+/* line 127, ../sass/components/_buttons.scss */
+.button--text:hover, .button--text:active, .button--text.is-selected {
+  background-color: transparent;
+  border-color: transparent;
+  border-bottom: 1px solid #000;
+  color: #000;
+}
+
+/* line 135, ../sass/components/_buttons.scss */
 .button--large {
   font-size: 18px;
   font-weight: 300;
@@ -1659,6 +1699,45 @@ button.button {
   border-right: 4px solid transparent;
 }
 
+/* line 2, ../sass/components/_markdown-hints.scss */
+.hint-table td {
+  vertical-align: top;
+}
+
+/* line 8, ../sass/components/_markdown-hints.scss */
+.hint ul, .hint ol {
+  margin: 0;
+  margin-left: 1em;
+}
+/* line 12, ../sass/components/_markdown-hints.scss */
+.hint ul {
+  list-style-type: disc;
+}
+/* line 15, ../sass/components/_markdown-hints.scss */
+.hint ol {
+  list-style-type: decimal;
+}
+/* line 18, ../sass/components/_markdown-hints.scss */
+.hint blockquote {
+  border-left: 4px solid #bdbdbd;
+  margin-left: 0;
+  padding: 0 2em;
+}
+/* line 24, ../sass/components/_markdown-hints.scss */
+.hint h1, .hint h2, .hint h3 {
+  margin: 0;
+}
+
+/* line 29, ../sass/components/_markdown-hints.scss */
+.hint__code {
+  font-family: "Source Code Pro", "Monaco", "Courier New", mono;
+}
+/* line 31, ../sass/components/_markdown-hints.scss */
+.hint__code p {
+  font-size: 14px;
+  margin: 0;
+}
+
 /*------------------------------------*\
     # Templates
 \*------------------------------------*/
@@ -1988,12 +2067,11 @@ button.button {
 /* line 25, ../sass/templates/_article-edit.scss */
 .edit-article__editor {
   width: 50%;
-  max-width: 800px;
   background-color: #fafafa;
   border-right: 1px solid #e0e0e0;
 }
 
-/* line 33, ../sass/templates/_article-edit.scss */
+/* line 32, ../sass/templates/_article-edit.scss */
 .markdown-textarea {
   -webkit-box-flex: 1;
   -moz-box-flex: 1;
@@ -2017,19 +2095,20 @@ button.button {
   overflow: auto;
   padding: 2em;
 }
-/* line 50, ../sass/templates/_article-edit.scss */
+/* line 49, ../sass/templates/_article-edit.scss */
 .markdown-textarea:focus {
   background-color: transparent;
 }
-/* line 54, ../sass/templates/_article-edit.scss */
+/* line 53, ../sass/templates/_article-edit.scss */
 .lt-ie10 .markdown-textarea {
   min-height: 300px;
   max-height: 700px;
 }
 
-/* line 60, ../sass/templates/_article-edit.scss */
+/* line 59, ../sass/templates/_article-edit.scss */
 .edit-article__previewer {
   width: 50%;
+  background-color: #f5f5f5;
 }
 
 /* line 64, ../sass/templates/_article-edit.scss */
@@ -2044,11 +2123,18 @@ button.button {
 }
 
 /* line 74, ../sass/templates/_article-edit.scss */
+.previewer__hints {
+  font-weight: 400;
+  padding: 60px;
+  overflow: auto;
+}
+
+/* line 81, ../sass/templates/_article-edit.scss */
 .previewer__iframe-container {
   width: 100%;
 }
 
-/* line 78, ../sass/templates/_article-edit.scss */
+/* line 85, ../sass/templates/_article-edit.scss */
 .markdown-previewer {
   -webkit-appearance: none;
   -moz-appearance: none;
@@ -2062,7 +2148,7 @@ button.button {
   border: 1px solid #e0e0e0;
 }
 
-/* line 87, ../sass/templates/_article-edit.scss */
+/* line 94, ../sass/templates/_article-edit.scss */
 .previewer__bar {
   background-color: #f5f5f5;
   border-bottom: 1px solid #e0e0e0;
@@ -2074,7 +2160,7 @@ button.button {
   user-select: none;
 }
 
-/* line 95, ../sass/templates/_article-edit.scss */
+/* line 102, ../sass/templates/_article-edit.scss */
 .edit-article__footer {
   -webkit-flex-shrink: 0;
   -moz-flex-shrink: 0;
@@ -2086,7 +2172,7 @@ button.button {
   border-top: 1px solid #e0e0e0;
 }
 
-/* line 105, ../sass/templates/_article-edit.scss */
+/* line 112, ../sass/templates/_article-edit.scss */
 .statistics {
   color: #616161;
 }
