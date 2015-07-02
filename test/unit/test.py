@@ -1130,6 +1130,50 @@ class TestRepo (TestCase):
             self.assertEqual(u'created new file {}'.format(check_detail[3]), check_item['commit_body'])
             self.assertEqual(repo_functions.MESSAGE_TYPE_EDIT, check_item['commit_type'])
 
+    def test_newlines_in_commit_message_body(self):
+        ''' Newlines in the commit message body are preserved.
+        '''
+        # start a new branch
+        fake_author_email = u'erica@example.com'
+        task_description = u'cling to a rock and scrape bacteria and algae off of it with a radula'
+        task_beneficiary = u'mollusks'
+
+        source_repo = self.origin
+        first_commit = list(source_repo.iter_commits())[-1].hexsha
+        dir_name = 'repo-{}-{}'.format(first_commit[:8], slugify(fake_author_email))
+        user_dir = realpath(join(self.work_path, quote(dir_name)))
+
+        if isdir(user_dir):
+            new_clone = ChimeRepo(user_dir)
+            new_clone.git.reset(hard=True)
+            new_clone.remotes.origin.fetch()
+        else:
+            new_clone = source_repo.clone(user_dir, bare=False)
+
+        # tell git to ignore merge conflicts on the task metadata file
+        repo_functions.ignore_task_metadata_on_merge(new_clone)
+
+        working_branch = repo_functions.get_start_branch(new_clone, 'master', task_description, task_beneficiary, fake_author_email)
+        self.assertTrue(working_branch.name in new_clone.branches)
+        self.assertTrue(working_branch.name in self.origin.branches)
+        working_branch.checkout()
+
+        # add some comments with newlines
+        striking_comment = u'A striking feature of molluscs is the use of the same organ for multiple functions.\n(و ˃̵ᴗ˂̵)و\n\nFor example, the heart and nephridia ("kidneys") are important parts of the reproductive system, as well as the circulatory and excretory systems\nᶘ ᵒᴥᵒᶅ'
+        repo_functions.provide_feedback(new_clone, striking_comment)
+
+        universal_comment = u'The three most universal features defining modern molluscs are:\n\n1. A mantle with a significant cavity used for breathing and excretion,\n\n2. the presence of a radula, and\n\n3. the structure of the nervous system.'
+        repo_functions.provide_feedback(new_clone, universal_comment)
+
+        # checkout
+        working_branch.checkout()
+
+        _, universal_body = repo_functions.get_commit_message_subject_and_body(working_branch.commit)
+        _, striking_body = repo_functions.get_commit_message_subject_and_body(working_branch.commit.parents[0])
+
+        self.assertEqual(universal_comment, universal_body)
+        self.assertEqual(striking_comment, striking_body)
+
     def test_delete_full_folders(self):
         ''' Make sure that full folders can be deleted, and that what's reported as deleted matches what's expected.
         '''
