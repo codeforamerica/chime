@@ -1079,6 +1079,10 @@ class TestRepo (TestCase):
         funny_comment = u'I like coconuts ᶘ ᵒᴥᵒᶅ'
         repo_functions.provide_feedback(new_clone, funny_comment)
 
+        # add another comment with newlines
+        newline_comment = u'You wound me sir.\n\nI thought we were friends\nBut I guess we are not.'
+        repo_functions.provide_feedback(new_clone, newline_comment)
+
         # delete a category with stuff in it
         commit_message = view_functions.make_delete_display_commit_message(new_clone, 'tree')
         candidate_file_paths = edit_functions.list_contained_files(new_clone, 'tree')
@@ -1094,12 +1098,12 @@ class TestRepo (TestCase):
 
         # get and check the history
         activity_history = view_functions.make_activity_history(new_clone)
-        self.assertEqual(len(activity_history), 9)
+        self.assertEqual(len(activity_history), 10)
 
         # check the creation of the activity
         check_item = activity_history.pop()
         self.assertEqual(u'The "{}" activity was started'.format(task_description), check_item['commit_subject'])
-        self.assertEqual(u'Created task metadata file "_task.yml"', check_item['commit_body'])
+        self.assertEqual(u'Created task metadata file "{}"\nSet author_email to {}\nSet task_description to {}\nSet task_beneficiary to {}'.format(repo_functions.TASK_METADATA_FILENAME, fake_author_email, task_description, task_beneficiary), check_item['commit_body'])
         self.assertEqual(repo_functions.MESSAGE_TYPE_ACTIVITY_UPDATE, check_item['commit_type'])
 
         # check the delete
@@ -1108,7 +1112,12 @@ class TestRepo (TestCase):
         self.assertEqual(u'deleted files "{}", "{}", "{}"'.format(updated_details[0][3], updated_details[1][3], updated_details[2][3]), check_item['commit_body'])
         self.assertEqual(repo_functions.MESSAGE_TYPE_EDIT, check_item['commit_type'])
 
-        # check the comment
+        # check the comments
+        check_item = activity_history.pop(0)
+        self.assertEqual(u'Provided feedback.', check_item['commit_subject'])
+        self.assertEqual(newline_comment, check_item['commit_body'])
+        self.assertEqual(repo_functions.MESSAGE_TYPE_COMMENT, check_item['commit_type'])
+
         check_item = activity_history.pop(0)
         self.assertEqual(u'Provided feedback.', check_item['commit_subject'])
         self.assertEqual(funny_comment, check_item['commit_body'])
