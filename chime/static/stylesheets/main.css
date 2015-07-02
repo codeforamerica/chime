@@ -2209,3 +2209,51 @@ input[type="submit"]:disabled:hover {
 .history-table__subject {
   font-weight: 700;
 }
+
+/* line 1, ../sass/templates/_error-404.scss */
+.error-404 {
+  background-image: url("../images/error-404-bg.jpg");
+}
+
+/* line 5, ../sass/templates/_error-404.scss */
+.message-404 {
+  position: absolute;
+  top: 50%;
+  width: 600px;
+  margin-top: -5em;
+}
+/* line 10, ../sass/templates/_error-404.scss */
+.message-404 p {
+  font-size: 28px;
+  font-weight: 300;
+  margin: 0;
+}
+/* line 14, ../sass/templates/_error-404.scss */
+.message-404 p a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+/* line 1, ../sass/templates/_error-500.scss */
+.error-500 {
+  background-image: url("../images/error-500-bg.png");
+}
+
+/* line 5, ../sass/templates/_error-500.scss */
+.message-500 {
+  position: absolute;
+  top: 50%;
+  width: 600px;
+  margin-top: -5em;
+}
+/* line 10, ../sass/templates/_error-500.scss */
+.message-500 p {
+  font-size: 28px;
+  font-weight: 300;
+  margin: 0;
+}
+/* line 14, ../sass/templates/_error-500.scss */
+.message-500 p a {
+  color: inherit;
+  text-decoration: underline;
+}

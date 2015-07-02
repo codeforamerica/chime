@@ -1,0 +1,19 @@
+.error-404 {
+    background-image: url('../images/error-404-bg.jpg');
+}
+
+.message-404 {
+    position: absolute;
+    top: 50%;
+    width: 600px;
+    margin-top: -5em;
+    p {
+        font-size: $h2-font-size;
+        font-weight: 300;
+        margin: 0;
+        a {
+            color: inherit;
+            text-decoration: underline;
+        }
+    }
+}

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found{% endblock %}
+
+
+{% set template_name = 'error-404' %}
+{% block body_class %}{{template_name}}{% endblock %}
+
+{% block content %}
+
+<div class="row col__flex message-404">
+  <p>in sunshine or rain</p>
+  <p>sometimes the page isn't found</p>
+  <p>we're sorry, here's <a href="/">home</a></p>
+</div>
+
+{% endblock %}
