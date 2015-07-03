@@ -10,7 +10,7 @@ from glob import glob
 from git import Repo
 from git.cmd import GitCommandError
 from requests import post
-from flask import current_app, flash, render_template, redirect, request, Response, session
+from flask import current_app, flash, render_template, redirect, request, Response, session, abort
 
 from . import chime as app
 from . import repo_functions, edit_functions
@@ -613,19 +613,17 @@ def deploy_key():
     except IOError:
         return Response('Not found.', 404, content_type='text/plain')
 
-@app.route('/error_404', methods=['GET'])
+@app.route('/test404', methods=['GET'])
 @log_application_errors
 def error_404():
     kwargs = common_template_args(current_app.config, session)
     return render_template('error_404.html', **kwargs)
 
-@app.route('/error_500', methods=['GET'])
+@app.route('/test500', methods=['GET'])
 @log_application_errors
 def error_500():
     kwargs = common_template_args(current_app.config, session)
     return render_template('error_500.html', **kwargs)
-
-
 
 @app.route('/<path:path>')
 @log_application_errors
@@ -635,4 +633,9 @@ def all_other_paths(path):
     if should_redirect():
         return make_redirect()
     else:
-        return 'OK'
+        abort(404)
+
+@app.errorhandler(404)
+def page_not_found(error):
+    kwargs = common_template_args(current_app.config, session)
+    return render_template('error_404.html', **kwargs), 404

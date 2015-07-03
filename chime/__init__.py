@@ -8,7 +8,8 @@ logger = getLogger('chime')
 from os import mkdir
 from os.path import realpath, join
 
-from flask import Blueprint, Flask
+from flask import Blueprint, Flask, current_app, render_template, session
+from .view_functions import common_template_args
 
 from .httpd import run_apache_forever
 
@@ -100,10 +101,15 @@ def create_app(environ):
                 sns_handler = SnsHandler(app.config['SNS_ALERTS_TOPIC'])
                 sns_handler.setLevel(logging.ERROR)
                 logger.addHandler(sns_handler)
-            except Exception as e:
+            except Exception:
                 logger.exception("Unexpected failure setting up SNS logging")
 
         logger.info("app config before_first_request: %s" % app.config)
+
+    @app.errorhandler(500)
+    def internal_server_error(error):
+        kwargs = common_template_args(current_app.config, session)
+        return render_template('error_500.html', **kwargs), 500
 
     return AppShim(app)
 
