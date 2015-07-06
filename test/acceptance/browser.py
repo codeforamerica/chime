@@ -5,7 +5,7 @@ __author__ = 'william'
 FIREFOX_LATEST = ["35.0"]
 CHROME_LATEST = ["39.0"]
 
-ALL_SUPPORTED = {
+ALL_BROWSERS = {
     "Windows": {
         "7": {
             "IE": ["8.0", "9.0", "10.0", "11.0"],
@@ -32,12 +32,12 @@ def _digits(string):
 
 class Browser:
     @staticmethod
-    def all_supported():
+    def all_browsers():
         result = []
-        for os in ALL_SUPPORTED:
-            for os_version in ALL_SUPPORTED[os]:
-                for browser in ALL_SUPPORTED[os][os_version]:
-                    for browser_version in ALL_SUPPORTED[os][os_version][browser]:
+        for os in ALL_BROWSERS:
+            for os_version in ALL_BROWSERS[os]:
+                for browser in ALL_BROWSERS[os][os_version]:
+                    for browser_version in ALL_BROWSERS[os][os_version][browser]:
                         result.append(Browser(os, os_version, browser, browser_version))
         return result
 
@@ -46,7 +46,7 @@ class Browser:
         if "/" in string:
             lumps = string.split('/')
             partials = [Browser._filter_for(lump) for lump in lumps]
-            return lambda browser: reduce(lambda x,y: x and y(browser), partials, True)
+            return lambda browser: reduce(lambda x, y: x and y(browser), partials, True)
 
         string = string.lower()
         items = []
@@ -60,18 +60,24 @@ class Browser:
             version = _digits(string)
             if version:
                 items.append(lambda b: b.os_version == version)
+        else:
+            raise ValueError('Unknown browser description "{}"'.format(string))
 
-        return lambda b: reduce(lambda x,y: x and y(b), items, True)
+        return lambda b: reduce(lambda x, y: x and y(b), items, True)
 
     @staticmethod
     def from_string(string):
         if not string:
             return None
         if string == 'all':
-            return Browser.all_supported()
+            return Browser.all_browsers()
+        elif string == 'supported':
+            result = Browser.all_browsers()
+            result.remove(Browser('Windows', '8.1', "IE", "11.0")) # currently disabling due to a strange test issue
+            return result
         else:
-            filter = Browser._filter_for(string)
-            return [b for b in (Browser.all_supported()) if filter(b)]
+            chosen_filter = Browser._filter_for(string)
+            return [b for b in (Browser.all_browsers()) if chosen_filter(b)]
 
     def __init__(self, os, os_version, browser, browser_version):
         self.os = os
@@ -79,27 +85,27 @@ class Browser:
         self.browser = browser
         self.browser_version = browser_version
 
-    def as_browserstack_capabilities(self,other_info=None):
+    def as_browserstack_capabilities(self, other_info=None):
         result = other_info or {}
         result = result.copy()
         result.update({'os': self.os, 'os_version': self.os_version, 'browser': self.browser,
-                                'browser_version': self.browser_version})
+                       'browser_version': self.browser_version})
         return result
 
-    def as_saucelabs_capabilities(self,other_info=None):
+    def as_saucelabs_capabilities(self, other_info=None):
         result = other_info or {}
         result = result.copy()
         if self.browser == 'IE':
             browser_name = 'internet explorer'
         elif self.browser == 'Chrome':
             browser_name = 'chrome'
-        elif self.browser =='Firefox':
+        elif self.browser == 'Firefox':
             browser_name = 'firefox'
         else:
             raise ValueError
 
         result.update({'platform': self.os + " " + self.os_version, 'browserName': browser_name,
-                                'version': self.browser_version})
+                       'version': self.browser_version})
         return result
 
     def safe_name(self):
@@ -108,7 +114,8 @@ class Browser:
     def _interesting_fields(self):
         return [self.os, self.os_version, self.browser, self.browser_version]
 
-    def _safe_text(self,text):
+    @staticmethod
+    def _safe_text(text):
         return re.sub('\W', '', re.sub('[.]', '_', text.lower()))
 
     def __eq__(self, other):
@@ -118,5 +125,3 @@ class Browser:
 
     def __str__(self):
         return " ".join(self._interesting_fields())
-
-

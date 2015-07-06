@@ -18,7 +18,7 @@ from acceptance.browser import Browser
 from acceptance.chime_test_case import ChimeTestCase
 
 
-BROWSERS_TO_TRY = Browser.from_string(os.environ.get('BROWSERS_TO_TEST'))
+BROWSERS_TO_TRY = Browser.from_string(os.environ.get('BROWSERS_TO_TEST', "").strip().lower())
 TEST_REPETITIONS = int(os.environ.get('TEST_REPETITIONS',"1"))
 TEST_RETRY_COUNT = int(os.environ.get('TEST_RETRY_COUNT',"1"))
 

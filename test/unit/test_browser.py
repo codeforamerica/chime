@@ -1,9 +1,7 @@
-import sys
-from os.path import abspath, join, dirname
-from acceptance.browser import Browser
-
 import unittest
 from unittest import TestCase
+
+from acceptance.browser import Browser
 
 
 class TestBrowser(TestCase):
@@ -45,7 +43,7 @@ class TestBrowser(TestCase):
             browser.as_browserstack_capabilities(other_info))
         self.assertEqual(1, len(other_info.keys()))
 
-    def test_from_string(self):
+    def test_from_string_basic(self):
         browsers = Browser.from_string("all")
         self.assertEqual(9, len(browsers))
 
@@ -54,6 +52,15 @@ class TestBrowser(TestCase):
 
         browsers = Browser.from_string("")
         self.assertEqual(None, browsers)
+
+    def test_from_string_unknown(self):
+        with self.assertRaises(ValueError):
+            Browser.from_string("arglebargle")
+
+    def test_from_string_supported(self):
+        browsers = Browser.from_string("supported")
+        self.assertEqual(8, len(browsers))
+        self.assertFalse(Browser('Windows', '8.1', "IE", '11.0') in browsers)
 
     def test_from_string_with_browser(self):
         browsers = Browser.from_string("ie8")
