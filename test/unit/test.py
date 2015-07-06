@@ -21,11 +21,12 @@ from slugify import slugify
 repo_root = abspath(join(dirname(__file__), '..'))
 sys.path.insert(0, repo_root)
 
+from bs4 import BeautifulSoup
 from git.cmd import GitCommandError
 from box.util.rotunicode import RotUnicode
 from httmock import response, HTTMock
 from mock import MagicMock
-
+            
 from chime import (
     create_app, jekyll_functions, repo_functions, edit_functions,
     google_api_functions, view_functions, publish,
@@ -1849,20 +1850,14 @@ class TestApps (TestCase):
         repo_functions.ignore_task_metadata_on_merge(self.upstream)
         self.origin = self.upstream.clone(mkdtemp(prefix='repo-origin-', dir=self.work_path), bare=True)
         repo_functions.ignore_task_metadata_on_merge(self.origin)
-        self.clone1 = self.origin.clone(mkdtemp(prefix='repo-clone-', dir=self.work_path))
-        repo_functions.ignore_task_metadata_on_merge(self.clone1)
 
-        fake_author_email = u'erica@example.com'
-        self.session = dict(email=fake_author_email)
-
-        environ['GIT_AUTHOR_NAME'] = ' '
-        environ['GIT_COMMITTER_NAME'] = ' '
-        environ['GIT_AUTHOR_EMAIL'] = self.session['email']
-        environ['GIT_COMMITTER_EMAIL'] = self.session['email']
+        #environ['GIT_AUTHOR_NAME'] = ' '
+        #environ['GIT_COMMITTER_NAME'] = ' '
+        #environ['GIT_AUTHOR_EMAIL'] = u'erica@example.com'
+        #environ['GIT_COMMITTER_EMAIL'] = u'erica@example.com'
 
         create_app_environ = {}
 
-        create_app_environ['SINGLE_USER'] = 'Yes'
         create_app_environ['GA_CLIENT_ID'] = 'client_id'
         create_app_environ['GA_CLIENT_SECRET'] = 'meow_secret'
 
@@ -1906,7 +1901,7 @@ class TestApps (TestCase):
         else:
             return self.auth_csv_example_allowed(url, request)
 
-    def test_login(self):
+    def test_editing_process(self):
         ''' Check basic log in / log out flow without talking to Persona.
         '''
         response = self.test_client.get('/')
@@ -1920,11 +1915,111 @@ class TestApps (TestCase):
             response = self.test_client.get('/')
             self.assertTrue('Start' in response.data)
 
-            response = self.test_client.post('/sign-out')
+            # Start a new task, "Diving for Dollars".
+            
+            response = self.test_client.post('/start', data={'task_description': 'Diving', 'task_beneficiary': 'Dollars'})
+            self.assertEqual(response.status_code, 303)
+            
+            # Visit the Activity file browser.
+            
+            redirect = urlparse(response.headers['Location']).path
+            response = self.test_client.get(redirect)
+            self.assertEqual(response.status_code, 200)
+            
+            # Look for a link to the categores, here called "other".
+            
+            soup = BeautifulSoup(response.data)
+            link = soup.find(lambda tag: bool(tag.name == 'a' and tag['href'] == '/tree/9313f09/edit/other'))
+            response = self.test_client.get(link['href'])
+            self.assertEqual(response.status_code, 302) # Watch out for a redirect here.
+            
+            # Drop down into "other", where the categories are?
+            
+            categories_path = urlparse(response.headers['Location']).path
+            response = self.test_client.get(categories_path)
             self.assertEqual(response.status_code, 200)
 
-            response = self.test_client.get('/')
-            self.assertFalse('Start' in response.data)
+            # Create a new category "Ninjas".
+            
+            soup = BeautifulSoup(response.data)
+            input = soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add Category'))
+            form = input.find_parent('form')
+            self.assertEqual(form['method'].upper(), 'POST')
+
+            data = {i['name']: i.get('value') for i in form.find_all('input')}
+            data[input['name']] = 'Ninjas'
+            
+            add_category_path = urlparse(urljoin(categories_path, form['action'])).path
+            response = self.test_client.post(add_category_path, data=data)
+            self.assertEqual(response.status_code, 303)
+            
+            # Drop down into "Ninjas" where the subcategories are.
+            
+            category_path = urlparse(response.headers['Location']).path
+            response = self.test_client.get(category_path)
+            self.assertEqual(response.status_code, 200)
+            
+            # Create a new category "Flipping Out".
+            
+            soup = BeautifulSoup(response.data)
+            input = soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add Subcategory'))
+            form = input.find_parent('form')
+            self.assertEqual(form['method'].upper(), 'POST')
+            
+            data = {i['name']: i.get('value') for i in form.find_all('input')}
+            data[input['name']] = 'Flipping Out'
+            
+            add_subcategory_path = urlparse(urljoin(category_path, form['action'])).path
+            response = self.test_client.post(add_subcategory_path, data=data)
+            self.assertEqual(response.status_code, 303)
+            
+            # Drop down into "Flipping Out" where the articles are.
+            
+            articles_path = urlparse(response.headers['Location']).path
+            response = self.test_client.get(articles_path)
+            self.assertEqual(response.status_code, 200)
+            
+            # Create a new article "So Awesome".
+            
+            soup = BeautifulSoup(response.data)
+            input = soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add Article'))
+            form = input.find_parent('form')
+            self.assertEqual(form['method'].upper(), 'POST')
+            
+            data = {i['name']: i.get('value') for i in form.find_all('input')}
+            data[input['name']] = 'So Awesome'
+            
+            add_article_path = urlparse(urljoin(articles_path, form['action'])).path
+            response = self.test_client.post(add_article_path, data=data)
+            self.assertEqual(response.status_code, 303)
+            
+            # View the new article.
+
+            article_path = urlparse(response.headers['Location']).path
+            response = self.test_client.get(article_path)
+            self.assertEqual(response.status_code, 200)
+            
+            # Edit the new article.
+            
+            soup = BeautifulSoup(response.data)
+            body = soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'en-body'))
+            form = body.find_parent('form')
+            title = form.find(lambda tag: bool(tag.name == 'input' and tag.get('name') == 'en-title'))
+            button = form.find(lambda tag: bool(tag.name == 'input' and tag.get('value') == 'Save'))
+            self.assertEqual(form['method'].upper(), 'POST')
+            
+            data = {i['name']: i.get('value')
+                    for i in form.find_all(['input', 'button', 'textarea'])
+                    if i.get('type') != 'submit'}
+            
+            data[title['name']] = 'So, So Awesome'
+            data[body['name']] = 'It was the best of times.'
+            
+            edit_article_path = urlparse(urljoin(article_path, form['action'])).path
+            response = self.test_client.post(edit_article_path, data=data)
+            self.assertEqual(response.status_code, 303)
+            
+            # Now what?
 
 class TestApp (TestCase):
 
