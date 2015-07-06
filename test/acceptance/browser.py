@@ -65,12 +65,13 @@ class Browser:
 
     @staticmethod
     def from_string(string):
-        all = Browser.all_supported()
+        if not string:
+            return None
         if string == 'all':
-            return all
+            return Browser.all_supported()
         else:
             filter = Browser._filter_for(string)
-            return [b for b in all if filter(b)]
+            return [b for b in (Browser.all_supported()) if filter(b)]
 
     def __init__(self, os, os_version, browser, browser_version):
         self.os = os

@@ -48,10 +48,17 @@ class TestBrowser(TestCase):
             browser.as_browserstack_capabilities(other_info))
         self.assertEqual(1, len(other_info.keys()))
 
-    def test_from_string_for_browser(self):
+    def test_from_string(self):
         browsers = Browser.from_string("all")
         self.assertEqual(9, len(browsers))
 
+        browsers = Browser.from_string(None)
+        self.assertEqual(None, browsers)
+
+        browsers = Browser.from_string("")
+        self.assertEqual(None, browsers)
+
+    def test_from_string_with_browser(self):
         browsers = Browser.from_string("ie8")
         self.assertEqual([Browser('Windows', '7', "IE", '8.0')], browsers)
 
