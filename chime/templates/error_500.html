@@ -9,9 +9,22 @@
 {% block content %}
 
 <div class="row col__flex message-500">
-  <p>it seems something broke</p>
-  <p>sorry to rain on your day</p>
-  <p><a href="mailto:frances@codeforamerica.org">let us know</a> perhaps</p>
+{% if message %}<p>{{ message }}</p>{% endif %}
+    <p>it seems something broke</p>
+    <p>sorry to rain on your day</p>
+    <p><a href="mailto:frances@codeforamerica.org">let us know</a> perhaps</p>
+    <ul>
+    {% for file in new_files %}
+        <li>{{ file }} <i>new</i></li>
+    {% endfor %}
+    {% for file in gone_files %}
+        <li>{{ file }} <i>gone</i></li>
+    {% endfor %}
+    {% for file in changed_files %}
+        <li>{{ file }} <i>changed</i></li>
+    {% endfor %}
+    </ul>
+
 </div>
 
 {% endblock %}
