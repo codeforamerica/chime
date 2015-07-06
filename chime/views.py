@@ -634,8 +634,3 @@ def all_other_paths(path):
         return make_redirect()
     else:
         abort(404)
-
-@app.errorhandler(404)
-def page_not_found(error):
-    kwargs = common_template_args(current_app.config, session)
-    return render_template('error_404.html', **kwargs), 404
