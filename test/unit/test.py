@@ -1835,6 +1835,67 @@ class TestAppConfig (TestCase):
         self.assertEqual(template_args['support_email'], fake_support_email)
         self.assertEqual(template_args['support_phone_number'], fake_support_phone_number)
 
+class TestApps (TestCase):
+    
+    def setUp(self):
+        self.work_path = mkdtemp(prefix='chime-repo-clones-')
+        print 'self.work_path:', self.work_path
+
+        repo_path = dirname(abspath(__file__)) + '/../test-app.git'
+        upstream_repo_dir = mkdtemp(prefix='repo-upstream-', dir=self.work_path)
+        upstream_repo_path = join(upstream_repo_dir, 'test-app.git')
+        copytree(repo_path, upstream_repo_path)
+        self.upstream = ChimeRepo(upstream_repo_path)
+        repo_functions.ignore_task_metadata_on_merge(self.upstream)
+        self.origin = self.upstream.clone(mkdtemp(prefix='repo-origin-', dir=self.work_path), bare=True)
+        repo_functions.ignore_task_metadata_on_merge(self.origin)
+        self.clone1 = self.origin.clone(mkdtemp(prefix='repo-clone-', dir=self.work_path))
+        repo_functions.ignore_task_metadata_on_merge(self.clone1)
+
+        fake_author_email = u'erica@example.com'
+        self.session = dict(email=fake_author_email)
+
+        environ['GIT_AUTHOR_NAME'] = ' '
+        environ['GIT_COMMITTER_NAME'] = ' '
+        environ['GIT_AUTHOR_EMAIL'] = self.session['email']
+        environ['GIT_COMMITTER_EMAIL'] = self.session['email']
+
+        create_app_environ = {}
+
+        create_app_environ['SINGLE_USER'] = 'Yes'
+        create_app_environ['GA_CLIENT_ID'] = 'client_id'
+        create_app_environ['GA_CLIENT_SECRET'] = 'meow_secret'
+
+        self.ga_config_dir = mkdtemp(prefix='chime-config-', dir=self.work_path)
+        create_app_environ['RUNNING_STATE_DIR'] = self.ga_config_dir
+        create_app_environ['WORK_PATH'] = self.work_path
+        create_app_environ['REPO_PATH'] = self.origin.working_dir
+        create_app_environ['AUTH_DATA_HREF'] = 'http://example.com/auth.csv'
+        create_app_environ['BROWSERID_URL'] = 'http://localhost'
+        create_app_environ['LIVE_SITE_URL'] = 'http://example.org/'
+
+        self.app = create_app(create_app_environ)
+
+        # write a tmp config file
+        config_values = {
+            "access_token": "meowser_token",
+            "refresh_token": "refresh_meows",
+            "profile_id": "12345678",
+            "project_domain": ""
+        }
+        with self.app.app_context():
+            google_api_functions.write_ga_config(config_values, self.app.config['RUNNING_STATE_DIR'])
+
+        random.choice = MagicMock(return_value="P")
+
+        self.test_client = self.app.test_client()
+
+    def tearDown(self):
+        pass # rmtree(self.work_path)
+    
+    def test_poop(self):
+        pass
+
 class TestApp (TestCase):
 
     def setUp(self):
