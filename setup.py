@@ -8,7 +8,7 @@ setup(
     description = 'Hashing out some ideas about Git, Jekyll, language, and content management',
     packages = ['chime', 'chime.httpd', 'chime.publish', 'chime.instantiation'],
     package_data = {
-        'chime': []
+        'chime': ['templates/*.html', 'templates/macros/*.html', 'templates/includes/*.html']
     },
     install_requires = [],
     entry_points = dict(
