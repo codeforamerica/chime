@@ -48,6 +48,12 @@
 	}
 }
 
+.col__item {
+	@include clearfix();
+	@include flex-shrink(0);
+
+}
+
 .col__flex {
 	@include flex(1);
 }

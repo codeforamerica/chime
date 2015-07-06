@@ -39,6 +39,10 @@
   }
 }
 
+.is-hidden {
+  display: none;
+}
+
 .text-red {
   color: $color-red-500 !important;
 }
