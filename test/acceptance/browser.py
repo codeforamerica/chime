@@ -21,6 +21,15 @@ ALL_SUPPORTED = {
 
 }
 
+
+def _digits(string):
+    results = re.findall(r'[.0-9]+', string)
+    if results:
+        return results[0]
+    else:
+        pass
+
+
 class Browser:
     @staticmethod
     def all_supported():
@@ -33,12 +42,35 @@ class Browser:
         return result
 
     @staticmethod
+    def _filter_for(string):
+        if "/" in string:
+            lumps = string.split('/')
+            partials = [Browser._filter_for(lump) for lump in lumps]
+            return lambda browser: reduce(lambda x,y: x and y(browser), partials, True)
+
+        string = string.lower()
+        items = []
+        if string.startswith('ie'):
+            items.append(lambda b: b.browser == 'IE')
+            version = _digits(string)
+            if version:
+                items.append(lambda b: b.browser_version == version + '.0')
+        elif string.startswith('win'):
+            items.append(lambda b: b.os == 'Windows')
+            version = _digits(string)
+            if version:
+                items.append(lambda b: b.os_version == version)
+
+        return lambda b: reduce(lambda x,y: x and y(b), items, True)
+
+    @staticmethod
     def from_string(string):
         all = Browser.all_supported()
         if string == 'all':
             return all
-        if string == 'ie8':
-            return [b for b in all if b.browser == 'IE' and b.browser_version == '8.0']
+        else:
+            filter = Browser._filter_for(string)
+            return [b for b in all if filter(b)]
 
     def __init__(self, os, os_version, browser, browser_version):
         self.os = os
@@ -46,11 +78,27 @@ class Browser:
         self.browser = browser
         self.browser_version = browser_version
 
-    def as_selenium_capabilities(self,other_info=None):
+    def as_browserstack_capabilities(self,other_info=None):
         result = other_info or {}
         result = result.copy()
         result.update({'os': self.os, 'os_version': self.os_version, 'browser': self.browser,
                                 'browser_version': self.browser_version})
+        return result
+
+    def as_saucelabs_capabilities(self,other_info=None):
+        result = other_info or {}
+        result = result.copy()
+        if self.browser == 'IE':
+            browser_name = 'internet explorer'
+        elif self.browser == 'Chrome':
+            browser_name = 'chrome'
+        elif self.browser =='Firefox':
+            browser_name = 'firefox'
+        else:
+            raise ValueError
+
+        result.update({'platform': self.os + " " + self.os_version, 'browserName': browser_name,
+                                'version': self.browser_version})
         return result
 
     def safe_name(self):

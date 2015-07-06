@@ -127,7 +127,7 @@ def _load_hosts():
     try:
         with open(hostfile, 'r') as f:
             hosts = f.read().split(',')
-        return [h for h in hosts if h != '']
+        return [h.strip() for h in hosts if h != '']
     except IOError:
         return []
 
