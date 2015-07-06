@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en-us">
 <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
         <link rel="stylesheet" type="text/css" href="//cloud.webtype.com/css/944a7551-9b08-4f0a-8767-e0f83db4a16b.css" />
@@ -11,7 +12,7 @@
         <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
         <meta http-equiv="X-UA-Compatible" content="IE=Edge">
         {% if config.get('ACCEPTANCE_TEST_MODE', False) %}
-        <script src="http://toolness.github.io/stubbyid/stubbyid.js"></script>
+        <script src="/static/javascript/stubbyid.js"></script>
         {% else %}
         <script src="https://login.persona.org/include.js"></script>
         {% endif %}

@@ -108,11 +108,11 @@ def not_allowed():
     Logger.info("Redirecting from /not-allowed to /")
     return redirect('/')
 
-@app.route('/sign-in', methods=['POST'])
+@app.route('/sign-in', methods=['POST', 'GET'])
 @log_application_errors
 def sign_in():
     if current_app.config['ACCEPTANCE_TEST_MODE']:
-        session['email'] = request.form.get('assertion')
+        session['email'] = request.values.get('assertion')
         Logger.info("bypassing auth")
     else:
         success, email = _verify_persona_assertion(request.form.get('assertion'))
