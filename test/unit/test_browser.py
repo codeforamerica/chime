@@ -39,7 +39,6 @@ class TestBrowser(TestCase):
              'browserName': 'internet explorer', 'version': '8.0', 'foo': 'bar'},
             browser.as_saucelabs_capabilities({'foo': 'bar'}))
 
-
     def test_doesnt_mutate_extra_info(self):
         browser = Browser('Windows', '7', "IE", '8.0')
         other_info = {'foo': 'bar'}
@@ -76,8 +75,6 @@ class TestBrowser(TestCase):
     def test_as_string(self):
         browser = Browser('Windows', '7', 'IE', '8.0')
         self.assertEqual('Windows 7 IE 8.0', str(browser))
-
-
 
 
 if __name__ == '__main__':
