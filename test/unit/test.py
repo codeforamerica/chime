@@ -1893,8 +1893,38 @@ class TestApps (TestCase):
     def tearDown(self):
         pass # rmtree(self.work_path)
     
-    def test_poop(self):
-        pass
+    def auth_csv_example_allowed(self, url, request):
+        if url.geturl() == 'http://example.com/auth.csv':
+            return response(200, '''Email domain,Organization\nexample.com,Example Org''')
+
+        raise Exception('Asked for unknown URL ' + url.geturl())
+
+    def mock_persona_verify(self, url, request):
+        if url.geturl() == 'https://verifier.login.persona.org/verify':
+            return response(200, '''{"status": "okay", "email": "erica@example.com"}''', headers=dict(Link='<https://api.github.com/user/337792/repos?page=1>; rel="prev", <https://api.github.com/user/337792/repos?page=1>; rel="first"'))
+
+        else:
+            return self.auth_csv_example_allowed(url, request)
+
+    def test_login(self):
+        ''' Check basic log in / log out flow without talking to Persona.
+        '''
+        response = self.test_client.get('/')
+        self.assertFalse('Start' in response.data)
+
+        with HTTMock(self.mock_persona_verify):
+            response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
+            self.assertEqual(response.status_code, 200)
+
+        with HTTMock(self.auth_csv_example_allowed):
+            response = self.test_client.get('/')
+            self.assertTrue('Start' in response.data)
+
+            response = self.test_client.post('/sign-out')
+            self.assertEqual(response.status_code, 200)
+
+            response = self.test_client.get('/')
+            self.assertFalse('Start' in response.data)
 
 class TestApp (TestCase):
 
