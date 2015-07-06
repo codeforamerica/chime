@@ -2,9 +2,6 @@ import sys
 from os.path import abspath, join, dirname
 from acceptance.browser import Browser
 
-repo_root = abspath(join(dirname(__file__), '..'))
-sys.path.insert(0, repo_root)
-
 import unittest
 from unittest import TestCase
 
