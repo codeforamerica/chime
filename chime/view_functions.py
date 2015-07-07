@@ -748,14 +748,7 @@ def publish_or_destroy_activity(branch_name, action):
             publish.release_commit(current_app.config['RUNNING_STATE_DIR'], repo, repo.commit().hexsha)
 
     except MergeConflict as conflict:
-        new_files, gone_files, changed_files = conflict.files()
-
-        kwargs = common_template_args(current_app.config, session)
-        kwargs.update(branch=branch_name, new_files=new_files,
-                      gone_files=gone_files, changed_files=changed_files,
-                      activity=activity)
-
-        return render_template('merge-conflict.html', **kwargs)
+        raise conflict
 
     else:
         activity_blurb = u'the "{task_description}" activity for {task_beneficiary}'.format(task_description=activity['task_description'], task_beneficiary=activity['task_beneficiary'])
@@ -1102,7 +1095,7 @@ def save_page(repo, default_branch_name, working_branch_name, path, new_values):
         Logger.debug('  {}'.format(repr(conflict.remote_commit.tree[path].data_stream.read())))
         Logger.debug('2 {}'.format(conflict.local_commit))
         Logger.debug('  {}'.format(repr(conflict.local_commit.tree[path].data_stream.read())))
-        raise
+        raise conflict
 
     return path, True
 

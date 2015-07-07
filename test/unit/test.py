@@ -779,8 +779,8 @@ class TestRepo (TestCase):
         _, _, changed_files = conflict.exception.files()
 
         self.assertEqual(len(changed_files), 1)
-        self.assertEqual(changed_files[0], 'conflict.md')
-        self.assertEqual(changed_files[0], 'conflict.md')
+        self.assertEqual(changed_files[0]['name'], 'conflict.md')
+        self.assertEqual(changed_files[0]['path'], 'conflict.md')
 
     # in TestRepo
     def test_conflict_resolution_clobber(self):

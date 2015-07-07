@@ -15,13 +15,13 @@
     <p><a href="mailto:frances@codeforamerica.org">let us know</a> perhaps</p>
     <ul>
     {% for file in new_files %}
-        <li>{{ file }} <i>new</i></li>
+        <li>{{ file.name }} at {{ file.path }} <i>new</i></li>
     {% endfor %}
     {% for file in gone_files %}
-        <li>{{ file }} <i>gone</i></li>
+        <li>{{ file.name }} at {{ file.path }} <i>gone</i></li>
     {% endfor %}
     {% for file in changed_files %}
-        <li>{{ file }} <i>changed</i></li>
+        <li>{{ file.name }} at {{ file.path }} <i>changed</i></li>
     {% endfor %}
     </ul>
 

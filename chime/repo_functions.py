@@ -54,9 +54,9 @@ class MergeConflict (Exception):
     def files(self):
         diffs = self.remote_commit.diff(self.local_commit)
 
-        new_files = [d.b_blob.name for d in diffs if d.new_file]
-        gone_files = [d.a_blob.name for d in diffs if d.deleted_file]
-        changed_files = [d.a_blob.name for d in diffs if not (d.deleted_file or d.new_file)]
+        new_files = [{"name": d.b_blob.name, "path": d.b_blob.path} for d in diffs if d.new_file]
+        gone_files = [{"name": d.a_blob.name, "path": d.a_blob.path} for d in diffs if d.deleted_file]
+        changed_files = [{"name": d.a_blob.name, "path": d.a_blob.path} for d in diffs if not (d.deleted_file or d.new_file)]
 
         return new_files, gone_files, changed_files
 
