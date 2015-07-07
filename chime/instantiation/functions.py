@@ -14,7 +14,8 @@ from boto.route53 import Route53Connection
 from boto.ec2.blockdevicemapping import BlockDeviceMapping, BlockDeviceType
 from oauth2client.client import OAuth2WebServerFlow
 from itsdangerous import Signer
-import gspread, requests
+import gspread
+import requests
 
 GITHUB_API_BASE = 'https://api.github.com/'
 GDOCS_API_BASE = 'https://www.googleapis.com/drive/v2/files/'
@@ -34,7 +35,7 @@ def check_repo_state(reponame, token):
     auth = token, 'x-oauth-basic'
     path = '/repos/chimecms/{}'.format(reponame)
     resp = requests.get(urljoin(GITHUB_API_BASE, path), auth=auth)
-    
+
     return bool(resp.status_code == 200)
 
 def get_input(environ):
@@ -42,7 +43,7 @@ def get_input(environ):
     '''
     github_client_id = environ['GITHUB_CLIENT_ID']
     github_client_secret = environ['GITHUB_CLIENT_SECRET']
-    
+
     gdocs_client_id = environ['GDOCS_CLIENT_ID']
     gdocs_client_secret = environ['GDOCS_CLIENT_SECRET']
 
@@ -56,10 +57,10 @@ def get_input(environ):
 
     ec2 = EC2Connection()
     route53 = Route53Connection()
-    
+
     return github_client_id, github_client_secret, \
-           gdocs_client_id, gdocs_client_secret, \
-           username, password, reponame, ec2, route53
+        gdocs_client_id, gdocs_client_secret, \
+        username, password, reponame, ec2, route53
 
 def authenticate_google(gdocs_client_id, gdocs_client_secret):
     '''
@@ -69,7 +70,7 @@ def authenticate_google(gdocs_client_id, gdocs_client_secret):
 
         # http://stackoverflow.com/questions/24293523/im-trying-to-access-google-drive-through-the-cli-but-keep-getting-not-authori
         'https://docs.google.com/feeds',
-        ]
+    ]
 
     flow = OAuth2WebServerFlow(gdocs_client_id, gdocs_client_secret, scopes)
     flow_info = flow.step1_get_device_and_user_codes()
@@ -81,7 +82,7 @@ def authenticate_google(gdocs_client_id, gdocs_client_secret):
 
     raw_input()
     credentials = flow.step2_exchange(device_flow_info=flow_info)
-    
+
     print('--> Google Docs authentication OK')
     return credentials
 
@@ -103,7 +104,7 @@ def create_google_spreadsheet(credentials, reponame):
     url = urljoin(GDOCS_API_BASE, new_id)
     new_title = 'Chime CMS logins for {reponame}'.format(**locals())
     patch = dict(title=new_title)
-    
+
     gc = gspread.authorize(credentials)
     gc.session.request('PATCH', url, json.dumps(patch), headers=headers)
 
@@ -134,7 +135,7 @@ def create_google_spreadsheet(credentials, reponame):
 
 def get_github_authorization(client_id, client_secret, auth):
     ''' Create a new authorization with Github.
-        
+
         https://developer.github.com/v3/oauth_authorizations/#create-a-new-authorization
     '''
     info = dict(
@@ -142,7 +143,7 @@ def get_github_authorization(client_id, client_secret, auth):
         note='Chime setup script',
         client_id=client_id,
         client_secret=client_secret
-        )
+    )
 
     url = urljoin(GITHUB_API_BASE, '/authorizations')
     resp = requests.post(url, json.dumps(info), auth=auth)
@@ -152,12 +153,12 @@ def get_github_authorization(client_id, client_secret, auth):
     temporary_token = resp.json().get('token')
 
     print('--> Github authorization OK')
-    
-    return auth_id, temporary_token 
+
+    return auth_id, temporary_token
 
 def verify_github_authorization(client_id, client_secret, temporary_token, auth_id):
     ''' Verify status of Github authorization.
-        
+
         https://developer.github.com/v3/oauth_authorizations/#check-an-authorization
     '''
     path = '/applications/{client_id}/tokens/{token}'
@@ -178,10 +179,11 @@ def create_ec2_instance(ec2, reponame, sheet_url, client_id, client_secret, toke
             github_temporary_token=token,
             github_repo=reponame,
             auth_data_href=sheet_url
-            )
+        )
 
     device_sda1 = BlockDeviceType(size=16, delete_on_termination=True)
-    device_map = BlockDeviceMapping(); device_map['/dev/sda1'] = device_sda1
+    device_map = BlockDeviceMapping()
+    device_map['/dev/sda1'] = device_sda1
 
     ec2_args = dict(instance_type='c3.large', user_data=user_data,
                     key_name='cfa-chime-keypair', block_device_map=device_map,
@@ -197,12 +199,12 @@ def create_ec2_instance(ec2, reponame, sheet_url, client_id, client_secret, toke
         sleep(1)
 
     print('--> Available at', instance.dns_name)
-    
+
     return instance
 
 def add_github_webhook(reponame, auth):
     ''' Add a new repository webhook.
-    
+
         https://developer.github.com/v3/repos/hooks/#create-a-hook
     '''
     url = urljoin(GITHUB_API_BASE, '/repos/chimecms/{}/hooks'.format(reponame))
@@ -220,13 +222,13 @@ def get_public_deploy_key(instance_dns_name, secret, salt):
     '''
     signer = Signer(secret, salt)
     path = '/.well-known/deploy-key.txt'
-    
+
     while True:
         print('    Waiting for', path)
         sleep(5)
-    
+
         resp = requests.get('http://{}{}'.format(instance_dns_name, path))
-    
+
         if resp.status_code == 200:
             break
 
@@ -251,17 +253,17 @@ def add_permanent_github_deploy_key(deploy_key, reponame, auth):
         key_url = [k['url'] for k in resp.json() if k['title'] == 'token-key'][0]
         resp = requests.delete(key_url, auth=auth)
         code = resp.status_code
-    
+
         if code not in range(200, 299):
             raise RuntimeError('Github deploy key deletion failed, status {}'.format(code))
-    
+
         print('    Deleted temporary token key')
         resp = requests.post(keys_url, body, headers=head, auth=auth)
         code = resp.status_code
-    
+
         if code not in range(200, 299):
             raise RuntimeError('Github deploy key recreation failed, status {}'.format(code))
-    
+
     elif code not in range(200, 299):
         raise RuntimeError('Github deploy key creation failed, status {}'.format(code))
 
@@ -276,7 +278,7 @@ def delete_temporary_github_authorization(github_auth_id, auth):
     resp = requests.delete(url, auth=auth)
 
     check_status(resp, 'delete authorization {}'.format(github_auth_id))
-    
+
     print('--> Deleted temporary Github token')
 
 def create_cname_record(route53, reponame, cname_value):
@@ -286,7 +288,7 @@ def create_cname_record(route53, reponame, cname_value):
 
     zone = route53.get_zone('chimecms.org')
     zone.add_record('CNAME', cname, cname_value, 60)
-    
+
     print('--> Prepared DNS name', cname)
 
     return cname
@@ -300,7 +302,7 @@ def save_details(credentials, name, cname, instance, reponame, sheet_url, deploy
     instance_query = 'region={}#Instances:instanceId={}'.format(instance.region.name, instance.id)
     instance_url = 'https://console.aws.amazon.com/ec2/v2/home?{}'.format(instance_query)
     github_url = 'https://github.com/chimecms/{}'.format(reponame)
-    
+
     gc = gspread.authorize(credentials)
     doc = gc.open_by_key(CHIME_INSTANCES_LIST)
     sheet = doc.worksheet('Instances')

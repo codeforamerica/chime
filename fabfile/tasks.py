@@ -112,8 +112,6 @@ def test_chime(setup=True, despawn=True, despawn_on_failure=False):
             _despawn(public_dns)
         raise
 
-
-
 def _despawn(public_dns):
     print(green('Despawning EC2 instance'))
     _despawn_instance(public_dns)
@@ -144,7 +142,7 @@ def _strip_host_from_file(host):
     hosts.remove(host)
     with open(hostfile, 'w+') as f:
         for remainder in hosts:
-            f.write(remainder+',')
+            f.write(remainder + ',')
 
 def _connect_to_ec2():
     '''
