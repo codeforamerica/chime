@@ -401,8 +401,7 @@ def log_application_errors(route_function):
             return route_function(*args, **kwargs)
         except Exception as e:
             Logger.error(e, exc_info=True, extra={'request': request})
-            t, v, tb = sys.exc_info()
-            raise t, Exception(u' '.join(["Unable to log application errors.", e.message])), tb
+            raise
 
     return decorated_function
 
