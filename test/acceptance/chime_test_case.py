@@ -1,8 +1,9 @@
+import os
 from unittest import TestCase, SkipTest
 from unittest.case import _ExpectedFailure, _UnexpectedSuccess
 import sys
 import warnings
-
+from acceptance.browser import Browser
 
 class ChimeTestCase(TestCase):
     def run(self, result=None):
@@ -105,4 +106,42 @@ class ChimeTestCase(TestCase):
 
     def onFailure(self, exception_info):
         pass
+
+
+def rewrite_for_all_browsers(test_class, browser_list, times=1, retry_count=1):
+    """
+        Magically make test methods for all desired browsers. Note that this method cannot contain
+        the word 'test' or nose will decide it is worth running.
+    """
+    for name in [n for n in dir(test_class) if n.startswith('test_')]:
+        test_method = getattr(test_class, name)
+        for count in range(1,times+1):
+            for browser in browser_list:
+                new_name = "{name}_{browser}".format(name=name, browser=browser.safe_name())
+                if times > 1:
+                    new_name+= "-{}".format(count)
+                if retry_count<=1:
+                    new_function = lambda instance, browser_to_use=browser: test_method(instance, browser_to_use)
+                else:
+                    def auto_retry(instance, test_method, browser_to_use):
+                        failure_type, failure_value, failure_traceback = None, None, None
+                        for _ in xrange(retry_count):
+                            if failure_type:
+                                sys.stderr.write("ignoring failure {} for {}\n".format(failure_type, test_method))
+                            try:
+                                test_method(instance, browser_to_use)
+                                return # test success means we return doing nothing
+                            except:
+                                failure_type, failure_value, failure_traceback = sys.exc_info()
+                                instance.tearDown()
+                                instance.setUp()
+                                pass
+                        # reaching here means repeated failure, so let's raise the last failure
+                        raise failure_type, failure_value, failure_traceback
+                    new_function = lambda instance, browser_to_use=browser: auto_retry(instance, test_method, browser_to_use)
+
+                new_function.__name__ = new_name
+                setattr(test_class, new_name, new_function)
+        delattr(test_class, name)
+
 

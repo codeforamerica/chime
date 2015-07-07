@@ -15,12 +15,13 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from acceptance.browser import Browser
 
-from acceptance.chime_test_case import ChimeTestCase
+from acceptance.chime_test_case import ChimeTestCase, rewrite_for_all_browsers
 
-
+# All of this test magic should move somewhere else, but I'm not sure where the somewhere else is yet.
 BROWSERS_TO_TRY = Browser.from_string(os.environ.get('BROWSERS_TO_TEST', "").strip().lower())
 TEST_REPETITIONS = int(os.environ.get('TEST_REPETITIONS',"1"))
 TEST_RETRY_COUNT = int(os.environ.get('TEST_RETRY_COUNT',"1"))
+
 
 
 class TestPreview(ChimeTestCase):
@@ -207,46 +208,9 @@ class TestPreview(ChimeTestCase):
         element.send_keys(Keys.PAGE_DOWN)
 
 
-def rewrite_for_all_browsers(browser_list, times=1, retry_count=1):
-    """
-        Magically make test methods for all desired browsers. Note that this method cannot contain
-        the word 'test' or nose will decide it is worth running.
-    """
-    # TODO: find test methods and rewrite them all
-    name = 'test_create_page_and_preview'
-    test_method = getattr(TestPreview, name)
-    for count in range(1,times+1):
-        for browser in browser_list:
-            new_name = "{name}_{browser}".format(name=name, browser=browser.safe_name())
-            if times > 1:
-                new_name+= "-{}".format(count)
-            if retry_count<=1:
-                new_function = lambda instance, browser_to_use=browser: test_method(instance, browser_to_use)
-            else:
-                def auto_retry(instance, test_method, browser_to_use):
-                    failure_type, failure_value, failure_traceback = None, None, None
-                    for _ in xrange(retry_count):
-                        if failure_type:
-                            sys.stderr.write("ignoring failure {} for {}\n".format(failure_type, test_method))
-                        try:
-                            test_method(instance, browser_to_use)
-                            return # test success means we return doing nothing
-                        except:
-                            failure_type, failure_value, failure_traceback = sys.exc_info()
-                            instance.tearDown()
-                            instance.setUp()
-                            pass
-                    # reaching here means repeated failure, so let's raise the last failure
-                    raise failure_type, failure_value, failure_traceback
-                new_function = lambda instance, browser_to_use=browser: auto_retry(instance, test_method, browser_to_use)
-
-            new_function.__name__ = new_name
-            setattr(TestPreview, new_name, new_function)
-    delattr(TestPreview, name)
-
 
 if BROWSERS_TO_TRY:
-    rewrite_for_all_browsers(BROWSERS_TO_TRY, TEST_REPETITIONS, TEST_RETRY_COUNT)
+    rewrite_for_all_browsers(TestPreview, BROWSERS_TO_TRY, TEST_REPETITIONS, TEST_RETRY_COUNT)
 
 if __name__ == '__main__':
     main()
