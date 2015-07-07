@@ -1,36 +1,39 @@
-{% extends "base_new.html" %}
+{% extends "base.html" %}
 {% block title %}Activities{% endblock %}
-{% block body_class %}activities-list{% endblock %}
+{% set template_name = 'activities-list' %}
+{% block body_class %}{{template_name}}{% endblock %}
 
 {% block content %}
+    <!-- template name: {{ template_name }} -->
     <div class="activities-list__main grid col__flex">
       <div class="current-tasks grid__item width-two-thirds">
         <h2 class="current-tasks__title">Current Activities</h2>
-        {% if items | length == 0 %}
+        {% if activities | length == 0 %}
 
           <p class="current-tasks__empty-description">Doesn't look like anyone's working on anything at the moment. You should hop to it!</p>
         {% else %}
           <p class="current-tasks__description">Work that's already underway by you and your colleagues.</p>
           <ul class="current-tasks__list">
-          {% for item in items %}
+          {% for activity in activities %}
            <li class="current-task">
-            <p class="current-task__title"><a href="/tree/{{item.path}}/edit/">{{item.task_description}}{% if item.task_beneficiary %} for {{item.task_beneficiary}}{% endif %}</a> <!--({{item.ahead|count}} ahead, {{item.behind|count}} behind)--></p>
+            <p class="current-task__title"><a href="{{ activity.edit_path }}">{{ activity.task_description }}{% if activity.task_beneficiary %} for {{ activity.task_beneficiary }}{% endif %}</a></p>
             <div class="current-task__details row">
-              <p class="current-task__author row__left">{{item.author_email}}</p>
+              <p class="current-task__author row__left">Last edited by {{ activity.last_edited_email }}</p>
               <div class="current-task__actions row__right toolbar--right">
-                <form action="/merge" method="POST">
-                  <a class="button-edit button toolbar__item" href="/tree/{{item.path}}/edit/">Continue</a>
-                  
-                  {% if item.needs_peer_review %}
-                    <a href="mailto:?to=&amp;subject={{item.review_subject|urlencode}}&amp;body={{item.review_body|urlencode}}" class="button-review button toolbar__item">Submit for review</a>
+                  {% if activity.review_authorized %}
+                    {% if activity.review_state == 'unreviewed edits' %}
+                    <a href="{{ activity.overview_path }}" class="toolbar__item button button--outline">Unreviewed Edits</a>
+                    {% elif activity.review_state == 'feedback requested' %}
+                    <a href="{{ activity.overview_path }}" class="toolbar__item button button--outline">Feedback requested</a>
+                    {% elif activity.review_state == 'edits endorsed' %}
+                    <a href="{{ activity.overview_path }}" class="toolbar__item button button--outline">Ready to publish</a>
+                    {% elif activity.review_state == 'changes published' %}
+                    <a href="{{ activity.overview_path }}" class="toolbar__item button button--outline">Published</a>
+                    {% endif %}
                   {% endif %}
-                  
-                  {% if item.is_peer_approved %}
-                    <button name="action" value="merge" type="submit" class="button button-publish toolbar__item">Publish</button>
-                  {% endif %}
-
-                    <button name="action" value="abandon" type="submit" class="button button--red toolbar__item">Delete</button>
-                    <input type="hidden" name="branch" value="{{item.name}}">
+                  <form action="/update" method="POST" class="toolbar__item">
+                    <input class="toolbar__item button button--red" type="submit" name="abandon" value="Delete">
+                    <input type="hidden" name="branch" value="{{ activity.safe_branch }}">
                   </form>
                 </div>
               </div>
