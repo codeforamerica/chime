@@ -25,7 +25,7 @@
             <p class="activity-overview__details">Last edited by {{ activity.last_edited_email }}.</p>
         </div>
 
-        <ul class="activity-progress">
+        <ul class="activity-progress grid">
             {% set review_step = 0 %}
             {% if activity.review_state == "unreviewed edits" %}
                 {% set review_step = 1 %}
@@ -37,19 +37,19 @@
                 {% set review_step = 4 %}
             {% endif %}
 
-            <li class="activity-progress__item {% if review_step > 0 %}completed{% endif %}">
+            <li class="activity-progress__item {% if review_step > 0 %}completed{% endif %} grid__item width-one-fourth">
                 <div class="activity-progress__icon fa fa-pencil"></div>
                 <p class="activity-progress__label">Edits Made</p>
             </li>
-            <li class="activity-progress__item {% if review_step > 1 %}completed{% endif %}">
+            <li class="activity-progress__item {% if review_step > 1 %}completed{% endif %} grid__item width-one-fourth">
                 <div class="activity-progress__icon fa fa-eye"></div>
                 <p class="activity-progress__label">Feedback Requested</p>
             </li>
-            <li class="activity-progress__item {% if review_step > 2 %}completed{% endif %}">
+            <li class="activity-progress__item {% if review_step > 2 %}completed{% endif %} grid__item width-one-fourth">
                 <div class="activity-progress__icon fa fa-thumbs-o-up"></div>
                 <p class="activity-progress__label">Edits Endorsed</p>
             </li>
-            <li class="activity-progress__item {% if review_step > 3 %}completed{% endif %}">
+            <li class="activity-progress__item {% if review_step > 3 %}completed{% endif %} grid__item width-one-fourth end-row">
                 <div class="activity-progress__icon fa fa-check"></div>
                 <p class="activity-progress__label">Published</p>
             </li>
@@ -93,7 +93,7 @@
                 {% if activity.review_state == 'unreviewed edits' %}
                     {% set comment_note = "request feedback on your work" %}
                 {% elif activity.review_state == 'feedback requested' %}
-                    {% set comment_note = "leave feedback on" + activity.last_edited_email + "'s changes" %}
+                    {% set comment_note = "leave feedback on " + activity.last_edited_email + "'s changes" %}
                 {% elif activity.review_state == 'edits endorsed' %}
                     {% set comment_note = "publish changes to the site" %}
                 {% endif %}

@@ -12,8 +12,8 @@
 }
 
 .edit-article__main {
-	padding: 0;
 	@include stretch-content();
+	padding: 0;
 }
 
 .edit-article__title {

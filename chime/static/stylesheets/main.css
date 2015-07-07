@@ -451,7 +451,7 @@ th {
 
 /* line 42, ../sass/core/_utilities.scss */
 .is-hidden {
-  display: none;
+  display: none !important;
 }
 
 /* line 46, ../sass/core/_utilities.scss */
@@ -464,7 +464,7 @@ th {
   color: #00a175 !important;
 }
 
-/* line 10, ../sass/core/_layout.scss */
+/* line 11, ../sass/core/_layout.scss */
 .row {
   -webkit-flex-shrink: 0;
   -moz-flex-shrink: 0;
@@ -486,28 +486,24 @@ th {
 .row:after {
   clear: both;
 }
-/* line 22, ../sass/core/_layout.scss */
-.lt-ie10 .row {
-  display: block;
-}
 
-/* line 27, ../sass/core/_layout.scss */
+/* line 25, ../sass/core/_layout.scss */
 .row__left {
   float: left;
 }
 
-/* line 31, ../sass/core/_layout.scss */
+/* line 29, ../sass/core/_layout.scss */
 .row__right {
   float: right;
 }
 
-/* line 35, ../sass/core/_layout.scss */
+/* line 33, ../sass/core/_layout.scss */
 .row__center {
   margin-left: auto;
   margin-right: auto;
 }
 
-/* line 42, ../sass/core/_layout.scss */
+/* line 40, ../sass/core/_layout.scss */
 .col {
   display: -webkit-box;
   display: -moz-box;
@@ -536,12 +532,12 @@ th {
   justify-content: stretch;
   -ms-flex-pack: stretch;
 }
-/* line 46, ../sass/core/_layout.scss */
+/* line 44, ../sass/core/_layout.scss */
 .lt-ie10 .col {
   display: block;
 }
 
-/* line 51, ../sass/core/_layout.scss */
+/* line 49, ../sass/core/_layout.scss */
 .col__item {
   -webkit-flex-shrink: 0;
   -moz-flex-shrink: 0;
@@ -558,7 +554,7 @@ th {
   clear: both;
 }
 
-/* line 57, ../sass/core/_layout.scss */
+/* line 55, ../sass/core/_layout.scss */
 .col__flex {
   -webkit-box-flex: 1;
   -moz-box-flex: 1;
@@ -860,12 +856,12 @@ table th, table td {
 /* line 7, ../sass/components/_table.scss */
 table th {
   font-weight: bold;
-  border-bottom: 4px solid #eeeeee;
+  border-bottom: 4px solid #e0e0e0;
 }
 /* line 11, ../sass/components/_table.scss */
 table td {
   color: #424242;
-  border-bottom: 1px solid #eeeeee;
+  border-bottom: 1px solid #e0e0e0;
 }
 /* line 16, ../sass/components/_table.scss */
 table tr:last-of-type td {
@@ -1579,6 +1575,8 @@ input[type="submit"]:disabled:hover {
   margin-top: -1px;
   padding-top: 2em;
   padding-bottom: 1.5em;
+  padding-right: 0;
+  padding-left: 0;
 }
 /* line 7, ../sass/core/_utilities.scss */
 .activity-progress:before, .activity-progress:after {
@@ -1590,20 +1588,12 @@ input[type="submit"]:disabled:hover {
   clear: both;
 }
 
-/* line 14, ../sass/components/_activity-progress.scss */
+/* line 16, ../sass/components/_activity-progress.scss */
 .activity-progress__item {
-  float: left;
-  display: block;
-  margin-right: 1.9356%;
-  width: 23.5483%;
   text-align: center;
   position: relative;
 }
-/* line 89, ../sass/neat/grid/_span-columns.scss */
-.activity-progress__item:last-child {
-  margin-right: 0;
-}
-/* line 18, ../sass/components/_activity-progress.scss */
+/* line 19, ../sass/components/_activity-progress.scss */
 .activity-progress__item:before {
   content: '';
   display: block;
@@ -1616,29 +1606,29 @@ input[type="submit"]:disabled:hover {
   background-color: #eeeeee;
   z-index: 0;
 }
-/* line 31, ../sass/components/_activity-progress.scss */
+/* line 32, ../sass/components/_activity-progress.scss */
 .activity-progress__item:first-child:before {
   display: none;
 }
-/* line 36, ../sass/components/_activity-progress.scss */
+/* line 37, ../sass/components/_activity-progress.scss */
 .activity-progress__item.completed:before {
   background-color: #66c6ac;
 }
 
-/* line 42, ../sass/components/_activity-progress.scss */
+/* line 43, ../sass/components/_activity-progress.scss */
 .activity-progress__label {
   font-size: 14px;
   color: #9e9e9e;
   font-weight: 300;
   margin-bottom: 0;
 }
-/* line 47, ../sass/components/_activity-progress.scss */
+/* line 48, ../sass/components/_activity-progress.scss */
 .completed .activity-progress__label {
   color: #000;
   font-weight: 600;
 }
 
-/* line 53, ../sass/components/_activity-progress.scss */
+/* line 54, ../sass/components/_activity-progress.scss */
 .activity-progress__icon {
   position: relative;
   z-index: 1;
@@ -1651,7 +1641,7 @@ input[type="submit"]:disabled:hover {
   background-color: #eeeeee;
   color: #9e9e9e;
 }
-/* line 64, ../sass/components/_activity-progress.scss */
+/* line 65, ../sass/components/_activity-progress.scss */
 .completed .activity-progress__icon {
   background-color: #33b390;
   color: #fff;
@@ -1905,7 +1895,7 @@ input[type="submit"]:disabled:hover {
   background-color: #fafafa;
   overflow: auto;
 }
-/* line 5, ../sass/core/_layout.scss */
+/* line 6, ../sass/core/_layout.scss */
 .lt-ie10 .activities-list__main {
   display: block;
 }
@@ -2020,7 +2010,7 @@ input[type="submit"]:disabled:hover {
   overflow: auto;
   padding-top: 3em;
 }
-/* line 5, ../sass/core/_layout.scss */
+/* line 6, ../sass/core/_layout.scss */
 .lt-ie10 .activity-overview__container {
   display: block;
 }
@@ -2078,7 +2068,7 @@ input[type="submit"]:disabled:hover {
   -ms-flex-align: stretch;
   padding: 0;
 }
-/* line 5, ../sass/core/_layout.scss */
+/* line 6, ../sass/core/_layout.scss */
 .lt-ie10 .articles-list__main {
   display: block;
 }
@@ -2261,7 +2251,6 @@ input[type="submit"]:disabled:hover {
 
 /* line 14, ../sass/templates/_article-edit.scss */
 .edit-article__main {
-  padding: 0;
   display: -webkit-box;
   display: -moz-box;
   display: box;
@@ -2278,8 +2267,9 @@ input[type="submit"]:disabled:hover {
   -o-align-items: stretch;
   align-items: stretch;
   -ms-flex-align: stretch;
+  padding: 0;
 }
-/* line 5, ../sass/core/_layout.scss */
+/* line 6, ../sass/core/_layout.scss */
 .lt-ie10 .edit-article__main {
   display: block;
 }

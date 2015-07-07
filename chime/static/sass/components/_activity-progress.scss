@@ -8,11 +8,12 @@
 	padding: {
 		top: 2em;
 		bottom: 1.5em;
+		right: 0;
+		left: 0;
 	}
 }
 
 .activity-progress__item {
-	@include span-columns(3);
 	text-align: center;
 	position: relative;
 	&:before {
