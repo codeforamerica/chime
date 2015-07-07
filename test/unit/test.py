@@ -1836,6 +1836,151 @@ class TestAppConfig (TestCase):
         self.assertEqual(template_args['support_email'], fake_support_email)
         self.assertEqual(template_args['support_phone_number'], fake_support_phone_number)
 
+class ChimeTestClient:
+    
+    def __init__(self, client, test):
+        ''' Create a new client, with Flask test client and TestApps instance.
+        '''
+        self.client = client
+        self.test = test
+
+        response = self.client.get('/')
+        self.test.assertFalse('Start' in response.data)
+    
+    def follow_link(self, soup, href):
+        ''' Follow a link after making sure it's present in the page.
+        '''
+        # Look for a link to the categories, here called "other".
+        link = soup.find(lambda tag: bool(tag.name == 'a' and tag['href'] == href))
+        response = self.client.get(link['href'])
+        self.test.assertEqual(response.status_code, 302) # Watch out for a redirect here.
+        
+        # Drop down into "other", where the categories are?
+        redirect = urlparse(response.headers['Location']).path
+        response = self.client.get(redirect)
+        self.test.assertEqual(response.status_code, 200)
+
+        soup = BeautifulSoup(response.data)
+        
+        return redirect, soup
+    
+    def sign_in(self, email):
+        with HTTMock(self.test.mock_persona_verify):
+            response = self.client.post('/sign-in', data={'email': email})
+            self.test.assertEqual(response.status_code, 200)
+
+        response = self.client.get('/')
+        self.test.assertTrue('Start' in response.data)
+    
+    def start_task(self, description, beneficiary):
+        ''' Start a new task and return URL and soup of the resulting page.
+        '''
+        data = {'task_description': description, 'task_beneficiary': beneficiary}
+        response = self.client.post('/start', data=data)
+        self.test.assertEqual(response.status_code, 303)
+        
+        redirect = urlparse(response.headers['Location']).path
+        response = self.client.get(redirect)
+        self.test.assertEqual(response.status_code, 200)
+        
+        return redirect, BeautifulSoup(response.data)
+    
+    def add_category(self, url, soup, category_name):
+        ''' Look for form to add a category, submit it and return URL and soup.
+        '''
+        input = soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add Category'))
+        form = input.find_parent('form')
+        self.test.assertEqual(form['method'].upper(), 'POST')
+
+        data = {i['name']: i.get('value') for i in form.find_all('input')}
+        data[input['name']] = 'Ninjas'
+        
+        add_category_path = urlparse(urljoin(url, form['action'])).path
+        response = self.client.post(add_category_path, data=data)
+        self.test.assertEqual(response.status_code, 303)
+        
+        # Drop down to where the subcategories are.
+        
+        category_path = urlparse(response.headers['Location']).path
+        response = self.client.get(category_path)
+        self.test.assertEqual(response.status_code, 200)
+        
+        return category_path, BeautifulSoup(response.data)
+
+    def add_subcategory(self, url, soup, subcategory_name):
+        ''' Look for form to add a subcategory, submit it and return URL and soup.
+        '''
+        input = soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add Subcategory'))
+        form = input.find_parent('form')
+        self.test.assertEqual(form['method'].upper(), 'POST')
+        
+        data = {i['name']: i.get('value') for i in form.find_all('input')}
+        data[input['name']] = subcategory_name
+        
+        add_subcategory_path = urlparse(urljoin(url, form['action'])).path
+        response = self.client.post(add_subcategory_path, data=data)
+        self.test.assertEqual(response.status_code, 303)
+        
+        # Drop down into the subcategory where the articles are.
+        
+        subcategory_path = urlparse(response.headers['Location']).path
+        response = self.client.get(subcategory_path)
+        self.test.assertEqual(response.status_code, 200)
+        
+        return subcategory_path, BeautifulSoup(response.data)
+        
+    def add_article(self, url, soup, article_name):
+        ''' Look for form to add an article, submit it and return URL and soup.
+        '''
+        # Create a new article.
+        
+        input = soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add Article'))
+        form = input.find_parent('form')
+        self.test.assertEqual(form['method'].upper(), 'POST')
+        
+        data = {i['name']: i.get('value') for i in form.find_all('input')}
+        data[input['name']] = article_name
+        
+        add_article_path = urlparse(urljoin(url, form['action'])).path
+        response = self.client.post(add_article_path, data=data)
+        self.test.assertEqual(response.status_code, 303)
+        
+        # View the new article.
+
+        article_path = urlparse(response.headers['Location']).path
+        response = self.client.get(article_path)
+        self.test.assertEqual(response.status_code, 200)
+        
+        return article_path, BeautifulSoup(response.data)
+    
+    def edit_article(self, url, soup, title, body):
+        ''' Look for form to edit an article, submit it and return URL and soup.
+        '''
+        body = soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'en-body'))
+        form = body.find_parent('form')
+        title = form.find(lambda tag: bool(tag.name == 'input' and tag.get('name') == 'en-title'))
+        button = form.find(lambda tag: bool(tag.name == 'input' and tag.get('value') == 'Save'))
+        self.test.assertEqual(form['method'].upper(), 'POST')
+        
+        data = {i['name']: i.get('value')
+                for i in form.find_all(['input', 'button', 'textarea'])
+                if i.get('type') != 'submit'}
+        
+        data[title['name']] = 'So, So Awesome'
+        data[body['name']] = 'It was the best of times.'
+        
+        edit_article_path = urlparse(urljoin(url, form['action'])).path
+        response = self.client.post(edit_article_path, data=data)
+        self.test.assertEqual(response.status_code, 303)
+        
+        # View the updated article.
+
+        article_path = urlparse(response.headers['Location']).path
+        response = self.client.get(article_path)
+        self.test.assertEqual(response.status_code, 200)
+        
+        return article_path, BeautifulSoup(response.data)
+
 class TestApps (TestCase):
     
     def setUp(self):
@@ -1904,120 +2049,23 @@ class TestApps (TestCase):
     def test_editing_process(self):
         ''' Check basic log in / log out flow without talking to Persona.
         '''
-        response = self.test_client.get('/')
-        self.assertFalse('Start' in response.data)
-
-        with HTTMock(self.mock_persona_verify):
-            response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
-            self.assertEqual(response.status_code, 200)
-
         with HTTMock(self.auth_csv_example_allowed):
-            response = self.test_client.get('/')
-            self.assertTrue('Start' in response.data)
-
+            client = ChimeTestClient(self.test_client, self)
+            client.sign_in('erica@example.com')
+            
             # Start a new task, "Diving for Dollars".
+            _, soup = client.start_task('Diving', 'Dollars')
             
-            response = self.test_client.post('/start', data={'task_description': 'Diving', 'task_beneficiary': 'Dollars'})
-            self.assertEqual(response.status_code, 303)
-            
-            # Visit the Activity file browser.
-            
-            redirect = urlparse(response.headers['Location']).path
-            response = self.test_client.get(redirect)
-            self.assertEqual(response.status_code, 200)
-            
-            # Look for a link to the categores, here called "other".
-            
-            soup = BeautifulSoup(response.data)
-            link = soup.find(lambda tag: bool(tag.name == 'a' and tag['href'] == '/tree/9313f09/edit/other'))
-            response = self.test_client.get(link['href'])
-            self.assertEqual(response.status_code, 302) # Watch out for a redirect here.
-            
-            # Drop down into "other", where the categories are?
-            
-            categories_path = urlparse(response.headers['Location']).path
-            response = self.test_client.get(categories_path)
-            self.assertEqual(response.status_code, 200)
+            # Look for an "other" link that we know about - is it a category?
+            categories_path, soup = client.follow_link(soup, '/tree/9313f09/edit/other')
 
-            # Create a new category "Ninjas".
-            
-            soup = BeautifulSoup(response.data)
-            input = soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add Category'))
-            form = input.find_parent('form')
-            self.assertEqual(form['method'].upper(), 'POST')
-
-            data = {i['name']: i.get('value') for i in form.find_all('input')}
-            data[input['name']] = 'Ninjas'
-            
-            add_category_path = urlparse(urljoin(categories_path, form['action'])).path
-            response = self.test_client.post(add_category_path, data=data)
-            self.assertEqual(response.status_code, 303)
-            
-            # Drop down into "Ninjas" where the subcategories are.
-            
-            category_path = urlparse(response.headers['Location']).path
-            response = self.test_client.get(category_path)
-            self.assertEqual(response.status_code, 200)
-            
-            # Create a new category "Flipping Out".
-            
-            soup = BeautifulSoup(response.data)
-            input = soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add Subcategory'))
-            form = input.find_parent('form')
-            self.assertEqual(form['method'].upper(), 'POST')
-            
-            data = {i['name']: i.get('value') for i in form.find_all('input')}
-            data[input['name']] = 'Flipping Out'
-            
-            add_subcategory_path = urlparse(urljoin(category_path, form['action'])).path
-            response = self.test_client.post(add_subcategory_path, data=data)
-            self.assertEqual(response.status_code, 303)
-            
-            # Drop down into "Flipping Out" where the articles are.
-            
-            articles_path = urlparse(response.headers['Location']).path
-            response = self.test_client.get(articles_path)
-            self.assertEqual(response.status_code, 200)
-            
-            # Create a new article "So Awesome".
-            
-            soup = BeautifulSoup(response.data)
-            input = soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add Article'))
-            form = input.find_parent('form')
-            self.assertEqual(form['method'].upper(), 'POST')
-            
-            data = {i['name']: i.get('value') for i in form.find_all('input')}
-            data[input['name']] = 'So Awesome'
-            
-            add_article_path = urlparse(urljoin(articles_path, form['action'])).path
-            response = self.test_client.post(add_article_path, data=data)
-            self.assertEqual(response.status_code, 303)
-            
-            # View the new article.
-
-            article_path = urlparse(response.headers['Location']).path
-            response = self.test_client.get(article_path)
-            self.assertEqual(response.status_code, 200)
+            # Create a new category "Ninjas", subcategory "Flipping Out", and article "So Awesome".
+            subcategories_path, soup = client.add_category(categories_path, soup, 'Ninjas')
+            articles_path, soup = client.add_subcategory(subcategories_path, soup, 'Flipping Out')
+            article_path, soup = client.add_article(articles_path, soup, 'So Awesome')
             
             # Edit the new article.
-            
-            soup = BeautifulSoup(response.data)
-            body = soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'en-body'))
-            form = body.find_parent('form')
-            title = form.find(lambda tag: bool(tag.name == 'input' and tag.get('name') == 'en-title'))
-            button = form.find(lambda tag: bool(tag.name == 'input' and tag.get('value') == 'Save'))
-            self.assertEqual(form['method'].upper(), 'POST')
-            
-            data = {i['name']: i.get('value')
-                    for i in form.find_all(['input', 'button', 'textarea'])
-                    if i.get('type') != 'submit'}
-            
-            data[title['name']] = 'So, So Awesome'
-            data[body['name']] = 'It was the best of times.'
-            
-            edit_article_path = urlparse(urljoin(article_path, form['action'])).path
-            response = self.test_client.post(edit_article_path, data=data)
-            self.assertEqual(response.status_code, 303)
+            client.edit_article(article_path, soup, 'So, So Awesome', 'It was the best of times.')
             
             # Now what?
 
