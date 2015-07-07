@@ -25,36 +25,6 @@
             <p class="activity-overview__details">Last edited by {{ activity.last_edited_email }}.</p>
         </div>
 
-        <div class="activity-summary">
-            <a href="#" class="activity-summary__toggle">3 articles and categories have been changed (click to review)</a>
-            <table class="activity-summary__table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Type</th>
-                        <th>Changes</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td class="activity-summary__name">Snowstorm Operations</td>
-                        <td class="activity-summary__filetype">Article</td>
-                        <td class="activity-summary__changes">Created, Edited</td>
-                    </tr>
-                    <tr>
-                        <td class="activity-summary__name">Public Safety</td>
-                        <td class="activity-summary__filetype">Category</td>
-                        <td class="activity-summary__changes">Description Edited</td>
-                    </tr>
-                    <tr>
-                        <td class="activity-summary__name">Snowstorm Operations</td>
-                        <td class="activity-summary__filetype">Article</td>
-                        <td class="activity-summary__changes">Created, Edited</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
         <ul class="activity-progress">
             {% set review_step = 0 %}
             {% if activity.review_state == "unreviewed edits" %}
@@ -84,6 +54,36 @@
                 <p class="activity-progress__label">Published</p>
             </li>
         </ul>
+
+        <div class="activity-summary">
+            <a href="#" class="activity-summary__toggle">3 articles and categories have been changed (click to review)</a>
+            <table class="activity-summary__table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Changes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="activity-summary__name">Snowstorm Operations</td>
+                        <td class="activity-summary__filetype">Article</td>
+                        <td class="activity-summary__changes">Created, Edited</td>
+                    </tr>
+                    <tr>
+                        <td class="activity-summary__name">Public Safety</td>
+                        <td class="activity-summary__filetype">Category</td>
+                        <td class="activity-summary__changes">Description Edited</td>
+                    </tr>
+                    <tr>
+                        <td class="activity-summary__name">Snowstorm Operations</td>
+                        <td class="activity-summary__filetype">Article</td>
+                        <td class="activity-summary__changes">Created, Edited</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
 
         <div class="activity-log">
 
