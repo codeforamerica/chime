@@ -274,6 +274,7 @@ def _install_chime_if_necessary():
     else:
         print(green('Installing chime'))
         sudo('apt-get -qq update')
+        sudo('apt-get -qq dist-upgrade')
         # rsync quietly and don't bother with host keys
         rsync_code()
         print(green('Running chef setup scripts...'))
