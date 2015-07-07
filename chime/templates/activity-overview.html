@@ -12,12 +12,10 @@
 <!-- template name: {{template_name}} -->
 <div class="activity-overview__container col__flex">
     <div class="activity-overview__main">
-        <p class="activity-overview__subtitle">Activity Overview</p>
+<!--         <p class="activity-overview__subtitle">Activity Overview</p> -->
         <h1 class="activity-overview__header">{{ activity.task_description | title }} For {{ activity.task_beneficiary | title }}</h1>
 
         <a href="{{ activity.edit_path }}" class="button button--outline button--large">Keep working on this activity</a>
-
-        <p class="activity-overview__description">Activity Summary</p>
 
         <ul class="activity-progress">
             {% set review_step = 0 %}
@@ -33,7 +31,7 @@
 
             <li class="activity-progress__item {% if review_step > 0 %}completed{% endif %}">
                 <div class="activity-progress__icon fa fa-pencil"></div>
-                <p class="activity-progress__label">Changes Made</p>
+                <p class="activity-progress__label">Edits Made</p>
             </li>
             <li class="activity-progress__item {% if review_step > 1 %}completed{% endif %}">
                 <div class="activity-progress__icon fa fa-eye"></div>
@@ -41,7 +39,7 @@
             </li>
             <li class="activity-progress__item {% if review_step > 2 %}completed{% endif %}">
                 <div class="activity-progress__icon fa fa-thumbs-o-up"></div>
-                <p class="activity-progress__label">Endorsed</p>
+                <p class="activity-progress__label">Edits Endorsed</p>
             </li>
             <li class="activity-progress__item {% if review_step > 3 %}completed{% endif %}">
                 <div class="activity-progress__icon fa fa-check"></div>
