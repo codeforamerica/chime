@@ -61,8 +61,10 @@ def merge_conflict(error):
 
 @app.app_errorhandler(Exception)
 def exception(error):
+    error_class = type(error).__name__
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(common_error_template_args(current_app.config))
     kwargs.update({"message": error.args[0]})
     kwargs.update({"error_type": ERROR_TYPE_EXCEPTION})
+    kwargs.update({"error_class": error_class})
     return render_template('error_500.html', **kwargs), 500

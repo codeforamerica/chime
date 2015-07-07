@@ -10,9 +10,18 @@
 <!-- template name: {{ template_name }} -->
 <div class="row col__flex message-500">
     <p>ERROR!</p>
+
+{% if message or error_class %}
+    <p>
 {% if message %}
-    <p>{{ message }}</p>
+    {{ message }}
 {% endif %}
+{% if error_class %}
+    ({{ error_class }})
+{% endif %}
+    </p>
+{% endif %}
+
 {% if error_type == 'merge-conflict' %}
     <ul>
     {% for file in changed_files %}
@@ -26,6 +35,7 @@
     {% endfor %}
     </ul>
 {% endif %}
+
 {% if support_phone_number or support_email %}
     <p>If you need help:</p>
 {% endif %}
