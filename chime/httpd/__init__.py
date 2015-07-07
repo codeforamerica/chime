@@ -67,8 +67,8 @@ def write_config(doc_root, root, port):
         file.write(config.format(**vars))
         
     if not exists(join(root, 'httpd.conf')):
-        raise RuntimeError('Did not make httpd.conf')
-    
+        raise RuntimeError('Tried to write a config, but couldn\'t create the httpd.conf file.')
+
     return mod_path
 
 def apache_version(httpd_path):

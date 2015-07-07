@@ -106,7 +106,7 @@ class ChimeRepo(Repo):
             head, check_dir = split(head)
             dirs.insert(0, check_dir)
         if '..' in dirs:
-            raise Exception('Invalid path component.')
+            raise Exception('Encountered an invalid component in this path: {}'.format(path))
 
         return dirs
 
@@ -260,7 +260,7 @@ def get_task_metadata_for_branch(clone, working_branch_name=None):
     if task_file_contents:
         task_metadata = yaml.safe_load(task_file_contents)
         if type(task_metadata) is not dict:
-            raise ValueError()
+            raise ValueError(u'Unable to load metadata for an activity.')
 
     return task_metadata
 
@@ -487,7 +487,7 @@ def save_working_file(clone, path, message, base_sha, default_branch_name):
         merge problems early. Might raise a MergeConflict.
     '''
     if clone.active_branch.commit.hexsha != base_sha:
-        raise Exception('Out of date SHA: {}'.format(base_sha))
+        raise Exception(u'Unable to save page because someone else made edits while you were working.')
 
     if exists(join(clone.working_dir, path)):
         clone.index.add([path])
@@ -518,7 +518,7 @@ def move_existing_file(clone, old_path, new_path, base_sha, default_branch_name)
         merge problems early. Might raise a MergeConflict.
     '''
     if clone.active_branch.commit.hexsha != base_sha:
-        raise Exception('Out of date SHA: {}'.format(base_sha))
+        raise Exception(u'Unable to move page because someone else made edits while you were working.')
 
     # check whether we're being asked to move a dir
     if not isdir(join(clone.working_dir, old_path)):
@@ -693,7 +693,7 @@ def update_review_state(clone, new_state):
     ''' Adds a new empty commit changing the review state
     '''
     if new_state not in (REVIEW_STATE_FEEDBACK, REVIEW_STATE_ENDORSED, REVIEW_STATE_PUBLISHED):
-        raise Exception(u'Can\'t set review state to {}'.format(new_state))
+        raise Exception(u'The review state can\'t be set to {}'.format(new_state))
 
     message_text = u''
     if new_state == REVIEW_STATE_FEEDBACK:

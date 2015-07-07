@@ -11,7 +11,7 @@ def update_page(clone, file_path, front, body):
     full_path = join(clone.working_dir, file_path)
 
     if not exists(full_path):
-        raise Exception(u'Path does not exist: {}'.format(full_path))
+        raise Exception(u'Tried to update page, but path does not exist: {}'.format(full_path))
 
     with open(full_path, 'w') as file:
         dump_jekyll_doc(front, body, file)
@@ -50,7 +50,7 @@ def create_new_page(clone, dir_path, request_path, front, body):
     clone.create_directories_if_necessary(file_path)
 
     if clone.exists(file_path):
-        raise Exception(u'create_new_page: path already exists!')
+        raise Exception(u'Tried to create a new page, but it already exists!')
 
     with open(clone.full_path(file_path), 'w') as file:
         dump_jekyll_doc(front_copy, body, file)

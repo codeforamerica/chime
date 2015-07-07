@@ -49,7 +49,7 @@ def load_languages(directory):
             config = yaml.load(file).get('languages', [])
 
         if type(config) is not list:
-            raise ValueError()
+            raise ValueError(u'Unable to load language options.')
     else:
         config = []
 
@@ -82,7 +82,7 @@ def load_yaml_and_body(file):
 
             return front_matter, content
 
-    raise Exception('Never found a yaml.DocumentStartToken')
+    raise Exception('Couldn\'t find yaml.DocumentStartToken when loading a file.')
 
 def load_jekyll_doc(file):
     ''' Load jekyll front matter and remaining content from a file.
@@ -148,9 +148,10 @@ def build_jekyll_site(dirname):
         build = Popen(call, cwd=dirname)
         build.wait()
     except:
+        error_message = u'Unexpected Jekyll failure running {} in {}'.format(call, dirname)
         logger = logging.getLogger('chime.jekyll')
-        logger.error("Unexpected failure running %s in %s", call, dirname)
-        raise
+        logger.error(error_message)
+        raise Exception(error_message)
 
     # By default Jekyll builds into dirname/_site
     return join(dirname, '_site')

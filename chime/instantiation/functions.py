@@ -26,7 +26,7 @@ def check_status(resp, task):
     ''' Raise a RuntimeError if response is not HTTP 2XX.
     '''
     if resp.status_code not in range(200, 299):
-        raise RuntimeError('Got {} trying to {}'.format(resp.status_code, task))
+        raise RuntimeError('Got an HTTP error {} trying to {}'.format(resp.status_code, task))
 
 def check_repo_state(reponame, token):
     ''' Return True if repository name exists.
