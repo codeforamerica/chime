@@ -55,7 +55,7 @@ fabconf['EC2_REGION'] = os.environ.get('EC2_REGION', 'us-east-1')
 
 # AMI name. Either pass in a comma-delimited list of values.
 # Defaults to Ubuntu 14.04
-fabconf['EC2_AMIS'] = os.environ.get('EC2_AMIS', 'ami-3129e65a').split(',')
+fabconf['EC2_AMIS'] = os.environ.get('EC2_AMIS', 'ami-6725ea0c').split(',')
 
 # Name of the keypair you use in EC2.
 fabconf['EC2_KEY_PAIR'] = os.environ.get('EC2_KEY_PAIR', 'cfa-chime-keypair')

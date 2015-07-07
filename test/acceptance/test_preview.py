@@ -207,7 +207,7 @@ class TestPreview(ChimeTestCase):
         self.screenshot()
 
     def tearDown(self):
-        if self.driver:
+        if hasattr(self, 'driver') and self.driver:
             self.driver.quit()
         pass
 
