@@ -21,30 +21,30 @@
       <h2>Categories</h2>
       <div class="selection-box box-add-file-folder">
         <form action="." method="POST" class="form-one-line">
-            <input class="form-one-line__input" name="request_path" placeholder="Add Category" type="text" />
+            <input class="form-one-line__input" name="request_path" placeholder="Add Category" id="create-category-name" type="text" />
             <input name="create_what" value="category" type="hidden" />
             <input name="create_path" value="{{column['base_path']}}" type="hidden" />
-            <input class="form-one-line__submit button" name="action" type="submit" value="Create" />
+            <input class="form-one-line__submit button" name="action" type="submit" id="create-category-button" value="Create" />
         </form>
       </div>
       {% elif loop.index == 3 %}
       <h2>Subcategories</h2>
       <div class="selection-box box-add-file-folder">
         <form action="." method="POST" class="form-one-line">
-            <input class="form-one-line__input" name="request_path" placeholder="Add Subcategory" type="text" />
+            <input class="form-one-line__input" name="request_path" placeholder="Add Subcategory" id="create-subcategory-name" type="text" />
             <input name="create_what" value="category" type="hidden" />
             <input name="create_path" value="{{column['base_path']}}" type="hidden" />
-            <input class="form-one-line__submit button" name="action" type="submit" value="Create" />
+            <input class="form-one-line__submit button" name="action" type="submit" id="create-subcategory-button" value="Create" />
         </form>
       </div>
       {% elif loop.index == 4 %}
       <h2>Articles</h2>
       <div class="selection-box box-add-file-folder">
         <form action="." method="POST" class="form-one-line">
-            <input class="form-one-line__input" name="request_path" placeholder="Add Article" type="text" />
+            <input class="form-one-line__input" name="request_path" placeholder="Add Article" id="create-article-name" type="text" />
             <input name="create_what" value="article" type="hidden" />
             <input name="create_path" value="{{column['base_path']}}" type="hidden" />
-            <input class="form-one-line__submit button" name="action" type="submit" value="Create" />
+            <input class="form-one-line__submit button" name="action" type="submit" id="create-article-button" value="Create" />
         </form>
       </div>
       {% endif %}

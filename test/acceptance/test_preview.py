@@ -38,7 +38,7 @@ class TestPreview(ChimeTestCase):
 
     def use_driver(self, browser=None):
         """
-        :param capabilities: If particular browser are requested; it is passed along to BrowserStack.
+        :param browser: If particular browser is requested it is passed along to BrowserStack or SauceLabs.
             Otherwise, a local Firefox is used.
         """
         if browser:
@@ -129,15 +129,19 @@ class TestPreview(ChimeTestCase):
         self.driver.find_element_by_class_name('create').click()
 
         # create a new page
-        self.driver.find_element_by_xpath("//form[@action='.']/input[@name='path']").send_keys(self.marked_string('filename'))
-        self.driver.find_element_by_xpath("//form[@action='.']/input[@type='submit']").click()
-
+        self.driver.find_element_by_link_text("categories").click()
+        self.driver.find_element_by_id("create-category-name").send_keys(self.marked_string('category'))
+        self.driver.find_element_by_id("create-category-button").click()
+        self.driver.find_element_by_id("create-subcategory-name").send_keys(self.marked_string('subcategory'))
+        self.driver.find_element_by_id("create-subcategory-button").click()
+        self.driver.find_element_by_id("create-article-name").send_keys(self.marked_string('article'))
+        self.driver.find_element_by_id("create-article-button").click()
 
         # add some content to that page
-        self.driver.find_element_by_name('en-title').send_keys(self.marked_string('title'))
-        test_page_content = 'This is some test content.', Keys.RETURN, Keys.RETURN, self.marked_string('body_text'), \
+        body_text_marker = self.marked_string('body_text')
+        test_page_content = 'This is some test content.', Keys.RETURN, Keys.RETURN, body_text_marker, \
                             Keys.RETURN, Keys.RETURN, '# This is a test h1', Keys.RETURN, Keys.RETURN, '> This is a test pull-quote'
-        self.driver.find_element_by_id('en-body markItUp').send_keys(*test_page_content)
+        self.driver.find_element_by_id('en-body').send_keys(*test_page_content)
 
         # save the page
         self.driver.find_element_by_xpath("//input[@value='Save']").click()
@@ -148,18 +152,22 @@ class TestPreview(ChimeTestCase):
         # wait until the preview window's available and switch to it
         self.waiter.until(self.switch_to_other_window(main_window))
         self.waiter.until(EC.presence_of_element_located((By.TAG_NAME, 'body')))
+        self.assertIn(body_text_marker, self.driver.find_element_by_class_name('article-content').text)
         self.driver.close()
         self.driver.switch_to.window(main_window)
-        # TODO: make sure there's something there
 
         # go back to the main page
         self.driver.get(main_url)
         # delete our branch
         delete_button = self.driver.find_element_by_xpath(
-            "//a[contains(text(),'{}')]/../..//button[@value='abandon']".format(task_description))
+            "//a[contains(text(),'{}')]/../..//input[@value='Delete']".format(task_description))
         self.scrollTo(delete_button)
         delete_button.click()
-        # TODO: make sure deletion happens
+
+        notice_text = self.driver.find_element_by_class_name('flash--notice').text
+        self.assertIn("You deleted", notice_text)
+        self.assertIn(task_description, notice_text)
+
 
     def random_digits(self, count=6):
         format_as = "{:0" + str(count) + "d}"
