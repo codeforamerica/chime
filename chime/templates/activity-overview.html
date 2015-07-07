@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% set breadcrumb_items = [{'name': 'Activities', 'url': '/'}] %}
+
+{% block title %}Activity Overview{% endblock %}
+
+
+{% set template_name = 'activity-overview' %}
+{% block body_class %}{{template_name}}{% endblock %}
+
+{% block content %}
+<!-- template name: {{template_name}} -->
+<div class="activity-overview__container col__flex">
+    <div class="activity-overview__main">
+        <p class="activity-overview__subtitle">Activity Overview</p>
+        <h1 class="activity-overview__header">{{ activity.task_description | title }} For {{ activity.task_beneficiary | title }}</h1>
+        <a href="{{ activity.edit_path }}" class="button button--outline button--large">Continue working</a>
+
+        <p class="activity-overview__description">Below is a timeline of all of the work and discussion around this activity. Any work you do will appear at the the top of this list.</p>
+
+        <div class="activity-log">
+            {% if activity.review_state != 'changes published' %}
+            <div class="activity-log-item activity-log-item--comment">
+                <form action="." method="POST" class="comment comment--new">
+                    <div class="comment__author">{% if email %}{{ email }}{% else %}unknown{% endif %}</div>
+                    <div class="comment__body">
+
+                        {% set comment_note = "Work is currently in progress. Feel free to leave a comment." %}
+                        {% if activity.review_authorized %}
+                            {% if activity.review_state == 'unreviewed edits' %}
+                                {% set comment_note = "Looks like you've made some changes. Have someone check your work." %}
+                            {% elif activity.review_state == 'feedback requested' %}
+                                {% set comment_note = activity.last_edited_email + " made some changes and is requesting feedback." %}
+                            {% elif activity.review_state == 'edits endorsed' %}
+                                {% set comment_note = "Changes were made and endorsed. They can now be published to the live site." %}
+                            {% endif %}
+                        {% else %}
+                            {% if activity.review_state == 'feedback requested' %}
+                                {% set comment_note = "Currently awaiting someone to check your work." %}
+                            {% endif %}
+                        {% endif %}
+
+                        <p class="comment__note"><span class="fa fa-info-circle"></span> {{ comment_note }}</p>
+
+                        <textarea class="comment__input" name="comment_text" placeholder="Leave your comment here"></textarea>
+                    </div>
+                    <div class="comment__actions toolbar toolbar--right">
+                    {% if activity.review_authorized %}
+                        {% if activity.review_state == 'unreviewed edits' %}
+                        <input class="toolbar__item button button--orange" type="submit" name="request_feedback" value="Request Feedback">
+                        {% elif activity.review_state == 'feedback requested' %}
+                        <input class="toolbar__item button button--green" type="submit" name="endorse_edits" value="Looks Good!">
+                        {% elif activity.review_state == 'edits endorsed' %}
+                        <input class="toolbar__item button button--blue" type="submit" name="merge" value="Publish">
+                        {% endif %}
+                    {% endif %}
+                        <input class="toolbar__item button button" type="submit" name="comment" value="Leave a Comment">
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+
+            {% for log_item in activity.history %}
+            <div class="activity-log-item activity-log-item--{{ log_item.commit_category }}">
+                {% if log_item.commit_type == 'comment' %}
+                <div class="comment">
+                    <div class="comment__author">{{ log_item.author_email }}</div>
+                    <div class="comment__body">{{ log_item.commit_body }}</div>
+                    <div class="comment__datetime">{{ log_item.commit_date }}</div>
+                </div>
+                {% elif log_item.commit_type == 'review update' %}
+                <div class="activity-log-item__content">
+                    <p class="text-{% if log_item.commit_action == 'feedback requested' %}orange{% elif log_item.commit_action == 'edits endorsed' %}green{% else %}blue{% endif %}">{{ log_item.author_email }} {{ log_item.commit_body }}</p>
+                    <div class="activity-log-item__datetime">{{ log_item.commit_date }}</div>
+                </div>
+                {% else %}
+                <div class="activity-log-item__content">
+                    <p>{{ log_item.commit_subject }} by {{ log_item.author_email }}.</p>
+                    <div class="activity-log-item__datetime">{{ log_item.commit_date }}</div>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}

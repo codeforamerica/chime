@@ -11,7 +11,7 @@ import os
 import posixpath
 import json
 from datetime import date, timedelta
-from .view_functions import WriteLocked, ReadLocked
+from fcntl import flock, LOCK_EX, LOCK_UN, LOCK_SH
 
 GA_CONFIG_FILENAME = 'ga_config.json'
 # these are the names of the values that can be saved to the google analytics config file
@@ -22,6 +22,39 @@ GOOGLE_ANALYTICS_TOKENS_URL = 'https://accounts.google.com/o/oauth2/token'
 GOOGLE_TOKEN_INFO_URL = 'https://www.googleapis.com/oauth2/v1/tokeninfo'
 GOOGLE_PLUS_WHOAMI_URL = 'https://www.googleapis.com/plus/v1/people/me'
 GOOGLE_ANALYTICS_PROPERTIES_URL = 'https://www.googleapis.com/analytics/v3/management/accounts/~all/webproperties'
+
+class WriteLocked:
+    ''' Context manager for a locked file open in a+ mode, seek(0).
+    '''
+    def __init__(self, fname):
+        self.fname = fname
+        self.file = None
+
+    def __enter__(self):
+        self.file = open(self.fname, 'a+')
+        flock(self.file, LOCK_EX)
+        self.file.seek(0)
+        return self.file
+
+    def __exit__(self, *args):
+        flock(self.file, LOCK_UN)
+        self.file.close()
+
+class ReadLocked:
+    ''' Context manager for a locked file open in r mode, seek(0).
+    '''
+    def __init__(self, fname):
+        self.fname = fname
+        self.file = None
+
+    def __enter__(self):
+        self.file = open(self.fname, 'r')
+        flock(self.file, LOCK_SH)
+        return self.file
+
+    def __exit__(self, *args):
+        flock(self.file, LOCK_UN)
+        self.file.close()
 
 def authorize_google():
     ''' Authorize google via oauth2
@@ -78,7 +111,7 @@ def request_new_google_access_and_refresh_tokens(request):
         # Google rejected our request for some reason
         error_message = extract_error_message(access)
         if error_message:
-            error_message = ' ({})'.format(error_message)
+            error_message = u' ({})'.format(error_message)
 
         raise Exception(u'Google rejected authorization request{}, please try again.'.format(error_message), u'error')
 
@@ -170,7 +203,7 @@ def get_google_personal_info(access_token):
     if response.status_code != 200:
         error_message = extract_error_message(whoami)
         if error_message:
-            error_message = ' ({})'.format(error_message)
+            error_message = u' ({})'.format(error_message)
 
         raise Exception('Unable to retrieve personal info from the Google+ API{}'.format(error_message), u'warning')
 

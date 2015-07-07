@@ -13,10 +13,10 @@
         <li>{{ file }} <i>different</i></li>
       {% endfor %}
     </ul>
-    <form action="/merge" method="POST">
-    <input name="branch" value="{{branch}}" type="hidden">
-    <input name="action" type="submit" value="Clobber">
-    <input name="action" type="submit" value="Abandon">
+    <form action="/update" method="POST">
+      <input name="branch" value="{{branch}}" type="hidden">
+      <input class="toolbar__item button button--red" type="submit" name="abandon" value="Abandon">
+      <input class="toolbar__item button button--red" type="submit" name="clobber" value="Clobber">
     </form>
 
 {% endblock %}

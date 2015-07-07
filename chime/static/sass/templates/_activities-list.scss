@@ -21,7 +21,7 @@
 	padding: .5em 1em;
 	background-color: #fff;
 	box-shadow: 0 0 3px rgba(#000, .15);
-	margin-bottom: 1em;
+	margin-bottom: 2em;
 	border-radius: $border-radius;
 	.lt-ie10 & {
 		border: 1px solid $color-grey-200;
@@ -36,11 +36,21 @@
 	padding-bottom: .5em;
 	a {
 		color: $color-grey-900;
+		display: block;
+		position: relative;
+		&:after {
+			content: '\f105';
+			font-family: "FontAwesome";
+			position: absolute;
+			display: block;
+			right: 0;
+			top: 0;
+		}
 		&:hover {
-			color: $color-blue-400;
+			color: $color-link;
 			text-decoration: none;
 		}
-	}	
+	}
 }
 
 .current-task__author {
@@ -61,7 +71,7 @@
 
 .new-task__form {
 	margin-top: 2em;
-	background-color: $color-grey-200;
+	background-color: $color-grey-100;
 	border: 1px solid $color-grey-300;
 	border-radius: $border-radius;
 	padding: 1em;

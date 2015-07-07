@@ -23,62 +23,80 @@
 }
 
 .edit-article__editor {
-	width: 100%;
-	max-width: 800px;
+	width: 50%;
 	background-color: $color-grey-50;
 	border-right: 1px solid $color-grey-300;
 
-	textarea {
-		@include flex(1);
-		margin: 0;
-		font-family: $font-mono;
-		font-weight: 400;
-		line-height: 1.5em;
-		background-color: transparent;
-		color: $color-grey-900;
-		width: 100%;
-		-webkit-appearance: none;
-		border: 0;
-		outline: none;
-		resize: none;
-		height: auto;
-		overflow: auto;
-		padding: 2em;
-		max-height: 700px;
-		.lt-ie10 & {
-			min-height: 300px;
-		}
-	}
 }
 
-.md-editor {
-	@include display(flex);
-	@include flex-direction(column);
+.markdown-textarea {
 	@include flex(1);
+	margin: 0;
+	font-family: $font-mono;
+	font-weight: 400;
+	line-height: 1.5em;
+	background-color: transparent;
+	color: $color-grey-900;
+	width: 100%;
+	-webkit-appearance: none;
 	border: 0;
-	box-shadow: none;
-	&.active {
-		border: 0;
-		box-shadow: none;
+	outline: none;
+	resize: none;
+	height: auto;
+	overflow: auto;
+	padding: 2em;
+
+	&:focus {
+		background-color: transparent;
 	}
-	.md-header {
-		@include flex-shrink(0);
-		background-color: $color-grey-100;
-		border-bottom: 1px solid $color-grey-300;
-		padding: .5em $site-margins;
-		.btn {
-			@extend .button--outline;
-			border-radius: $border-radius;
-			margin-right: .5em;
-		}
-	}
-	textarea {
-		@include flex(1);
+
+	.lt-ie10 & {
+		min-height: 300px;
+		max-height: 700px;
 	}
 }
 
 .edit-article__previewer {
-	display: none;
+	width: 50%;
+	background-color: $color-grey-100;
+}
+
+.previewer__content {
+	overflow: auto;
+	padding: $site-margins;
+
+	.lt-ie10 & {
+		min-height: 300px;
+		max-height: 700px;
+	}
+}
+
+.previewer__hints {
+	font-weight: 400;
+	padding: $site-margins*1.5;
+	overflow: auto;
+}
+
+
+.previewer__iframe-container {
+	width: 100%;
+}
+
+.markdown-previewer {
+	@include appearance(none);
+	outline: none;
+	background-color: #fff;
+	height: 100%;
+	width: 100%;
+	border: 1px solid $color-grey-300;
+}
+
+.previewer__bar {
+	background-color: $color-grey-100;
+	border-bottom: 1px solid $color-grey-300;
+	padding: .5em $site-margins;
+	font-family: 'FontAwesome';
+	@include user-select(none);
 }
 
 .edit-article__footer {

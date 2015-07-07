@@ -1,61 +1,143 @@
-{% extends "base_new.html" %}
+{% extends "base.html" %}
 
-{% set breadcrumb_items = [{'name': 'Activites', 'url': '/'}, {'name': 'Browse', 'url': task_root_path}] %}
+{% set breadcrumb_items = [{'name': 'Activities', 'url': '/'}, {'name': 'Browse', 'url': activity.edit_path}] %}
 
 {% block title %}Edit Article{% endblock %}
 
-{% block body_class %}article-edit{% endblock %}
+{% set template_name = 'article-edit' %}
+{% block body_class %}{{ template_name }}{% endblock %}
+
+{% block scripts %}
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script src="/static/javascript/markdown-hints.js"></script>
+
+<!--[if !IE]><!-->
+<script src="/static/javascript/undo.js"></script>
+<script src="/static/javascript/markdown-bar.js"></script>
+<!--<![endif]-->
+
+{% endblock %}
 
 {% block content %}
+<!-- template name: {{ template_name }} -->
+<form action="{{ save_path }}" method="POST" class="row col__flex col edit-article__form">
 
-<form action="/tree/{{safe_branch}}/save/{{edit_path}}" method="POST" class="row col__flex col edit-article__form">
-
-    <input name="layout" value="{{front['layout']}}" type="hidden" />
-    <input name="hexsha" value="{{hexsha}}" type="hidden" />
-    <input name="url-slug" type="hidden" value="{{url_slug}}" />  
+    <input name="layout" value="{{ front['layout'] }}" type="hidden" />
+    <input name="hexsha" value="{{ hexsha }}" type="hidden" />
+    <input name="url-slug" type="hidden" value="{{ url_slug }}" />
+    <input name="order" type="hidden" value="{{ front['order'] }}" />
 {% for iso in languages %}
     {% if iso == 'en' %}
         {% set form_title = front['title'] %}
+        {% set form_description = front['description'] %}
         {% set form_body = body %}
         {% set display_class = '' %}
     {% else %}
         {% set form_title = front['title-'+iso] %}
+        {% set form_description = front['description-'+iso] %}
         {% set form_body = front['body-'+iso] %}
         {% set display_class = 'is-hidden' %}
     {% endif %}
+
+    <input name="{{ iso }}-description" type="hidden" value="{{ form_description }}" />
+
     <div class="edit-article__header row">
         <div class="row__left">
             <div class="selection-box">
                 <label>Article Title</label>
-                <input name="{{iso}}-title" value="{{form_title}}" type="text" class="edit-article__title">
+                <input name="{{ iso }}-title" value="{{ form_title }}" type="text" class="edit-article__title">
             </div>
         </div>
         <div class="row__right toolbar--right">
-            <div class="selection-box toolbar__item">
-                <label>Category</label>
-                <select>
-                    <option value="public-safety">Public Safety</option>
-                    <option value="parks">Parks and Recreation</option>
-                </select>   
-            </div>
-            <div class="selection-box toolbar__item">
-                <label>Subcategory</label>
-                <select>
-                    <option value="public-safety">Crime Reporting and Statistics</option>
-                    <option value="parks">Emergency Services</option>
-                </select>   
-            </div>
-            <a href="{{history_path}}" class="button button--green toolbar__item">History</a>
-            <a href="{{view_path}}" target="_blank" class="button button--green toolbar__item">Preview</a>
+            <a href="{{ history_path }}" class="button button--outline toolbar__item">History</a>
+            <a href="{{ view_path }}" target="_blank" class="button button--outline toolbar__item">Preview</a>
             <input type="submit" class="button button--green toolbar__item" value="Save"/>
         </div>
     </div>    
-    
-    
-
     <div class="edit-article__main row col__flex">
         <div class="edit-article__editor row__left col">
-            <textarea id="{{iso}}-body markItUp" class="col__flex" name="{{iso}}-body" type="text" data-provide="markdown" data-iconlibrary="fa" data-hidden-buttons="cmdPreview">{{form_body}}</textarea>
+            <!--[if !IE]><!-->
+            <div class="markdown-bar toolbar toolbar--left"></div>
+            <!--<![endif]-->
+            <textarea id="{{ iso }}-body" class="col__flex markdown-textarea" name="{{iso}}-body" type="text">{{ form_body }}</textarea>
+        </div>
+        <div class="edit-article__previewer row__right col">
+            <div class="previewer__bar col__item">
+                <div class="toolbar toolbar--right">
+                    <a href="#" class="button button--outline" id="toggle-hints">Formatting Hints</a>
+                </div>
+            </div>
+
+            <div class="col__flex previewer__hints">
+                <table class="hint-table">
+                    <thead>
+                        <tr>
+                            <th>Formatting Syntax</th>
+                            <th>Output</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="hint">
+                            <td class="hint__code">**bold text**</td>
+                            <td class="hint__preview"><b>bold text</b></td>
+                        </tr>
+                        <tr class="hint">
+                            <td class="hint__code">_italic text_</td>
+                            <td class="hint__preview"><i>italic text</i></td>
+                        </tr>
+                        <tr class="hint">
+                            <td class="hint__code">[link text](url)</td>
+                            <td class="hint__preview"><a href="#">link text</a></td>
+                        </tr>
+                        <tr class="hint">
+                            <td class="hint__code"># Level 1 Heading</td>
+                            <td class="hint__preview"><h1>Level 1 Heading</h1></td>
+                        </tr>
+                        <tr class="hint">
+                            <td class="hint__code">## Level 2 Heading</td>
+                            <td class="hint__preview"><h2>Level 2 Heading</h2></td>
+                        </tr>
+                        <tr class="hint">
+                            <td class="hint__code">### Level 3 Heading</td>
+                            <td class="hint__preview"><h3>Level 3 Heading</h3></td>
+                        </tr>
+                        <tr class="hint">
+                            <td class="hint__code">
+                                <p>- bulleted list item</p>
+                                <p>- bulleted list item</p>
+                                <p>- bulleted list item</p>
+                            </td>
+                            <td class="hint__preview">
+                                <ul>
+                                    <li>bulleted list item</li>
+                                    <li>bulleted list item</li>
+                                    <li>bulleted list item</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr class="hint">
+                            <td class="hint__code">
+                                <p>1. numbered list item</p>
+                                <p>1. numbered list item</p>
+                                <p>1. numbered list item</p>
+                            </td>
+                            <td class="hint__preview">
+                                <ol>
+                                    <li>numbered list item</li>
+                                    <li>numbered list item</li>
+                                    <li>numbered list item</li>
+                                </ol>
+                            </td>
+                        </tr>
+                        <tr class="hint">
+                            <td class="hint__code">> blockquote text</td>
+                            <td class="hint__preview">
+                                <blockquote>Blockquote Text</blockquote>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
     <div class="edit-article__footer row">
@@ -69,36 +151,34 @@
                     {% else %}
                         {% set class = 'button' %}
                     {% endif %}
-                    <a href="#" id="{{iso}}-nav" class="{{class}}" onclick="return show{{lang}}Form()">{{lang}}</a>
+                    <a href="#" id="{{ iso }}-nav" class="{{ class }}" onclick="return show{{ lang }}Form()">{{ lang }}</a>
                 {% endfor %}
             {% endif %}
             </div>
             <div class="statistics row__right toolbar--right">
                 {% if app_authorized %}
-                <span class="toolbar__item">This week, <b>{{page_views}} people</b> spent an average of <b>{{average_time_page}} secs</b> on this page.</span>
+                <span class="toolbar__item">This week, <b>{{ page_views }} people</b> spent an average of <b>{{ average_time_page }} secs</b> on this page.</span>
                 {% else %}
-                <form method="POST" action="/authorize">
-                    <button id="authorize-button" class="toolbar__item button button--outline">Connect to Google Analytics</button>
-                </form>
+                <a href="/setup" class="toolbar__item button button--outline">Connect to Google Analytics</a>
                 {% endif %}
             </div>
-        </div>
-        {% endfor %}
+    </div>
+{% endfor %}
 </form>
 <script type="text/javascript">
     {% for iso in languages %}
         {% set lang = languages[iso] %}
     
-        function show{{lang}}Form()
+        function show{{ lang }}Form()
         {
             {% for other_iso in languages %}
                 {% set other_lang = languages[other_iso] %}
-                document.getElementById('{{other_lang}}-form').style.display = 'none';
-                document.getElementById("{{other_iso}}-nav").className = "nav-tab";
+                document.getElementById('{{ other_lang }}-form').style.display = 'none';
+                document.getElementById("{{ other_iso }}-nav").className = "nav-tab";
             {% endfor %}
 
-            document.getElementById('{{lang}}-form').style.display = 'block';
-            var d = document.getElementById("{{iso}}-nav");
+            document.getElementById('{{ lang }}-form').style.display = 'block';
+            var d = document.getElementById("{{ iso }}-nav");
             d.className = d.className + " state-active";
             return false;
         }

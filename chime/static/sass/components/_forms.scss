@@ -24,6 +24,18 @@ textarea  {
 	font-size: $text-font-size;
 	padding: 0 .7em;
 	height: 2em;
+	line-height: $base-line-height;
+}
+
+label {
+	@include user-select(none);
+	font-size: $small-font-size;
+	font-weight: 400;
+	display: block;
+	margin-bottom: .5em;
+	text-transform: uppercase;
+	letter-spacing: .1em;
+	color: $color-grey-700;
 }
 
 select {
@@ -74,12 +86,6 @@ input[type="submit"]:disabled {
 .selection-box {
 	text-align: left;
 	margin-right: 1em;
-	label {
-		font-size: $small-font-size;
-		font-weight: 600;
-		display: block;
-		margin-bottom: .5em;
-	}
 	select {
 		border: 1px solid #ddd;
 		font-family: $font-sans;
@@ -87,3 +93,32 @@ input[type="submit"]:disabled {
 		font-weight: 300;
 	}
 }
+
+.form-one-line {
+	@include display(flex);
+	.lt-ie10 & {
+		@include clearfix();
+	}
+	.form-one-line__input {
+		@include flex(1);
+
+		border-top-right-radius: 0;
+		border-bottom-right-radius: 0;
+
+		.lt-ie10 & {
+			float: left;
+			width: 75%;
+		}
+	}
+
+	.form-one-line__submit {
+		border-top-left-radius: 0;
+		border-bottom-left-radius: 0;
+		margin-left: -1px;
+		.lt-ie10 & {
+			float: left;
+			width: 25%;
+		}
+	}
+}
+

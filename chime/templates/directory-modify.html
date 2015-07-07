@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% set template_name = 'articles-list' %}
+{% block body_class %}{{template_name}}{% endblock %}
+
+{% set breadcrumb_items = [{'name': 'Activities', 'url': '/'}] %}
+
+{% block title %}Browse{% endblock %}
+
+{% block content %}
+
+<!-- task: {{ activity.task_description }} -->
+<!-- beneficiary: {{ activity.task_beneficiary }} -->
+<!-- template name: {{ template_name }} -->
+{% set icon_class_lookup = {'folder': 'fa fa-folder-o', 'file': 'fa fa-file-text-o', 'category': 'fa fa-folder', 'article': 'fa fa-file-text'} %}
+<div class="articles-list__main grid col__flex">
+    {% for column in dir_columns %}
+    {% if (loop.index != 1 and loop.index != dir_columns|length) or (loop.index == 1 and dir_columns|length == 1) %}
+    <div class="dir grid__item {% if loop.index < 4 %}width-one-fourth{% endif %}">
+      {% if loop.index == 2 %}
+      <h2>Categories</h2>
+      <div class="selection-box box-add-file-folder">
+        <form action="{{ category.edit_path }}" method="POST" class="form-one-line">
+            <input class="form-one-line__input" name="request_path" placeholder="Add Category" type="text" />
+            <input name="create_what" value="category" type="hidden" />
+            <input name="create_path" value="{{column['base_path']}}" type="hidden" />
+            <input class="form-one-line__submit button" name="action" type="submit" value="Create" />
+        </form>
+      </div>
+      {% elif loop.index == 3 %}
+      <h2>Subcategories</h2>
+      <div class="selection-box box-add-file-folder">
+        <form action="{{ category.edit_path }}" method="POST" class="form-one-line">
+            <input class="form-one-line__input" name="request_path" placeholder="Add Subcategory" type="text" />
+            <input name="create_what" value="category" type="hidden" />
+            <input name="create_path" value="{{column['base_path']}}" type="hidden" />
+            <input class="form-one-line__submit button" name="action" type="submit" value="Create" />
+        </form>
+      </div>
+      {% endif %}
+      {% if loop.index != dir_columns|length %}
+      <ul class="dir">
+        {% for file in column['files'] %}
+         <!-- file type: {{file['display_type']}}, file name: {{file['name']}}, file title: {{file['title']}} -->
+         <li class="dir-item {% if file['selected'] == True %}is-selected{% endif %}">
+            <a class="dir-item__name {{file['display_type']}}" href="{{file['edit_path']}}"><span class="{{icon_class_lookup[file['display_type']]}}"></span>{{ file['title'] }}</a>
+            <div class="dir-item__actions toolbar--right">
+              <a href="{{file['modify_path']}}" class="toolbar__item"><span class="fa fa-pencil"></span></a>
+            </div>
+          </li>
+        {% endfor %}   
+      </ul>
+      {% endif %}
+    </div>
+    {% endif %}
+    {% endfor %}
+    <div class="grid__item {% if dir_columns|length == 3 %}width-three-fourths{% elif dir_columns|length == 4 %}width-one-half{% endif %} end-row directory-modify">
+      {% set dir_title = "Category" %}
+      {% if dir_columns|length == 4 %}
+        {% set dir_title = "Subcategory" %}
+      {% endif %}
+      <form action="." method="POST" class="directory-modify__form">
+          <input name="layout" value="{{ category.layout }}" type="hidden" />
+          <input name="hexsha" value="{{ hexsha }}" type="hidden" />
+          <input name="url-slug" type="hidden" value="{{ url_slug }}" />
+          <input name="order" type="hidden" value="{{ category.order }}" />
+      {% for iso in languages %}
+          {% if iso == 'en' %}
+              {% set category_title = category['title'] %}
+              {% set category_description = category['description'] %}
+              {% set display_class = '' %}
+          {% else %}
+              {% set category_title = category['title-'+iso] %}
+              {% set category_description = category['description-'+iso] %}
+              {% set display_class = 'is-hidden' %}
+          {% endif %}
+          <h3 class="directory-modify__title">{{ dir_title }} Details</h3>
+          <label>{{ dir_title }} Name</label>
+          <input name="{{ iso }}-title" type="text" value="{{ category_title }}" class="directory-modify__name">
+          <label>{{ dir_title }} Description</label>
+          <textarea name="{{ iso }}-description" class="directory-modify__description">{{ category_description }}</textarea>
+          <div class="directory-modify__action-bar row">
+            <div class="row__left toolbar toolbar--left">
+              <button name="delete" type="submit" class="button button--red toolbar__item"><span class="fa fa-trash"></span> Delete</button>
+            </div>
+            <div class="row__right toolbar toolbar--right">
+              <a href="{{ category.edit_path }}" class="button toolbar__item">Cancel</a>
+              <button name="save" type="submit" class="button button--green toolbar__item">Save</button>
+            </div>
+
+          </div>
+      {% endfor %}
+      </form>
+    </div>
+</div>
+{% endblock %}
+

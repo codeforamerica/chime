@@ -16,16 +16,18 @@ $font-mono: "Source Code Pro", "Monaco", "Courier New", mono;
 $base-font-size:		14px;
 $small-font-size:		12px;
 $text-font-size:		16px;
-$h1-font-size:			rem(36px) !default;
-$h2-font-size:			rem(28px) !default;
-$h3-font-size:			rem(24px) !default;
-$h4-font-size:			rem(18px) !default;
-$h5-font-size:			rem(16px) !default;
-$h6-font-size:			rem(14px) !default;
+$h1-font-size:			36px !default;
+$h2-font-size:			28px !default;
+$h3-font-size:			24px !default;
+$h4-font-size:			18px !default;
+$h5-font-size:			16px !default;
+$h6-font-size:			14px !default;
 $base-line-height:		1.5em !default;
 $heading-line-height:	1.3em !default;
 
 // Colors
+$color-link:			#009DDB;
+
 $color-grey-50:			#fafafa;
 $color-grey-100:		#f5f5f5;
 $color-grey-200:		#eeeeee;
@@ -42,10 +44,12 @@ $color-blue-900:		shade($color-blue-500, 80%);
 $color-blue-800:		shade($color-blue-500, 60%);
 $color-blue-700:		shade($color-blue-500, 40%);
 $color-blue-600:		shade($color-blue-500, 20%);
+$color-blue-450:		tint($color-blue-500, 10%);
 $color-blue-400:		tint($color-blue-500, 20%);
 $color-blue-300:		tint($color-blue-500, 40%);
 $color-blue-200:		tint($color-blue-500, 60%);
 $color-blue-100:		tint($color-blue-500, 80%);	
+$color-blue-50:			tint($color-blue-500, 90%);	
 
 $color-red-500:			#aa1c3a;
 $color-red-900:			shade($color-red-500, 80%);
@@ -55,7 +59,8 @@ $color-red-600:			shade($color-red-500, 20%);
 $color-red-400:			tint($color-red-500, 20%);
 $color-red-300:			tint($color-red-500, 40%);
 $color-red-200:			tint($color-red-500, 60%);
-$color-red-100:			tint($color-red-500, 80%);	
+$color-red-100:			tint($color-red-500, 80%);
+$color-red-50:			tint($color-red-500, 90%);		
 
 $color-orange-500:		#e87d2b;
 $color-orange-900:		shade($color-orange-500, 80%);
@@ -65,7 +70,8 @@ $color-orange-600:		shade($color-orange-500, 20%);
 $color-orange-400:		tint($color-orange-500, 20%);
 $color-orange-300:		tint($color-orange-500, 40%);
 $color-orange-200:		tint($color-orange-500, 60%);
-$color-orange-100:		tint($color-orange-500, 80%);	
+$color-orange-100:		tint($color-orange-500, 80%);
+$color-orange-50:		tint($color-orange-500, 90%);	
 
 $color-green-500:		#00a175;
 $color-green-900:		shade($color-green-500, 80%);
@@ -75,4 +81,5 @@ $color-green-600:		shade($color-green-500, 20%);
 $color-green-400:		tint($color-green-500, 20%);
 $color-green-300:		tint($color-green-500, 40%);
 $color-green-200:		tint($color-green-500, 60%);
-$color-green-100:		tint($color-green-500, 80%);	
+$color-green-100:		tint($color-green-500, 80%);
+$color-green-50:		tint($color-green-500, 90%);

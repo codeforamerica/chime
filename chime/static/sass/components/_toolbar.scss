@@ -1,17 +1,28 @@
+.toolbar {
+	@include clearfix();
+}
+
 .toolbar--left {
-	text-align: left;
-	.toolbar__item {
-		margin-right: .5em;
+	:first-child {
+		margin-left: 0;
 	}
 }
 
 .toolbar--right {
-	text-align: right;
-	.toolbar__item {
-		margin-left: .5em;
+	float: right;
+	:last-child {
+		margin-right: 0;
 	}
 }
 
 .toolbar__item {
-	display: inline-block;
+	float: left;
+	margin: {
+		left: .5em;
+		right: .5em;
+	}
+}
+
+.toolbar__item {
+	
 }

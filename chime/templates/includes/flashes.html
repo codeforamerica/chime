@@ -1,9 +1,9 @@
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
-    <div class="flash-holder">
+    <div class="flash-holder row">
       <ul class="flashes">
       {% for category, message in messages %}
-        <li class="{{ category }}">{{ message }}</li>
+        <li class="flash flash--{{ category }}">{{ message }}</li>
       {% endfor %}
       </ul>
     </div>

@@ -38,3 +38,15 @@
     border-top:    $perpendicular-borders;
   }
 }
+
+.is-hidden {
+  display: none;
+}
+
+.text-red {
+  color: $color-red-500 !important;
+}
+
+.text-green {
+  color: $color-green-500 !important;
+}

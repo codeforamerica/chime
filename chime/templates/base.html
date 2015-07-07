@@ -1,13 +1,9 @@
 <!DOCTYPE html>
-<html lang="en-us">
+<!--[if lte IE 10]><html lang="en-us" class="lt-ie10"><![endif]-->
+<!--[if gt IE 9]><!--><html lang="en-us"><!--<![endif]-->
 <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
         <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-        <link rel="stylesheet" type="text/css" href="//cloud.webtype.com/css/944a7551-9b08-4f0a-8767-e0f83db4a16b.css" />
-        <link rel="stylesheet" href="http://style.codeforamerica.org/style/css/main.css">
-        <link rel="stylesheet" href="http://style.codeforamerica.org/style/css/layout.css" media="all and (min-width: 40em)">
-        <link href="http://style.codeforamerica.org/style/css/prism.css" rel="stylesheet" />
         <link rel="stylesheet" type="text/css" media="screen" href="/static/javascript/toopaymarkdown/css/bootstrap-markdown.min.css">
         <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
         <meta http-equiv="X-UA-Compatible" content="IE=Edge">
@@ -19,61 +15,42 @@
         <script type="text/javascript">
           var currentUser = {{email|tojson|safe}};
         </script>
+        <link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700,300italic,400italic,700italic' rel='stylesheet' type='text/css'>
+        <link href="/static/stylesheets/main.css" rel="stylesheet" />
         <script src="{{ url_for('static', filename='script.js') }}"></script>
-        <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet" />
         <title>{% block title %}{% endblock %} | Chime</title>
+        <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+        {% if activity %}
+        <!-- branch: {{branch}} -->
+        <!-- author: {% if activity.author_email %}{{activity.author_email}}{% else %}unknown{% endif %} -->
+        {% endif %}
+        <script>
+          (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+          (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+          })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+          ga('create', 'UA-64736351-1', 'auto');
+          ga('send', 'pageview');
+
+        </script>
     </head>
-    <body>
-      
-      <!-- header block -->
-      <header>
-        <h1><a href="/" class="logo"><img src="/static/images/chime-logo-small.png" alt="Chime"></a></h1>
-        <nav>
-          <ul class="nav">
-            <li><a href="/">Activity</a></li>
-            <li><a href="{{ live_site_url }}">Visit site</a></li>
-            {% if (author_email and task_description) or branch %}
-            <li class="active-task"><a href="{% if task_root_path %}{{task_root_path}}{% else %}./{% endif %}">{% if author_email and task_description %}{{author_email}}/<strong>{{task_description}}</strong>{% elif branch %}{{branch}}{% endif %}</a></li>
-            {% endif %}
-          </ul>
-      </header>
-     <!-- end header block -->
+    <body class="{% block body_class %}{% endblock %} col">
 
+    {% block global_header %}
+      {% from 'macros/macros.html' import globalHeader as globalHeader %}
+      {{ globalHeader(breadcrumb_items = breadcrumb_items, email=email, branch=branch, activity=activity) }}
+    {% endblock %}
 
-
-      <!-- feedback messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            <div class="flash-holder">
-              <ul class="flashes">
-              {% for category, message in messages %}
-                <li class="{{ category }}">{{ message }}</li>
-              {% endfor %}
-              </ul>
-            </div>
-          {% endif %}
-        {% endwith %}
-     <!-- end feedback messages -->
+    {% include 'includes/flashes.html' %}
 
      <!-- content -->
         {% block content %}{% endblock %}
      <!-- end content -->
 
-     <!-- footer block -->
-        <footer class="product-info">
-            <p class="cfa">Created by <span><img src="/static/images/logo-black.png" alt="Code for America" height="40px" /></span></p>
-            <div class="signout">
-                  {% if email %}
-                    <input type="button" id="signout" value="Sign out">
-                  {% else %}
-                 
-                  {% endif %}
-            </div>
-        </footer>
-      <!-- end footer block -->
-        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-        <script src="/static/javascript/toopaymarkdown/js//bootstrap-markdown.js"></script>
+      {% block scripts %}{% endblock %}
 
+        <script src="/static/javascript/placeholders.min.js"></script>
     </body>
 
     <script type="text/javascript">

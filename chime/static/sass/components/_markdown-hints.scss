@@ -1,0 +1,39 @@
+.hint-table {
+	td {
+		vertical-align: top;
+	}
+}
+
+.hint {
+	ul, ol {
+		margin: 0;
+		margin-left: 1em;
+	}
+	ul {
+		list-style-type: disc;
+	}
+	ol {
+		list-style-type: decimal;
+	}
+	blockquote {
+		border-left: 4px solid $color-grey-400;
+		margin-left: 0;
+		padding: 0 2em;
+	}
+
+	h1, h2, h3 {
+		margin: 0;
+	}
+}
+
+.hint__code {
+	font-family: $font-mono;
+	p {
+		font-size: $base-font-size;
+		margin: 0;
+	}
+}
+
+.hint__preview {
+
+}

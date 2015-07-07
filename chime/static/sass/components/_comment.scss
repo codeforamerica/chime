@@ -1,0 +1,55 @@
+.comment {
+	@include clearfix();
+	background-color: #fff;
+	border-radius: $border-radius;
+	padding: 1em;
+	box-shadow: 0 0 3px rgba(0,0,0,.15);
+	margin-bottom: 1em;
+}
+
+.comment--new {
+	background-color: $color-grey-50;
+	border: 1px solid $color-grey-300;
+	box-shadow: none;
+	.comment__author {
+		color: $color-grey-600;
+	}
+}
+
+.comment__note {
+	font-size: $base-font-size;
+	color: #000;
+	margin-bottom: 1em;
+	.fa-info-circle {
+		margin-right: .5em;
+	}
+}
+
+.comment__author {
+	color: $color-grey-600;
+	border-bottom: 1px solid $color-grey-200;
+	padding-bottom: 1em;
+	margin-bottom: 1em;
+}
+
+.comment__body {
+	font-size: $h4-font-size;
+	font-weight: normal;
+}
+
+.comment__datetime {
+	color: $color-grey-600;
+	font-size: $small-font-size;
+	margin-top: 1em;
+}
+
+.comment__input {
+	border: 1px solid $color-grey-200;
+	height: 70px;
+	padding: .5em;
+}
+
+.comment__actions {
+	margin-top: 1em;
+	padding: 0;
+}

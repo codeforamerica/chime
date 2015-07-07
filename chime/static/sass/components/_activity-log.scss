@@ -1,0 +1,72 @@
+
+.activity-overview {
+	.activity-log {
+		margin: 4em 0
+	}
+}
+
+.activity-log {
+	padding-left: 1em;
+}
+
+
+.activity-log-item {
+	@include clearfix();
+	position: relative;
+	border-left: 1px solid $color-grey-400;
+	padding-left: 3em;
+	padding-bottom: 4em;
+	font-weight: 400;
+	&:last-child {
+		border: 0;
+		padding-bottom: 0;
+	}
+	&:before {
+		content: '';
+		position: absolute;
+		display: block;
+		height: 2.5em;
+		width: 2.5em;
+		z-index: 2;
+		background-color: $color-grey-50;
+		border: 1px solid $color-grey-400;
+		border-radius: 50%;
+		left: -1.25em;
+		font-family: 'FontAwesome';
+		font-size: 14px;
+		text-align: center;
+		line-height: 2.5em;
+		color: $color-grey-800;
+	}
+}
+
+.activity-log-item--info {
+	&:before {
+		content: '\f129';
+	}
+}
+
+.activity-log-item--edit {
+	&:before {
+		content: '\f040';
+	}
+}
+
+.activity-log-item--comment {
+	&:before {
+		line-height: 2.25em; //fixes vertical alignment of comment icon for visual balance.
+		content: '\f075';
+	}
+}
+
+.activity-log-item__content {
+	p {
+		margin: 0;
+	}
+}
+
+.activity-log-item__datetime {
+	margin-top: .5em;
+	font-size: $small-font-size;
+	color: $color-grey-600;
+}

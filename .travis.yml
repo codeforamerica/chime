@@ -3,14 +3,13 @@ language: python
 python:
 - '2.7'
 cache: pip
-install:
-- pip install -r requirements.txt
-- pip install -r fabfile/requirements.txt
 script:
 - nosetests test/unit
 notifications:
   webhooks:
     - http://project-monitor.codeforamerica.org/projects/1bf2f3b3-bed8-42bc-91e8-d47f873443de/status
-    - http://chime.chimecms.org/ops/travis
+    - http://chime-admin.chimecms.org/ops/travis
+    - http://demo-admin.chimecms.org/ops/travis
+    - http://springfield-admin.chimecms.org/ops/travis
   slack:
     secure: jayLiI1FjF5/M4WtL5mjO+2NOnCJZI+7IhMvZPSUiikutZSrxCvggf2C/YtlAD2NaxZXrCpnVgdB4XjQTnmRdo8U/M7pLbAF2JVgphSizrRhEY15tIPuyRRKqCQMZo5fz3+Tb6wvgLEGHxVhJv8COfe9zuwlVTcK9XmXrJkPYBE=
