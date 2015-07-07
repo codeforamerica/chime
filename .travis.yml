@@ -10,9 +10,6 @@ before_install:
 install:
 - pip install -r requirements.txt
 - pip install -r fabfile/requirements.txt
-env:
-  - SUITE='nosetests test/unit'
-  - SUITE='env BROWSERS_TO_TEST=supported TEST_RETRY_COUNT=3 fab test_chime:despawn_on_failure=t'
 script:
 - "$SUITE"
 notifications:
@@ -25,6 +22,8 @@ notifications:
     secure: jayLiI1FjF5/M4WtL5mjO+2NOnCJZI+7IhMvZPSUiikutZSrxCvggf2C/YtlAD2NaxZXrCpnVgdB4XjQTnmRdo8U/M7pLbAF2JVgphSizrRhEY15tIPuyRRKqCQMZo5fz3+Tb6wvgLEGHxVhJv8COfe9zuwlVTcK9XmXrJkPYBE=
 # AWS_ACCESS_KEY AWS_SECRET_KEY SSH_PRIVATE_KEY_PATH TESTING_EMAIL TESTING_PASSWORD
 env:
+  - SUITE='nosetests test/unit'
+  - SUITE='env BROWSERS_TO_TEST=supported TEST_RETRY_COUNT=3 fab test_chime:despawn_on_failure=t'
   global:
   - secure: M+PrGzEfHRj+mPn7d1vHC0n/IQN6fNGER2dhG8qBE8wfC3tfaB3F50R8YSR9R5SdkdapxtgEjPgGvR3agum999qYXo839nra0zq2l3DeQYvwM0IXX0JlscwUkBrMtqMFW9iIIyxB6dgdksUJ5Zz7qcYudm+Msr15iob3DfIxZqs=
   - secure: C8Br1052Hqd+X2OS6g+x31gZtwIzWSq1M2fvGxgIWR+wqZ5IQ6NfkTD2Ht6KwtW4fMUo/41le3t+AFReQeSMZ16l7yvkC7BWcrqQOWaNXNm9Gj1t1QFMuKQvhv3NT0H6HGLXXGMrHwLKDHTCAnSOe8k/xbhqG8Og4UF0hoOF7lY=
