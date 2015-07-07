@@ -3,12 +3,12 @@
 	background-color: #fff;
 	border-radius: $border-radius;
 	padding: 1em;
-	box-shadow: 0 0 3px rgba(0,0,0,.15);
+	box-shadow: 0 0 3px rgba(0,0,0,.25);
 	margin-bottom: 1em;
 }
 
 .comment--new {
-	background-color: $color-grey-50;
+	background-color: $color-grey-100;
 	border: 1px solid $color-grey-300;
 	box-shadow: none;
 	.comment__author {

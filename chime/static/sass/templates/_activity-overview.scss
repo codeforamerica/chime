@@ -5,18 +5,30 @@
 	padding-top: 3em;
 }
 
-
-.activity-overview__header {
-	margin-top: 0;
+.activity-overview__subtitle {
+	@include allcaps();
+	font-size: $base-font-size;
+	font-weight: 400;
 }
 
-.activity-overview__description {
-	margin-top: 2em;
-	font-size: $h3-font-size;
+.activity-overview__header {
+	background-color: #fff;
+	padding: 1em $site-margins 2em $site-margins;
+	border: 1px solid $color-grey-300;
+}
+
+.activity-overview__details {
+	font-size: $base-font-size;
+	color: $color-grey-600;
+}
+
+.activity-overview__title {
+	margin-top: 0;
 }
 
 .activity-overview__main {
 	margin: 0 auto;
 	padding: 3px;
-	max-width: 600px;
+	max-width: 680px;
 }
+

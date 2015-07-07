@@ -3,10 +3,11 @@
 	font-size: $h4-font-size;
 	border: 1px solid $color-grey-300;
 	background-color: #fff;
-	margin: 2em 0;
+	margin: 0;
+	margin-top: -1px;
 	padding: {
-		top: 1.5em;
-		bottom: 1em;
+		top: 2em;
+		bottom: 1.5em;
 	}
 }
 
@@ -21,8 +22,9 @@
 		top: 1em;
 		left: -50%;
 		right: 50%;
-		height: 2px;
-		background-color: $color-grey-300;
+		height: 4px;
+		margin-top: -2px;
+		background-color: $color-grey-200;
 		z-index: 0;
 	}
 	&:first-child {
@@ -39,11 +41,12 @@
 
 .activity-progress__label {
 	font-size: $base-font-size;
-	color: $color-grey-600;
-	font-weight: 400;
+	color: $color-grey-500;
+	font-weight: 300;
 	margin-bottom: 0;
 	.completed & {
 		color: #000;
+		font-weight: 600;
 	}
 }
 
@@ -56,7 +59,7 @@
 	width: 2em;
 	text-align: center;
 	line-height: 1em;
-	background-color: $color-grey-100;
+	background-color: $color-grey-200;
 	color: $color-grey-500;
 	.completed & {
 		background-color: $color-green-400;

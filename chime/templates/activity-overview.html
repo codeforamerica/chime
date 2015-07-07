@@ -8,14 +8,52 @@
 {% set template_name = 'activity-overview' %}
 {% block body_class %}{{template_name}}{% endblock %}
 
+{% block scripts %}
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script src="/static/javascript/activity-summary.js"></script>
+
+{% endblock%}
+
 {% block content %}
 <!-- template name: {{template_name}} -->
 <div class="activity-overview__container col__flex">
     <div class="activity-overview__main">
-<!--         <p class="activity-overview__subtitle">Activity Overview</p> -->
-        <h1 class="activity-overview__header">{{ activity.task_description | title }} For {{ activity.task_beneficiary | title }}</h1>
+        <div class="activity-overview__header">
+            <p class="activity-overview__subtitle">Activity Overview</p>
+            <h1 class="activity-overview__title">{{ activity.task_description | title }} For {{ activity.task_beneficiary | title }}</h1>
+            <p class="activity-overview__details">Last edited by {{ activity.last_edited_email }}.</p>
+        </div>
 
-        <a href="{{ activity.edit_path }}" class="button button--outline button--large">Keep working on this activity</a>
+        <div class="activity-summary">
+            <a href="#" class="activity-summary__toggle">3 articles and categories have been changed (click to review)</a>
+            <table class="activity-summary__table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Changes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="activity-summary__name">Snowstorm Operations</td>
+                        <td class="activity-summary__filetype">Article</td>
+                        <td class="activity-summary__changes">Created, Edited</td>
+                    </tr>
+                    <tr>
+                        <td class="activity-summary__name">Public Safety</td>
+                        <td class="activity-summary__filetype">Category</td>
+                        <td class="activity-summary__changes">Description Edited</td>
+                    </tr>
+                    <tr>
+                        <td class="activity-summary__name">Snowstorm Operations</td>
+                        <td class="activity-summary__filetype">Article</td>
+                        <td class="activity-summary__changes">Created, Edited</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
 
         <ul class="activity-progress">
             {% set review_step = 0 %}
@@ -47,32 +85,31 @@
             </li>
         </ul>
 
-        <p class="activity-overview__description">Activity History and Discussion</p>
-
         <div class="activity-log">
+
+            {% set comment_note = "leave a comment" %}
+
+            {% if activity.review_authorized %}
+                {% if activity.review_state == 'unreviewed edits' %}
+                    {% set comment_note = "request feedback on your work" %}
+                {% elif activity.review_state == 'feedback requested' %}
+                    {% set comment_note = "leave feedback on" + activity.last_edited_email + "'s changes" %}
+                {% elif activity.review_state == 'edits endorsed' %}
+                    {% set comment_note = "publish changes to the site" %}
+                {% endif %}
+            {% else %}
+                {% if activity.review_state == 'feedback requested' %}
+                    {% set comment_note = "leave a comment. Currently awaiting someone to look over your work" %}
+                {% endif %}
+            {% endif %}
+
+            <p class="activity-overview__description"><a href="{{ activity.edit_path }}">Do more work on this activity</a> or {{ comment_note }}.</p>
+
             {% if activity.review_state != 'changes published' %}
             <div class="activity-log-item activity-log-item--comment">
                 <form action="." method="POST" class="comment comment--new">
                     <div class="comment__author">{% if email %}{{ email }}{% else %}unknown{% endif %}</div>
                     <div class="comment__body">
-
-                        {% set comment_note = "Work is currently in progress. Feel free to leave a comment." %}
-                        {% if activity.review_authorized %}
-                            {% if activity.review_state == 'unreviewed edits' %}
-                                {% set comment_note = "Looks like you've made some changes. Have someone check your work." %}
-                            {% elif activity.review_state == 'feedback requested' %}
-                                {% set comment_note = activity.last_edited_email + " made some changes and is requesting feedback." %}
-                            {% elif activity.review_state == 'edits endorsed' %}
-                                {% set comment_note = "Changes were made and endorsed. They can now be published to the live site." %}
-                            {% endif %}
-                        {% else %}
-                            {% if activity.review_state == 'feedback requested' %}
-                                {% set comment_note = "Currently awaiting someone to check your work." %}
-                            {% endif %}
-                        {% endif %}
-
-                        <p class="comment__note"><span class="fa fa-info-circle"></span> {{ comment_note }}</p>
-
                         <textarea class="comment__input" name="comment_text" placeholder="Leave your comment here"></textarea>
                     </div>
                     <div class="comment__actions toolbar toolbar--right">

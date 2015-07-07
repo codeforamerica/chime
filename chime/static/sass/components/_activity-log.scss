@@ -1,7 +1,11 @@
 
 .activity-overview {
 	.activity-log {
-		margin: 4em 0
+		background-color: $color-grey-50;
+		padding: 2em $site-margins;
+		border: 1px solid $color-grey-300;
+		margin-top: -1px;
+		margin-bottom: 4em;
 	}
 }
 
@@ -9,14 +13,25 @@
 	padding-left: 1em;
 }
 
+.activity-overview__description {
+	font-size: $text-font-size;
+	font-weight: 600;
+	padding-bottom: 2em;
+	a {
+		color: inherit;
+		text-decoration: underline;
+	}
+}
+
 
 .activity-log-item {
 	@include clearfix();
 	position: relative;
-	border-left: 1px solid $color-grey-400;
+	border-left: 4px solid $color-grey-300;
 	padding-left: 3em;
-	padding-bottom: 4em;
-	font-weight: 400;
+	padding-bottom: 3em;
+	margin-left: -$site-margins;
+	font-weight: 300;
 	&:last-child {
 		border: 0;
 		padding-bottom: 0;
@@ -28,7 +43,7 @@
 		height: 2.5em;
 		width: 2.5em;
 		z-index: 2;
-		background-color: $color-grey-50;
+		background-color: #fff;
 		border: 1px solid $color-grey-400;
 		border-radius: 50%;
 		left: -1.25em;
