@@ -14,9 +14,42 @@
     <div class="activity-overview__main">
         <p class="activity-overview__subtitle">Activity Overview</p>
         <h1 class="activity-overview__header">{{ activity.task_description | title }} For {{ activity.task_beneficiary | title }}</h1>
-        <a href="{{ activity.edit_path }}" class="button button--outline button--large">Continue working</a>
 
-        <p class="activity-overview__description">Below is a timeline of all of the work and discussion around this activity. Any work you do will appear at the the top of this list.</p>
+        <a href="{{ activity.edit_path }}" class="button button--outline button--large">Keep working on this activity</a>
+
+        <p class="activity-overview__description">Activity Summary</p>
+
+        <ul class="activity-progress">
+            {% set review_step = 0 %}
+            {% if activity.review_state == "unreviewed edits" %}
+                {% set review_step = 1 %}
+            {% elif activity.review_state == "feedback requested" %}
+                {% set review_step = 2 %}
+            {% elif activity.review_state == "edits endorsed" %}
+                {% set review_step = 3 %}
+            {% elif activity.review_state == "changes published" %}
+                {% set review_step = 4 %}
+            {% endif %}
+
+            <li class="activity-progress__item {% if review_step > 0 %}completed{% endif %}">
+                <div class="activity-progress__icon fa fa-pencil"></div>
+                <p class="activity-progress__label">Changes Made</p>
+            </li>
+            <li class="activity-progress__item {% if review_step > 1 %}completed{% endif %}">
+                <div class="activity-progress__icon fa fa-eye"></div>
+                <p class="activity-progress__label">Feedback Requested</p>
+            </li>
+            <li class="activity-progress__item {% if review_step > 2 %}completed{% endif %}">
+                <div class="activity-progress__icon fa fa-thumbs-o-up"></div>
+                <p class="activity-progress__label">Endorsed</p>
+            </li>
+            <li class="activity-progress__item {% if review_step > 3 %}completed{% endif %}">
+                <div class="activity-progress__icon fa fa-check"></div>
+                <p class="activity-progress__label">Published</p>
+            </li>
+        </ul>
+
+        <p class="activity-overview__description">Activity History and Discussion</p>
 
         <div class="activity-log">
             {% if activity.review_state != 'changes published' %}

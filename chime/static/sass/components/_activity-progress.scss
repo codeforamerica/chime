@@ -1,0 +1,66 @@
+.activity-progress {
+	@include clearfix();
+	font-size: $h4-font-size;
+	border: 1px solid $color-grey-300;
+	background-color: #fff;
+	margin: 2em 0;
+	padding: {
+		top: 1.5em;
+		bottom: 1em;
+	}
+}
+
+.activity-progress__item {
+	@include span-columns(3);
+	text-align: center;
+	position: relative;
+	&:before {
+		content: '';
+		display: block;
+		position: absolute;
+		top: 1em;
+		left: -50%;
+		right: 50%;
+		height: 2px;
+		background-color: $color-grey-300;
+		z-index: 0;
+	}
+	&:first-child {
+		&:before {
+			display: none;
+		}
+	}
+	&.completed {
+		&:before {
+			background-color: $color-green-300;
+		}
+	}
+}
+
+.activity-progress__label {
+	font-size: $base-font-size;
+	color: $color-grey-600;
+	font-weight: 400;
+	margin-bottom: 0;
+	.completed & {
+		color: #000;
+	}
+}
+
+.activity-progress__icon {
+	position: relative;
+	z-index: 1;
+	padding: .5em;
+	border-radius: 50%;
+	height: 2em;
+	width: 2em;
+	text-align: center;
+	line-height: 1em;
+	background-color: $color-grey-100;
+	color: $color-grey-500;
+	.completed & {
+		background-color: $color-green-400;
+		color: #fff;
+	}
+
+}
