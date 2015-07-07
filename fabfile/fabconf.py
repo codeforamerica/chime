@@ -55,7 +55,7 @@ fabconf['EC2_REGION'] = os.environ.get('EC2_REGION', 'us-east-1')
 
 # AMI name. Either pass in a comma-delimited list of values.
 # Defaults to Ubuntu 14.04
-fabconf['EC2_AMIS'] = os.environ.get('EC2_AMIS', 'ami-d05e75b8').split(',')
+fabconf['EC2_AMIS'] = os.environ.get('EC2_AMIS', 'ami-6725ea0c').split(',')
 
 # Name of the keypair you use in EC2.
 fabconf['EC2_KEY_PAIR'] = os.environ.get('EC2_KEY_PAIR', 'cfa-chime-keypair')
@@ -64,7 +64,7 @@ fabconf['EC2_KEY_PAIR'] = os.environ.get('EC2_KEY_PAIR', 'cfa-chime-keypair')
 fabconf['AWS_SECURITY_GROUPS'] = os.environ.get('AWS_SECURITY_GROUPS', 'default')
 
 # API Name of instance type. Defaults to t2.micro
-fabconf['EC2_INSTANCE_TYPE'] = os.environ.get('EC2_INSTANCE_TYPE', 't2.micro')
+fabconf['EC2_INSTANCE_TYPE'] = os.environ.get('EC2_INSTANCE_TYPE', 't2.small')
 
 # Assorted other config (described in AcceptanceTests.md) used here to fail fast
 fabconf['TESTING_EMAIL'] = os.environ['TESTING_EMAIL']

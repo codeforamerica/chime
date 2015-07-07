@@ -44,8 +44,7 @@ end
 #
 env_file = '/etc/chime.conf'
 
-file env_file do
-  content <<-CONF
+env_contents = <<-CONF
 RUNNING_STATE_DIR=/var/run/#{username}
 REPO_PATH=/var/opt/chime-site
 WORK_PATH=/var/opt/chime-work
@@ -57,6 +56,13 @@ GA_REDIRECT_URI="#{ga_redirect_uri}"
 
 AUTH_DATA_HREF=#{authorization_data_href}
 CONF
+
+if ENV['ACCEPTANCE_TEST_MODE']
+  env_contents << "ACCEPTANCE_TEST_MODE=1\n"
+end
+
+file env_file do
+  content env_contents
 end
 
 execute "honcho export upstart /etc/init" do
