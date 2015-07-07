@@ -269,7 +269,7 @@ def _server_setup(fqdn=None):
 
 
 def _install_chime_if_necessary():
-    if run("ps -u chime").succeeded:
+    if run("ps -u chime", quiet=True).succeeded:
         print(green('Chime running; skipping chime install'))
     else:
         print(green('Installing chime'))
