@@ -613,6 +613,9 @@ def deploy_key():
     except IOError:
         return Response('Not found.', 404, content_type='text/plain')
 
+@app.route('/styleguide')
+def styleguide():
+    return render_template('styleguide.html')
 
 @app.route('/<path:path>')
 @log_application_errors

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<!--[if lte IE 10]><html lang="en-us" class="lt-ie10"><![endif]-->
+<!--[if gt IE 9]><!--><html lang="en-us"><!--<![endif]-->
+<head>
+        <meta charset="utf-8">
+        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+        <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+        <link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700,300italic,400italic,700italic' rel='stylesheet' type='text/css'>
+        <link href="/static/stylesheets/main.css" rel="stylesheet" />
+        <link href="/static/stylesheets/styleguide.css" rel="stylesheet" />
+        <script src="{{ url_for('static', filename='script.js') }}"></script>
+        <title>Styleguide | Chime</title>
+        <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    </head>
+    <body class="styleguide">
+        <h1>Chime Styleguide</h1>
+
+        <h2>Row and Column Layouts</h2>
+
+        <h3>Row</h3>
+        <div class="row">
+          <div class="row__left">
+            Row Left
+          </div>
+          <div class="row__right">
+            Row Right
+          </div>
+        </div>
+
+
+        <h3>Main Row</h3>
+        <div class="row row--main">
+          <div class="row__left">
+            Row Left
+          </div>
+          <div class="row__right">
+            Row Right
+          </div>
+        </div>
+
+        <h3>Row with Toolbars</h3>
+        <div class="row">
+          <div class="row__left toolbar toolbar--left">
+            <span class="toolbar__item">Toolbar Item</span>
+            <span class="toolbar__item">Toolbar Item</span>
+            <span class="toolbar__item">Toolbar Item</span>
+          </div>
+          <div class="row__right toolbar toolbar--right">
+            <span class="toolbar__item">Toolbar Item</span>
+            <span class="toolbar__item">Toolbar Item</span>
+            <span class="toolbar__item">Toolbar Item</span>
+          </div>
+        </div>
+
+        <h3>Column</h3>
+        <div class="col" style="height: 300px">
+          <div class="col__item">Column Item</div>
+          <div class="col__flex">Flexible Column Item</div>
+        </div>
+
+
+        <h2>Grid Layouts</h2>
+        <div class="grid">
+          <div class="grid__item width-one-whole">One Whole</div>
+          <div class="grid__item width-one-half">One Half</div>
+          <div class="grid__item width-one-half end-row">One Half</div>
+          <div class="grid__item width-one-third">One Third</div>
+          <div class="grid__item width-two-thirds end-row">Two Thirds</div>
+          <div class="grid__item width-one-fourth">One Fourth</div>
+          <div class="grid__item width-three-fourths">Three Fourths</div>
+        </div>
+
+        <script src="/static/javascript/placeholders.min.js"></script>
+    </body>
+</html>
