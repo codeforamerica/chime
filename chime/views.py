@@ -626,18 +626,6 @@ def deploy_key():
     except IOError:
         return Response('Not found.', 404, content_type='text/plain')
 
-@app.route('/test404', methods=['GET'])
-@log_application_errors
-def error_404():
-    kwargs = common_template_args(current_app.config, session)
-    return render_template('error_404.html', **kwargs)
-
-@app.route('/test500', methods=['GET'])
-@log_application_errors
-def error_500():
-    kwargs = common_template_args(current_app.config, session)
-    return render_template('error_500.html', **kwargs)
-
 @app.route('/<path:path>')
 @log_application_errors
 def all_other_paths(path):
