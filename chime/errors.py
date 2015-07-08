@@ -22,7 +22,7 @@ def common_error_template_args(app_config):
     }
 
 def make_email_params(message, path=None):
-    ''' Render a 500 error page with the passed details
+    ''' Construct email params to send to the template.
     '''
     email_message = EMAIL_BODY_PREFIX + message
     if path:
