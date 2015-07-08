@@ -1877,7 +1877,7 @@ input[type="submit"]:disabled:hover {
   display: block;
   padding: .5em 1em;
   background-color: #fff;
-  box-shadow: 0 0 3px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.25);
   margin-bottom: 2em;
   border-radius: 3px;
 }
@@ -2144,7 +2144,7 @@ input[type="submit"]:disabled:hover {
   max-width: 500px;
   margin-top: -175px;
   border-radius: 3px;
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.25);
 }
 /* line 7, ../sass/core/_utilities.scss */
 .directory-modify__form:before, .directory-modify__form:after {

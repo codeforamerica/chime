@@ -21,7 +21,7 @@
 	display: block;
 	padding: .5em 1em;
 	background-color: #fff;
-	box-shadow: 0 0 3px rgba(#000, .15);
+	box-shadow: $box-shadow-1;
 	margin-bottom: 2em;
 	border-radius: $border-radius;
 	.lt-ie10 & {

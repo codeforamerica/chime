@@ -21,7 +21,7 @@
 	@include clearfix();
 	position: absolute;
 	background-color: #fff;
-	box-shadow: 0 0 10px rgba(#000, .4);
+	box-shadow: $box-shadow-2;
 	z-index: 2;
 	padding: 1em 2em;
 	display: none;
