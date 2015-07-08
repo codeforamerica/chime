@@ -699,9 +699,10 @@ html {
   font-family: "Source Sans Pro", "Helvetiva", "Arial", sans-serif;
   font-size: 14px;
   font-weight: 300;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* line 12, ../sass/core/_base.scss */
+/* line 13, ../sass/core/_base.scss */
 body {
   position: absolute;
   top: 0px;
@@ -712,24 +713,24 @@ body {
   background-color: #fafafa;
 }
 
-/* line 22, ../sass/core/_base.scss */
+/* line 23, ../sass/core/_base.scss */
 p {
   font-size: 16px;
   line-height: 1.5em;
 }
 
-/* line 28, ../sass/core/_base.scss */
+/* line 29, ../sass/core/_base.scss */
 ul, ol {
   list-style-type: none;
   padding: 0;
 }
 
-/* line 33, ../sass/core/_base.scss */
+/* line 34, ../sass/core/_base.scss */
 a {
   text-decoration: none;
   color: #009DDB;
 }
-/* line 36, ../sass/core/_base.scss */
+/* line 37, ../sass/core/_base.scss */
 a:hover {
   text-decoration: underline;
 }
@@ -765,13 +766,12 @@ h1, h2, h3 {
   margin-right: auto;
 }
 
-/* line 39, ../sass/styleguide.scss */
-.row, .col, .grid, .toolbar {
+/* line 40, ../sass/styleguide.scss */
+.layout-examples .row, .layout-examples .col, .layout-examples .grid, .layout-examples .toolbar {
   border: 1px solid #9e9e9e;
 }
-
-/* line 47, ../sass/styleguide.scss */
-.toolbar__item, .grid__item, .row__left, .row__right, .col__item, .col__flex {
+/* line 44, ../sass/styleguide.scss */
+.layout-examples .toolbar__item, .layout-examples .grid__item, .layout-examples .row__left, .layout-examples .row__right, .layout-examples .col__item, .layout-examples .col__flex {
   background-color: rgba(102, 198, 172, 0.5);
   margin-top: 1px;
   margin-bottom: 1px;

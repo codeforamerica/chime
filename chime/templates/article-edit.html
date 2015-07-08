@@ -49,8 +49,8 @@
             </div>
         </div>
         <div class="row__right toolbar--right">
-            <a href="{{ history_path }}" class="button button--outline toolbar__item">History</a>
-            <a href="{{ view_path }}" target="_blank" class="button button--outline toolbar__item">Preview</a>
+            <a href="{{ history_path }}" class="button  toolbar__item">History</a>
+            <a href="{{ view_path }}" target="_blank" class="button  toolbar__item">Preview</a>
             <input type="submit" class="button button--green toolbar__item" value="Save"/>
         </div>
     </div>    
@@ -64,7 +64,7 @@
         <div class="edit-article__previewer row__right col">
             <div class="previewer__bar col__item">
                 <div class="toolbar toolbar--right">
-                    <a href="#" class="button button--outline" id="toggle-hints">Formatting Hints</a>
+                    <a href="#" class="button " id="toggle-hints">Formatting Hints</a>
                 </div>
             </div>
 
@@ -159,7 +159,7 @@
                 {% if app_authorized %}
                 <span class="toolbar__item">This week, <b>{{ page_views }} people</b> spent an average of <b>{{ average_time_page }} secs</b> on this page.</span>
                 {% else %}
-                <a href="/setup" class="toolbar__item button button--outline">Connect to Google Analytics</a>
+                <a href="/setup" class="toolbar__item button ">Connect to Google Analytics</a>
                 {% endif %}
             </div>
     </div>

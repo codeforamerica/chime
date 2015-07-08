@@ -17,58 +17,97 @@
 
         <h2>Row and Column Layouts</h2>
 
-        <h3>Row</h3>
-        <div class="row">
-          <div class="row__left">
-            Row Left
+        <div class="layout-examples">
+          <h3>Row</h3>
+          <div class="row">
+            <div class="row__left">
+              Row Left
+            </div>
+            <div class="row__right">
+              Row Right
+            </div>
           </div>
-          <div class="row__right">
-            Row Right
+
+
+          <h3>Main Row</h3>
+          <div class="row row--main">
+            <div class="row__left">
+              Row Left
+            </div>
+            <div class="row__right">
+              Row Right
+            </div>
           </div>
+
+          <h3>Row with Toolbars</h3>
+          <div class="row">
+            <div class="row__left toolbar toolbar--left">
+              <span class="toolbar__item">Toolbar Item</span>
+              <span class="toolbar__item">Toolbar Item</span>
+              <span class="toolbar__item">Toolbar Item</span>
+            </div>
+            <div class="row__right toolbar toolbar--right">
+              <span class="toolbar__item">Toolbar Item</span>
+              <span class="toolbar__item">Toolbar Item</span>
+              <span class="toolbar__item">Toolbar Item</span>
+            </div>
+          </div>
+
+          <h3>Column</h3>
+          <div class="col" style="height: 300px">
+            <div class="col__item">Column Item</div>
+            <div class="col__flex">Flexible Column Item</div>
+          </div>
+
+
+          <h2>Grid Layouts</h2>
+          <div class="grid">
+            <div class="grid__item width-one-whole">One Whole</div>
+            <div class="grid__item width-one-half">One Half</div>
+            <div class="grid__item width-one-half end-row">One Half</div>
+            <div class="grid__item width-one-third">One Third</div>
+            <div class="grid__item width-two-thirds end-row">Two Thirds</div>
+            <div class="grid__item width-one-fourth">One Fourth</div>
+            <div class="grid__item width-three-fourths">Three Fourths</div>
+          </div>
+
         </div>
 
+        
 
-        <h3>Main Row</h3>
+        <h2>Buttons</h2>
+
+        <h3>Solid Buttons</h3>
         <div class="row row--main">
-          <div class="row__left">
-            Row Left
-          </div>
-          <div class="row__right">
-            Row Right
-          </div>
-        </div>
-
-        <h3>Row with Toolbars</h3>
-        <div class="row">
-          <div class="row__left toolbar toolbar--left">
-            <span class="toolbar__item">Toolbar Item</span>
-            <span class="toolbar__item">Toolbar Item</span>
-            <span class="toolbar__item">Toolbar Item</span>
-          </div>
-          <div class="row__right toolbar toolbar--right">
-            <span class="toolbar__item">Toolbar Item</span>
-            <span class="toolbar__item">Toolbar Item</span>
-            <span class="toolbar__item">Toolbar Item</span>
+          <div class="toolbar toolbar--left">
+            <button class="toolbar__item button">Button</button>
+            <button class="toolbar__item button button--red">Button</button>
+            <button class="toolbar__item button button--green">Button</button>
+            <button class="toolbar__item button button--blue">Button</button>
+            <button class="toolbar__item button button--orange">Button</button>
           </div>
         </div>
 
-        <h3>Column</h3>
-        <div class="col" style="height: 300px">
-          <div class="col__item">Column Item</div>
-          <div class="col__flex">Flexible Column Item</div>
+        <div class="row row--main">
+          <div class="toolbar toolbar--left">
+            <button class="toolbar__item button button--medium">Button</button>
+            <button class="toolbar__item button button--medium button--red">Button</button>
+            <button class="toolbar__item button button--medium button--green">Button</button>
+            <button class="toolbar__item button button--medium button--blue">Button</button>
+            <button class="toolbar__item button button--medium button--orange">Button</button>
+          </div>
         </div>
 
-
-        <h2>Grid Layouts</h2>
-        <div class="grid">
-          <div class="grid__item width-one-whole">One Whole</div>
-          <div class="grid__item width-one-half">One Half</div>
-          <div class="grid__item width-one-half end-row">One Half</div>
-          <div class="grid__item width-one-third">One Third</div>
-          <div class="grid__item width-two-thirds end-row">Two Thirds</div>
-          <div class="grid__item width-one-fourth">One Fourth</div>
-          <div class="grid__item width-three-fourths">Three Fourths</div>
+        <div class="row row--main">
+          <div class="toolbar toolbar--left">
+            <button class="toolbar__item button button--large">Button</button>
+            <button class="toolbar__item button button--large button--red">Button</button>
+            <button class="toolbar__item button button--large button--green">Button</button>
+            <button class="toolbar__item button button--large button--blue">Button</button>
+            <button class="toolbar__item button button--large button--orange">Button</button>
+          </div>
         </div>
+
 
         <script src="/static/javascript/placeholders.min.js"></script>
     </body>

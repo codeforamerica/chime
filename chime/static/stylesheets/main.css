@@ -699,9 +699,10 @@ html {
   font-family: "Source Sans Pro", "Helvetiva", "Arial", sans-serif;
   font-size: 14px;
   font-weight: 300;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* line 12, ../sass/core/_base.scss */
+/* line 13, ../sass/core/_base.scss */
 body {
   position: absolute;
   top: 0px;
@@ -712,24 +713,24 @@ body {
   background-color: #fafafa;
 }
 
-/* line 22, ../sass/core/_base.scss */
+/* line 23, ../sass/core/_base.scss */
 p {
   font-size: 16px;
   line-height: 1.5em;
 }
 
-/* line 28, ../sass/core/_base.scss */
+/* line 29, ../sass/core/_base.scss */
 ul, ol {
   list-style-type: none;
   padding: 0;
 }
 
-/* line 33, ../sass/core/_base.scss */
+/* line 34, ../sass/core/_base.scss */
 a {
   text-decoration: none;
   color: #009DDB;
 }
-/* line 36, ../sass/core/_base.scss */
+/* line 37, ../sass/core/_base.scss */
 a:hover {
   text-decoration: underline;
 }
@@ -1030,146 +1031,111 @@ input[type="submit"]:disabled:hover {
   transition: all ease-out 0.1s;
   display: inline-block;
   text-decoration: none;
-  background-color: #e0e0e0;
+  background: #f5f5f5;
   border: 1px solid #e0e0e0;
   color: #424242;
   font-family: "Source Sans Pro", "Helvetiva", "Arial", sans-serif;
   font-size: 12px;
   font-weight: 400;
   border-radius: 3px;
-  padding: .3em .5em;
+  padding: .3em .8em;
 }
 /* line 14, ../sass/components/_buttons.scss */
 .button:hover {
-  border-color: #bdbdbd;
-  background-color: #bdbdbd;
+  -webkit-transition-duration: 0s;
+  -moz-transition-duration: 0s;
+  transition-duration: 0s;
+  border-color: #e0e0e0;
+  background-color: #e0e0e0;
   text-decoration: none;
 }
-/* line 20, ../sass/components/_buttons.scss */
+/* line 21, ../sass/components/_buttons.scss */
 .button:active, .button.is-selected {
-  border-color: #757575;
-  background-color: #757575;
-  color: #f5f5f5;
+  border-color: #9e9e9e;
+  background-color: #9e9e9e;
+  color: #fff;
 }
-/* line 26, ../sass/components/_buttons.scss */
+/* line 27, ../sass/components/_buttons.scss */
 .button:disabled {
   opacity: .4;
   cursor: default;
 }
+/* line 33, ../sass/components/_buttons.scss */
+.button:focus {
+  outline: none;
+}
 
-/* line 32, ../sass/components/_buttons.scss */
+/* line 38, ../sass/components/_buttons.scss */
 .button--blue {
   border: 1px solid #336f87;
-  background-color: #336f87;
+  background-color: #6693a5;
   color: #fff;
 }
-/* line 36, ../sass/components/_buttons.scss */
+/* line 42, ../sass/components/_buttons.scss */
 .button--blue:hover {
   border-color: #004b6a;
   background-color: #004b6a;
 }
-/* line 40, ../sass/components/_buttons.scss */
+/* line 46, ../sass/components/_buttons.scss */
 .button--blue:active, .button--blue.is-selected {
   border-color: #002d3f;
   background-color: #002d3f;
 }
 
-/* line 46, ../sass/components/_buttons.scss */
+/* line 52, ../sass/components/_buttons.scss */
 .button--green {
   border: 1px solid #33b390;
-  background-color: #33b390;
+  background-color: #66c6ac;
   color: #fff;
 }
-/* line 50, ../sass/components/_buttons.scss */
+/* line 56, ../sass/components/_buttons.scss */
 .button--green:hover {
   border-color: #00a175;
   background-color: #00a175;
 }
-/* line 54, ../sass/components/_buttons.scss */
+/* line 60, ../sass/components/_buttons.scss */
 .button--green:active, .button--green.is-selected {
   border-color: #006046;
   background-color: #006046;
 }
 
-/* line 60, ../sass/components/_buttons.scss */
+/* line 66, ../sass/components/_buttons.scss */
 .button--red {
-  border: 1px solid #bb4961;
-  background-color: #bb4961;
-  color: #fff;
-}
-/* line 64, ../sass/components/_buttons.scss */
-.button--red:hover {
-  border-color: #aa1c3a;
-  background-color: #aa1c3a;
+  color: #bb4961;
 }
 /* line 68, ../sass/components/_buttons.scss */
-.button--red:active, .button--red.is-selected {
-  border-color: #661022;
-  background-color: #661022;
+.button--red:hover {
+  color: #aa1c3a;
 }
-
-/* line 74, ../sass/components/_buttons.scss */
-.button--orange {
-  border: 1px solid #ec9755;
-  background-color: #ec9755;
+/* line 71, ../sass/components/_buttons.scss */
+.button--red:active, .button--red.is-selected {
   color: #fff;
 }
-/* line 78, ../sass/components/_buttons.scss */
+
+/* line 76, ../sass/components/_buttons.scss */
+.button--orange {
+  border: 1px solid #ec9755;
+  background-color: #f1b17f;
+  color: #fff;
+}
+/* line 80, ../sass/components/_buttons.scss */
 .button--orange:hover {
   border-color: #e87d2b;
   background-color: #e87d2b;
 }
-/* line 82, ../sass/components/_buttons.scss */
+/* line 84, ../sass/components/_buttons.scss */
 .button--orange:active, .button--orange.is-selected {
   border-color: #8b4b19;
   background-color: #8b4b19;
 }
 
-/* line 88, ../sass/components/_buttons.scss */
-.button--white {
-  border: 1px solid #fff;
-  background-color: #fff;
-  color: #424242;
-}
-/* line 92, ../sass/components/_buttons.scss */
-.button--white:hover {
-  border-color: #f5f5f5;
-  background-color: #f5f5f5;
-}
-/* line 96, ../sass/components/_buttons.scss */
-.button--white:active, .button--white.is-selected {
-  border-color: #eeeeee;
-  background-color: #eeeeee;
-}
-
-/* line 102, ../sass/components/_buttons.scss */
-.button--outline {
-  -webkit-transition: all ease-out 0.2s;
-  -moz-transition: all ease-out 0.2s;
-  transition: all ease-out 0.2s;
-  background: transparent;
-  border: 1px solid #e0e0e0;
-  color: #616161;
-}
-/* line 107, ../sass/components/_buttons.scss */
-.button--outline:hover {
-  border-color: #bdbdbd;
-  background-color: #bdbdbd;
-  color: #424242;
-}
-/* line 112, ../sass/components/_buttons.scss */
-.button--outline:active, .button--outline.is-selected {
-  border-color: #9e9e9e;
-  background-color: #9e9e9e;
-}
-
-/* line 118, ../sass/components/_buttons.scss */
+/* line 90, ../sass/components/_buttons.scss */
 .button--text {
   background-color: transparent;
   border: 1px solid transparent;
   border-radius: 0;
 }
-/* line 122, ../sass/components/_buttons.scss */
+/* line 94, ../sass/components/_buttons.scss */
 .button--text:hover, .button--text:active, .button--text.is-selected {
   background-color: transparent;
   border-color: transparent;
@@ -1177,10 +1143,15 @@ input[type="submit"]:disabled:hover {
   color: #000;
 }
 
-/* line 130, ../sass/components/_buttons.scss */
+/* line 102, ../sass/components/_buttons.scss */
+.button--medium {
+  font-size: 14px;
+  padding: .5em 1em;
+}
+
+/* line 107, ../sass/components/_buttons.scss */
 .button--large {
   font-size: 18px;
-  font-weight: 300;
   padding: .5em 1em;
 }
 
@@ -1243,23 +1214,14 @@ input[type="submit"]:disabled:hover {
 .breadcrumb__item {
   display: block;
   float: left;
-  color: #99b7c3;
+  color: #fff;
   text-decoration: none;
   margin-left: -1px;
   margin-top: -.2em;
   margin-bottom: -.2em;
   padding: .3em .7em;
-  border: 1px solid #336f87;
-  border-radius: 3px;
   margin-right: .5em;
-  font-size: 12px;
   font-weight: 400;
-}
-/* line 22, ../sass/components/_breadcrumbs.scss */
-.breadcrumb__item:hover {
-  text-decoration: none;
-  background-color: #336f87;
-  color: #ccdbe1;
 }
 
 /* line 1, ../sass/components/_dropdown-nav.scss */
@@ -1411,33 +1373,39 @@ input[type="submit"]:disabled:hover {
 /* line 26, ../sass/components/_global-header.scss */
 .global-header__link {
   text-decoration: none;
-  color: #ccdbe1;
+  color: #fff;
+  font-weight: 400;
   padding: 1em 2em;
   border-left: 1px solid #195d78;
   margin: 0;
 }
-/* line 32, ../sass/components/_global-header.scss */
+/* line 33, ../sass/components/_global-header.scss */
 .global-header__link:hover {
   color: #fff;
   text-decoration: underline;
   background-color: #195d78;
 }
 
-/* line 39, ../sass/components/_global-header.scss */
-.activity-dropdown__link {
-  color: #ccdbe1;
+/* line 40, ../sass/components/_global-header.scss */
+.activity-dropdown {
+  background-color: #336f87;
 }
-/* line 41, ../sass/components/_global-header.scss */
+
+/* line 44, ../sass/components/_global-header.scss */
+.activity-dropdown__link {
+  color: #fff;
+}
+/* line 46, ../sass/components/_global-header.scss */
 .activity-dropdown__link:hover {
   color: #fff;
 }
 
-/* line 46, ../sass/components/_global-header.scss */
+/* line 51, ../sass/components/_global-header.scss */
 .activity-dropdown__subtitle {
   margin: 0em;
 }
 
-/* line 50, ../sass/components/_global-header.scss */
+/* line 55, ../sass/components/_global-header.scss */
 .activity-dropdown__title {
   font-weight: 600;
   padding-bottom: 1em;
@@ -1447,7 +1415,7 @@ input[type="submit"]:disabled:hover {
   color: #212121;
 }
 
-/* line 59, ../sass/components/_global-header.scss */
+/* line 64, ../sass/components/_global-header.scss */
 .activity-dropdown__button {
   width: 100%;
   margin-bottom: 2em;

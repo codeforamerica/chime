@@ -25,7 +25,8 @@
 
 .global-header__link {
 	text-decoration: none;
-	color: $color-blue-100;
+	color: #fff;
+	font-weight: 400;
 	padding: 1em 2em;
 	border-left: 1px solid $color-blue-450;
 	margin: 0;
@@ -36,8 +37,12 @@
 	}
 }
 
+.activity-dropdown {
+	background-color: $color-blue-400;
+}
+
 .activity-dropdown__link {
-	color: $color-blue-100;
+	color: #fff;
 	&:hover {
 		color: #fff;
 	}

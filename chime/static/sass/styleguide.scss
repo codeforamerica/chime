@@ -36,18 +36,17 @@ h1, h2, h3 {
 	}
 }
 
-.row, .col, .grid, .toolbar {
-	border: 1px solid $color-grey-500;
-}
+.layout-examples {
+	.row, .col, .grid, .toolbar {
+		border: 1px solid $color-grey-500;
+	}
 
-.grid__item {
-	
-}
-
-.toolbar__item, .grid__item, .row__left, .row__right, .col__item, .col__flex {
-	background-color: rgba($color-green-300, .5);
-	margin: {
-		top: 1px;
-		bottom: 1px;
+	.toolbar__item, .grid__item, .row__left, .row__right, .col__item, .col__flex {
+		background-color: rgba($color-green-300, .5);
+		margin: {
+			top: 1px;
+			bottom: 1px;
+		}
 	}
 }
+
