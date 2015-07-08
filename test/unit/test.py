@@ -1847,6 +1847,16 @@ class ChimeTestClient:
         response = self.client.get('/')
         self.test.assertFalse('Start' in response.data)
     
+    def open_link(self, url):
+        ''' Open a link and return its soupy representation.
+        '''
+        response = self.client.get(url)
+        self.test.assertEqual(response.status_code, 200)
+
+        soup = BeautifulSoup(response.data)
+        
+        return soup
+    
     def follow_link(self, soup, href):
         ''' Follow a link after making sure it's present in the page.
         '''
@@ -1865,9 +1875,16 @@ class ChimeTestClient:
         return redirect, soup
     
     def sign_in(self, email):
-        with HTTMock(self.test.mock_persona_verify):
-            response = self.client.post('/sign-in', data={'email': email})
-            self.test.assertEqual(response.status_code, 200)
+        if email == 'erica@example.com':
+            with HTTMock(self.test.mock_persona_verify_erica):
+                response = self.client.post('/sign-in', data={'email': email})
+                self.test.assertEqual(response.status_code, 200)
+        elif email == 'frances@example.com':
+            with HTTMock(self.test.mock_persona_verify_frances):
+                response = self.client.post('/sign-in', data={'email': email})
+                self.test.assertEqual(response.status_code, 200)
+        else:
+            raise ValueError(email)
 
         response = self.client.get('/')
         self.test.assertTrue('Start' in response.data)
@@ -1953,7 +1970,7 @@ class ChimeTestClient:
         
         return article_path, BeautifulSoup(response.data)
     
-    def edit_article(self, url, soup, title, body):
+    def edit_article(self, url, soup, title_str, body_str):
         ''' Look for form to edit an article, submit it and return URL and soup.
         '''
         body = soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'en-body'))
@@ -1966,8 +1983,8 @@ class ChimeTestClient:
                 for i in form.find_all(['input', 'button', 'textarea'])
                 if i.get('type') != 'submit'}
         
-        data[title['name']] = 'So, So Awesome'
-        data[body['name']] = 'It was the best of times.'
+        data[title['name']] = title_str
+        data[body['name']] = body_str
         
         edit_article_path = urlparse(urljoin(url, form['action'])).path
         response = self.client.post(edit_article_path, data=data)
@@ -2039,9 +2056,16 @@ class TestApps (TestCase):
 
         raise Exception('Asked for unknown URL ' + url.geturl())
 
-    def mock_persona_verify(self, url, request):
+    def mock_persona_verify_erica(self, url, request):
         if url.geturl() == 'https://verifier.login.persona.org/verify':
-            return response(200, '''{"status": "okay", "email": "erica@example.com"}''', headers=dict(Link='<https://api.github.com/user/337792/repos?page=1>; rel="prev", <https://api.github.com/user/337792/repos?page=1>; rel="first"'))
+            return response(200, '''{"status": "okay", "email": "erica@example.com"}''')
+
+        else:
+            return self.auth_csv_example_allowed(url, request)
+
+    def mock_persona_verify_frances(self, url, request):
+        if url.geturl() == 'https://verifier.login.persona.org/verify':
+            return response(200, '''{"status": "okay", "email": "frances@example.com"}''')
 
         else:
             return self.auth_csv_example_allowed(url, request)
@@ -2067,7 +2091,12 @@ class TestApps (TestCase):
             # Edit the new article.
             client.edit_article(article_path, soup, 'So, So Awesome', 'It was the best of times.')
             
-            # Now what?
+            #
+            # Switch users and edit the article.
+            #
+            client.sign_in('frances@example.com')
+            soup = client.open_link(article_path)
+            client.edit_article(article_path, soup, 'So, So Terribad', 'It was the worst of times.')
 
 class TestApp (TestCase):
 
