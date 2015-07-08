@@ -8,20 +8,25 @@
 	}
 }
 
-.row {
-	@include clearfix();
-	@include flex-shrink(0);
-	width: 100%;
-	position: relative;
-}
-
-.row--main {
+// Adds default padding for main application sections
+@mixin main-padding {
 	padding: {
 		top: 1em;
 		bottom: 1em;
 		left: $site-margins;
 		right: $site-margins;
 	}
+}
+
+.row--main {
+	@include main-padding();
+}
+
+.row {
+	@include clearfix();
+	@include flex-shrink(0);
+	width: 100%;
+	position: relative;
 }
 
 .row__left {

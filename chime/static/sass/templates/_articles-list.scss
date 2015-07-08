@@ -1,7 +1,6 @@
 .articles-list__main {
 	@include stretch-content();
 	@include clearfix();
-	padding: 0;
 }
 
 .dir.grid__item {

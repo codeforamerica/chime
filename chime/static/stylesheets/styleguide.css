@@ -464,7 +464,15 @@ th {
   color: #00a175 !important;
 }
 
-/* line 11, ../sass/core/_layout.scss */
+/* line 21, ../sass/core/_layout.scss */
+.row--main {
+  padding-top: 1em;
+  padding-bottom: 1em;
+  padding-left: 40px;
+  padding-right: 40px;
+}
+
+/* line 25, ../sass/core/_layout.scss */
 .row {
   -webkit-flex-shrink: 0;
   -moz-flex-shrink: 0;
@@ -483,31 +491,23 @@ th {
   clear: both;
 }
 
-/* line 18, ../sass/core/_layout.scss */
-.row--main {
-  padding-top: 1em;
-  padding-bottom: 1em;
-  padding-left: 40px;
-  padding-right: 40px;
-}
-
-/* line 27, ../sass/core/_layout.scss */
+/* line 32, ../sass/core/_layout.scss */
 .row__left {
   float: left;
 }
 
-/* line 31, ../sass/core/_layout.scss */
+/* line 36, ../sass/core/_layout.scss */
 .row__right {
   float: right;
 }
 
-/* line 35, ../sass/core/_layout.scss */
+/* line 40, ../sass/core/_layout.scss */
 .row__center {
   margin-left: auto;
   margin-right: auto;
 }
 
-/* line 42, ../sass/core/_layout.scss */
+/* line 47, ../sass/core/_layout.scss */
 .col {
   display: -webkit-box;
   display: -moz-box;
@@ -536,12 +536,12 @@ th {
   justify-content: stretch;
   -ms-flex-pack: stretch;
 }
-/* line 46, ../sass/core/_layout.scss */
+/* line 51, ../sass/core/_layout.scss */
 .lt-ie10 .col {
   display: block;
 }
 
-/* line 51, ../sass/core/_layout.scss */
+/* line 56, ../sass/core/_layout.scss */
 .col__item {
   -webkit-flex-shrink: 0;
   -moz-flex-shrink: 0;
@@ -558,7 +558,7 @@ th {
   clear: both;
 }
 
-/* line 57, ../sass/core/_layout.scss */
+/* line 62, ../sass/core/_layout.scss */
 .col__flex {
   -webkit-box-flex: 1;
   -moz-box-flex: 1;

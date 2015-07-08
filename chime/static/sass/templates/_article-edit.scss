@@ -3,7 +3,7 @@
 }
 
 .edit-article__header {
-	@include flex-shrink(0);
+	@include main-padding();
 	background-color: #fff;
 	border-bottom: 1px solid #ddd;
 	.button {
@@ -13,7 +13,6 @@
 
 .edit-article__main {
 	@include stretch-content();
-	padding: 0;
 }
 
 .edit-article__title {
@@ -100,7 +99,7 @@
 }
 
 .edit-article__footer {
-	@include flex-shrink(0);
+	@include main-padding();
 	padding: {
 		top: .5em;
 		bottom: .5em;

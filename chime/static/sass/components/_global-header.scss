@@ -1,5 +1,5 @@
 .global-header {
-	@include flex-shrink(0);
+	@include main-padding;
 	background-color: $color-blue-600;
 	color: $color-blue-100;
 	padding: {
