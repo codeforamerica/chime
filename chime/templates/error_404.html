@@ -9,7 +9,7 @@
 {% block content %}
 <!-- template name: {{ template_name }} -->
 <div class="row col__flex message-404">
-    <p>Page Not Found!</p>
+    <p>The page you're trying to access doesn't appear to exist.</p>
     <p>
 {% if edit_path %}
     <a href="{{ edit_path }}" class="button button--green button--large">Continue working on this activity</a>
@@ -26,7 +26,7 @@
     <p>Call us at {{ support_phone_number }}</p>
 {% endif %}
 {% if support_email %}
-    <p>Send an email to <a href="mailto:{{ support_email }}">{{ support_email }}</a>
+    <p>Send an email to <a href="mailto:{{ support_email }}{{ email_params }}">{{ support_email }}</a>
 {% endif %}
 
 </div>

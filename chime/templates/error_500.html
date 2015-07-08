@@ -9,20 +9,10 @@
 {% block content %}
 <!-- template name: {{ template_name }} -->
 <div class="row col__flex message-500">
-    <p>ERROR!</p>
-
-{% if message or error_class %}
-    <p>
-{% if message %}
-    {{ message }}
-{% endif %}
-{% if error_class %}
-    ({{ error_class }})
-{% endif %}
-    </p>
-{% endif %}
+    <p>SOMETHING WENT WRONG</p>
 
 {% if error_type == 'merge-conflict' %}
+    <p>We couldn't automatically resolve the differences between your changes and those of a co-worker.</p>
     <ul>
     {% for file in changed_files %}
         <li><strong>{{ file.name }}</strong> (path: {{ file.path }}) was changed</li>
@@ -43,7 +33,7 @@
     <p>Call us at {{ support_phone_number }}</p>
 {% endif %}
 {% if support_email %}
-    <p>Send an email to <a href="mailto:{{ support_email }}">{{ support_email }}</a>
+    <p>Send an email to <a href="mailto:{{ support_email }}{{ email_params }}">{{ support_email }}</a>
 {% endif %}
 
 {% if activities_path %}
