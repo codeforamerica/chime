@@ -13,13 +13,15 @@
 	@include flex-shrink(0);
 	width: 100%;
 	position: relative;
+}
+
+.row--main {
 	padding: {
 		top: 1em;
 		bottom: 1em;
 		left: $site-margins;
 		right: $site-margins;
 	}
-
 }
 
 .row__left {
