@@ -82,6 +82,7 @@ def create_app(environ):
     app.config['SNS_ALERTS_TOPIC'] = environ.get('SNS_ALERTS_TOPIC')
     app.config['SUPPORT_EMAIL_ADDRESS'] = environ.get('SUPPORT_EMAIL_ADDRESS')
     app.config['SUPPORT_PHONE_NUMBER'] = environ.get('SUPPORT_PHONE_NUMBER')
+    app.config['ACCEPTANCE_TEST_MODE'] = environ.get('ACCEPTANCE_TEST_MODE', False)
     app.config['default_branch'] = 'master'
 
     # If no live site URL was provided, we'll use Apache to make our own.

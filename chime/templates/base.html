@@ -2,11 +2,16 @@
 <!--[if lt IE 10]><html lang="en-us" class="lt-ie10"><![endif]-->
 <!--[if gt IE 9]><!--><html lang="en-us"><!--<![endif]-->
 <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
         <meta charset="utf-8">
         <link rel="stylesheet" type="text/css" media="screen" href="/static/javascript/toopaymarkdown/css/bootstrap-markdown.min.css">
         <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
         <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+        {% if config.get('ACCEPTANCE_TEST_MODE', False) %}
+        <script src="/static/javascript/stubbyid.js"></script>
+        {% else %}
         <script src="https://login.persona.org/include.js"></script>
+        {% endif %}
         <script type="text/javascript">
           var currentUser = {{email|tojson|safe}};
         </script>

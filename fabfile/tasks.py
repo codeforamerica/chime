@@ -11,6 +11,12 @@ from fabric.colors import green, yellow, red
 from fabric.exceptions import NetworkError
 from fabric.contrib.project import rsync_project
 
+from fabconf import fabconf
+
+
+def server_host():
+    return _load_hosts()[0]
+
 
 @task
 def spawn_instance():
@@ -18,19 +24,18 @@ def spawn_instance():
     Creates a new EC2 instance and stores the
     resulting DNS in a hosts.txt file.
     '''
-    from fabconf import fabconf
     print(green('Spawning new instance...'))
     env.key_filename = fabconf.get('SSH_PRIVATE_KEY_PATH')
     env.host_string = _create_ec2_instance()
+
 
 @task
 def despawn_instance(public_dns=None):
     '''
     Destroys an EC2 instance.
     '''
-    from fabconf import fabconf
     if public_dns is None:
-        public_dns = _read_hosts_from_file()[0]
+        public_dns = server_host()
         env.key_filename = fabconf.get('SSH_PRIVATE_KEY_PATH')
     print(yellow('Shutting down instance {dns}'.format(
         dns=public_dns
@@ -38,20 +43,20 @@ def despawn_instance(public_dns=None):
 
     _despawn_instance(public_dns, terminate=True)
 
+
 @task(alias='boot')
 def boot_chime():
     '''
     Installs and boots up chime.
 
     Spawns an EC2 instance if no dns is given and boots
-    up chime on that instance. Can only deploy the master
-    branch.
+    up chime on that instance.
     '''
     from fabconf import fabconf
     # set some login variables
     env.user = fabconf.get('SERVER_USERNAME')
     env.key_filename = fabconf.get('SSH_PRIVATE_KEY_PATH')
-    hosts = _read_hosts_from_file()
+    hosts = _load_hosts()
 
     if len(hosts) == 0:
         public_dns = _create_ec2_instance()
@@ -64,6 +69,7 @@ def boot_chime():
         public_dns = hosts[0]
 
     _server_setup(public_dns)
+
 
 @task
 def test_chime(setup=True, despawn=True, despawn_on_failure=False):
@@ -83,10 +89,45 @@ def test_chime(setup=True, despawn=True, despawn_on_failure=False):
     specified with the branch argument
     '''
     from fabconf import fabconf
+
     env.user = fabconf.get('SERVER_USERNAME')
     env.key_filename = fabconf.get('SSH_PRIVATE_KEY_PATH')
-    hosts = _read_hosts_from_file()
 
+    public_dns = _find_or_make_a_host()
+
+    if _looks_true(setup):
+        _server_setup(public_dns)
+
+    print(green('Running tests...'))
+    time.sleep(2)
+    try:
+        local('nosetests  --processes=9 --process-timeout=300 ' + fabconf.get('FAB_CONFIG_PATH') + '/../test/acceptance')
+        if _looks_true(despawn):
+            _despawn(public_dns)
+    except:
+        if _looks_true(despawn_on_failure):
+            _despawn(public_dns)
+        raise
+
+@task
+def redeploy():
+    env.user = fabconf.get('SERVER_USERNAME')
+
+    _find_host()
+    _server_setup()
+    rsync_code()
+    print(green("restarting chime"))
+    sudo('service chime restart')
+    print(green("done"))
+
+
+def _find_host():
+    hosts = _load_hosts()
+    env.hosts = hosts
+    return hosts[0]
+
+def _find_or_make_a_host():
+    hosts = _load_hosts()
     if len(hosts) == 0:
         public_dns = _create_ec2_instance()
         print(yellow('Waiting for server to come online...'))
@@ -97,58 +138,49 @@ def test_chime(setup=True, despawn=True, despawn_on_failure=False):
     else:
         env.hosts = hosts
         public_dns = hosts[0]
-
-    if _looks_true(setup):
-        _server_setup(public_dns)
-
-    print(green('Running tests...'))
-    time.sleep(2)
-    try:
-        local('python ' + fabconf.get('FAB_CONFIG_PATH') + '/../test/acceptance/e2e.py')
-        if _looks_true(despawn):
-            _despawn(public_dns)
-    except:
-        if _looks_true(despawn_on_failure):
-            _despawn(public_dns)
-        raise
+    return public_dns
 
 def _despawn(public_dns):
     print(green('Despawning EC2 instance'))
     _despawn_instance(public_dns)
 
+
 def _looks_true(argument):
     return argument in [True, 'True', 'true', 't', 'y']
 
-def _read_hosts_from_file():
-    from fabconf import fabconf
+
+def _load_hosts():
     hostfile = fabconf.get('FAB_HOSTS_FILE')
     try:
-        with open(hostfile, 'r+') as f:
+        with open(hostfile, 'r') as f:
             hosts = f.read().split(',')
-        return [h for h in hosts if h != '']
+        return [h.strip() for h in hosts if h != '']
     except IOError:
         return []
 
+
 def _write_host_to_file(host):
-    from fabconf import fabconf
-    hostfile = fabconf.get('FAB_HOSTS_FILE')
-    with open(hostfile, 'w+') as f:
-        f.write(host + ',')
+    hosts = _load_hosts()
+    hosts.append(host)
+    _save_hosts(hosts)
+
 
 def _strip_host_from_file(host):
-    from fabconf import fabconf
-    hostfile = fabconf.get('FAB_HOSTS_FILE')
-    hosts = _read_hosts_from_file()
+    hosts = _load_hosts()
     hosts.remove(host)
-    with open(hostfile, 'w+') as f:
-        for remainder in hosts:
-            f.write(remainder + ',')
+    _save_hosts(hosts)
+
+
+def _save_hosts(hosts):
+    with open(fabconf.get('FAB_HOSTS_FILE'), 'w') as f:
+        f.write(",".join(hosts))
 
 def _connect_to_ec2():
     '''
     Returns a boto connection object
     '''
     from fabconf import fabconf
+
     print(yellow('Connecting to EC2...'))
     conn = boto.ec2.connect_to_region(
         fabconf.get('EC2_REGION'), aws_access_key_id=fabconf.get('AWS_ACCESS_KEY'),
@@ -157,11 +189,13 @@ def _connect_to_ec2():
 
     return conn
 
+
 def _create_ec2_instance():
     '''
     Actually creates the ec2 instance
     '''
     from fabconf import fabconf
+
     conn = _connect_to_ec2()
 
     print(yellow('Booting up instance...'))
@@ -193,6 +227,7 @@ def _create_ec2_instance():
 
     return instance.public_dns_name
 
+
 def _despawn_instance(dns, terminate=True):
     conn = _connect_to_ec2()
 
@@ -213,6 +248,7 @@ def _despawn_instance(dns, terminate=True):
 
     print(red('DNS not found.'))
 
+
 def _server_setup(fqdn=None):
     '''
     Runs the commands for setting up a server. Uses a hostfile
@@ -220,10 +256,40 @@ def _server_setup(fqdn=None):
     directly pass a fqdn (fully qualified domain name) or use
     the first available host in env.hosts
     '''
-
     hostname = fqdn if fqdn else env.hosts[0]
     env.host_string = hostname
 
+    _wait_until_host_is_ready()
+
+    _make_sure_host_name_is_right(hostname)
+
+    _install_chime_if_necessary()
+
+
+def _install_chime_if_necessary():
+    if run("ps -u chime", quiet=True).succeeded:
+        print(green('Chime running; skipping chime install'))
+    else:
+        print(green('Installing chime'))
+        sudo('apt-get -qq update')
+        sudo('apt-get -qq dist-upgrade')
+        # rsync quietly and don't bother with host keys
+        rsync_code()
+        print(green('Running chef setup scripts...'))
+        time.sleep(2)
+        run('cd chime && sudo ACCEPTANCE_TEST_MODE=1 chef/run.sh')
+
+
+def _make_sure_host_name_is_right(hostname):
+    if run('hostname') == hostname:
+        print(green('Hostname is correct'))
+    else:
+        print(green('Setting up hostname'))
+        sudo("echo '" + hostname + "' > " + '/etc/hostname')
+        sudo('hostname -F /etc/hostname')
+
+
+def _wait_until_host_is_ready():
     print(yellow('Waiting for host to come online...'))
     retries = 0
     while retries < 10:
@@ -234,20 +300,18 @@ def _server_setup(fqdn=None):
             retries += 1
             if retries >= 10:
                 print(red('Host still not online. Aborting.'))
-                return
+                raise
             print(yellow('Host still not alive. Waiting five seconds and retrying...'))
             time.sleep(5)
 
-    print(green('Setting up hostname'))
-    sudo("echo '" + hostname + "' > " + '/etc/hostname')
-    sudo('hostname -F /etc/hostname')
 
-    print(green('Installing chime'))
-    time.sleep(2)
-    sudo('apt-get -qq update')
-    # rsync quietly and don't bother with host keys
+@task
+def rsync_code(hostname=None):
+    if not hostname:
+        hostname = server_host()
+    env.host_string = hostname
+    env.user = fabconf.get('SERVER_USERNAME')
+    print("going for user " + env.user)
+
     rsync_project(remote_dir='.', default_opts='-pthrz',
                   ssh_opts='-o CheckHostIP=no -o UserKnownHostsFile=/dev/null -o StrictHostkeyChecking=no')
-    print(green('Running chef setup scripts...'))
-    time.sleep(2)
-    run('cd chime && sudo chef/run.sh')

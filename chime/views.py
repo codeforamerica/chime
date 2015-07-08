@@ -102,20 +102,33 @@ def not_allowed():
     Logger.info("Redirecting from /not-allowed to /")
     return redirect('/')
 
-@app.route('/sign-in', methods=['POST'])
+@app.route('/sign-in', methods=['POST', 'GET'])
 @log_application_errors
 def sign_in():
+    if current_app.config['ACCEPTANCE_TEST_MODE']:
+        session['email'] = request.values.get('assertion')
+        Logger.info("bypassing auth")
+    else:
+        success, email = _verify_persona_assertion(request.form.get('assertion'))
+        if success:
+            Logger.info("Successful Persona auth")
+            session['email'] = email
+        else:
+            Logger.info("Failed Persona auth")
+            return Response('Failed', status=400)
+    Logger.info("Logged in as '{}'".format(session['email']))
+    return 'OK'
+
+
+
+def _verify_persona_assertion(assertion):
     posted = post('https://verifier.login.persona.org/verify',
-                  data=dict(assertion=request.form.get('assertion'),
+                  data=dict(assertion=assertion,
                             audience=current_app.config['BROWSERID_URL']))
-
     response = posted.json()
+    success = response.get('status', '') == 'okay'
+    return success, response['email']
 
-    if response.get('status', '') == 'okay':
-        session['email'] = response['email']
-        return 'OK'
-
-    return Response('Failed', status=400)
 
 @app.route('/sign-out', methods=['POST'])
 @log_application_errors
