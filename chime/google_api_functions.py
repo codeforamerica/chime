@@ -10,6 +10,7 @@ from string import ascii_uppercase, digits
 import os
 import posixpath
 import json
+import time
 from datetime import date, timedelta
 from fcntl import flock, LOCK_EX, LOCK_UN, LOCK_SH
 
@@ -151,6 +152,22 @@ def get_empty_ga_config():
     for key_name in GA_CONFIG_VALUES:
         ga_config[key_name] = u''
     return ga_config
+
+def is_overdue_ga_config(running_state_dir):
+    ''' Return boolean True if the google analytics config file is overdue.
+    '''
+    ga_config_path = os.path.join(running_state_dir, GA_CONFIG_FILENAME)
+    try:
+        with ReadLocked(ga_config_path) as infile:
+            try:
+                age = timedelta(seconds=(time.time() - os.stat(infile.name).st_mtime))
+            except ValueError:
+                return True
+            else:
+                # Google access tokens expire after one hour.
+                return bool(age > timedelta(minutes=55))
+    except IOError:
+        return True
 
 def read_ga_config(running_state_dir):
     ''' Return the contents of the google analytics config file. Create the file if it doesn't exist.
