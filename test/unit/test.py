@@ -3542,6 +3542,7 @@ class TestApp (TestCase):
             self.assertTrue(u'support@example.com' in response.data)
             self.assertTrue(u'(123) 456-7890' in response.data)
 
+    # in TestApp
     def test_exception_error(self):
         ''' A 500 page is generated when we provoke an uncaught exception
         '''
@@ -3602,7 +3603,7 @@ class TestApp (TestCase):
                                                    'url-slug': u'{}/index'.format(fake_page_slug)},
                                              follow_redirects=True)
 
-        # Request feedback on the change
+        # Request feedback on person 1's change
         with HTTMock(self.auth_csv_example_allowed):
             response = self.test_client.post('/tree/{}/'.format(generated_branch_name_1), data={'comment_text': u'', 'request_feedback': u'Request Feedback'}, follow_redirects=True)
 
@@ -3639,7 +3640,7 @@ class TestApp (TestCase):
                                                    'url-slug': u'{}/index'.format(fake_page_slug)},
                                              follow_redirects=True)
 
-        # Request feedback on the change
+        # Request feedback on person 2's change
         with HTTMock(self.auth_csv_example_allowed):
             response = self.test_client.post('/tree/{}/'.format(generated_branch_name_2), data={'comment_text': u'', 'request_feedback': u'Request Feedback'}, follow_redirects=True)
 
@@ -3647,7 +3648,7 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             response = self.test_client.post('/tree/{}/'.format(generated_branch_name_1), data={'comment_text': u'', 'endorse_edits': 'Looks Good!'}, follow_redirects=True)
 
-        # And publish the change!
+        # And publish person 1's change!
         with HTTMock(self.auth_csv_example_allowed):
             response = self.test_client.post('/tree/{}/'.format(generated_branch_name_1), data={'comment_text': u'', 'merge': 'Publish'}, follow_redirects=True)
 
@@ -3661,7 +3662,7 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             response = self.test_client.post('/tree/{}/'.format(generated_branch_name_2), data={'comment_text': u'', 'endorse_edits': 'Looks Good!'}, follow_redirects=True)
 
-        # And publish the change!
+        # And publish person 2's change!
         with HTTMock(self.auth_csv_example_allowed):
             response = self.test_client.post('/tree/{}/'.format(generated_branch_name_2), data={'comment_text': u'', 'merge': 'Publish'}, follow_redirects=True)
 
