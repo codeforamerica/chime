@@ -17,15 +17,15 @@
 
 {% block content %}
 <!-- template name: {{template_name}} -->
-<div class="activity-overview__container col__flex">
+<div class="activity-overview__container">
     <div class="activity-overview__main">
-        <div class="activity-overview__header">
+        <div class="activity-overview__header row">
             <p class="activity-overview__subtitle">Activity Overview</p>
             <h1 class="activity-overview__title">{{ activity.task_description | title }} For {{ activity.task_beneficiary | title }}</h1>
             <p class="activity-overview__details">Last edited by {{ activity.last_edited_email }}.</p>
         </div>
 
-        <ul class="activity-progress grid">
+        <ul class="activity-progress grid row">
             {% set review_step = 0 %}
             {% if activity.review_state == "unreviewed edits" %}
                 {% set review_step = 1 %}
@@ -55,7 +55,7 @@
             </li>
         </ul>
 
-        <div class="activity-summary">
+        <div class="activity-summary row">
             <a href="#" class="activity-summary__toggle">3 articles and categories have been changed (click to review)</a>
             <table class="activity-summary__table">
                 <thead>
@@ -85,7 +85,7 @@
             </table>
         </div>
 
-        <div class="activity-log">
+        <div class="activity-log row">
 
             {% set comment_note = "leave a comment" %}
 

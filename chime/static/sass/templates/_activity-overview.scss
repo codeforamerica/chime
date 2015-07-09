@@ -1,20 +1,13 @@
 .activity-overview__container {
-	@include stretch-content();
 	background-color: $color-grey-100;
 	overflow: auto;
-	padding-top: 3em;
 }
 
 .activity-overview__subtitle {
 	@include allcaps();
 	font-size: $base-font-size;
 	font-weight: 400;
-}
-
-.activity-overview__header {
-	background-color: #fff;
-	padding: 1em $site-margins 2em $site-margins;
-	border: 1px solid $color-grey-300;
+	color: $color-grey-700;
 }
 
 .activity-overview__details {
@@ -27,8 +20,33 @@
 }
 
 .activity-overview__main {
-	margin: 0 auto;
-	padding: 3px;
+	margin: 3em auto;
 	max-width: 680px;
+	box-shadow: $box-shadow-1;
+	.row {
+		padding: 2em $site-margins;
+		border-top: 1px solid $color-grey-200;
+		background-color: #fff;
+		&:first-child {
+			border-top: 0;
+		}
+	}
 }
 
+
+.activity-overview {
+	.activity-log.row {
+		background-color: $color-grey-50;
+		margin-top: -1px;
+	}
+}
+
+.activity-overview__description {
+	font-size: $text-font-size;
+	font-weight: 600;
+	padding-bottom: 2em;
+	a {
+		color: inherit;
+		text-decoration: underline;
+	}
+}

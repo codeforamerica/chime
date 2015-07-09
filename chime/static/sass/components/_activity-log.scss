@@ -1,28 +1,6 @@
-
-.activity-overview {
-	.activity-log {
-		background-color: $color-grey-50;
-		padding: 2em $site-margins;
-		border: 1px solid $color-grey-300;
-		margin-top: -1px;
-		margin-bottom: 4em;
-	}
-}
-
 .activity-log {
 	padding-left: $site-margins;
 }
-
-.activity-overview__description {
-	font-size: $text-font-size;
-	font-weight: 600;
-	padding-bottom: 2em;
-	a {
-		color: inherit;
-		text-decoration: underline;
-	}
-}
-
 
 .activity-log-item {
 	@include clearfix();
@@ -31,7 +9,7 @@
 	padding-left: 3em;
 	padding-bottom: 3em;
 	margin-left: -$site-margins;
-	font-weight: 300;
+	font-weight: 400;
 	&:last-child {
 		border: 0;
 		padding-bottom: 0;

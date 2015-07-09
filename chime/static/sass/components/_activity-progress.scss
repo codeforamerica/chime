@@ -1,12 +1,9 @@
 .activity-progress {
 	@include clearfix();
 	font-size: $h4-font-size;
-	border: 1px solid $color-grey-300;
-	background-color: #fff;
 	margin: 0;
 	margin-top: -1px;
 	padding: {
-		top: 2em;
 		bottom: 1.5em;
 		right: 0;
 		left: 0;
