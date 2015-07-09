@@ -2017,7 +2017,7 @@ input[type="submit"]:disabled:hover {
 /* line 12, ../sass/templates/_articles-list.scss */
 .box-add-file-folder {
   padding-bottom: 2em;
-  border-bottom: 1px solid #bdbdbd;
+  border-bottom: 4px solid #e0e0e0;
   margin-bottom: 2em;
   margin-left: -.5em;
   margin-right: -.5em;
@@ -2026,14 +2026,14 @@ input[type="submit"]:disabled:hover {
 /* line 22, ../sass/templates/_articles-list.scss */
 .articles-list__header {
   padding-bottom: 1em;
-  border-bottom: 1px solid #9e9e9e;
+  border-bottom: 4px solid #e0e0e0;
   margin-bottom: 2em;
 }
 
 /* line 29, ../sass/templates/_articles-list.scss */
 .dir-item {
   position: relative;
-  padding: 1em .5em;
+  padding: 1em;
   font-size: 16px;
   margin-left: -.5em;
   margin-right: -.5em;
@@ -2046,25 +2046,26 @@ input[type="submit"]:disabled:hover {
 .dir-item:hover {
   background-color: #eeeeee;
 }
-/* line 43, ../sass/templates/_articles-list.scss */
+/* line 44, ../sass/templates/_articles-list.scss */
 .dir-item:hover .dir-item__actions {
   opacity: 1;
 }
-/* line 49, ../sass/templates/_articles-list.scss */
+/* line 50, ../sass/templates/_articles-list.scss */
 .dir-item.is-selected {
-  background-color: #e0e0e0;
+  background-color: #eeeeee;
 }
-/* line 51, ../sass/templates/_articles-list.scss */
+/* line 52, ../sass/templates/_articles-list.scss */
 .dir-item.is-selected .dir-item__name {
+  font-weight: 600;
   color: #000;
 }
 
-/* line 57, ../sass/templates/_articles-list.scss */
+/* line 59, ../sass/templates/_articles-list.scss */
 .dir-item__display-type {
-  margin-right: 1em;
+  margin-right: .75em;
 }
 
-/* line 61, ../sass/templates/_articles-list.scss */
+/* line 63, ../sass/templates/_articles-list.scss */
 .dir-item__name {
   color: #616161;
   font-weight: 400;
@@ -2073,45 +2074,33 @@ input[type="submit"]:disabled:hover {
   text-overflow: ellipsis;
   display: block;
   width: auto;
-  margin-right: 2.5em;
+  margin-right: 3em;
 }
-/* line 70, ../sass/templates/_articles-list.scss */
+/* line 72, ../sass/templates/_articles-list.scss */
 .lt-ie10 .dir-item__name {
   text-overflow: clip;
   -ms-text-overflow: clip;
 }
 
-/* line 76, ../sass/templates/_articles-list.scss */
+/* line 78, ../sass/templates/_articles-list.scss */
 .dir-item__actions {
   opacity: 0;
   position: absolute;
   right: 1em;
   top: 50%;
-  margin-top: -.5em;
+  margin-top: -.75em;
 }
 
-/* line 84, ../sass/templates/_articles-list.scss */
-.dir-item__action {
-  background: transparent;
-  border: 0;
-  padding: 0;
-  color: #757575;
-}
-/* line 89, ../sass/templates/_articles-list.scss */
-.dir-item__action:hover {
-  color: #000;
-}
-
-/* line 94, ../sass/templates/_articles-list.scss */
+/* line 90, ../sass/templates/_articles-list.scss */
 .dir-item__action--delete {
   color: #bb4961;
 }
-/* line 96, ../sass/templates/_articles-list.scss */
+/* line 92, ../sass/templates/_articles-list.scss */
 .dir-item__action--delete:hover {
   color: #88162e;
 }
 
-/* line 101, ../sass/templates/_articles-list.scss */
+/* line 97, ../sass/templates/_articles-list.scss */
 .articles {
   padding: 1em 40px;
 }

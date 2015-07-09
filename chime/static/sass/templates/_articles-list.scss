@@ -11,7 +11,7 @@
 
 .box-add-file-folder {
 	padding-bottom: 2em;
-	border-bottom: 1px solid $color-grey-400;
+	border-bottom: 4px solid $color-grey-300;
 	margin-bottom: 2em;
 	margin: {
 		left: -.5em;
@@ -21,14 +21,14 @@
 
 .articles-list__header {
 	padding-bottom: 1em;
-	border-bottom: 1px solid $color-grey-500;
+	border-bottom: 4px solid $color-grey-300;
 	margin-bottom: 2em;
 }
 
 
 .dir-item {
 	position: relative;
-	padding: 1em .5em;
+	padding: 1em;
 	font-size: $h5-font-size;
 	margin: {
 		left: -.5em;
@@ -40,22 +40,24 @@
 	
 
 	&:hover {
+		background-color: $color-grey-200;
 		.dir-item__actions {
 			opacity: 1;
 		}
-		background-color: $color-grey-200;
+		
 	}
 
 	&.is-selected {
-		background-color: $color-grey-300;
+		background-color: $color-grey-200;
 		.dir-item__name {
+			font-weight: 600;
 			color: #000;
 		}
 	}
 }
 
 .dir-item__display-type {
-	margin-right: 1em;
+	margin-right: .75em;
 }
 
 .dir-item__name {
@@ -66,7 +68,7 @@
 	text-overflow: ellipsis;
 	display: block;
 	width: auto;
-	margin-right: 2.5em;
+	margin-right: 3em;
 	.lt-ie10 & {
 		text-overflow: clip;
 		-ms-text-overflow: clip;
@@ -78,17 +80,11 @@
 	position: absolute;
 	right: 1em;
 	top: 50%;
-	margin-top: -.5em;
+	margin-top: -.75em;
 }
 
 .dir-item__action {
-	background: transparent;
-	border: 0;
-	padding: 0;
-	color: $color-grey-600;
-	&:hover {
-		color: #000;
-	}
+
 }
 
 .dir-item__action--delete {
