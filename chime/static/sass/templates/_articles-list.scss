@@ -43,6 +43,7 @@
 		.dir-item__actions {
 			opacity: 1;
 		}
+		background-color: $color-grey-200;
 	}
 
 	&.is-selected {
@@ -75,7 +76,7 @@
 .dir-item__actions {
 	opacity: 0;
 	position: absolute;
-	right: .5em;
+	right: 1em;
 	top: 50%;
 	margin-top: -.5em;
 }

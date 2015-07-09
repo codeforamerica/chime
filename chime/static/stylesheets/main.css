@@ -2042,25 +2042,29 @@ input[type="submit"]:disabled:hover {
 .dir-item:not(:last-child) {
   border-bottom: 1px solid #e0e0e0;
 }
+/* line 42, ../sass/templates/_articles-list.scss */
+.dir-item:hover {
+  background-color: #eeeeee;
+}
 /* line 43, ../sass/templates/_articles-list.scss */
 .dir-item:hover .dir-item__actions {
   opacity: 1;
 }
-/* line 48, ../sass/templates/_articles-list.scss */
+/* line 49, ../sass/templates/_articles-list.scss */
 .dir-item.is-selected {
   background-color: #e0e0e0;
 }
-/* line 50, ../sass/templates/_articles-list.scss */
+/* line 51, ../sass/templates/_articles-list.scss */
 .dir-item.is-selected .dir-item__name {
   color: #000;
 }
 
-/* line 56, ../sass/templates/_articles-list.scss */
+/* line 57, ../sass/templates/_articles-list.scss */
 .dir-item__display-type {
   margin-right: 1em;
 }
 
-/* line 60, ../sass/templates/_articles-list.scss */
+/* line 61, ../sass/templates/_articles-list.scss */
 .dir-item__name {
   color: #616161;
   font-weight: 400;
@@ -2071,43 +2075,43 @@ input[type="submit"]:disabled:hover {
   width: auto;
   margin-right: 2.5em;
 }
-/* line 69, ../sass/templates/_articles-list.scss */
+/* line 70, ../sass/templates/_articles-list.scss */
 .lt-ie10 .dir-item__name {
   text-overflow: clip;
   -ms-text-overflow: clip;
 }
 
-/* line 75, ../sass/templates/_articles-list.scss */
+/* line 76, ../sass/templates/_articles-list.scss */
 .dir-item__actions {
   opacity: 0;
   position: absolute;
-  right: .5em;
+  right: 1em;
   top: 50%;
   margin-top: -.5em;
 }
 
-/* line 83, ../sass/templates/_articles-list.scss */
+/* line 84, ../sass/templates/_articles-list.scss */
 .dir-item__action {
   background: transparent;
   border: 0;
   padding: 0;
   color: #757575;
 }
-/* line 88, ../sass/templates/_articles-list.scss */
+/* line 89, ../sass/templates/_articles-list.scss */
 .dir-item__action:hover {
   color: #000;
 }
 
-/* line 93, ../sass/templates/_articles-list.scss */
+/* line 94, ../sass/templates/_articles-list.scss */
 .dir-item__action--delete {
   color: #bb4961;
 }
-/* line 95, ../sass/templates/_articles-list.scss */
+/* line 96, ../sass/templates/_articles-list.scss */
 .dir-item__action--delete:hover {
   color: #88162e;
 }
 
-/* line 100, ../sass/templates/_articles-list.scss */
+/* line 101, ../sass/templates/_articles-list.scss */
 .articles {
   padding: 1em 40px;
 }
