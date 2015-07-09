@@ -22,13 +22,13 @@
               <div class="current-task__actions row__right toolbar--right">
                   {% if activity.review_authorized %}
                     {% if activity.review_state == 'unreviewed edits' %}
-                    <a href="{{ activity.overview_path }}" class="toolbar__item button ">Unreviewed Edits</a>
+                    <a href="{{ activity.overview_path }}" class="toolbar__item button">Unreviewed Edits</a>
                     {% elif activity.review_state == 'feedback requested' %}
-                    <a href="{{ activity.overview_path }}" class="toolbar__item button ">Feedback requested</a>
+                    <a href="{{ activity.overview_path }}" class="toolbar__item button">Feedback requested</a>
                     {% elif activity.review_state == 'edits endorsed' %}
-                    <a href="{{ activity.overview_path }}" class="toolbar__item button ">Ready to publish</a>
+                    <a href="{{ activity.overview_path }}" class="toolbar__item button">Ready to publish</a>
                     {% elif activity.review_state == 'changes published' %}
-                    <a href="{{ activity.overview_path }}" class="toolbar__item button ">Published</a>
+                    <a href="{{ activity.overview_path }}" class="toolbar__item button">Published</a>
                     {% endif %}
                   {% endif %}
                   <form action="/update" method="POST" class="toolbar__item">
