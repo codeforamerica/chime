@@ -15,9 +15,10 @@
 {% set icon_class_lookup = {'folder': 'fa fa-folder-o', 'file': 'fa fa-file-text-o', 'category': 'fa fa-folder', 'article': 'fa fa-file-text'} %}
 <div class="articles-list__main grid col__flex">
     {% for column in dir_columns %}
-    {% if loop.index != 1 or (loop.index == 1 and dir_columns|length == 1) %}
-    <div class="dir grid__item {% if loop.index == 4 %}width-one-half end-row{% else %}width-one-fourth{% endif %}">
-      {% if loop.index == 2 %}
+    {% set column_depth = loop.index %}
+    {% if column_depth != 1 or (column_depth == 1 and dir_columns|length == 1) %}
+    <div class="dir grid__item {% if column_depth == 4 %}width-one-half end-row{% else %}width-one-fourth{% endif %}">
+      {% if column_depth == 2 %}
       <h2>Categories</h2>
       <div class="selection-box box-add-file-folder">
         <form action="." method="POST" class="form-one-line">
@@ -27,7 +28,7 @@
             <input class="form-one-line__submit button" name="action" type="submit" id="create-category-button" value="Create" />
         </form>
       </div>
-      {% elif loop.index == 3 %}
+      {% elif column_depth == 3 %}
       <h2>Subcategories</h2>
       <div class="selection-box box-add-file-folder">
         <form action="." method="POST" class="form-one-line">
@@ -37,7 +38,7 @@
             <input class="form-one-line__submit button" name="action" type="submit" id="create-subcategory-button" value="Create" />
         </form>
       </div>
-      {% elif loop.index == 4 %}
+      {% elif column_depth == 4 %}
       <h2>Articles</h2>
       <div class="selection-box box-add-file-folder">
         <form action="." method="POST" class="form-one-line">
@@ -52,13 +53,16 @@
         {% for file in column['files'] %}
          <!-- file type: {{file['display_type']}}, file name: {{file['name']}}, file title: {{file['title']}} -->
          <li class="dir-item {% if file['selected'] == True %}is-selected{% endif %}">
-            <a class="dir-item__name {{file['display_type']}}" href="{{file['edit_path']}}"><span class="{{icon_class_lookup[file['display_type']]}}"></span>{{ file['title'] }}</a>
+            <a class="dir-item__name {{file['display_type']}}" href="{{file['edit_path']}}"><span class="dir-item__display-type {{icon_class_lookup[file['display_type']]}}"></span>{{ file['title'] }}</a>
             <div class="dir-item__actions toolbar--right">
-<!--           <form action="." method="POST" class="toolbar__item">
+            {% if column_depth == 4 %}
+              <form action="." method="POST" class="toolbar__item">
                 <input name="request_path" value="{{file['file_path']}}" type="hidden">
-                <button name="action" type="submit" value="delete" style="background:none!important; border:none; padding:0!important; margin:0!important"><span class="fa fa-trash"></span></button>
-              </form> -->
-              <a href="{{file['modify_path']}}" class="toolbar__item"><span class="fa fa-pencil"></span></a>
+                <button name="action" type="submit" value="delete" class="dir-item__action dir-item__action--delete"><span class="fa fa-trash"></span></button>
+              </form>
+            {% else %}
+              <a href="{{file['modify_path']}}" class="toolbar__item dir-item__action"><span class="fa fa-pencil"></span></a>
+            {% endif %}
             </div>
           </li>
         {% endfor %}   
