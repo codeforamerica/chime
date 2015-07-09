@@ -2,36 +2,41 @@
 	@include transition(all ease-out .1s);
 	display: inline-block;
 	text-decoration: none;
-	background-color: $color-grey-300;
+	background: $color-grey-100;
 	border: 1px solid $color-grey-300;
 	color: $color-grey-800;
 	font-family: $font-sans;
-	font-size: 12px;
-	font-weight: 400;
+	font-size: $small-font-size;
+	font-weight: 600;
 	border-radius: $border-radius;
-	padding: .3em .5em;
+	padding: .3em .8em;
 
 	&:hover {
-		border-color: $color-grey-400;
-		background-color: $color-grey-400;
+		@include transition-duration(0s);
+		border-color: $color-grey-300;
+		background-color: $color-grey-300;
 		text-decoration: none;
 	}
 
 	&:active, &.is-selected {
-		border-color: $color-grey-600;
-		background-color: $color-grey-600;
-		color: $color-grey-100;
+		border-color: $color-grey-400;
+		background-color: $color-grey-400;
 	}
 
 	&:disabled {
 		opacity: .4;
 		cursor: default;
 	}
+
+	// removes blue outline in webkit
+	&:focus {
+		outline: none;
+	}
 }
 
 .button--blue {
 	border: 1px solid $color-blue-400;
-	background-color: $color-blue-400;
+	background-color: $color-blue-300;
 	color: #fff;
 	&:hover {
 		border-color: $color-blue-500;
@@ -45,7 +50,7 @@
 
 .button--green {
 	border: 1px solid $color-green-400;
-	background-color: $color-green-400;
+	background-color: $color-green-300;
 	color: #fff;
 	&:hover {
 		border-color: $color-green-500;
@@ -58,22 +63,15 @@
 }
 
 .button--red {
-	border: 1px solid $color-red-400;
-	background-color: $color-red-400;
-	color: #fff;
+	color: $color-red-400;
 	&:hover {
-		border-color: $color-red-500;
-		background-color: $color-red-500;
-	}
-	&:active, &.is-selected {
-		border-color: $color-red-700;
-		background-color: $color-red-700;
+		color: $color-red-500;
 	}
 }
 
 .button--orange {
 	border: 1px solid $color-orange-400;
-	background-color: $color-orange-400;
+	background-color: $color-orange-300;
 	color: #fff;
 	&:hover {
 		border-color: $color-orange-500;
@@ -82,36 +80,6 @@
 	&:active, &.is-selected {
 		border-color: $color-orange-700;
 		background-color: $color-orange-700;
-	}
-}
-
-.button--white {
-	border: 1px solid #fff;
-	background-color: #fff;
-	color: $color-grey-800;
-	&:hover {
-		border-color: $color-grey-100;
-		background-color: $color-grey-100;
-	}
-	&:active, &.is-selected {
-		border-color: $color-grey-200;
-		background-color: $color-grey-200;
-	}
-}
-
-.button--outline {
-	@include transition(all ease-out .2s);
-	background: transparent;
-	border: 1px solid $color-grey-300;
-	color: $color-grey-700;
-	&:hover {
-		border-color: $color-grey-400;
-		background-color: $color-grey-400;
-		color: $color-grey-800;
-	}
-	&:active, &.is-selected {
-		border-color: $color-grey-500;
-		background-color: $color-grey-500;
 	}
 }
 
@@ -127,8 +95,14 @@
 	}
 }
 
+.button--medium {
+	font-size: $base-font-size;
+	padding: .5em 1em;
+	font-weight: 400;
+}
+
 .button--large {
 	font-size: $h4-font-size;
-	font-weight: 300;
 	padding: .5em 1em;
+	font-weight: 400;
 }

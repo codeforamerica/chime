@@ -7,6 +7,7 @@ html {
 	font-family: $font-sans;
 	font-size: $base-font-size;
 	font-weight: 300;
+	-webkit-font-smoothing: antialiased; // for crisper text in webkit browsers
 }
 
 body {

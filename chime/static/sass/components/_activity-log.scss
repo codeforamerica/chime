@@ -1,21 +1,14 @@
-
-.activity-overview {
-	.activity-log {
-		margin: 4em 0
-	}
-}
-
 .activity-log {
-	padding-left: 1em;
+	padding-left: $site-margins;
 }
-
 
 .activity-log-item {
 	@include clearfix();
 	position: relative;
-	border-left: 1px solid $color-grey-400;
+	border-left: 4px solid $color-grey-300;
 	padding-left: 3em;
-	padding-bottom: 4em;
+	padding-bottom: 3em;
+	margin-left: -$site-margins;
 	font-weight: 400;
 	&:last-child {
 		border: 0;
@@ -28,10 +21,11 @@
 		height: 2.5em;
 		width: 2.5em;
 		z-index: 2;
-		background-color: $color-grey-50;
+		background-color: #fff;
 		border: 1px solid $color-grey-400;
 		border-radius: 50%;
 		left: -1.25em;
+		margin-left: -2px;
 		font-family: 'FontAwesome';
 		font-size: 14px;
 		text-align: center;

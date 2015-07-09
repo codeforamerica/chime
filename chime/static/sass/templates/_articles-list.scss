@@ -1,7 +1,6 @@
 .articles-list__main {
 	@include stretch-content();
 	@include clearfix();
-	padding: 0;
 }
 
 .dir.grid__item {
@@ -63,7 +62,8 @@
 }
 
 .dir-item__name {
-	color: $color-grey-600;
+	color: $color-grey-700;
+	font-weight: 400;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
