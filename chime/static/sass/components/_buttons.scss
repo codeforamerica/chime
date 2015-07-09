@@ -19,9 +19,8 @@
 	}
 
 	&:active, &.is-selected {
-		border-color: $color-grey-500;
-		background-color: $color-grey-500;
-		color: #fff;
+		border-color: $color-grey-400;
+		background-color: $color-grey-400;
 	}
 
 	&:disabled {
@@ -67,9 +66,6 @@
 	color: $color-red-400;
 	&:hover {
 		color: $color-red-500;
-	}
-	&:active, &.is-selected {
-		color: #fff;
 	}
 }
 

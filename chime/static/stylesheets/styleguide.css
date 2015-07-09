@@ -750,29 +750,157 @@ a:hover {
   color: #33b390;
 }
 
-/* line 23, ../sass/styleguide.scss */
-h1, h2, h3 {
-  margin-top: 3em;
-}
-
-/* line 27, ../sass/styleguide.scss */
+/* line 24, ../sass/styleguide.scss */
 .styleguide {
-  position: static;
+  position: relative;
   padding-bottom: 4em;
-  max-width: 680px;
-  min-width: 0;
-  width: auto;
-  margin-left: auto;
-  margin-right: auto;
 }
 
-/* line 40, ../sass/styleguide.scss */
-.layout-examples .row, .layout-examples .col, .layout-examples .grid, .layout-examples .toolbar {
-  border: 1px solid #9e9e9e;
+/* line 29, ../sass/styleguide.scss */
+.nav-sidebar {
+  position: fixed;
+  overflow: auto;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 250px;
+  border-right: 1px solid #e0e0e0;
+  padding: 40px;
+  z-index: 1;
+  background-color: #f5f5f5;
+  font-size: 16px;
 }
-/* line 44, ../sass/styleguide.scss */
-.layout-examples .toolbar__item, .layout-examples .grid__item, .layout-examples .row__left, .layout-examples .row__right, .layout-examples .col__item, .layout-examples .col__flex {
-  background-color: rgba(102, 198, 172, 0.5);
+/* line 41, ../sass/styleguide.scss */
+.nav-sidebar h1 {
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  font-size: 18px;
+  color: #9e9e9e;
+  margin-bottom: 3em;
+}
+/* line 47, ../sass/styleguide.scss */
+.nav-sidebar .link-h1 {
+  color: #000;
+  display: block;
+  font-weight: 600;
+  margin-top: 2em;
+}
+/* line 53, ../sass/styleguide.scss */
+.nav-sidebar .link-h2 {
+  color: #004b6a;
+  margin-left: 1em;
+  font-weight: 400;
+}
+
+/* line 60, ../sass/styleguide.scss */
+.main-content {
+  margin-left: 250px;
+  padding: 40px;
+  max-width: 800px;
+}
+
+/* line 67, ../sass/styleguide.scss */
+.style-guide-content > h1 {
+  border-top: 4px solid #e0e0e0;
+  font-size: 36px;
+  padding-top: 1em;
+}
+/* line 71, ../sass/styleguide.scss */
+.style-guide-content > h1:not(:first-child) {
+  margin-top: 4em;
+}
+/* line 77, ../sass/styleguide.scss */
+.style-guide-content > h2 {
+  margin-top: 3em;
+  font-weight: 400;
+  color: #004b6a;
+  font-size: 28px;
+}
+/* line 84, ../sass/styleguide.scss */
+.style-guide-content > h3 {
+  margin-top: 3em;
+  font-weight: 300;
+  color: #000;
+  font-size: 18px;
+  text-decoration: underline;
+}
+
+/* line 95, ../sass/styleguide.scss */
+.layout-example .row, .layout-example .col, .layout-example .grid, .layout-example .toolbar {
+  border: 1px solid #e0e0e0;
+  padding: 2px;
+}
+/* line 100, ../sass/styleguide.scss */
+.layout-example .row--main {
+  padding: 1em 40px;
+}
+/* line 104, ../sass/styleguide.scss */
+.layout-example .toolbar__item, .layout-example .grid__item, .layout-example .row__left, .layout-example .row__right, .layout-example .col__item, .layout-example .col__flex {
+  background-color: rgba(245, 245, 245, 0.9);
+  border: 1px solid #e0e0e0;
   margin-top: 1px;
   margin-bottom: 1px;
+  padding: 2px;
+}
+
+/* line 115, ../sass/styleguide.scss */
+.preview {
+  background-color: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  padding: 1em 2em;
+  margin: 2em 0;
+}
+/* line 120, ../sass/styleguide.scss */
+.preview .is-peripheral {
+  opacity: .2;
+}
+
+/* line 125, ../sass/styleguide.scss */
+.code-sample {
+  border: 1px solid #e0e0e0;
+  background-color: #fafafa;
+}
+/* line 7, ../sass/core/_utilities.scss */
+.code-sample:before, .code-sample:after {
+  content: " ";
+  display: table;
+}
+/* line 11, ../sass/core/_utilities.scss */
+.code-sample:after {
+  clear: both;
+}
+/* line 131, ../sass/styleguide.scss */
+.code-sample.is-open .button-toggle:before {
+  content: 'Hide code';
+}
+/* line 134, ../sass/styleguide.scss */
+.code-sample.is-open pre {
+  display: block;
+}
+/* line 138, ../sass/styleguide.scss */
+.code-sample .button-toggle {
+  color: #000;
+  display: block;
+  padding: 0.5em 40px;
+  text-decoration: underline;
+}
+/* line 143, ../sass/styleguide.scss */
+.code-sample .button-toggle:before {
+  content: 'Show code';
+}
+/* line 147, ../sass/styleguide.scss */
+.code-sample pre {
+  display: none;
+  background-color: transparent;
+  overflow-y: hidden;
+}
+/* line 151, ../sass/styleguide.scss */
+.code-sample pre code {
+  background-color: transparent;
+}
+
+/* line 157, ../sass/styleguide.scss */
+.preview + .code-sample {
+  margin-top: -2em;
+  border-top: 0px;
 }

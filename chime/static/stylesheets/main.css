@@ -1051,91 +1051,86 @@ input[type="submit"]:disabled:hover {
 }
 /* line 21, ../sass/components/_buttons.scss */
 .button:active, .button.is-selected {
-  border-color: #9e9e9e;
-  background-color: #9e9e9e;
-  color: #fff;
+  border-color: #bdbdbd;
+  background-color: #bdbdbd;
 }
-/* line 27, ../sass/components/_buttons.scss */
+/* line 26, ../sass/components/_buttons.scss */
 .button:disabled {
   opacity: .4;
   cursor: default;
 }
-/* line 33, ../sass/components/_buttons.scss */
+/* line 32, ../sass/components/_buttons.scss */
 .button:focus {
   outline: none;
 }
 
-/* line 38, ../sass/components/_buttons.scss */
+/* line 37, ../sass/components/_buttons.scss */
 .button--blue {
   border: 1px solid #336f87;
   background-color: #6693a5;
   color: #fff;
 }
-/* line 42, ../sass/components/_buttons.scss */
+/* line 41, ../sass/components/_buttons.scss */
 .button--blue:hover {
   border-color: #004b6a;
   background-color: #004b6a;
 }
-/* line 46, ../sass/components/_buttons.scss */
+/* line 45, ../sass/components/_buttons.scss */
 .button--blue:active, .button--blue.is-selected {
   border-color: #002d3f;
   background-color: #002d3f;
 }
 
-/* line 52, ../sass/components/_buttons.scss */
+/* line 51, ../sass/components/_buttons.scss */
 .button--green {
   border: 1px solid #33b390;
   background-color: #66c6ac;
   color: #fff;
 }
-/* line 56, ../sass/components/_buttons.scss */
+/* line 55, ../sass/components/_buttons.scss */
 .button--green:hover {
   border-color: #00a175;
   background-color: #00a175;
 }
-/* line 60, ../sass/components/_buttons.scss */
+/* line 59, ../sass/components/_buttons.scss */
 .button--green:active, .button--green.is-selected {
   border-color: #006046;
   background-color: #006046;
 }
 
-/* line 66, ../sass/components/_buttons.scss */
+/* line 65, ../sass/components/_buttons.scss */
 .button--red {
   color: #bb4961;
 }
-/* line 68, ../sass/components/_buttons.scss */
+/* line 67, ../sass/components/_buttons.scss */
 .button--red:hover {
   color: #aa1c3a;
 }
-/* line 71, ../sass/components/_buttons.scss */
-.button--red:active, .button--red.is-selected {
-  color: #fff;
-}
 
-/* line 76, ../sass/components/_buttons.scss */
+/* line 72, ../sass/components/_buttons.scss */
 .button--orange {
   border: 1px solid #ec9755;
   background-color: #f1b17f;
   color: #fff;
 }
-/* line 80, ../sass/components/_buttons.scss */
+/* line 76, ../sass/components/_buttons.scss */
 .button--orange:hover {
   border-color: #e87d2b;
   background-color: #e87d2b;
 }
-/* line 84, ../sass/components/_buttons.scss */
+/* line 80, ../sass/components/_buttons.scss */
 .button--orange:active, .button--orange.is-selected {
   border-color: #8b4b19;
   background-color: #8b4b19;
 }
 
-/* line 90, ../sass/components/_buttons.scss */
+/* line 86, ../sass/components/_buttons.scss */
 .button--text {
   background-color: transparent;
   border: 1px solid transparent;
   border-radius: 0;
 }
-/* line 94, ../sass/components/_buttons.scss */
+/* line 90, ../sass/components/_buttons.scss */
 .button--text:hover, .button--text:active, .button--text.is-selected {
   background-color: transparent;
   border-color: transparent;
@@ -1143,13 +1138,13 @@ input[type="submit"]:disabled:hover {
   color: #000;
 }
 
-/* line 102, ../sass/components/_buttons.scss */
+/* line 98, ../sass/components/_buttons.scss */
 .button--medium {
   font-size: 14px;
   padding: .5em 1em;
 }
 
-/* line 107, ../sass/components/_buttons.scss */
+/* line 103, ../sass/components/_buttons.scss */
 .button--large {
   font-size: 18px;
   padding: .5em 1em;
@@ -1304,8 +1299,9 @@ input[type="submit"]:disabled:hover {
   padding: 1em 40px;
   font-size: 16px;
   color: #fff;
+  font-weight: 400;
 }
-/* line 14, ../sass/components/_flashes.scss */
+/* line 15, ../sass/components/_flashes.scss */
 .flash:before {
   content: '';
   font-family: "FontAwesome";
@@ -1313,29 +1309,29 @@ input[type="submit"]:disabled:hover {
   margin-right: 1em;
 }
 
-/* line 22, ../sass/components/_flashes.scss */
+/* line 23, ../sass/components/_flashes.scss */
 .flash--notice {
   background-color: #33b390;
 }
-/* line 24, ../sass/components/_flashes.scss */
+/* line 25, ../sass/components/_flashes.scss */
 .flash--notice:before {
   content: '\f05a';
 }
 
-/* line 29, ../sass/components/_flashes.scss */
+/* line 30, ../sass/components/_flashes.scss */
 .flash--warning {
   background-color: #ec9755;
 }
-/* line 32, ../sass/components/_flashes.scss */
+/* line 33, ../sass/components/_flashes.scss */
 .flash--warning:before {
   content: '\f06a';
 }
 
-/* line 37, ../sass/components/_flashes.scss */
+/* line 38, ../sass/components/_flashes.scss */
 .flash--error {
   background-color: #bb4961;
 }
-/* line 40, ../sass/components/_flashes.scss */
+/* line 41, ../sass/components/_flashes.scss */
 .flash--error:before {
   content: '\f057';
 }
@@ -1433,7 +1429,7 @@ input[type="submit"]:disabled:hover {
 
 /* line 12, ../sass/components/_activity-log.scss */
 .activity-log {
-  padding-left: 1em;
+  padding-left: 40px;
 }
 
 /* line 16, ../sass/components/_activity-log.scss */
@@ -1483,6 +1479,7 @@ input[type="submit"]:disabled:hover {
   border: 1px solid #bdbdbd;
   border-radius: 50%;
   left: -1.25em;
+  margin-left: -2px;
   font-family: 'FontAwesome';
   font-size: 14px;
   text-align: center;
@@ -1490,28 +1487,28 @@ input[type="submit"]:disabled:hover {
   color: #424242;
 }
 
-/* line 59, ../sass/components/_activity-log.scss */
+/* line 60, ../sass/components/_activity-log.scss */
 .activity-log-item--info:before {
   content: '\f129';
 }
 
-/* line 65, ../sass/components/_activity-log.scss */
+/* line 66, ../sass/components/_activity-log.scss */
 .activity-log-item--edit:before {
   content: '\f040';
 }
 
-/* line 71, ../sass/components/_activity-log.scss */
+/* line 72, ../sass/components/_activity-log.scss */
 .activity-log-item--comment:before {
   line-height: 2.25em;
   content: '\f075';
 }
 
-/* line 78, ../sass/components/_activity-log.scss */
+/* line 79, ../sass/components/_activity-log.scss */
 .activity-log-item__content p {
   margin: 0;
 }
 
-/* line 83, ../sass/components/_activity-log.scss */
+/* line 84, ../sass/components/_activity-log.scss */
 .activity-log-item__datetime {
   margin-top: .5em;
   font-size: 12px;
@@ -1563,7 +1560,7 @@ input[type="submit"]:disabled:hover {
   display: none;
 }
 /* line 37, ../sass/components/_activity-progress.scss */
-.activity-progress__item.completed:before {
+.activity-progress__item.is-completed:before {
   background-color: #66c6ac;
 }
 
@@ -1575,7 +1572,7 @@ input[type="submit"]:disabled:hover {
   margin-bottom: 0;
 }
 /* line 48, ../sass/components/_activity-progress.scss */
-.completed .activity-progress__label {
+.is-completed .activity-progress__label {
   color: #000;
   font-weight: 600;
 }
@@ -1594,7 +1591,7 @@ input[type="submit"]:disabled:hover {
   color: #9e9e9e;
 }
 /* line 65, ../sass/components/_activity-progress.scss */
-.completed .activity-progress__icon {
+.is-completed .activity-progress__icon {
   background-color: #33b390;
   color: #fff;
 }
@@ -2094,7 +2091,8 @@ input[type="submit"]:disabled:hover {
 
 /* line 64, ../sass/templates/_articles-list.scss */
 .dir-item__name {
-  color: #757575;
+  color: #616161;
+  font-weight: 400;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2102,13 +2100,13 @@ input[type="submit"]:disabled:hover {
   width: auto;
   margin-right: 2.5em;
 }
-/* line 72, ../sass/templates/_articles-list.scss */
+/* line 73, ../sass/templates/_articles-list.scss */
 .lt-ie10 .dir-item__name {
   text-overflow: clip;
   -ms-text-overflow: clip;
 }
 
-/* line 78, ../sass/templates/_articles-list.scss */
+/* line 79, ../sass/templates/_articles-list.scss */
 .dir-item__actions {
   opacity: 0;
   position: absolute;
@@ -2116,12 +2114,12 @@ input[type="submit"]:disabled:hover {
   top: 50%;
   margin-top: -.5em;
 }
-/* line 84, ../sass/templates/_articles-list.scss */
+/* line 85, ../sass/templates/_articles-list.scss */
 .dir-item__actions a {
   color: #757575;
 }
 
-/* line 89, ../sass/templates/_articles-list.scss */
+/* line 90, ../sass/templates/_articles-list.scss */
 .articles {
   padding: 1em 40px;
 }

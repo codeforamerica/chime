@@ -10,7 +10,7 @@
 }
 
 .activity-log {
-	padding-left: 1em;
+	padding-left: $site-margins;
 }
 
 .activity-overview__description {
@@ -47,6 +47,7 @@
 		border: 1px solid $color-grey-400;
 		border-radius: 50%;
 		left: -1.25em;
+		margin-left: -2px;
 		font-family: 'FontAwesome';
 		font-size: 14px;
 		text-align: center;

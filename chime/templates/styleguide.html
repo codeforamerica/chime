@@ -2,113 +2,271 @@
 <!--[if lte IE 10]><html lang="en-us" class="lt-ie10"><![endif]-->
 <!--[if gt IE 9]><!--><html lang="en-us"><!--<![endif]-->
 <head>
-        <meta charset="utf-8">
-        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
-        <meta http-equiv="X-UA-Compatible" content="IE=Edge">
-        <link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700,300italic,400italic,700italic' rel='stylesheet' type='text/css'>
-        <link href="/static/stylesheets/main.css" rel="stylesheet" />
-        <link href="/static/stylesheets/styleguide.css" rel="stylesheet" />
-        <script src="{{ url_for('static', filename='script.js') }}"></script>
-        <title>Styleguide | Chime</title>
-        <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    </head>
-    <body class="styleguide">
-        <h1>Chime Styleguide</h1>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+  <link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700,300italic,400italic,700italic' rel='stylesheet' type='text/css'>
+  <link href="/static/stylesheets/prism.css" rel="stylesheet" />
+  <link href="/static/stylesheets/main.css" rel="stylesheet" />
+  <link href="/static/stylesheets/styleguide.css" rel="stylesheet" />
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+  <title>Styleguide | Chime</title>
+  <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+</head>
+<body class="styleguide">
 
-        <h2>Row and Column Layouts</h2>
+  <div class="global-header">
+    
+  </div>
 
-        <div class="layout-examples">
-          <h3>Row</h3>
-          <div class="row">
-            <div class="row__left">
-              Row Left
-            </div>
-            <div class="row__right">
-              Row Right
-            </div>
-          </div>
+  <div class="nav-sidebar">
+    <h1>Chime CMS Styleguide</h1>
+  </div>
+  <div class="main-content">
+    <div class="style-guide-content">
 
+      <h1>Layouts</h1>
 
-          <h3>Main Row</h3>
-          <div class="row row--main">
-            <div class="row__left">
-              Row Left
-            </div>
-            <div class="row__right">
-              Row Right
-            </div>
-          </div>
-
-          <h3>Row with Toolbars</h3>
-          <div class="row">
-            <div class="row__left toolbar toolbar--left">
-              <span class="toolbar__item">Toolbar Item</span>
-              <span class="toolbar__item">Toolbar Item</span>
-              <span class="toolbar__item">Toolbar Item</span>
-            </div>
-            <div class="row__right toolbar toolbar--right">
-              <span class="toolbar__item">Toolbar Item</span>
-              <span class="toolbar__item">Toolbar Item</span>
-              <span class="toolbar__item">Toolbar Item</span>
-            </div>
-          </div>
-
-          <h3>Column</h3>
-          <div class="col" style="height: 300px">
-            <div class="col__item">Column Item</div>
-            <div class="col__flex">Flexible Column Item</div>
-          </div>
-
-
-          <h2>Grid Layouts</h2>
-          <div class="grid">
-            <div class="grid__item width-one-whole">One Whole</div>
-            <div class="grid__item width-one-half">One Half</div>
-            <div class="grid__item width-one-half end-row">One Half</div>
-            <div class="grid__item width-one-third">One Third</div>
-            <div class="grid__item width-two-thirds end-row">Two Thirds</div>
-            <div class="grid__item width-one-fourth">One Fourth</div>
-            <div class="grid__item width-three-fourths">Three Fourths</div>
-          </div>
-
+      <h2>Grid</h2>
+      <p>Used to define layouts based on fixed percentages of the screen.</p>
+      <div class="layout-example preview">
+        <div class="grid">
+          <div class="grid__item width-one-whole">One Whole</div>
+          <div class="grid__item width-one-half">One Half</div>
+          <div class="grid__item width-one-half end-row">One Half</div>
+          <div class="grid__item width-one-third">One Third</div>
+          <div class="grid__item width-two-thirds end-row">Two Thirds</div>
+          <div class="grid__item width-one-fourth">One Fourth</div>
+          <div class="grid__item width-three-fourths">Three Fourths</div>
         </div>
+      </div>
 
-        
 
-        <h2>Buttons</h2>
+      <h2>Rows and Columns</h2>
+      <p>Used to create user-interface specific layouts where precentage based widths are not appropriate (e.g, headers, footers, action bars, etc).</p>
 
-        <h3>Solid Buttons</h3>
+      <h3>Row</h3>
+      <p>Defines a row of horizontally floated items. Items can be floated right or left.</p>
+      <div class="layout-example preview">
+        <div class="row">
+          <div class="row__left">Row Left</div>
+          <div class="row__right">Row Right</div>
+        </div> 
+      </div>
+
+
+
+      <h3>Main Row</h3>
+      <p>This row modifier provides default padding for an app level row.</p>
+      <div class="layout-example preview">
         <div class="row row--main">
-          <div class="toolbar toolbar--left">
-            <button class="toolbar__item button">Button</button>
-            <button class="toolbar__item button button--red">Button</button>
-            <button class="toolbar__item button button--green">Button</button>
-            <button class="toolbar__item button button--blue">Button</button>
-            <button class="toolbar__item button button--orange">Button</button>
+          <div class="row__left">Row Left</div>
+          <div class="row__right">Row Right</div>
+        </div>
+      </div>
+
+      <h3>Row with Toolbars</h3>
+      <p>Toolbars can be floated left or right of rows and add appropriate margins to toolbar items</p>
+      <div class="layout-example preview">
+        <div class="row">
+          <div class="row__left toolbar toolbar--left">
+            <span class="toolbar__item">Toolbar Item</span>
+            <span class="toolbar__item">Toolbar Item</span>
+            <span class="toolbar__item">Toolbar Item</span>
+          </div>
+          <div class="row__right toolbar toolbar--right">
+            <span class="toolbar__item">Toolbar Item</span>
+            <span class="toolbar__item">Toolbar Item</span>
+            <span class="toolbar__item">Toolbar Item</span>
           </div>
         </div>
+      </div>
 
-        <div class="row row--main">
-          <div class="toolbar toolbar--left">
-            <button class="toolbar__item button button--medium">Button</button>
-            <button class="toolbar__item button button--medium button--red">Button</button>
-            <button class="toolbar__item button button--medium button--green">Button</button>
-            <button class="toolbar__item button button--medium button--blue">Button</button>
-            <button class="toolbar__item button button--medium button--orange">Button</button>
+      <h3>Column</h3>
+      <p>Defines vertically stacked items. Flexible column items can be used to fill the remaining space in a column. Columns are pretty much unnecessary unless using a flexible column item. Flexible columns only work on modern browsers (that support the flexbox model). IE8 and IE9 simply treat column items as basic block elements that do not flex.</p>
+      <div class="layout-example preview">
+        <div class="col" style="height: 300px">
+          <div class="col__item">Column Item</div>
+          <div class="col__flex">Flexible Column Item</div>
+          <div class="col__item">Column Item</div>
+        </div>
+      </div>
+
+
+
+
+
+
+      <h1>Buttons</h1>
+      <p>Buttons come in three sizes: regular, medium, and large.</p>
+      <h2>Small Buttons</h2>
+      <div class="row preview">
+        <div class="toolbar toolbar--left">
+          <button class="toolbar__item button">Button</button>
+          <button class="toolbar__item button button--red">Button</button>
+          <button class="toolbar__item button button--green">Button</button>
+          <button class="toolbar__item button button--blue">Button</button>
+          <button class="toolbar__item button button--orange">Button</button>
+        </div>
+      </div>
+
+      <h2>Medium Buttons</h2>
+      <div class="row preview">
+        <div class="toolbar toolbar--left">
+          <button class="toolbar__item button button--medium">Button</button>
+          <button class="toolbar__item button button--medium button--red">Button</button>
+          <button class="toolbar__item button button--medium button--green">Button</button>
+          <button class="toolbar__item button button--medium button--blue">Button</button>
+          <button class="toolbar__item button button--medium button--orange">Button</button>
+        </div>
+      </div>
+
+      <h2>Large Buttons</h2>
+      <div class="row preview">
+        <div class="toolbar toolbar--left">
+          <button class="toolbar__item button button--large">Button</button>
+          <button class="toolbar__item button button--large button--red">Button</button>
+          <button class="toolbar__item button button--large button--green">Button</button>
+          <button class="toolbar__item button button--large button--blue">Button</button>
+          <button class="toolbar__item button button--large button--orange">Button</button>
+        </div>
+      </div>
+
+
+      <h1>Tables</h1>
+
+      <div class="row preview">
+        <table>
+          <thead>
+            <tr> 
+              <th>Column 1</th>
+              <th>Column 2</th>
+              <th>Column 3</th>
+            </tr>
+          </thead>
+          <tbody>
+
+            <tr>
+              <td>Table Item</td>
+              <td>Table Item</td>
+              <td>Table Item</td>
+            </tr>
+            <tr>
+              <td>Table Item</td>
+              <td>Table Item</td>
+              <td>Table Item</td>
+            </tr>
+            <tr>
+              <td>Table Item</td>
+              <td>Table Item</td>
+              <td>Table Item</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h1>Flash Messages</h1>
+      <h2>Notice Message</h2>
+      <div class="flash-holder row preview">
+        <ul class="flashes">
+          <li class="flash flash--notice">This is a notice</li>
+        </ul>
+      </div>
+
+      <h2>Warning Message</h2>
+      <div class="flash-holder row preview">
+        <ul class="flashes">
+          <li class="flash flash--warning">This is a warning</li>
+        </ul>
+      </div>
+
+      <h2>Error Message</h2>
+      <div class="flash-holder row preview">
+        <ul class="flashes">
+          <li class="flash flash--error">This is an error</li>
+        </ul>
+      </div>
+      <h1>Comments</h1>
+
+      <h2>Comment</h2>
+      <div class="row preview">
+        <div class="comment">
+          <div class="comment__author">Comment Author</div>
+          <div class="comment__body">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Soluta itaque quae aliquam dolorem odio blanditiis hic eveniet alias ratione laborum provident sint amet, sequi nam nulla reiciendis fuga sunt facere.</div>
+          <div class="comment__datetime">Date and Time</div>
+        </div>          
+      </div>
+
+      <h2>New Comment</h2>
+      <div class="row preview">
+        <div class="comment comment--new">
+          <div class="comment__author">Comment Author</div>
+          <div class="comment__body">
+            <textarea name="" id="" cols="30" rows="10" class="comment__input" placeholder="Leave a comment here..."></textarea>
+          </div>
+          <div class="comment__actions toolbar toolbar--right">
+            <button class="toolbar__item button">Leave a comment</button>
+          </div>
+        </div>          
+      </div>
+
+      <h1>Activity Log</h1>
+      <p>Used to display chronological events in a timeline.</p>
+      <div class="row preview">
+        <div class="activity-log">
+          <div class="activity-log-item activity-log-item--edit">
+            <div class="activity-log-item__content">
+              <p>This is an edit activity</p>
+            </div>
+            <div class="activity-log-item__datetime">Date and Time</div>
+          </div>
+          <div class="activity-log-item activity-log-item--info">
+            <div class="activity-log-item__content">
+              <p>This is a status update</p>
+            </div>
+            <div class="activity-log-item__datetime">Date and Time</div>
+          </div>
+          <div class="activity-log-item activity-log-item--comment">
+            <div class="comment">
+              <div class="comment__author">Comment Author</div>
+              <div class="comment__body">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Soluta itaque quae aliquam dolorem odio blanditiis hic eveniet alias ratione laborum provident sint amet, sequi nam nulla reiciendis fuga sunt facere.</div>
+              <div class="comment__datetime">Date and Time</div>
+            </div>  
           </div>
         </div>
+      </div>
 
-        <div class="row row--main">
-          <div class="toolbar toolbar--left">
-            <button class="toolbar__item button button--large">Button</button>
-            <button class="toolbar__item button button--large button--red">Button</button>
-            <button class="toolbar__item button button--large button--green">Button</button>
-            <button class="toolbar__item button button--large button--blue">Button</button>
-            <button class="toolbar__item button button--large button--orange">Button</button>
+
+      <h1>Activity Progress</h1>
+      <p>Used to track step by step progress. Items can be marked as completed by using the <code>.is-completed</code> class.</p>
+      <div class="row preview">
+        <div class="activity-progress grid">
+          <div class="activity-progress__item grid__item width-one-fourth is-completed">
+            <div class="activity-progress__icon fa fa-pencil"></div>
+            <p class="activity-progress__label">Step 1</p>
+          </div>
+          <div class="activity-progress__item grid__item width-one-fourth is-completed">
+            <div class="activity-progress__icon fa fa-eye"></div>
+            <p class="activity-progress__label">Step 2</p>
+          </div>
+          <div class="activity-progress__item grid__item width-one-fourth">
+            <div class="activity-progress__icon fa fa-thumbs-o-up"></div>
+            <p class="activity-progress__label">Step 3</p>
+          </div>
+          <div class="activity-progress__item grid__item width-one-fourth">
+            <div class="activity-progress__icon fa fa-check"></div>
+            <p class="activity-progress__label">Step 4</p>
           </div>
         </div>
+      </div>
+
+    </div>
+  </div>
 
 
-        <script src="/static/javascript/placeholders.min.js"></script>
-    </body>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script src="/static/javascript/prism.js"></script>
+  <script src="/static/javascript/placeholders.min.js"></script>
+  <script src="/static/javascript/styleguide.js"></script>
+</body>
 </html>

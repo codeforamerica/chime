@@ -37,19 +37,19 @@
                 {% set review_step = 4 %}
             {% endif %}
 
-            <li class="activity-progress__item {% if review_step > 0 %}completed{% endif %} grid__item width-one-fourth">
+            <li class="activity-progress__item {% if review_step > 0 %}is-completed{% endif %} grid__item width-one-fourth">
                 <div class="activity-progress__icon fa fa-pencil"></div>
                 <p class="activity-progress__label">Edits Made</p>
             </li>
-            <li class="activity-progress__item {% if review_step > 1 %}completed{% endif %} grid__item width-one-fourth">
+            <li class="activity-progress__item {% if review_step > 1 %}is-completed{% endif %} grid__item width-one-fourth">
                 <div class="activity-progress__icon fa fa-eye"></div>
                 <p class="activity-progress__label">Feedback Requested</p>
             </li>
-            <li class="activity-progress__item {% if review_step > 2 %}completed{% endif %} grid__item width-one-fourth">
+            <li class="activity-progress__item {% if review_step > 2 %}is-completed{% endif %} grid__item width-one-fourth">
                 <div class="activity-progress__icon fa fa-thumbs-o-up"></div>
                 <p class="activity-progress__label">Edits Endorsed</p>
             </li>
-            <li class="activity-progress__item {% if review_step > 3 %}completed{% endif %} grid__item width-one-fourth end-row">
+            <li class="activity-progress__item {% if review_step > 3 %}is-completed{% endif %} grid__item width-one-fourth end-row">
                 <div class="activity-progress__icon fa fa-check"></div>
                 <p class="activity-progress__label">Published</p>
             </li>
