@@ -760,7 +760,7 @@ def publish_or_destroy_activity(branch_name, action):
         elif action == 'clobber':
             flash(u'You clobbered the {activity_blurb}!'.format(activity_blurb=activity_blurb), u'notice')
 
-        return redirect('/')
+        return redirect('/', code=303)
 
 def make_kwargs_for_activity_files_page(repo, branch_name, path):
     ''' Assemble the kwargs for a page that shows an activity's files.

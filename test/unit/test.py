@@ -1863,7 +1863,7 @@ class ChimeTestClient:
         # Look for a link to the categories, here called "other".
         link = soup.find(lambda tag: bool(tag.name == 'a' and tag['href'] == href))
         response = self.client.get(link['href'])
-        self.test.assertEqual(response.status_code, 302) # Watch out for a redirect here.
+        self.test.assertTrue(response.status_code in (301, 302)) # Watch out for a redirect here.
         
         # Drop down into "other", where the categories are?
         redirect = urlparse(response.headers['Location']).path
@@ -1976,7 +1976,6 @@ class ChimeTestClient:
         body = soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'en-body'))
         form = body.find_parent('form')
         title = form.find(lambda tag: bool(tag.name == 'input' and tag.get('name') == 'en-title'))
-        button = form.find(lambda tag: bool(tag.name == 'input' and tag.get('value') == 'Save'))
         self.test.assertEqual(form['method'].upper(), 'POST')
         
         data = {i['name']: i.get('value')
@@ -1997,6 +1996,103 @@ class ChimeTestClient:
         self.test.assertEqual(response.status_code, 200)
         
         return article_path, BeautifulSoup(response.data)
+
+    def request_feedback(self, url, soup, feedback_str):
+        ''' Look for form to request feedback, submit it and return URL and soup.
+        '''
+        body = soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'comment_text'))
+        form = body.find_parent('form')
+        self.test.assertEqual(form['method'].upper(), 'POST')
+        
+        data = {i['name']: i.get('value')
+                for i in form.find_all(['input', 'button', 'textarea'])
+                if i.get('value') != 'Leave a Comment'}
+        
+        data[body['name']] = feedback_str
+        
+        save_feedback_path = urlparse(urljoin(url, form['action'])).path
+        response = self.client.post(save_feedback_path, data=data)
+        self.test.assertEqual(response.status_code, 303)
+        
+        # View the saved feedback.
+
+        result_path = urlparse(response.headers['Location']).path
+        response = self.client.get(result_path)
+        self.test.assertEqual(response.status_code, 200)
+        
+        return result_path, BeautifulSoup(response.data)
+
+    def leave_feedback(self, url, soup, feedback_str):
+        ''' Look for form to leave feedback, submit it and return URL and soup.
+        '''
+        body = soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'comment_text'))
+        form = body.find_parent('form')
+        self.test.assertEqual(form['method'].upper(), 'POST')
+        
+        data = {i['name']: i.get('value')
+                for i in form.find_all(['input', 'button', 'textarea'])
+                if i.get('value') != 'Looks Good!'}
+        
+        data[body['name']] = feedback_str
+        
+        save_feedback_path = urlparse(urljoin(url, form['action'])).path
+        response = self.client.post(save_feedback_path, data=data)
+        self.test.assertEqual(response.status_code, 303)
+        
+        # View the saved feedback.
+
+        result_path = urlparse(response.headers['Location']).path
+        response = self.client.get(result_path)
+        self.test.assertEqual(response.status_code, 200)
+        
+        return result_path, BeautifulSoup(response.data)
+
+    def approve_activity(self, url, soup):
+        ''' Look for form to approve activity, submit it and return URL and soup.
+        '''
+        body = soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'comment_text'))
+        form = body.find_parent('form')
+        self.test.assertEqual(form['method'].upper(), 'POST')
+        
+        data = {i['name']: i.get('value')
+                for i in form.find_all(['input', 'button', 'textarea'])
+                if i.get('value') != 'Leave a Comment'}
+        
+        approve_activity_path = urlparse(urljoin(url, form['action'])).path
+        response = self.client.post(approve_activity_path, data=data)
+        self.test.assertEqual(response.status_code, 303)
+        
+        # View the saved feedback.
+
+        result_path = urlparse(response.headers['Location']).path
+        response = self.client.get(result_path)
+        self.test.assertEqual(response.status_code, 200)
+        
+        return result_path, BeautifulSoup(response.data)
+
+    def publish_activity(self, url, soup):
+        ''' Look for form to publish activity, submit it and return URL and soup.
+        '''
+        body = soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'comment_text'))
+        form = body.find_parent('form')
+        self.test.assertEqual(form['method'].upper(), 'POST')
+        
+        data = {i['name']: i.get('value')
+                for i in form.find_all(['input', 'button', 'textarea'])
+                if i.get('value') != 'Leave a Comment'}
+        
+        publish_activity_path = urlparse(urljoin(url, form['action'])).path
+        response = self.client.post(publish_activity_path, data=data)
+        print(publish_activity_path, data)
+        self.test.assertEqual(response.status_code, 303)
+        
+        # View the published activity.
+
+        result_path = urlparse(response.headers['Location']).path
+        response = self.client.get(result_path)
+        self.test.assertEqual(response.status_code, 200)
+        
+        return result_path, BeautifulSoup(response.data)
 
 class TestApps (TestCase):
     
@@ -2091,12 +2187,24 @@ class TestApps (TestCase):
             # Edit the new article.
             client.edit_article(article_path, soup, 'So, So Awesome', 'It was the best of times.')
             
+            # Ask for feedback
+            task_path, soup = client.follow_link(soup, '/tree/9313f09')
+            client.request_feedback(task_path, soup, 'Is this okay?')
+            
             #
-            # Switch users and edit the article.
+            # Switch users and try to publish the article.
             #
             client.sign_in('frances@example.com')
-            soup = client.open_link(article_path)
-            client.edit_article(article_path, soup, 'So, So Terribad', 'It was the worst of times.')
+            soup = client.open_link(task_path)
+            task_path, soup = client.leave_feedback(task_path, soup, 'It is super-great.')
+            approved_path, soup = client.approve_activity(task_path, soup)
+            published_path, soup = client.publish_activity(approved_path, soup)
+            
+            return
+            print soup
+            print '-' * 80
+            print published_path
+            return
 
 class TestApp (TestCase):
 
