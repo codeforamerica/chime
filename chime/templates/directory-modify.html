@@ -43,9 +43,9 @@
         {% for file in column['files'] %}
          <!-- file type: {{file['display_type']}}, file name: {{file['name']}}, file title: {{file['title']}} -->
          <li class="dir-item {% if file['selected'] == True %}is-selected{% endif %}">
-            <a class="dir-item__name {{file['display_type']}}" href="{{file['edit_path']}}"><span class="{{icon_class_lookup[file['display_type']]}}"></span>{{ file['title'] }}</a>
+            <a class="dir-item__name {{file['display_type']}}" href="{{file['edit_path']}}"><span class="dir-item__display-type {{icon_class_lookup[file['display_type']]}}"></span>{{ file['title'] }}</a>
             <div class="dir-item__actions toolbar--right">
-              <a href="{{file['modify_path']}}" class="toolbar__item"><span class="fa fa-pencil"></span></a>
+              <a href="{{file['modify_path']}}" class="toolbar__item dir-item__action"><span class="fa fa-pencil"></span></a>
             </div>
           </li>
         {% endfor %}   
