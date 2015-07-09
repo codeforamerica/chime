@@ -7,7 +7,7 @@
 	color: $color-grey-800;
 	font-family: $font-sans;
 	font-size: $small-font-size;
-	font-weight: 400;
+	font-weight: 600;
 	border-radius: $border-radius;
 	padding: .3em .8em;
 
@@ -98,9 +98,11 @@
 .button--medium {
 	font-size: $base-font-size;
 	padding: .5em 1em;
+	font-weight: 400;
 }
 
 .button--large {
 	font-size: $h4-font-size;
 	padding: .5em 1em;
+	font-weight: 400;
 }

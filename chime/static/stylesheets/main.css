@@ -1036,7 +1036,7 @@ input[type="submit"]:disabled:hover {
   color: #424242;
   font-family: "Source Sans Pro", "Helvetiva", "Arial", sans-serif;
   font-size: 12px;
-  font-weight: 400;
+  font-weight: 600;
   border-radius: 3px;
   padding: .3em .8em;
 }
@@ -1142,12 +1142,14 @@ input[type="submit"]:disabled:hover {
 .button--medium {
   font-size: 14px;
   padding: .5em 1em;
+  font-weight: 400;
 }
 
-/* line 103, ../sass/components/_buttons.scss */
+/* line 104, ../sass/components/_buttons.scss */
 .button--large {
   font-size: 18px;
   padding: .5em 1em;
+  font-weight: 400;
 }
 
 /* line 1, ../sass/components/_alerts.scss */
