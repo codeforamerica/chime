@@ -2735,6 +2735,54 @@ class TestApp (TestCase):
             self.assertFalse(exists(cata_location))
 
     # in TestApp
+    def test_delete_article(self):
+        ''' An article can be deleted
+        '''
+        fake_author_email = u'erica@example.com'
+        with HTTMock(self.mock_persona_verify):
+            self.test_client.post('/sign-in', data={'email': fake_author_email})
+
+        with HTTMock(self.auth_csv_example_allowed):
+            # start a new branch via the http interface
+            # invokes view_functions/get_repo which creates a clone
+            task_description = u'Remove Small Organic Particles From Seawater Passing Over Outspread Tentacles'
+            task_beneficiary = u'Sea Anemones'
+
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            self.assertTrue(working_branch.name in self.clone1.branches)
+            self.assertTrue(working_branch.name in self.origin.branches)
+            working_branch_name = working_branch.name
+            working_branch.checkout()
+
+            # create an article
+            art_title = u'Zooplankters'
+            art_slug = slugify(art_title)
+            response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
+                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': art_title},
+                                             follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+
+            # pull the changes
+            self.clone1.git.pull('origin', working_branch_name)
+
+            # verify that the article exists
+            art_location = join(self.clone1.working_dir, art_slug)
+            self.assertTrue(exists(art_location))
+            self.assertTrue(view_functions.is_article_dir(art_location))
+
+            # delete the article
+            response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, art_slug),
+                                             data={'action': 'delete', 'request_path': art_slug},
+                                             follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+
+            # pull the changes
+            self.clone1.git.pull('origin', working_branch_name)
+
+            # verify that the deleted category and article no longer exist
+            self.assertFalse(exists(art_location))
+
+    # in TestApp
     def test_article_creation_with_unicode_via_web_interface(self):
         ''' An article with unicode in its title is created and logged as expected.
         '''
