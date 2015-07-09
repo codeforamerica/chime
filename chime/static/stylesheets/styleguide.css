@@ -881,7 +881,7 @@ a:hover {
 .code-sample .button-toggle {
   color: #000;
   display: block;
-  padding: 0.5em 40px;
+  padding: .5em 2em;
   text-decoration: underline;
 }
 /* line 143, ../sass/styleguide.scss */
