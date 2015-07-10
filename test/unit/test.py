@@ -21,6 +21,7 @@ from slugify import slugify
 repo_root = abspath(join(dirname(__file__), '..'))
 sys.path.insert(0, repo_root)
 
+from bs4 import BeautifulSoup
 from git.cmd import GitCommandError
 from box.util.rotunicode import RotUnicode
 from httmock import response, HTTMock
@@ -1834,6 +1835,351 @@ class TestAppConfig (TestCase):
         self.assertTrue('support_phone_number' in template_args)
         self.assertEqual(template_args['support_email'], fake_support_email)
         self.assertEqual(template_args['support_phone_number'], fake_support_phone_number)
+
+class ChimeTestClient:
+
+    def __init__(self, client, test):
+        ''' Create a new client, with Flask test client and TestApps instance.
+        '''
+        self.client = client
+        self.test = test
+
+        response = self.client.get('/')
+        self.test.assertFalse('Start' in response.data)
+
+    def open_link(self, url):
+        ''' Open a link and return its soupy representation.
+        '''
+        response = self.client.get(url)
+        self.test.assertEqual(response.status_code, 200)
+
+        soup = BeautifulSoup(response.data)
+
+        return soup
+
+    def follow_link(self, soup, href):
+        ''' Follow a link after making sure it's present in the page.
+        '''
+        # Look for a link to the categories, here called "other".
+        link = soup.find(lambda tag: bool(tag.name == 'a' and tag['href'] == href))
+        response = self.client.get(link['href'])
+        self.test.assertTrue(response.status_code in (301, 302)) # Watch out for a redirect here.
+
+        # Drop down into "other", where the categories are?
+        redirect = urlparse(response.headers['Location']).path
+        response = self.client.get(redirect)
+        self.test.assertEqual(response.status_code, 200)
+
+        soup = BeautifulSoup(response.data)
+
+        return redirect, soup
+
+    def follow_redirect(self, response, code):
+        ''' Expect and follow a response HTTP redirect.
+        '''
+        self.test.assertEqual(response.status_code, code, 'Status {} should have been {}'.format(response.status_code, code))
+
+        redirect = urlparse(response.headers['Location']).path
+        response = self.client.get(redirect)
+        self.test.assertEqual(response.status_code, 200)
+
+        return redirect, BeautifulSoup(response.data)
+
+    def sign_in(self, email):
+        if email == 'erica@example.com':
+            with HTTMock(self.test.mock_persona_verify_erica):
+                response = self.client.post('/sign-in', data={'email': email})
+                self.test.assertEqual(response.status_code, 200)
+        elif email == 'frances@example.com':
+            with HTTMock(self.test.mock_persona_verify_frances):
+                response = self.client.post('/sign-in', data={'email': email})
+                self.test.assertEqual(response.status_code, 200)
+        else:
+            raise ValueError(email)
+
+        response = self.client.get('/')
+        self.test.assertTrue('Start' in response.data)
+
+    def start_task(self, description, beneficiary):
+        ''' Start a new task and return URL and soup of the resulting page.
+        '''
+        data = {'task_description': description, 'task_beneficiary': beneficiary}
+        response = self.client.post('/start', data=data)
+
+        return self.follow_redirect(response, 303)
+
+    def add_category(self, url, soup, category_name):
+        ''' Look for form to add a category, submit it and return URL and soup.
+        '''
+        input = soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add Category'))
+        form = input.find_parent('form')
+        self.test.assertEqual(form['method'].upper(), 'POST')
+
+        data = {i['name']: i.get('value') for i in form.find_all('input')}
+        data[input['name']] = 'Ninjas'
+
+        add_category_path = urlparse(urljoin(url, form['action'])).path
+        response = self.client.post(add_category_path, data=data)
+
+        # Drop down to where the subcategories are.
+        return self.follow_redirect(response, 303)
+
+    def add_subcategory(self, url, soup, subcategory_name):
+        ''' Look for form to add a subcategory, submit it and return URL and soup.
+        '''
+        input = soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add Subcategory'))
+        form = input.find_parent('form')
+        self.test.assertEqual(form['method'].upper(), 'POST')
+
+        data = {i['name']: i.get('value') for i in form.find_all('input')}
+        data[input['name']] = subcategory_name
+
+        add_subcategory_path = urlparse(urljoin(url, form['action'])).path
+        response = self.client.post(add_subcategory_path, data=data)
+
+        # Drop down into the subcategory where the articles are.
+        return self.follow_redirect(response, 303)
+
+    def add_article(self, url, soup, article_name):
+        ''' Look for form to add an article, submit it and return URL and soup.
+        '''
+        # Create a new article.
+
+        input = soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add Article'))
+        form = input.find_parent('form')
+        self.test.assertEqual(form['method'].upper(), 'POST')
+
+        data = {i['name']: i.get('value') for i in form.find_all('input')}
+        data[input['name']] = article_name
+
+        add_article_path = urlparse(urljoin(url, form['action'])).path
+        response = self.client.post(add_article_path, data=data)
+
+        # View the new article.
+        return self.follow_redirect(response, 303)
+
+    def edit_article(self, url, soup, title_str, body_str):
+        ''' Look for form to edit an article, submit it and return URL and soup.
+        '''
+        body = soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'en-body'))
+        form = body.find_parent('form')
+        title = form.find(lambda tag: bool(tag.name == 'input' and tag.get('name') == 'en-title'))
+        self.test.assertEqual(form['method'].upper(), 'POST')
+
+        data = {i['name']: i.get('value')
+                for i in form.find_all(['input', 'button', 'textarea'])
+                if i.get('type') != 'submit'}
+
+        data[title['name']] = title_str
+        data[body['name']] = body_str
+
+        edit_article_path = urlparse(urljoin(url, form['action'])).path
+        response = self.client.post(edit_article_path, data=data)
+
+        # View the updated article.
+        return self.follow_redirect(response, 303)
+
+    def edit_outdated_article(self, url, soup, title_str, body_str):
+        ''' Look for form to edit an article we know to be outdated, submit it and assert that the sumbission fails.
+        '''
+        body = soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'en-body'))
+        form = body.find_parent('form')
+        title = form.find(lambda tag: bool(tag.name == 'input' and tag.get('name') == 'en-title'))
+        self.test.assertEqual(form['method'].upper(), 'POST')
+
+        data = {i['name']: i.get('value')
+                for i in form.find_all(['input', 'button', 'textarea'])
+                if i.get('type') != 'submit'}
+
+        data[title['name']] = title_str
+        data[body['name']] = body_str
+
+        edit_article_path = urlparse(urljoin(url, form['action'])).path
+        response = self.client.post(edit_article_path, data=data)
+        self.test.assertEqual(response.status_code, 500)
+
+    def request_feedback(self, url, soup, feedback_str):
+        ''' Look for form to request feedback, submit it and return URL and soup.
+        '''
+        body = soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'comment_text'))
+        form = body.find_parent('form')
+        self.test.assertEqual(form['method'].upper(), 'POST')
+
+        data = {i['name']: i.get('value')
+                for i in form.find_all(['input', 'button', 'textarea'])
+                if i.get('value') != 'Leave a Comment'}
+
+        data[body['name']] = feedback_str
+
+        save_feedback_path = urlparse(urljoin(url, form['action'])).path
+        response = self.client.post(save_feedback_path, data=data)
+
+        # View the saved feedback.
+        return self.follow_redirect(response, 303)
+
+    def leave_feedback(self, url, soup, feedback_str):
+        ''' Look for form to leave feedback, submit it and return URL and soup.
+        '''
+        body = soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'comment_text'))
+        form = body.find_parent('form')
+        self.test.assertEqual(form['method'].upper(), 'POST')
+
+        data = {i['name']: i.get('value')
+                for i in form.find_all(['input', 'button', 'textarea'])
+                if i.get('value') != 'Looks Good!'}
+
+        data[body['name']] = feedback_str
+
+        save_feedback_path = urlparse(urljoin(url, form['action'])).path
+        response = self.client.post(save_feedback_path, data=data)
+
+        # View the saved feedback.
+        return self.follow_redirect(response, 303)
+
+    def approve_activity(self, url, soup):
+        ''' Look for form to approve activity, submit it and return URL and soup.
+        '''
+        body = soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'comment_text'))
+        form = body.find_parent('form')
+        self.test.assertEqual(form['method'].upper(), 'POST')
+
+        data = {i['name']: i.get('value')
+                for i in form.find_all(['input', 'button', 'textarea'])
+                if i.get('value') != 'Leave a Comment'}
+
+        approve_activity_path = urlparse(urljoin(url, form['action'])).path
+        response = self.client.post(approve_activity_path, data=data)
+
+        # View the saved feedback.
+        return self.follow_redirect(response, 303)
+
+    def publish_activity(self, url, soup):
+        ''' Look for form to publish activity, submit it and return URL and soup.
+        '''
+        body = soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'comment_text'))
+        form = body.find_parent('form')
+        self.test.assertEqual(form['method'].upper(), 'POST')
+
+        data = {i['name']: i.get('value')
+                for i in form.find_all(['input', 'button', 'textarea'])
+                if i.get('value') != 'Leave a Comment'}
+
+        publish_activity_path = urlparse(urljoin(url, form['action'])).path
+        response = self.client.post(publish_activity_path, data=data)
+
+        # View the published activity.
+        return self.follow_redirect(response, 303)
+
+class TestProcess (TestCase):
+
+    def setUp(self):
+        self.work_path = mkdtemp(prefix='chime-repo-clones-')
+
+        repo_path = dirname(abspath(__file__)) + '/../test-app.git'
+        upstream_repo_dir = mkdtemp(prefix='repo-upstream-', dir=self.work_path)
+        upstream_repo_path = join(upstream_repo_dir, 'test-app.git')
+        copytree(repo_path, upstream_repo_path)
+        self.upstream = ChimeRepo(upstream_repo_path)
+        repo_functions.ignore_task_metadata_on_merge(self.upstream)
+        self.origin = self.upstream.clone(mkdtemp(prefix='repo-origin-', dir=self.work_path), bare=True)
+        repo_functions.ignore_task_metadata_on_merge(self.origin)
+
+        # environ['GIT_AUTHOR_NAME'] = ' '
+        # environ['GIT_COMMITTER_NAME'] = ' '
+        # environ['GIT_AUTHOR_EMAIL'] = u'erica@example.com'
+        # environ['GIT_COMMITTER_EMAIL'] = u'erica@example.com'
+
+        create_app_environ = {}
+
+        create_app_environ['GA_CLIENT_ID'] = 'client_id'
+        create_app_environ['GA_CLIENT_SECRET'] = 'meow_secret'
+
+        self.ga_config_dir = mkdtemp(prefix='chime-config-', dir=self.work_path)
+        create_app_environ['RUNNING_STATE_DIR'] = self.ga_config_dir
+        create_app_environ['WORK_PATH'] = self.work_path
+        create_app_environ['REPO_PATH'] = self.origin.working_dir
+        create_app_environ['AUTH_DATA_HREF'] = 'http://example.com/auth.csv'
+        create_app_environ['BROWSERID_URL'] = 'http://localhost'
+        create_app_environ['LIVE_SITE_URL'] = 'http://example.org/'
+
+        self.app = create_app(create_app_environ)
+
+        # write a tmp config file
+        config_values = {
+            "access_token": "meowser_token",
+            "refresh_token": "refresh_meows",
+            "profile_id": "12345678",
+            "project_domain": ""
+        }
+        with self.app.app_context():
+            google_api_functions.write_ga_config(config_values, self.app.config['RUNNING_STATE_DIR'])
+
+        random.choice = MagicMock(return_value="P")
+
+        self.test_client = self.app.test_client()
+
+    def tearDown(self):
+        pass # rmtree(self.work_path)
+
+    def auth_csv_example_allowed(self, url, request):
+        if url.geturl() == 'http://example.com/auth.csv':
+            return response(200, '''Email domain,Organization\nexample.com,Example Org''')
+
+        raise Exception('Asked for unknown URL ' + url.geturl())
+
+    def mock_persona_verify_erica(self, url, request):
+        if url.geturl() == 'https://verifier.login.persona.org/verify':
+            return response(200, '''{"status": "okay", "email": "erica@example.com"}''')
+
+        else:
+            return self.auth_csv_example_allowed(url, request)
+
+    def mock_persona_verify_frances(self, url, request):
+        if url.geturl() == 'https://verifier.login.persona.org/verify':
+            return response(200, '''{"status": "okay", "email": "frances@example.com"}''')
+
+        else:
+            return self.auth_csv_example_allowed(url, request)
+
+    def test_editing_process(self):
+        ''' Check basic log in / log out flow without talking to Persona.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            client = ChimeTestClient(self.test_client, self)
+            client.sign_in(email='erica@example.com')
+
+            # Start a new task, "Diving for Dollars".
+            _, soup1 = client.start_task(description='Diving', beneficiary='Dollars')
+
+            # Look for an "other" link that we know about - is it a category?
+            categories_path, soup2 = client.follow_link(soup=soup1, href='/tree/9313f09/edit/other')
+
+            # Create a new category "Ninjas", subcategory "Flipping Out", and article "So Awesome".
+            subcategories_path, soup3 = client.add_category(url=categories_path, soup=soup2, category_name='Ninjas')
+            articles_path, soup4 = client.add_subcategory(url=subcategories_path, soup=soup3, subcategory_name='Flipping Out')
+            article_path, soup5 = client.add_article(url=articles_path, soup=soup4, article_name='So Awesome')
+
+            # Edit the new article.
+            client.edit_article(url=article_path, soup=soup5, title_str='So, So Awesome', body_str='It was the best of times.')
+
+            # Ask for feedback
+            task_path, soup6 = client.follow_link(soup=soup5, href='/tree/9313f09')
+            client.request_feedback(url=task_path, soup=soup6, feedback_str='Is this okay?')
+
+            #
+            # Switch users and publish the article.
+            #
+            client.sign_in(email='frances@example.com')
+            soup7 = client.open_link(url=task_path)
+            task_path, soup8 = client.leave_feedback(url=task_path, soup=soup7, feedback_str='It is super-great.')
+            approved_path, soup9 = client.approve_activity(url=task_path, soup=soup8)
+            published_path, soup10 = client.publish_activity(url=approved_path, soup=soup9)
+
+            #
+            # Switch back and try to make another edit, but watch it fail.
+            #
+            client.sign_in(email='erica@example.com')
+            client.edit_outdated_article(url=article_path, soup=soup5, title_str='Just Awful', body_str='It was the worst of times.')
 
 class TestApp (TestCase):
 
