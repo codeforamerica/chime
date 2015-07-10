@@ -1980,7 +1980,7 @@ class ChimeTestClient:
         return self.follow_redirect(response, 303)
 
     def edit_outdated_article(self, url, soup, title_str, body_str):
-        ''' Look for form to edit an article, submit it and return URL and soup.
+        ''' Look for form to edit an article we know to be outdated, submit it and assert that the sumbission fails.
         '''
         body = soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'en-body'))
         form = body.find_parent('form')
