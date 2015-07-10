@@ -13,6 +13,7 @@ from io import BytesIO
 from slugify import slugify
 import csv
 import re
+import sys
 
 from git import Repo
 from dateutil import parser, tz
@@ -739,7 +740,7 @@ def publish_or_destroy_activity(branch_name, action):
         elif action == 'clobber':
             clobber_default_branch(*args)
         else:
-            raise Exception('I do not know what "%s" means' % action)
+            raise Exception(u'Tried to {} an activity, and I don\'t know how to do that.'.format(action))
 
         if current_app.config['PUBLISH_SERVICE_URL']:
             publish.announce_commit(current_app.config['BROWSERID_URL'], repo, repo.commit().hexsha)
@@ -748,14 +749,7 @@ def publish_or_destroy_activity(branch_name, action):
             publish.release_commit(current_app.config['RUNNING_STATE_DIR'], repo, repo.commit().hexsha)
 
     except MergeConflict as conflict:
-        new_files, gone_files, changed_files = conflict.files()
-
-        kwargs = common_template_args(current_app.config, session)
-        kwargs.update(branch=branch_name, new_files=new_files,
-                      gone_files=gone_files, changed_files=changed_files,
-                      activity=activity)
-
-        return render_template('merge-conflict.html', **kwargs)
+        raise conflict
 
     else:
         activity_blurb = u'the "{task_description}" activity for {task_beneficiary}'.format(task_description=activity['task_description'], task_beneficiary=activity['task_beneficiary'])
@@ -819,7 +813,7 @@ def render_modify_dir(repo, branch_name, path):
     category = get_front_matter(full_index_path)
 
     if 'layout' not in category:
-        raise Exception(u'No layout found in front-matter for {}.'.format(full_path))
+        raise Exception(u'No layout found for {}.'.format(full_path))
     if category['layout'] != CATEGORY_LAYOUT:
         raise Exception(u'Can\'t modify {}s, only categories.'.format(category['layout']))
 
@@ -926,7 +920,7 @@ def add_article_or_category(repo, dir_path, request_path, create_what):
             redirect_path = strip_index_file(file_path)
             return message, file_path, redirect_path, True
     else:
-        raise ValueError("Illegal {} creation request in {}".format(create_what, join(dir_path, request_path)))
+        raise ValueError(u'Can\'t create {} in {}.'.format(create_what, join(dir_path, request_path)))
 
 def strip_index_file(file_path):
     return re.sub(r'index.{}$'.format(CONTENT_FILE_EXTENSION), '', file_path)
@@ -998,7 +992,7 @@ def update_activity_review_status(branch_name, comment_text, action_list):
             action_authorized = True
 
     if not action:
-        raise Exception(u'Unrecognized request sent to update_activity_review_status')
+        raise Exception(u'Tried to update an activity\'s review status but wasn\'t given a valid action.')
 
     # comment if comment text was sent and the action is authorized
     if comment_text and action_authorized:
@@ -1032,7 +1026,7 @@ def save_page(repo, default_branch_name, working_branch_name, path, new_values):
     commit = existing_branch.commit
 
     if commit.hexsha != new_values.get('hexsha'):
-        raise Exception('Out of date SHA: {}'.format(new_values.get('hexsha')))
+        raise Exception(u'Unable to save page because someone else made edits while you were working.')
 
     #
     # Write changes.
@@ -1102,7 +1096,7 @@ def save_page(repo, default_branch_name, working_branch_name, path, new_values):
         Logger.debug('  {}'.format(repr(conflict.remote_commit.tree[path].data_stream.read())))
         Logger.debug('2 {}'.format(conflict.local_commit))
         Logger.debug('  {}'.format(repr(conflict.local_commit.tree[path].data_stream.read())))
-        raise
+        raise conflict
 
     return path, True
 

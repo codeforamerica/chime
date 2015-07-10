@@ -11,13 +11,13 @@ from boto import sns
 
 def get_filehandler(dirnames):
     ''' Make a new RotatingFileHandler.
-    
+
         Choose a logfile path based on priority-ordered list of directories.
     '''
     writeable_dirs = [d for d in dirnames if os.access(d, os.W_OK | os.X_OK)]
 
     if not writeable_dirs:
-        raise RuntimeError('Unable to pick a writeable directory name')
+        raise RuntimeError('Unable to pick a writeable directory name for logs.')
 
     logfile_path = join(realpath(writeable_dirs[0]), 'app.log')
     handler = handlers.RotatingFileHandler(logfile_path, 'a', 10000000, 10)

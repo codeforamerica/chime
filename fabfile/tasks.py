@@ -140,7 +140,6 @@ def _find_or_make_a_host():
         public_dns = hosts[0]
     return public_dns
 
-
 def _despawn(public_dns):
     print(green('Despawning EC2 instance'))
     _despawn_instance(public_dns)
@@ -175,7 +174,6 @@ def _strip_host_from_file(host):
 def _save_hosts(hosts):
     with open(fabconf.get('FAB_HOSTS_FILE'), 'w') as f:
         f.write(",".join(hosts))
-
 
 def _connect_to_ec2():
     '''

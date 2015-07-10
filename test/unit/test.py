@@ -29,7 +29,7 @@ from mock import MagicMock
 from chime import (
     create_app, jekyll_functions, repo_functions, edit_functions,
     google_api_functions, view_functions, publish,
-    google_access_token_update)
+    google_access_token_update, errors)
 
 import codecs
 codecs.register(RotUnicode.search_function)
@@ -779,8 +779,8 @@ class TestRepo (TestCase):
         _, _, changed_files = conflict.exception.files()
 
         self.assertEqual(len(changed_files), 1)
-        self.assertEqual(changed_files[0], 'conflict.md')
-        self.assertEqual(changed_files[0], 'conflict.md')
+        self.assertEqual(changed_files[0]['name'], 'conflict.md')
+        self.assertEqual(changed_files[0]['path'], 'conflict.md')
 
     # in TestRepo
     def test_conflict_resolution_clobber(self):
@@ -1813,6 +1813,28 @@ class TestAppConfig (TestCase):
         create_app_environ['BROWSERID_URL'] = 'Hey'
         create_app(create_app_environ)
 
+    def test_error_template_args(self):
+        ''' Default error template args are generated as expected
+        '''
+        create_app_environ = {}
+        create_app_environ['RUNNING_STATE_DIR'] = 'Yo'
+        create_app_environ['GA_CLIENT_ID'] = 'Yo'
+        create_app_environ['GA_CLIENT_SECRET'] = 'Yo'
+        create_app_environ['BROWSERID_URL'] = 'Hey'
+        create_app_environ['LIVE_SITE_URL'] = 'Hey'
+        fake_support_email = u'support@example.com'
+        fake_support_phone_number = u'(123) 456-7890'
+        create_app_environ['SUPPORT_EMAIL_ADDRESS'] = fake_support_email
+        create_app_environ['SUPPORT_PHONE_NUMBER'] = fake_support_phone_number
+        app = create_app(create_app_environ)
+        template_args = errors.common_error_template_args(app.config)
+        self.assertEqual(len(template_args), 3)
+        self.assertTrue('activities_path' in template_args)
+        self.assertTrue('support_email' in template_args)
+        self.assertTrue('support_phone_number' in template_args)
+        self.assertEqual(template_args['support_email'], fake_support_email)
+        self.assertEqual(template_args['support_phone_number'], fake_support_phone_number)
+
 class TestApp (TestCase):
 
     def setUp(self):
@@ -1848,6 +1870,9 @@ class TestApp (TestCase):
         create_app_environ['AUTH_DATA_HREF'] = 'http://example.com/auth.csv'
         create_app_environ['BROWSERID_URL'] = 'http://localhost'
         create_app_environ['LIVE_SITE_URL'] = 'http://example.org/'
+
+        create_app_environ['SUPPORT_EMAIL_ADDRESS'] = u'support@example.com'
+        create_app_environ['SUPPORT_PHONE_NUMBER'] = u'(123) 456-7890'
 
         self.app = create_app(create_app_environ)
 
@@ -1954,6 +1979,13 @@ class TestApp (TestCase):
 
         else:
             return self.auth_csv_example_allowed(url, request)
+
+    def mock_internal_server_error(self, url, request):
+        from flask import abort
+        abort(500)
+
+    def mock_exception(self, url, request):
+        raise Exception(u'This is a generic exception.')
 
     # in TestApp
     def test_bad_login(self):
@@ -3516,6 +3548,179 @@ class TestApp (TestCase):
             # verify that the new folder is represented as a file in the HTML
             self.assertTrue(PATTERN_BRANCH_COMMENT.format(working_branch_name) in response.data)
             self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": page_slug, "file_title": page_slug, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data)
+
+    # in TestApp
+    def test_page_not_found_error(self):
+        ''' A 404 page is generated when we get an address that doesn't exist
+        '''
+        fake_author_email = u'erica@example.com'
+        with HTTMock(self.mock_persona_verify):
+            self.test_client.post('/sign-in', data={'email': fake_author_email})
+
+        with HTTMock(self.auth_csv_example_allowed):
+            # start a new branch via the http interface
+            # invokes view_functions/get_repo which creates a clone
+            task_description = u'drink quinine'
+            task_beneficiary = u'mosquitos'
+
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            self.assertTrue(working_branch.name in self.clone1.branches)
+            self.assertTrue(working_branch.name in self.origin.branches)
+            working_branch_name = working_branch.name
+            working_branch.checkout()
+
+            # get a non-existent page
+            response = self.test_client.get('tree/{}/malaria'.format(working_branch_name), follow_redirects=True)
+            self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('error-404') in response.data)
+            # these values are set in setUp() above
+            self.assertTrue(u'support@example.com' in response.data)
+            self.assertTrue(u'(123) 456-7890' in response.data)
+
+    # in TestApp
+    def test_internal_server_error(self):
+        ''' A 500 page is generated when we provoke a server error
+        '''
+        with HTTMock(self.mock_persona_verify):
+            response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
+
+        with HTTMock(self.mock_internal_server_error):
+            response = self.test_client.get('/', follow_redirects=True)
+            self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('error-500') in response.data)
+            # these values are set in setUp() above
+            self.assertTrue(u'support@example.com' in response.data)
+            self.assertTrue(u'(123) 456-7890' in response.data)
+
+    # in TestApp
+    def test_exception_error(self):
+        ''' A 500 page is generated when we provoke an uncaught exception
+        '''
+        with HTTMock(self.mock_persona_verify):
+            response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
+
+        with HTTMock(self.mock_exception):
+            response = self.test_client.get('/', follow_redirects=True)
+            self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('error-500') in response.data)
+            # these values are set in setUp() above
+            self.assertTrue(u'support@example.com' in response.data)
+            self.assertTrue(u'(123) 456-7890' in response.data)
+
+    # in TestApp
+    def test_merge_conflict_error(self):
+        ''' We get a merge conflict error page when there's a merge conflict
+        '''
+        fake_task_description_1 = u'do things'
+        fake_task_beneficiary_1 = u'somebody else'
+        fake_task_description_2 = u'do other things'
+        fake_task_beneficiary_2 = u'somebody even else'
+        fake_email_1 = u'erica@example.com'
+        fake_email_2 = u'tomas@example.com'
+        fake_page_slug = u'hello'
+        fake_page_path = u'{}/index.{}'.format(fake_page_slug, view_functions.CONTENT_FILE_EXTENSION)
+        fake_page_content_1 = u'Hello world.'
+        fake_page_content_2 = u'Hello moon.'
+        #
+        #
+        # Log in as person 1
+        with HTTMock(self.mock_persona_verify):
+            self.test_client.post('/sign-in', data={'email': fake_email_1})
+
+        with HTTMock(self.auth_csv_example_allowed):
+            # create a new branch
+            response = self.test_client.post('/start', data={'task_description': fake_task_description_1, 'task_beneficiary': fake_task_beneficiary_1}, follow_redirects=True)
+            # extract the generated branch name from the returned HTML
+            generated_branch_search = search(r'<!-- branch: (.{{{}}}) -->'.format(repo_functions.BRANCH_NAME_LENGTH), response.data)
+            self.assertIsNotNone(generated_branch_search)
+            try:
+                generated_branch_name_1 = generated_branch_search.group(1)
+            except AttributeError:
+                raise Exception('No match for generated branch name.')
+
+        with HTTMock(self.mock_google_analytics):
+            # create a new file
+            response = self.test_client.post('/tree/{}/edit/'.format(generated_branch_name_1),
+                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': fake_page_slug},
+                                             follow_redirects=True)
+            # get the edit page for the new file and extract the hexsha value
+            response = self.test_client.get('/tree/{}/edit/{}'.format(generated_branch_name_1, fake_page_path))
+            hexsha = search(r'<input name="hexsha" value="(\w+)"', response.data).group(1)
+            # now save the file with new content
+            response = self.test_client.post('/tree/{}/save/{}'.format(generated_branch_name_1, fake_page_path),
+                                             data={'layout': view_functions.ARTICLE_LAYOUT, 'hexsha': hexsha,
+                                                   'en-title': 'Greetings',
+                                                   'en-body': u'{}\n'.format(fake_page_content_1),
+                                                   'url-slug': u'{}/index'.format(fake_page_slug)},
+                                             follow_redirects=True)
+
+        # Request feedback on person 1's change
+        with HTTMock(self.auth_csv_example_allowed):
+            response = self.test_client.post('/tree/{}/'.format(generated_branch_name_1), data={'comment_text': u'', 'request_feedback': u'Request Feedback'}, follow_redirects=True)
+
+        #
+        #
+        # Log in as person 2
+        with HTTMock(self.mock_other_persona_verify):
+            self.test_client.post('/sign-in', data={'email': fake_email_2})
+
+        with HTTMock(self.auth_csv_example_allowed):
+            # create a new branch
+            response = self.test_client.post('/start', data={'task_description': fake_task_description_2, 'task_beneficiary': fake_task_beneficiary_2}, follow_redirects=True)
+            # extract the generated branch name from the returned HTML
+            generated_branch_search = search(r'<!-- branch: (.{{{}}}) -->'.format(repo_functions.BRANCH_NAME_LENGTH), response.data)
+            try:
+                generated_branch_name_2 = generated_branch_search.group(1)
+            except AttributeError:
+                raise Exception('No match for generated branch name.')
+
+        with HTTMock(self.mock_google_analytics):
+            # create a new file
+            response = self.test_client.post('/tree/{}/edit/'.format(generated_branch_name_2),
+                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': fake_page_slug},
+                                             follow_redirects=True)
+
+            # get the edit page for the new file and extract the hexsha value
+            response = self.test_client.get('/tree/{}/edit/{}'.format(generated_branch_name_2, fake_page_path))
+            hexsha = search(r'<input name="hexsha" value="(\w+)"', response.data).group(1)
+            # now save the file with new content
+            response = self.test_client.post('/tree/{}/save/{}'.format(generated_branch_name_2, fake_page_path),
+                                             data={'layout': view_functions.ARTICLE_LAYOUT, 'hexsha': hexsha,
+                                                   'en-title': 'Bloople',
+                                                   'en-body': u'{}\n'.format(fake_page_content_2),
+                                                   'url-slug': u'{}/index'.format(fake_page_slug)},
+                                             follow_redirects=True)
+
+        # Request feedback on person 2's change
+        with HTTMock(self.auth_csv_example_allowed):
+            response = self.test_client.post('/tree/{}/'.format(generated_branch_name_2), data={'comment_text': u'', 'request_feedback': u'Request Feedback'}, follow_redirects=True)
+
+        # Endorse person 1's change
+        with HTTMock(self.auth_csv_example_allowed):
+            response = self.test_client.post('/tree/{}/'.format(generated_branch_name_1), data={'comment_text': u'', 'endorse_edits': 'Looks Good!'}, follow_redirects=True)
+
+        # And publish person 1's change!
+        with HTTMock(self.auth_csv_example_allowed):
+            response = self.test_client.post('/tree/{}/'.format(generated_branch_name_1), data={'comment_text': u'', 'merge': 'Publish'}, follow_redirects=True)
+
+        #
+        #
+        # Log in as person 1
+        with HTTMock(self.mock_persona_verify):
+            self.test_client.post('/sign-in', data={'email': fake_email_1})
+
+        # Endorse person 2's change
+        with HTTMock(self.auth_csv_example_allowed):
+            response = self.test_client.post('/tree/{}/'.format(generated_branch_name_2), data={'comment_text': u'', 'endorse_edits': 'Looks Good!'}, follow_redirects=True)
+
+        # And publish person 2's change!
+        with HTTMock(self.auth_csv_example_allowed):
+            response = self.test_client.post('/tree/{}/'.format(generated_branch_name_2), data={'comment_text': u'', 'merge': 'Publish'}, follow_redirects=True)
+
+        # verify that we got an error page about the merge conflict
+        self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('error-500') in response.data)
+        self.assertTrue(u'MergeConflict' in response.data)
+        self.assertTrue(u'{}/index.{}'.format(fake_page_slug, view_functions.CONTENT_FILE_EXTENSION) in response.data)
+        # these values are set in setUp() above
+        self.assertTrue(u'support@example.com' in response.data)
+        self.assertTrue(u'(123) 456-7890' in response.data)
 
 class TestPublishApp (TestCase):
 

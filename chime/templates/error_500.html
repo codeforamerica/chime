@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Something went wrong{% endblock %}
+
+
+{% set template_name = 'error-500' %}
+{% block body_class %}{{template_name}}{% endblock %}
+
+{% block content %}
+<!-- template name: {{ template_name }} -->
+<div class="row col__flex message-500">
+    <p>SOMETHING WENT WRONG</p>
+
+{% if error_type == 'merge-conflict' %}
+    <p>We couldn't automatically resolve the differences between your changes and those of a co-worker.</p>
+    <ul>
+    {% for file in changed_files %}
+        <li><strong>{{ file.name }}</strong> (path: {{ file.path }}) was changed</li>
+    {% endfor %}
+    {% for file in new_files %}
+        <li><strong>{{ file.name }}</strong> (path: {{ file.path }}) is new</li>
+    {% endfor %}
+    {% for file in gone_files %}
+        <li><strong>{{ file.name }}</strong> (path: {{ file.path }}) is gone</li>
+    {% endfor %}
+    </ul>
+{% endif %}
+
+{% if support_phone_number or support_email %}
+    <p>If you need help:</p>
+{% endif %}
+{% if support_phone_number %}
+    <p>Call us at {{ support_phone_number }}</p>
+{% endif %}
+{% if support_email %}
+    <p>Send an email to <a href="mailto:{{ support_email }}{{ email_params }}">{{ support_email }}</a>
+{% endif %}
+
+{% if activities_path %}
+    <a href="{{ activities_path }}" class="button button--green button--large">Return to the list of activities</a>
+{% endif %}
+
+</div>
+
+{% endblock %}

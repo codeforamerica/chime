@@ -80,6 +80,8 @@ def create_app(environ):
     app.config['LIVE_SITE_URL'] = environ.get('LIVE_SITE_URL', 'http://127.0.0.1:5001/')
     app.config['PUBLISH_SERVICE_URL'] = environ.get('PUBLISH_SERVICE_URL', False)
     app.config['SNS_ALERTS_TOPIC'] = environ.get('SNS_ALERTS_TOPIC')
+    app.config['SUPPORT_EMAIL_ADDRESS'] = environ.get('SUPPORT_EMAIL_ADDRESS')
+    app.config['SUPPORT_PHONE_NUMBER'] = environ.get('SUPPORT_PHONE_NUMBER')
     app.config['ACCEPTANCE_TEST_MODE'] = environ.get('ACCEPTANCE_TEST_MODE', False)
     app.config['default_branch'] = 'master'
 
@@ -101,7 +103,7 @@ def create_app(environ):
                 sns_handler = SnsHandler(app.config['SNS_ALERTS_TOPIC'])
                 sns_handler.setLevel(logging.ERROR)
                 logger.addHandler(sns_handler)
-            except Exception as e:
+            except Exception:
                 logger.exception("Unexpected failure setting up SNS logging")
 
         logger.info("app config before_first_request: %s" % app.config)
@@ -109,4 +111,4 @@ def create_app(environ):
     return AppShim(app)
 
 # noinspection PyUnresolvedReferences
-from . import views
+from . import views, errors

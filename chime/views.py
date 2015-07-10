@@ -10,7 +10,7 @@ from glob import glob
 from git import Repo
 from git.cmd import GitCommandError
 from requests import post
-from flask import current_app, flash, render_template, redirect, request, Response, session
+from flask import current_app, flash, render_template, redirect, request, Response, session, abort
 
 from . import chime as app
 from . import repo_functions, edit_functions
@@ -437,7 +437,7 @@ def branch_modify_category(branch_name, path=u''):
         return redirect('/tree/{}/modify/{}'.format(safe_branch, strip_index_file(new_path)), code=303)
 
     else:
-        raise Exception(u'Unrecognized request posted to branch_modify_category()')
+        raise Exception(u'Tried to modify a category, but received an unfamiliar command.')
 
 @app.route('/tree/<branch_name>/edit/', methods=['POST'])
 @app.route('/tree/<branch_name>/edit/<path:path>', methods=['POST'])
@@ -473,7 +473,7 @@ def branch_edit_file(branch_name, path=None):
         redirect_path, do_save, commit_message = delete_page(repo=repo, browse_path=path, target_path=request.form['request_path'])
 
     else:
-        raise Exception(u'Unrecognized request posted to branch_edit_file()')
+        raise Exception(u'Tried to edit a file, but received an unfamiliar command.')
 
     if do_save:
         master_name = current_app.config['default_branch']
@@ -638,4 +638,4 @@ def all_other_paths(path):
     if should_redirect():
         return make_redirect()
     else:
-        return 'OK'
+        abort(404)

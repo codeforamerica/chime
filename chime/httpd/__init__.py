@@ -51,12 +51,12 @@ CustomLog "{ServerRoot}/logs/access_log" combined
 
 def write_config(doc_root, root, port):
     ''' Look for Apache modules, write a configuration file.
-    
+
         Return module directory.
     '''
     mod_paths = '/usr/lib/apache2/modules', '/usr/libexec/apache2'
     mime_paths = '/etc/apache2/mime.types', '/etc/mime.types'
-    
+
     mod_path = filter(exists, mod_paths)[0]
     mime_path = filter(exists, mime_paths)[0]
 
@@ -65,10 +65,10 @@ def write_config(doc_root, root, port):
 
     with open(join(root, 'httpd.conf'), 'w') as file:
         file.write(config.format(**vars))
-        
+
     if not exists(join(root, 'httpd.conf')):
-        raise RuntimeError('Did not make httpd.conf')
-    
+        raise RuntimeError('Tried to write a config, but couldn\'t create the httpd.conf file.')
+
     return mod_path
 
 def apache_version(httpd_path):
