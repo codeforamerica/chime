@@ -1,4 +1,5 @@
 // This mixin stretches content to fill col__flex containers
+// Useful only if content is stacked horizontally and needs to fill the container
 @mixin stretch-content() {
 	@include display(flex);
 	@include align-items(stretch);
@@ -7,21 +8,25 @@
 	}
 }
 
-.row {
-	@include clearfix();
-	@include flex-shrink(0);
-	width: 100%;
-	position: relative;
+// Adds default padding for main application sections
+@mixin main-padding {
 	padding: {
 		top: 1em;
 		bottom: 1em;
 		left: $site-margins;
 		right: $site-margins;
 	}
+}
 
-	.lt-ie10 & {
-		display: block;
-	}
+.row--main {
+	@include main-padding();
+}
+
+.row {
+	@include clearfix();
+	@include flex-shrink(0);
+	width: 100%;
+	position: relative;
 }
 
 .row__left {

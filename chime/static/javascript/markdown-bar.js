@@ -289,7 +289,7 @@ function MarkdownBar(bar, textarea) {
 
 		// Add buttons to markdown bar and bind events
 		$(PATTERNS).each(function(index, pattern) {
-			var patternButton = $('<button class="button button--outline toolbar__item markdown-bar__button">' + pattern['icon'] + '<span class="markdown-bar__tooltip">' + pattern['name'] + '</span></button>');
+			var patternButton = $('<button class="button toolbar__item markdown-bar__button">' + pattern['icon'] + '<span class="markdown-bar__tooltip">' + pattern['name'] + '</span></button>');
 			patternButton.bind('click', function(event) {
 				self.markdownify(event, pattern['syntax'], pattern['filler'], pattern['type']);
 			});
@@ -313,8 +313,8 @@ function MarkdownBar(bar, textarea) {
 
 
 		// Create Undo/redo buttons
-		var undoButton = $('<button href="#" id="undo-button" class="toolbar__item button button--outline markdown-bar__button"><span class="fa fa-undo"></span><span class="markdown-bar__tooltip">Undo</span></button>'),
-			redoButton = $('<button href="#" id="redo-button" class="toolbar__item button button--outline markdown-bar__button"><span class="fa fa-repeat"></span><span class="markdown-bar__tooltip">Redo</span></button>')
+		var undoButton = $('<button href="#" id="undo-button" class="toolbar__item button markdown-bar__button"><span class="fa fa-undo"></span><span class="markdown-bar__tooltip">Undo</span></button>'),
+			redoButton = $('<button href="#" id="redo-button" class="toolbar__item button markdown-bar__button"><span class="fa fa-repeat"></span><span class="markdown-bar__tooltip">Redo</span></button>')
 
 		function updateUndoStackUI() {
 			undoButton.attr("disabled", !undoStack.canUndo());

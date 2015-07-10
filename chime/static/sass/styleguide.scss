@@ -1,0 +1,161 @@
+/*------------------------------------*\
+    # Vendor CSS
+\*------------------------------------*/
+
+@import 'bourbon/bourbon';
+@import 'core/grid-settings';
+@import 'neat/neat';
+
+
+
+/*------------------------------------*\
+    # Core
+\*------------------------------------*/
+
+@import 'core/variables';
+@import 'core/normalize';
+@import 'core/utilities';
+@import 'core/layout';
+@import 'core/grid';
+@import 'core/base';
+@import 'core/helpers';
+
+
+.styleguide {
+	position: relative;
+	padding-bottom: 4em;
+}
+
+.nav-sidebar {
+	position: fixed;
+	overflow: auto;
+	left: 0;
+	top: 0;
+	bottom: 0;
+	width: 250px;
+	border-right: 1px solid $color-grey-300;
+	padding: $site-margins;
+	z-index: 1;
+	background-color: $color-grey-100;
+	font-size: $text-font-size;
+	h1 {
+		@include allcaps();
+		font-size: $h4-font-size;
+		color: $color-grey-500;
+		margin-bottom: 3em;
+	}
+	.link-h1 {
+		color: #000;
+		display: block;
+		font-weight: 600;
+		margin-top: 2em;
+	}
+	.link-h2 {
+		color: $color-blue-500;
+		margin-left: 1em;
+		font-weight: 400;
+	}
+}
+
+.main-content {
+	margin-left: 250px;
+	padding: $site-margins;
+	max-width: 800px;
+}
+
+.style-guide-content {
+	> h1 {
+		border-top: 4px solid $color-grey-300;
+		font-size: $h1-font-size;
+		padding-top: 1em;
+		&:not(:first-child) {
+			margin-top: 4em;
+		}
+		
+	}
+
+	> h2 {
+		margin-top: 3em;
+		font-weight: 400;
+		color: $color-blue-500;
+		font-size: $h2-font-size;
+	}
+
+	> h3 {
+		margin-top: 3em;
+		font-weight: 300;
+		color: #000;
+		font-size: $h4-font-size;
+		text-decoration: underline;
+	}
+
+}
+
+.layout-example {
+	.row, .col, .grid, .toolbar {
+		border: 1px solid $color-grey-300;
+		padding: 2px; // provides spacing between boxes to better portray examples
+	}
+
+	.row--main {
+		padding: 1em $site-margins; // reset padding for row--main to override above
+	}
+
+	.toolbar__item, .grid__item, .row__left, .row__right, .col__item, .col__flex {
+		background-color: rgba($color-grey-100, .9);
+		border: 1px solid $color-grey-300;
+		margin: {
+			top: 1px;
+			bottom: 1px;
+		}
+		padding: 2px;
+	}
+}
+
+.preview {
+	background-color: $color-grey-100;
+	border: 1px solid $color-grey-300;
+	padding: 1em 2em;
+	margin: 2em 0;
+	.is-peripheral {
+		opacity: .2;
+	}
+}
+
+.code-sample {
+	@include clearfix();
+	border: 1px solid $color-grey-300;
+	background-color: $color-grey-50;
+
+	&.is-open {
+		.button-toggle:before {
+			content: 'Hide code';
+		}
+		pre {
+			display: block;
+		}
+	}
+	.button-toggle {
+		color: #000;
+		display: block;
+		padding: .5em 2em;
+		text-decoration: underline;
+		&:before {
+			content: 'Show code';
+		}
+	}
+	pre {
+		display: none;
+		background-color: transparent;
+		overflow-y: hidden;
+		code {
+			background-color: transparent;
+		}			
+	}
+}
+
+.preview + .code-sample {
+	margin-top: -2em;
+	border-top: 0px;
+}
+

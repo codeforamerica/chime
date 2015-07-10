@@ -1,4 +1,5 @@
 .article-history__main {
+	@include main-padding();
 	background-color: $color-grey-50;
 }
 
