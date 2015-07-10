@@ -1874,6 +1874,17 @@ class ChimeTestClient:
         
         return redirect, soup
     
+    def follow_redirect(self, response, code):
+        ''' Expect and follow a response HTTP redirect.
+        '''
+        self.test.assertEqual(response.status_code, code, 'Status {} should have been {}'.format(response.status_code, code))
+        
+        redirect = urlparse(response.headers['Location']).path
+        response = self.client.get(redirect)
+        self.test.assertEqual(response.status_code, 200)
+        
+        return redirect, BeautifulSoup(response.data)
+    
     def sign_in(self, email):
         if email == 'erica@example.com':
             with HTTMock(self.test.mock_persona_verify_erica):
@@ -1894,13 +1905,8 @@ class ChimeTestClient:
         '''
         data = {'task_description': description, 'task_beneficiary': beneficiary}
         response = self.client.post('/start', data=data)
-        self.test.assertEqual(response.status_code, 303)
         
-        redirect = urlparse(response.headers['Location']).path
-        response = self.client.get(redirect)
-        self.test.assertEqual(response.status_code, 200)
-        
-        return redirect, BeautifulSoup(response.data)
+        return self.follow_redirect(response, 303)
     
     def add_category(self, url, soup, category_name):
         ''' Look for form to add a category, submit it and return URL and soup.
@@ -1914,15 +1920,9 @@ class ChimeTestClient:
         
         add_category_path = urlparse(urljoin(url, form['action'])).path
         response = self.client.post(add_category_path, data=data)
-        self.test.assertEqual(response.status_code, 303)
         
         # Drop down to where the subcategories are.
-        
-        category_path = urlparse(response.headers['Location']).path
-        response = self.client.get(category_path)
-        self.test.assertEqual(response.status_code, 200)
-        
-        return category_path, BeautifulSoup(response.data)
+        return self.follow_redirect(response, 303)
 
     def add_subcategory(self, url, soup, subcategory_name):
         ''' Look for form to add a subcategory, submit it and return URL and soup.
@@ -1936,15 +1936,9 @@ class ChimeTestClient:
         
         add_subcategory_path = urlparse(urljoin(url, form['action'])).path
         response = self.client.post(add_subcategory_path, data=data)
-        self.test.assertEqual(response.status_code, 303)
         
         # Drop down into the subcategory where the articles are.
-        
-        subcategory_path = urlparse(response.headers['Location']).path
-        response = self.client.get(subcategory_path)
-        self.test.assertEqual(response.status_code, 200)
-        
-        return subcategory_path, BeautifulSoup(response.data)
+        return self.follow_redirect(response, 303)
         
     def add_article(self, url, soup, article_name):
         ''' Look for form to add an article, submit it and return URL and soup.
@@ -1960,15 +1954,9 @@ class ChimeTestClient:
         
         add_article_path = urlparse(urljoin(url, form['action'])).path
         response = self.client.post(add_article_path, data=data)
-        self.test.assertEqual(response.status_code, 303)
         
         # View the new article.
-
-        article_path = urlparse(response.headers['Location']).path
-        response = self.client.get(article_path)
-        self.test.assertEqual(response.status_code, 200)
-        
-        return article_path, BeautifulSoup(response.data)
+        return self.follow_redirect(response, 303)
     
     def edit_article(self, url, soup, title_str, body_str):
         ''' Look for form to edit an article, submit it and return URL and soup.
@@ -1987,15 +1975,9 @@ class ChimeTestClient:
         
         edit_article_path = urlparse(urljoin(url, form['action'])).path
         response = self.client.post(edit_article_path, data=data)
-        self.test.assertEqual(response.status_code, 303)
         
         # View the updated article.
-
-        article_path = urlparse(response.headers['Location']).path
-        response = self.client.get(article_path)
-        self.test.assertEqual(response.status_code, 200)
-        
-        return article_path, BeautifulSoup(response.data)
+        return self.follow_redirect(response, 303)
 
     def edit_outdated_article(self, url, soup, title_str, body_str):
         ''' Look for form to edit an article, submit it and return URL and soup.
@@ -2031,15 +2013,9 @@ class ChimeTestClient:
         
         save_feedback_path = urlparse(urljoin(url, form['action'])).path
         response = self.client.post(save_feedback_path, data=data)
-        self.test.assertEqual(response.status_code, 303)
         
         # View the saved feedback.
-
-        result_path = urlparse(response.headers['Location']).path
-        response = self.client.get(result_path)
-        self.test.assertEqual(response.status_code, 200)
-        
-        return result_path, BeautifulSoup(response.data)
+        return self.follow_redirect(response, 303)
 
     def leave_feedback(self, url, soup, feedback_str):
         ''' Look for form to leave feedback, submit it and return URL and soup.
@@ -2056,15 +2032,9 @@ class ChimeTestClient:
         
         save_feedback_path = urlparse(urljoin(url, form['action'])).path
         response = self.client.post(save_feedback_path, data=data)
-        self.test.assertEqual(response.status_code, 303)
         
         # View the saved feedback.
-
-        result_path = urlparse(response.headers['Location']).path
-        response = self.client.get(result_path)
-        self.test.assertEqual(response.status_code, 200)
-        
-        return result_path, BeautifulSoup(response.data)
+        return self.follow_redirect(response, 303)
 
     def approve_activity(self, url, soup):
         ''' Look for form to approve activity, submit it and return URL and soup.
@@ -2079,15 +2049,9 @@ class ChimeTestClient:
         
         approve_activity_path = urlparse(urljoin(url, form['action'])).path
         response = self.client.post(approve_activity_path, data=data)
-        self.test.assertEqual(response.status_code, 303)
         
         # View the saved feedback.
-
-        result_path = urlparse(response.headers['Location']).path
-        response = self.client.get(result_path)
-        self.test.assertEqual(response.status_code, 200)
-        
-        return result_path, BeautifulSoup(response.data)
+        return self.follow_redirect(response, 303)
 
     def publish_activity(self, url, soup):
         ''' Look for form to publish activity, submit it and return URL and soup.
@@ -2102,22 +2066,14 @@ class ChimeTestClient:
         
         publish_activity_path = urlparse(urljoin(url, form['action'])).path
         response = self.client.post(publish_activity_path, data=data)
-        print(publish_activity_path, data)
-        self.test.assertEqual(response.status_code, 303)
         
         # View the published activity.
-
-        result_path = urlparse(response.headers['Location']).path
-        response = self.client.get(result_path)
-        self.test.assertEqual(response.status_code, 200)
-        
-        return result_path, BeautifulSoup(response.data)
+        return self.follow_redirect(response, 303)
 
 class TestApps (TestCase):
     
     def setUp(self):
         self.work_path = mkdtemp(prefix='chime-repo-clones-')
-        print 'self.work_path:', self.work_path
 
         repo_path = dirname(abspath(__file__)) + '/../test-app.git'
         upstream_repo_dir = mkdtemp(prefix='repo-upstream-', dir=self.work_path)
