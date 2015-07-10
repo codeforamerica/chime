@@ -2119,8 +2119,8 @@ class TestProcess (TestCase):
         self.test_client = self.app.test_client()
 
     def tearDown(self):
-        pass # rmtree(self.work_path)
-
+        rmtree(self.work_path)
+    
     def auth_csv_example_allowed(self, url, request):
         if url.geturl() == 'http://example.com/auth.csv':
             return response(200, '''Email domain,Organization\nexample.com,Example Org''')
@@ -2141,8 +2141,51 @@ class TestProcess (TestCase):
         else:
             return self.auth_csv_example_allowed(url, request)
 
-    def test_editing_process(self):
-        ''' Check basic log in / log out flow without talking to Persona.
+    def test_editing_process_with_two_users(self):
+        ''' Check edit process with a user looking at feedback from another user.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            client = ChimeTestClient(self.test_client, self)
+            client.sign_in('erica@example.com')
+            
+            # Start a new task, "Diving for Dollars".
+            _, soup1 = client.start_task('Diving', 'Dollars')
+            
+            # Look for an "other" link that we know about - is it a category?
+            categories_path, soup2 = client.follow_link(soup1, '/tree/9313f09/edit/other')
+
+            # Create a new category "Ninjas", subcategory "Flipping Out", and article "So Awesome".
+            subcategories_path, soup3 = client.add_category(categories_path, soup2, 'Ninjas')
+            articles_path, soup4 = client.add_subcategory(subcategories_path, soup3, 'Flipping Out')
+            article_path, soup5 = client.add_article(articles_path, soup4, 'So Awesome')
+            
+            # Edit the new article.
+            client.edit_article(article_path, soup5, 'So, So Awesome', 'It was the best of times.')
+            
+            # Ask for feedback
+            task_path, soup6 = client.follow_link(soup5, '/tree/9313f09')
+            client.request_feedback(task_path, soup6, 'Is this okay?')
+            
+            #
+            # Switch users and comment on the activity.
+            #
+            client.sign_in('frances@example.com')
+            soup7 = client.open_link(task_path)
+            client.leave_feedback(task_path, soup7, 'It is super-great.')
+
+            #
+            # Switch back and look for that bit of feedback.
+            #
+            client.sign_in('erica@example.com')
+            soup8 = client.open_link(task_path)
+            
+            words = soup8.find(text='It is super-great.')
+            comment = words.find_parent('div').find_parent('div')
+            author = comment.find(text='frances@example.com')
+            self.assertTrue(author is not None)
+
+    def test_editing_process_with_conflicting_publish(self):
+        ''' Check edit process with a user attempting to change an activity that's been published.
         '''
         with HTTMock(self.auth_csv_example_allowed):
             client = ChimeTestClient(self.test_client, self)
