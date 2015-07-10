@@ -1997,6 +1997,25 @@ class ChimeTestClient:
         
         return article_path, BeautifulSoup(response.data)
 
+    def edit_outdated_article(self, url, soup, title_str, body_str):
+        ''' Look for form to edit an article, submit it and return URL and soup.
+        '''
+        body = soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'en-body'))
+        form = body.find_parent('form')
+        title = form.find(lambda tag: bool(tag.name == 'input' and tag.get('name') == 'en-title'))
+        self.test.assertEqual(form['method'].upper(), 'POST')
+        
+        data = {i['name']: i.get('value')
+                for i in form.find_all(['input', 'button', 'textarea'])
+                if i.get('type') != 'submit'}
+        
+        data[title['name']] = title_str
+        data[body['name']] = body_str
+        
+        edit_article_path = urlparse(urljoin(url, form['action'])).path
+        response = self.client.post(edit_article_path, data=data)
+        self.test.assertEqual(response.status_code, 500)
+        
     def request_feedback(self, url, soup, feedback_str):
         ''' Look for form to request feedback, submit it and return URL and soup.
         '''
@@ -2174,37 +2193,37 @@ class TestApps (TestCase):
             client.sign_in('erica@example.com')
             
             # Start a new task, "Diving for Dollars".
-            _, soup = client.start_task('Diving', 'Dollars')
+            _, soup1 = client.start_task('Diving', 'Dollars')
             
             # Look for an "other" link that we know about - is it a category?
-            categories_path, soup = client.follow_link(soup, '/tree/9313f09/edit/other')
+            categories_path, soup2 = client.follow_link(soup1, '/tree/9313f09/edit/other')
 
             # Create a new category "Ninjas", subcategory "Flipping Out", and article "So Awesome".
-            subcategories_path, soup = client.add_category(categories_path, soup, 'Ninjas')
-            articles_path, soup = client.add_subcategory(subcategories_path, soup, 'Flipping Out')
-            article_path, soup = client.add_article(articles_path, soup, 'So Awesome')
+            subcategories_path, soup3 = client.add_category(categories_path, soup2, 'Ninjas')
+            articles_path, soup4 = client.add_subcategory(subcategories_path, soup3, 'Flipping Out')
+            article_path, soup5 = client.add_article(articles_path, soup4, 'So Awesome')
             
             # Edit the new article.
-            client.edit_article(article_path, soup, 'So, So Awesome', 'It was the best of times.')
+            client.edit_article(article_path, soup5, 'So, So Awesome', 'It was the best of times.')
             
             # Ask for feedback
-            task_path, soup = client.follow_link(soup, '/tree/9313f09')
-            client.request_feedback(task_path, soup, 'Is this okay?')
+            task_path, soup6 = client.follow_link(soup5, '/tree/9313f09')
+            client.request_feedback(task_path, soup6, 'Is this okay?')
             
             #
-            # Switch users and try to publish the article.
+            # Switch users and publish the article.
             #
             client.sign_in('frances@example.com')
-            soup = client.open_link(task_path)
-            task_path, soup = client.leave_feedback(task_path, soup, 'It is super-great.')
-            approved_path, soup = client.approve_activity(task_path, soup)
-            published_path, soup = client.publish_activity(approved_path, soup)
-            
-            return
-            print soup
-            print '-' * 80
-            print published_path
-            return
+            soup7 = client.open_link(task_path)
+            task_path, soup8 = client.leave_feedback(task_path, soup7, 'It is super-great.')
+            approved_path, soup9 = client.approve_activity(task_path, soup8)
+            published_path, soup10 = client.publish_activity(approved_path, soup9)
+
+            #
+            # Switch back and try to make another edit, but watch it fail.
+            #
+            client.sign_in('erica@example.com')
+            client.edit_outdated_article(article_path, soup5, 'Just Awful', 'It was the worst of times.')
 
 class TestApp (TestCase):
 
