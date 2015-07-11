@@ -13,7 +13,7 @@ from io import BytesIO
 from slugify import slugify
 import csv
 import re
-import sys
+import json
 
 from git import Repo
 from dateutil import parser, tz
@@ -226,7 +226,7 @@ def describe_directory_contents(clone, file_path):
             display_type, title = index_path_display_type_and_title(check_path)
             short_path = re.sub('{}/'.format(clone.working_dir), '', check_path)
             is_root = file_path == short_path or file_path == split(short_path)[0]
-            described_files.append({"display_type": display_type, "title": title, "short_path": short_path, "is_root": is_root})
+            described_files.append({"display_type": display_type, "title": title, "file_path": short_path, "is_root": is_root})
 
     return described_files
 
@@ -589,6 +589,14 @@ def make_delete_display_commit_message(repo, request_path):
 
     commit_message = commit_message + u' was deleted'
 
+    # alter targeted_files and dump it to the message body as json
+    altered_files = []
+    for file_description in targeted_files:
+        del file_description['is_root']
+        file_description['action'] = u'delete'
+        altered_files.append(file_description)
+    commit_message = commit_message + u'\n\n' + json.dumps(altered_files)
+
     return commit_message
 
 def make_activity_history(repo):
@@ -909,7 +917,9 @@ def add_article_or_category(repo, dir_path, request_path, create_what):
             return 'Article "{}" already exists'.format(request_path), file_path, file_path, False
         else:
             file_path = create_new_page(repo, dir_path, name, article_front, body)
-            message = u'The "{}" article was created\n\ncreated new file {}'.format(name.split('/')[-2], file_path)
+            display_name = name.split('/')[-2]
+            action_descriptions = [{'action': u'create', 'title': display_name, 'display_type': create_what, 'file_path': file_path}]
+            message = u'The "{}" article was created\n\n{}'.format(display_name, json.dumps(action_descriptions))
             redirect_path = file_path
             return message, file_path, redirect_path, True
     elif create_what == 'category':
@@ -918,7 +928,9 @@ def add_article_or_category(repo, dir_path, request_path, create_what):
             return 'Category "{}" already exists'.format(request_path), file_path, strip_index_file(file_path), False
         else:
             file_path = create_new_page(repo, dir_path, name, cat_front, body)
-            message = u'The "{}" category was created\n\ncreated new file {}'.format(name.split('/')[-2], file_path)
+            display_name = name.split('/')[-2]
+            action_descriptions = [{'action': u'create', 'title': display_name, 'display_type': create_what, 'file_path': file_path}]
+            message = u'The "{}" category was created\n\n{}'.format(name.split('/')[-2], json.dumps(action_descriptions))
             redirect_path = strip_index_file(file_path)
             return message, file_path, redirect_path, True
     else:
@@ -940,12 +952,7 @@ def delete_page(repo, browse_path, target_path):
     commit_message = make_delete_display_commit_message(repo, target_path)
 
     # delete the file(s)
-    candidate_file_paths = list_contained_files(repo, target_path)
     deleted_file_paths, do_save = delete_file(repo, target_path)
-
-    # add details to the commit message
-    file_files = u'files' if len(candidate_file_paths) > 1 else u'file'
-    commit_message = commit_message + u'\n\ndeleted {} "{}"'.format(file_files, u'", "'.join(candidate_file_paths))
 
     # if we're in the path that's been deleted, redirect to the first still-existing directory in the path
     path_dirs = browse_path.split('/')
@@ -1014,7 +1021,7 @@ def update_activity_review_status(branch_name, comment_text, action_list):
 
     return action, action_authorized
 
-def save_page(repo, default_branch_name, working_branch_name, path, new_values):
+def save_page(repo, default_branch_name, working_branch_name, file_path, new_values):
     ''' Save the page with the passed values
     '''
     working_branch_name = branch_var2name(working_branch_name)
@@ -1023,7 +1030,7 @@ def save_page(repo, default_branch_name, working_branch_name, path, new_values):
 
     if not existing_branch:
         flash(u'There is no {} branch!'.format(working_branch_name), u'warning')
-        return path, False
+        return file_path, False
 
     commit = existing_branch.commit
 
@@ -1055,18 +1062,21 @@ def save_page(repo, default_branch_name, working_branch_name, path, new_values):
             front['body-' + iso] = dos2unix(new_values.get(iso + '-body', ''))
 
     body = dos2unix(new_values.get('en-body', ''))
-    update_page(repo, path, front, body)
+    update_page(repo, file_path, front, body)
 
     #
     # Try to merge from the master to the current branch.
     #
     try:
-        message = u'The "{}" {} was edited\n\nsaved file "{}"'.format(new_values.get('en-title'), new_values.get('layout'), path)
-        c2 = save_working_file(repo, path, message, commit.hexsha, default_branch_name)
+        display_name = new_values.get('en-title')
+        display_type = new_values.get('layout')
+        action_descriptions = [{'action': u'edit', 'title': display_name, 'display_type': display_type, 'file_path': file_path}]
+        message = u'The "{}" {} was edited\n\n{}'.format(display_name, display_type, action_descriptions)
+        c2 = save_working_file(repo, file_path, message, commit.hexsha, default_branch_name)
         # they may've renamed the page by editing the URL slug
-        original_slug = path
-        if re.search(r'\/index.{}$'.format(CONTENT_FILE_EXTENSION), path):
-            original_slug = re.sub(ur'index.{}$'.format(CONTENT_FILE_EXTENSION), u'', path)
+        original_slug = file_path
+        if re.search(r'\/index.{}$'.format(CONTENT_FILE_EXTENSION), file_path):
+            original_slug = re.sub(ur'index.{}$'.format(CONTENT_FILE_EXTENSION), u'', file_path)
 
         # do some simple input cleaning
         new_slug = new_values.get('url-slug')
@@ -1082,25 +1092,25 @@ def save_page(repo, default_branch_name, working_branch_name, path, new_values):
                     # let unexpected errors raise normally
                     if error_type:
                         flash(error_message, error_type)
-                        return path, True
+                        return file_path, True
                     else:
                         raise
 
-                path = new_slug
+                file_path = new_slug
                 # append the index file if it's an editable directory
                 if is_article_dir(join(repo.working_dir, new_slug)):
-                    path = join(new_slug, u'index.{}'.format(CONTENT_FILE_EXTENSION))
+                    file_path = join(new_slug, u'index.{}'.format(CONTENT_FILE_EXTENSION))
 
     except MergeConflict as conflict:
         repo.git.reset(commit.hexsha, hard=True)
 
         Logger.debug('1 {}'.format(conflict.remote_commit))
-        Logger.debug('  {}'.format(repr(conflict.remote_commit.tree[path].data_stream.read())))
+        Logger.debug('  {}'.format(repr(conflict.remote_commit.tree[file_path].data_stream.read())))
         Logger.debug('2 {}'.format(conflict.local_commit))
-        Logger.debug('  {}'.format(repr(conflict.local_commit.tree[path].data_stream.read())))
+        Logger.debug('  {}'.format(repr(conflict.local_commit.tree[file_path].data_stream.read())))
         raise conflict
 
-    return path, True
+    return file_path, True
 
 def should_redirect():
     ''' Return True if the current flask.request should redirect.
