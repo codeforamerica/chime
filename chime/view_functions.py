@@ -22,7 +22,7 @@ from flask import request, session, current_app, redirect, flash, render_templat
 from requests import get
 
 from . import publish
-from .edit_functions import create_new_page, delete_file, list_contained_files, update_page
+from .edit_functions import create_new_page, delete_file, update_page
 from .repo_functions import get_existing_branch, ignore_task_metadata_on_merge, get_message_classification, ChimeRepo, ACTIVITY_CREATED_MESSAGE, get_task_metadata_for_branch, complete_branch, abandon_branch, clobber_default_branch, MergeConflict, get_review_state_and_authorized, save_working_file, update_review_state, provide_feedback, move_existing_file, TASK_METADATA_FILENAME, REVIEW_STATE_EDITED, REVIEW_STATE_FEEDBACK, REVIEW_STATE_ENDORSED, REVIEW_STATE_PUBLISHED
 from .jekyll_functions import load_jekyll_doc, load_languages
 from .google_api_functions import read_ga_config, fetch_google_analytics_for_page
@@ -595,7 +595,7 @@ def make_delete_display_commit_message(repo, request_path):
         del file_description['is_root']
         file_description['action'] = u'delete'
         altered_files.append(file_description)
-    commit_message = commit_message + u'\n\n' + json.dumps(altered_files)
+    commit_message = commit_message + u'\n\n' + json.dumps(altered_files, ensure_ascii=False)
 
     return commit_message
 
@@ -887,10 +887,10 @@ def render_edit_view(repo, branch_name, path, file):
 def add_article_or_category(repo, dir_path, request_path, create_what):
     ''' Add an article or category
     '''
+    if create_what not in ('article', 'category'):
+        raise ValueError(u'Can\'t create {} in {}.'.format(create_what, join(dir_path, request_path)))
+
     request_path = request_path.rstrip('/')
-    article_front = dict(title=u'', description=u'', order=0, layout=ARTICLE_LAYOUT)
-    cat_front = dict(title=u'', description=u'', order=0, layout=CATEGORY_LAYOUT)
-    body = u''
 
     # create and commit intermediate categories recursively
     if u'/' in request_path:
@@ -899,42 +899,36 @@ def add_article_or_category(repo, dir_path, request_path, create_what):
         for i in range(len(cat_paths)):
             cat_path = cat_paths[i]
             dir_cat_path = join(dir_path, sep.join(cat_paths[:i]))
-            message, file_path, _, do_save = add_article_or_category(repo, dir_cat_path, cat_path, CATEGORY_LAYOUT)
+            commit_message, file_path, _, do_save = add_article_or_category(repo, dir_cat_path, cat_path, CATEGORY_LAYOUT)
             if do_save:
                 Logger.debug('save')
-                save_working_file(repo, file_path, message, repo.commit().hexsha, current_app.config['default_branch'])
+                save_working_file(repo, file_path, commit_message, repo.commit().hexsha, current_app.config['default_branch'])
             else:
-                flash_messages.append(message)
+                flash_messages.append(commit_message)
 
         if len(flash_messages):
             flash(', '.join(flash_messages), u'notice')
 
-    name = u'{}/index.{}'.format(splitext(request_path)[0], CONTENT_FILE_EXTENSION)
+    # create the article or category
+    display_name = splitext(request_path)[0]
+    name = u'{}/index.{}'.format(display_name, CONTENT_FILE_EXTENSION)
+    file_path = repo.canonicalize_path(dir_path, name)
 
     if create_what == 'article':
-        file_path = repo.canonicalize_path(dir_path, name)
-        if repo.exists(file_path):
-            return 'Article "{}" already exists'.format(request_path), file_path, file_path, False
-        else:
-            file_path = create_new_page(repo, dir_path, name, article_front, body)
-            display_name = name.split('/')[-2]
-            action_descriptions = [{'action': u'create', 'title': display_name, 'display_type': create_what, 'file_path': file_path}]
-            message = u'The "{}" article was created\n\n{}'.format(display_name, json.dumps(action_descriptions))
-            redirect_path = file_path
-            return message, file_path, redirect_path, True
+        redirect_path = file_path
+        create_front = dict(title=u'', description=u'', order=0, layout=ARTICLE_LAYOUT)
     elif create_what == 'category':
-        file_path = repo.canonicalize_path(dir_path, name)
-        if repo.exists(file_path):
-            return 'Category "{}" already exists'.format(request_path), file_path, strip_index_file(file_path), False
-        else:
-            file_path = create_new_page(repo, dir_path, name, cat_front, body)
-            display_name = name.split('/')[-2]
-            action_descriptions = [{'action': u'create', 'title': display_name, 'display_type': create_what, 'file_path': file_path}]
-            message = u'The "{}" category was created\n\n{}'.format(name.split('/')[-2], json.dumps(action_descriptions))
-            redirect_path = strip_index_file(file_path)
-            return message, file_path, redirect_path, True
-    else:
-        raise ValueError(u'Can\'t create {} in {}.'.format(create_what, join(dir_path, request_path)))
+        redirect_path = strip_index_file(file_path)
+        create_front = dict(title=u'', description=u'', order=0, layout=CATEGORY_LAYOUT)
+
+    if repo.exists(file_path):
+        return '{} "{}" already exists'.format(create_what.title(), request_path), file_path, redirect_path, False
+
+    file_path = create_new_page(clone=repo, dir_path=dir_path, request_path=name, front=create_front, body=u'')
+    action_descriptions = [{'action': u'create', 'title': display_name, 'display_type': create_what, 'file_path': file_path}]
+    commit_message = u'The "{}" {} was created\n\n{}'.format(display_name, create_what, json.dumps(action_descriptions, ensure_ascii=False))
+
+    return commit_message, file_path, redirect_path, True
 
 def strip_index_file(file_path):
     return re.sub(r'index.{}$'.format(CONTENT_FILE_EXTENSION), '', file_path)
@@ -1071,8 +1065,8 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
         display_name = new_values.get('en-title')
         display_type = new_values.get('layout')
         action_descriptions = [{'action': u'edit', 'title': display_name, 'display_type': display_type, 'file_path': file_path}]
-        message = u'The "{}" {} was edited\n\n{}'.format(display_name, display_type, action_descriptions)
-        c2 = save_working_file(repo, file_path, message, commit.hexsha, default_branch_name)
+        commit_message = u'The "{}" {} was edited\n\n{}'.format(display_name, display_type, json.dumps(action_descriptions, ensure_ascii=False))
+        c2 = save_working_file(repo, file_path, commit_message, commit.hexsha, default_branch_name)
         # they may've renamed the page by editing the URL slug
         original_slug = file_path
         if re.search(r'\/index.{}$'.format(CONTENT_FILE_EXTENSION), file_path):

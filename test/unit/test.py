@@ -396,7 +396,7 @@ class TestRepo (TestCase):
         ''' We can't create a category that exists already.
         '''
         first_result = view_functions.add_article_or_category(self.clone1, 'categories', 'My New Category', view_functions.CATEGORY_LAYOUT)
-        self.assertEqual(u'The "My New Category" category was created\n\ncreated new file categories/my-new-category/index.markdown', first_result[0])
+        self.assertEqual(u'The "My New Category" category was created\n\n[{"action": "create", "file_path": "categories/my-new-category/index.markdown", "display_type": "category", "title": "My New Category"}]', first_result[0])
         self.assertEqual(u'categories/my-new-category/index.markdown', first_result[1])
         self.assertEqual(u'categories/my-new-category/', first_result[2])
         self.assertEqual(True, first_result[3])
@@ -411,7 +411,7 @@ class TestRepo (TestCase):
         ''' We can't create an article that exists already
         '''
         first_result = view_functions.add_article_or_category(self.clone1, 'categories/example', 'New Article', view_functions.ARTICLE_LAYOUT)
-        self.assertEqual('The "New Article" article was created\n\ncreated new file categories/example/new-article/index.markdown', first_result[0])
+        self.assertEqual(u'The "New Article" article was created\n\n[{"action": "create", "file_path": "categories/example/new-article/index.markdown", "display_type": "article", "title": "New Article"}]', first_result[0])
         self.assertEqual(u'categories/example/new-article/index.markdown', first_result[1])
         self.assertEqual(u'categories/example/new-article/index.markdown', first_result[2])
         self.assertEqual(True, first_result[3])
@@ -1054,7 +1054,7 @@ class TestRepo (TestCase):
         art_slug = slugify(art_title)
         add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, u'', art_title, view_functions.ARTICLE_LAYOUT)
         self.assertEqual(u'{}/index.{}'.format(art_slug, view_functions.CONTENT_FILE_EXTENSION), file_path)
-        self.assertEqual(u'The "{}" article was created\n\ncreated new file {}'.format(art_title, file_path), add_message)
+        self.assertEqual(u'The "{art_title}" article was created\n\n[{{"action": "create", "file_path": "{file_path}", "display_type": "article", "title": "{art_title}"}}]'.format(art_title=art_title, file_path=file_path), add_message)
         self.assertEqual(u'{}/index.{}'.format(art_slug, view_functions.CONTENT_FILE_EXTENSION), redirect_path)
         self.assertEqual(True, do_save)
         # commit the article
@@ -1094,7 +1094,7 @@ class TestRepo (TestCase):
         cat_slug = slugify(cat_title)
         add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, u'', cat_title, view_functions.CATEGORY_LAYOUT)
         self.assertEqual(u'{}/index.{}'.format(cat_slug, view_functions.CONTENT_FILE_EXTENSION), file_path)
-        self.assertEqual(u'The "{}" category was created\n\ncreated new file {}'.format(cat_title, file_path), add_message)
+        self.assertEqual(u'The "{cat_title}" category was created\n\n[{{"action": "create", "file_path": "{file_path}", "display_type": "category", "title": "{cat_title}"}}]'.format(cat_title=cat_title, file_path=file_path), add_message)
         self.assertEqual(u'{}/'.format(cat_slug), redirect_path)
         self.assertEqual(True, do_save)
         # commit the category
@@ -1113,7 +1113,7 @@ class TestRepo (TestCase):
         fake_changes = {'en-title': u'Drink Craw', 'en-description': u'Pink Straw', 'en-body': u'', 'hexsha': new_clone.commit().hexsha}
         new_values = dict(front_matter)
         new_values.update(fake_changes)
-        new_path, did_save = view_functions.save_page(repo=new_clone, default_branch_name='master', working_branch_name=working_branch.name, path=file_path, new_values=new_values)
+        new_path, did_save = view_functions.save_page(repo=new_clone, default_branch_name='master', working_branch_name=working_branch.name, file_path=file_path, new_values=new_values)
 
         # check for the new values!
         with open(index_path) as file:
@@ -1156,7 +1156,7 @@ class TestRepo (TestCase):
         cat_slug = slugify(cat_title)
         add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, u'', cat_title, view_functions.CATEGORY_LAYOUT)
         self.assertEqual(u'{}/index.{}'.format(cat_slug, view_functions.CONTENT_FILE_EXTENSION), file_path)
-        self.assertEqual(u'The "{}" category was created\n\ncreated new file {}'.format(cat_title, file_path), add_message)
+        self.assertEqual(u'The "{cat_title}" category was created\n\n[{{"action": "create", "file_path": "{file_path}", "display_type": "category", "title": "{cat_title}"}}]'.format(cat_title=cat_title, file_path=file_path), add_message)
         self.assertEqual(u'{}/'.format(cat_slug), redirect_path)
         self.assertEqual(True, do_save)
         # commit the category
@@ -1170,16 +1170,16 @@ class TestRepo (TestCase):
         # create a category inside that
         cat2_title = u'Drain Bawlers'
         cat2_slug = slugify(cat2_title)
-        add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, cat_slug, cat2_title, view_functions.CATEGORY_LAYOUT)
-        self.assertEqual(u'{}/{}/index.{}'.format(cat_slug, cat2_slug, view_functions.CONTENT_FILE_EXTENSION), file_path)
-        self.assertEqual(u'The "{}" category was created\n\ncreated new file {}'.format(cat2_title, file_path), add_message)
+        add_message, cat2_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, cat_slug, cat2_title, view_functions.CATEGORY_LAYOUT)
+        self.assertEqual(u'{}/{}/index.{}'.format(cat_slug, cat2_slug, view_functions.CONTENT_FILE_EXTENSION), cat2_path)
+        self.assertEqual(u'The "{cat_title}" category was created\n\n[{{"action": "create", "file_path": "{file_path}", "display_type": "category", "title": "{cat_title}"}}]'.format(cat_title=cat2_title, file_path=cat2_path), add_message)
         self.assertEqual(u'{}/{}/'.format(cat_slug, cat2_slug), redirect_path)
         self.assertEqual(True, do_save)
         # commit the category
-        repo_functions.save_working_file(new_clone, file_path, add_message, new_clone.commit().hexsha, 'master')
+        repo_functions.save_working_file(new_clone, cat2_path, add_message, new_clone.commit().hexsha, 'master')
 
         # verify that the directory and index file exist
-        cat2_index_path = join(new_clone.working_dir, file_path)
+        cat2_index_path = join(new_clone.working_dir, cat2_path)
         self.assertTrue(exists(cat2_index_path))
         self.assertTrue(exists(view_functions.strip_index_file(cat2_index_path)))
 
@@ -1187,25 +1187,25 @@ class TestRepo (TestCase):
         art_title = u'သံပုရာဖျော်ရည်'
         art_slug = slugify(art_title)
         dir_path = redirect_path.rstrip('/')
-        add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, dir_path, art_title, view_functions.ARTICLE_LAYOUT)
-        self.assertEqual(u'{}/{}/{}/index.{}'.format(cat_slug, cat2_slug, art_slug, view_functions.CONTENT_FILE_EXTENSION), file_path)
-        self.assertEqual(u'The "{}" article was created\n\ncreated new file {}'.format(art_title, file_path), add_message)
+        add_message, art_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, dir_path, art_title, view_functions.ARTICLE_LAYOUT)
+        self.assertEqual(u'{}/{}/{}/index.{}'.format(cat_slug, cat2_slug, art_slug, view_functions.CONTENT_FILE_EXTENSION), art_path)
+        self.assertEqual(u'The "{art_title}" article was created\n\n[{{"action": "create", "file_path": "{file_path}", "display_type": "article", "title": "{art_title}"}}]'.format(art_title=art_title, file_path=art_path), add_message)
         self.assertEqual(u'{}/{}/{}/index.{}'.format(cat_slug, cat2_slug, art_slug, view_functions.CONTENT_FILE_EXTENSION), redirect_path)
         self.assertEqual(True, do_save)
         # commit the article
-        repo_functions.save_working_file(new_clone, file_path, add_message, new_clone.commit().hexsha, 'master')
+        repo_functions.save_working_file(new_clone, art_path, add_message, new_clone.commit().hexsha, 'master')
 
         # verify that the directory and index file exist
-        art_index_path = join(new_clone.working_dir, file_path)
+        art_index_path = join(new_clone.working_dir, art_path)
         self.assertTrue(exists(art_index_path))
         self.assertTrue(exists(view_functions.strip_index_file(art_index_path)))
 
         # now delete the second category
-        browse_path = view_functions.strip_index_file(file_path)
+        browse_path = view_functions.strip_index_file(art_path)
         redirect_path, do_save, commit_message = view_functions.delete_page(repo=new_clone, browse_path=browse_path, target_path=dir_path)
         self.assertEqual(cat_slug, redirect_path)
         self.assertEqual(True, do_save)
-        self.assertEqual(u'The "{cat2_title}" category (containing 1 category and 1 article) was deleted\n\ndeleted files "{cat_slug}/{cat2_slug}/index.{content_file_extension}", "{cat_slug}/{cat2_slug}/{art_slug}/index.{content_file_extension}"'.format(cat2_title=cat2_title, cat_slug=cat_slug, cat2_slug=cat2_slug, content_file_extension=view_functions.CONTENT_FILE_EXTENSION, art_slug=art_slug), commit_message)
+        self.assertEqual(u'The "{cat2_title}" category (containing 1 article) was deleted\n\n[{{"action": "delete", "file_path": "{cat2_path}", "display_type": "category", "title": "{cat2_title}"}}, {{"action": "delete", "file_path": "{art_path}", "display_type": "article", "title": "{art_title}"}}]'.format(cat2_title=cat2_title, cat2_path=cat2_path, art_path=art_path, art_title=art_title), commit_message)
 
         repo_functions.save_working_file(clone=new_clone, path=dir_path, message=commit_message, base_sha=new_clone.commit().hexsha, default_branch_name='master')
 
@@ -1269,11 +1269,7 @@ class TestRepo (TestCase):
 
         # delete a category with stuff in it
         commit_message = view_functions.make_delete_display_commit_message(new_clone, 'tree')
-        candidate_file_paths = edit_functions.list_contained_files(new_clone, 'tree')
         deleted_file_paths, do_save = edit_functions.delete_file(new_clone, 'tree')
-        # add details to the commit message
-        file_files = u'files' if len(candidate_file_paths) > 1 else u'file'
-        commit_message = commit_message + u'\n\ndeleted {} "{}"'.format(file_files, u'", "'.join(candidate_file_paths))
         # commit
         repo_functions.save_working_file(new_clone, 'tree', commit_message, new_clone.commit().hexsha, 'master')
 
@@ -1292,8 +1288,8 @@ class TestRepo (TestCase):
 
         # check the delete
         check_item = activity_history.pop(0)
-        self.assertEqual(u'The "{}" category (containing 2 categories and 1 article) was deleted'.format(updated_details[0][1]), check_item['commit_subject'])
-        self.assertEqual(u'deleted files "{}", "{}", "{}"'.format(updated_details[0][3], updated_details[1][3], updated_details[2][3]), check_item['commit_body'])
+        self.assertEqual(u'The "{}" category (containing 1 category and 1 article) was deleted'.format(updated_details[0][1]), check_item['commit_subject'])
+        self.assertEqual(u'[{{"action": "delete", "file_path": "{cat1_path}", "display_type": "category", "title": "{cat1_title}"}}, {{"action": "delete", "file_path": "{cat2_path}", "display_type": "category", "title": "{cat2_title}"}}, {{"action": "delete", "file_path": "{art1_path}", "display_type": "article", "title": "{art1_title}"}}]'.format(cat1_path=updated_details[0][3], cat1_title=updated_details[0][1], cat2_path=updated_details[1][3], cat2_title=updated_details[1][1], art1_path=updated_details[2][3], art1_title=updated_details[2][1]), check_item['commit_body'])
         self.assertEqual(repo_functions.MESSAGE_TYPE_EDIT, check_item['commit_type'])
 
         # check the comments
@@ -1311,7 +1307,7 @@ class TestRepo (TestCase):
         for pos, check_item in list(enumerate(activity_history)):
             check_detail = updated_details[len(updated_details) - (pos + 1)]
             self.assertEqual(u'The "{}" {} was created'.format(check_detail[1], check_detail[2]), check_item['commit_subject'])
-            self.assertEqual(u'created new file {}'.format(check_detail[3]), check_item['commit_body'])
+            self.assertEqual(u'[{{"action": "create", "file_path": "{file_path}", "display_type": "{display_type}", "title": "{title}"}}]'.format(file_path=check_detail[3], display_type=check_detail[2], title=check_detail[1]), check_item['commit_body'])
             self.assertEqual(repo_functions.MESSAGE_TYPE_EDIT, check_item['commit_type'])
 
     # in TestRepo
@@ -3696,7 +3692,7 @@ class TestApp (TestCase):
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('activity-overview') in response_data)
             self.assertTrue(PATTERN_OVERVIEW_ACTIVITY_STARTED.format(**{"activity_name": task_description, "author_email": fake_author_email}) in response_data)
             self.assertTrue(PATTERN_OVERVIEW_COMMENT_BODY.format(**{"comment_body": comment_text}) in response_data)
-            self.assertTrue(PATTERN_OVERVIEW_ITEM_DELETED.format(**{"deleted_name": title_fig_zh, "deleted_type": view_functions.CATEGORY_LAYOUT, "deleted_also": u'(containing 2 categories and 1 article) ', "author_email": fake_author_email}) in response_data)
+            self.assertTrue(PATTERN_OVERVIEW_ITEM_DELETED.format(**{"deleted_name": title_fig_zh, "deleted_type": view_functions.CATEGORY_LAYOUT, "deleted_also": u'(containing 1 category and 1 article) ', "author_email": fake_author_email}) in response_data)
             for detail in create_details:
                 self.assertTrue(PATTERN_OVERVIEW_ITEM_CREATED.format(**{"created_name": detail[1], "created_type": detail[2], "author_email": fake_author_email}), response_data)
 
