@@ -567,16 +567,18 @@ def make_delete_display_commit_message(repo, request_path):
     message_details = {}
     root_file = {}
     for file_details in targeted_files:
-        display_type = file_details['display_type']
-        if display_type not in message_details:
-            message_details[display_type] = {}
-            message_details[display_type]['noun'] = display_type
-            message_details[display_type]['files'] = []
-        else:
-            message_details[display_type]['noun'] = file_type_plural(display_type)
-        message_details[display_type]['files'].append(file_details)
+        # don't include the root file in the count
         if file_details['is_root']:
             root_file = file_details
+        else:
+            display_type = file_details['display_type']
+            if display_type not in message_details:
+                message_details[display_type] = {}
+                message_details[display_type]['noun'] = display_type
+                message_details[display_type]['files'] = []
+            else:
+                message_details[display_type]['noun'] = file_type_plural(display_type)
+            message_details[display_type]['files'].append(file_details)
     commit_message = u'The "{}" {}'.format(root_file['title'], root_file['display_type'])
     if len(targeted_files) > 1:
         message_counts = []
