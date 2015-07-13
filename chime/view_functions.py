@@ -21,11 +21,19 @@ from dateutil.relativedelta import relativedelta
 from flask import request, session, current_app, redirect, flash, render_template
 from requests import get
 
-from . import publish
+from . import publish, NEEDS_PUSH_FILE
 from .edit_functions import create_new_page, delete_file, update_page
-from .repo_functions import get_existing_branch, ignore_task_metadata_on_merge, get_message_classification, ChimeRepo, ACTIVITY_CREATED_MESSAGE, get_task_metadata_for_branch, complete_branch, abandon_branch, clobber_default_branch, MergeConflict, get_review_state_and_authorized, save_working_file, update_review_state, provide_feedback, move_existing_file, TASK_METADATA_FILENAME, REVIEW_STATE_EDITED, REVIEW_STATE_FEEDBACK, REVIEW_STATE_ENDORSED, REVIEW_STATE_PUBLISHED
 from .jekyll_functions import load_jekyll_doc, load_languages
-from .google_api_functions import read_ga_config, fetch_google_analytics_for_page
+from .google_api_functions import read_ga_config, fetch_google_analytics_for_page, WriteLocked
+from .repo_functions import (
+    get_existing_branch, ignore_task_metadata_on_merge,
+    get_message_classification, ChimeRepo, ACTIVITY_CREATED_MESSAGE,
+    get_task_metadata_for_branch, complete_branch, abandon_branch,
+    clobber_default_branch, MergeConflict, get_review_state_and_authorized,
+    save_working_file, update_review_state, provide_feedback,
+    move_existing_file, TASK_METADATA_FILENAME, REVIEW_STATE_EDITED,
+    REVIEW_STATE_FEEDBACK, REVIEW_STATE_ENDORSED, REVIEW_STATE_PUBLISHED
+    )
 
 from .href import needs_redirect, get_redirect
 
@@ -501,9 +509,11 @@ def synch_required(route_function):
         if request.method in ('PUT', 'POST', 'DELETE'):
             Logger.debug('- ' * 40)
 
-            if _remote_exists(repo, 'origin'):
-                Logger.debug('  pushing origin {}'.format(repo))
-                repo.git.push('origin', all=True, with_exceptions=True)
+            needs_push_file = join(current_app.config['RUNNING_STATE_DIR'], NEEDS_PUSH_FILE)
+            
+            with WriteLocked(needs_push_file) as file:
+                file.truncate()
+                file.write('Yes')
 
         Logger.debug('-' * 40 + '>' * 40)
 
@@ -553,9 +563,11 @@ def synched_checkout_required(route_function):
         if request.method in ('PUT', 'POST', 'DELETE'):
             Logger.debug('- ' * 40)
 
-            if _remote_exists(repo, 'origin'):
-                Logger.debug('  pushing origin {}'.format(repo))
-                repo.git.push('origin', all=True, with_exceptions=True)
+            needs_push_file = join(current_app.config['RUNNING_STATE_DIR'], NEEDS_PUSH_FILE)
+            
+            with WriteLocked(needs_push_file) as file:
+                file.truncate()
+                file.write('Yes')
 
         Logger.debug('-' * 40 + '>' * 40)
 
