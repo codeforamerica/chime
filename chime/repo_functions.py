@@ -730,6 +730,15 @@ def _remote_exists(repo, remote):
     else:
         return True
 
+def mark_upstream_push_needed(running_state_dir):
+    ''' Add needs-push file for use by push_upstream_if_needed().
+    '''
+    needs_push_file = join(running_state_dir, NEEDS_PUSH_FILE)
+    
+    with google_api_functions.WriteLocked(needs_push_file) as file:
+        file.truncate()
+        file.write('Yes')
+
 def push_upstream_if_needed(repo, running_state_dir):
     ''' If needs-push file is found and origin exists, push it.
     '''
