@@ -523,9 +523,9 @@ def show_activity_overview(branch_name):
     date_updated = repo.git.log('--format=%ad', '--date=relative').split('\n')[0]
 
     activity.update(date_created=date_created, date_updated=date_updated,
-                    edit_path=u'/tree/{}/edit/'.format(branch_name2path(branch_name)),
-                    overview_path=u'/tree/{}/'.format(branch_name2path(branch_name)),
-                    safe_branch=safe_branch, history=history, review_state=review_state,
+                    edit_path=u'/tree/{}/edit/'.format(safe_branch),
+                    overview_path=u'/tree/{}/'.format(safe_branch), safe_branch=safe_branch,
+                    branch=safe_branch, history=history, review_state=review_state,
                     review_authorized=review_authorized, last_edited_email=last_edited_email)
 
     kwargs.update(activity=activity, app_authorized=app_authorized, languages=languages)
