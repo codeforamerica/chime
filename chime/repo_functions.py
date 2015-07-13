@@ -1,7 +1,7 @@
 # -- coding: utf-8 --
 from __future__ import absolute_import
 import logging
-from os import mkdir
+from os import mkdir, remove
 from os.path import join, split, exists, isdir, sep
 from git import Repo
 from git.cmd import GitCommandError
@@ -9,7 +9,7 @@ import hashlib
 import yaml
 from re import match, search
 
-from . import edit_functions
+from . import edit_functions, google_api_functions
 
 TASK_METADATA_FILENAME = u'_task.yml'
 BRANCH_NAME_LENGTH = 7
@@ -45,6 +45,9 @@ REVIEW_STATE_FEEDBACK = u'feedback requested'
 REVIEW_STATE_ENDORSED = u'edits endorsed'
 # the site has been published
 REVIEW_STATE_PUBLISHED = u'changes published'
+
+# Name of file in running state dir that signals a need to push upstream.
+NEEDS_PUSH_FILE = 'needs-push'
 
 class MergeConflict (Exception):
     def __init__(self, remote_commit, local_commit):
@@ -709,3 +712,32 @@ def provide_feedback(clone, comment_text):
     ''' Adds a new empty commit adding a comment
     '''
     return add_empty_commit(clone, COMMENT_COMMIT_PREFIX, comment_text)
+
+def _remote_exists(repo, remote):
+    ''' Check whether a named remote exists in a repository.
+
+        This should be as simple as `remote in repo.remotes`,
+        but GitPython has a bug in git.util.IterableList:
+
+            https://github.com/gitpython-developers/GitPython/issues/11
+    '''
+    try:
+        repo.remotes[remote]
+
+    except IndexError:
+        return False
+
+    else:
+        return True
+
+def push_upstream_if_needed(repo, running_state_dir):
+    ''' If needs-push file is found and origin exists, push it.
+    '''
+    needs_push_file = join(running_state_dir, NEEDS_PUSH_FILE)
+
+    if exists(needs_push_file):
+        with google_api_functions.WriteLocked(needs_push_file) as file:
+            if _remote_exists(repo, 'origin'):
+                logging.info('  pushing origin {}'.format(repo))
+                repo.git.push('origin', all=True, with_exceptions=True)
+            remove(file.name)

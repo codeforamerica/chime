@@ -21,18 +21,17 @@ from dateutil.relativedelta import relativedelta
 from flask import request, session, current_app, redirect, flash, render_template
 from requests import get
 
-from . import publish, NEEDS_PUSH_FILE
+from . import publish
 from .edit_functions import create_new_page, delete_file, update_page
 from .jekyll_functions import load_jekyll_doc, load_languages
 from .google_api_functions import read_ga_config, fetch_google_analytics_for_page, WriteLocked
 from .repo_functions import (
-    get_existing_branch, ignore_task_metadata_on_merge,
-    get_message_classification, ChimeRepo, ACTIVITY_CREATED_MESSAGE,
-    get_task_metadata_for_branch, complete_branch, abandon_branch,
-    clobber_default_branch, MergeConflict, get_review_state_and_authorized,
-    save_working_file, update_review_state, provide_feedback,
-    move_existing_file, TASK_METADATA_FILENAME, REVIEW_STATE_EDITED,
-    REVIEW_STATE_FEEDBACK, REVIEW_STATE_ENDORSED, REVIEW_STATE_PUBLISHED
+    get_existing_branch, ignore_task_metadata_on_merge, get_message_classification, ChimeRepo,
+    ACTIVITY_CREATED_MESSAGE, get_task_metadata_for_branch, complete_branch, abandon_branch,
+    clobber_default_branch, MergeConflict, get_review_state_and_authorized, save_working_file,
+    update_review_state, provide_feedback, move_existing_file, TASK_METADATA_FILENAME,
+    REVIEW_STATE_EDITED, REVIEW_STATE_FEEDBACK, REVIEW_STATE_ENDORSED, REVIEW_STATE_PUBLISHED,
+    NEEDS_PUSH_FILE, _remote_exists
     )
 
 from .href import needs_redirect, get_redirect
@@ -450,23 +449,6 @@ def login_required(route_function):
         return route_function(*args, **kwargs)
 
     return decorated_function
-
-def _remote_exists(repo, remote):
-    ''' Check whether a named remote exists in a repository.
-
-        This should be as simple as `remote in repo.remotes`,
-        but GitPython has a bug in git.util.IterableList:
-
-            https://github.com/gitpython-developers/GitPython/issues/11
-    '''
-    try:
-        repo.remotes[remote]
-
-    except IndexError:
-        return False
-
-    else:
-        return True
 
 def browserid_hostname_required(route_function):
     ''' Decorator for routes that enforces the hostname set in the BROWSERID_URL config variable

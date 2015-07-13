@@ -14,9 +14,6 @@ from .httpd import run_apache_forever
 
 chime = Blueprint('chime', __name__, template_folder='templates')
 
-# Name of file in running state dir that signals a need to push upstream.
-NEEDS_PUSH_FILE = 'needs-push'
-
 class AppShim:
 
     def __init__(self, app):
