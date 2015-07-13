@@ -965,6 +965,9 @@ def delete_page(repo, browse_path, target_path):
     else:
         redirect_path = browse_path
 
+    if redirect_path and not redirect_path.endswith('/'):
+        redirect_path = redirect_path + '/'
+
     return redirect_path, do_save, commit_message
 
 def update_activity_review_status(branch_name, comment_text, action_list):
