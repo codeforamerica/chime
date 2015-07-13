@@ -17,6 +17,7 @@ from datetime import date, timedelta
 import sys
 from chime.repo_functions import ChimeRepo
 from slugify import slugify
+import json
 
 repo_root = abspath(join(dirname(__file__), '..'))
 sys.path.insert(0, repo_root)
@@ -1203,7 +1204,7 @@ class TestRepo (TestCase):
         # now delete the second category
         browse_path = view_functions.strip_index_file(art_path)
         redirect_path, do_save, commit_message = view_functions.delete_page(repo=new_clone, browse_path=browse_path, target_path=dir_path)
-        self.assertEqual(cat_slug, redirect_path)
+        self.assertEqual(cat_slug.rstrip('/'), redirect_path.rstrip('/'))
         self.assertEqual(True, do_save)
         self.assertEqual(u'The "{cat2_title}" category (containing 1 article) was deleted\n\n[{{"action": "delete", "file_path": "{cat2_path}", "display_type": "category", "title": "{cat2_title}"}}, {{"action": "delete", "file_path": "{art_path}", "display_type": "article", "title": "{art_title}"}}]'.format(cat2_title=cat2_title, cat2_path=cat2_path, art_path=art_path, art_title=art_title), commit_message)
 
@@ -1881,6 +1882,19 @@ class ChimeTestClient:
 
         return redirect, BeautifulSoup(response.data)
 
+    def get_branch_name(self, soup):
+        ''' Extract and return the branch name from the passed soup.
+        '''
+        # Assumes there is an HTML comment in the format '<!-- branch: 1234567 -->'
+        branch_search = search(r'<!-- branch: (.{{{}}}) -->'.format(repo_functions.BRANCH_NAME_LENGTH), unicode(soup))
+        self.test.assertIsNotNone(branch_search)
+        try:
+            branch_name = branch_search.group(1)
+        except AttributeError:
+            raise Exception('No match for generated branch name.')
+
+        return branch_name
+
     def sign_in(self, email):
         if email == 'erica@example.com':
             with HTTMock(self.test.mock_persona_verify_erica):
@@ -1911,8 +1925,8 @@ class ChimeTestClient:
         form = input.find_parent('form')
         self.test.assertEqual(form['method'].upper(), 'POST')
 
-        data = {i['name']: i.get('value') for i in form.find_all('input')}
-        data[input['name']] = 'Ninjas'
+        data = {i['name']: i.get('value', u'') for i in form.find_all('input')}
+        data[input['name']] = category_name
 
         add_category_path = urlparse(urljoin(url, form['action'])).path
         response = self.client.post(add_category_path, data=data)
@@ -1927,7 +1941,7 @@ class ChimeTestClient:
         form = input.find_parent('form')
         self.test.assertEqual(form['method'].upper(), 'POST')
 
-        data = {i['name']: i.get('value') for i in form.find_all('input')}
+        data = {i['name']: i.get('value', u'') for i in form.find_all('input')}
         data[input['name']] = subcategory_name
 
         add_subcategory_path = urlparse(urljoin(url, form['action'])).path
@@ -1945,7 +1959,7 @@ class ChimeTestClient:
         form = input.find_parent('form')
         self.test.assertEqual(form['method'].upper(), 'POST')
 
-        data = {i['name']: i.get('value') for i in form.find_all('input')}
+        data = {i['name']: i.get('value', u'') for i in form.find_all('input')}
         data[input['name']] = article_name
 
         add_article_path = urlparse(urljoin(url, form['action'])).path
@@ -1962,7 +1976,7 @@ class ChimeTestClient:
         title = form.find(lambda tag: bool(tag.name == 'input' and tag.get('name') == 'en-title'))
         self.test.assertEqual(form['method'].upper(), 'POST')
 
-        data = {i['name']: i.get('value')
+        data = {i['name']: i.get('value', u'')
                 for i in form.find_all(['input', 'button', 'textarea'])
                 if i.get('type') != 'submit'}
 
@@ -1983,7 +1997,7 @@ class ChimeTestClient:
         title = form.find(lambda tag: bool(tag.name == 'input' and tag.get('name') == 'en-title'))
         self.test.assertEqual(form['method'].upper(), 'POST')
 
-        data = {i['name']: i.get('value')
+        data = {i['name']: i.get('value', u'')
                 for i in form.find_all(['input', 'button', 'textarea'])
                 if i.get('type') != 'submit'}
 
@@ -1994,6 +2008,31 @@ class ChimeTestClient:
         response = self.client.post(edit_article_path, data=data)
         self.test.assertEqual(response.status_code, 500)
 
+    def follow_modify_category_link(self, soup, title_str):
+        ''' Find the (sub-)category edit button in the passed soup and follow it
+        '''
+        mod_link = soup.find(lambda tag: bool(tag.name == 'a' and tag.text == title_str))
+        mod_li = mod_link.find_parent('li')
+        mod_span = mod_li.find(lambda tag: bool(tag.name == 'span' and 'fa-pencil' in tag.get('class')))
+        mod_link = mod_span.find_parent('a')
+        return self.follow_link(soup, mod_link['href'])
+
+    def delete_category(self, url, soup):
+        ''' Look for the delete button, submit it, return URL and soup.
+        '''
+        body = soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'en-description'))
+        form = body.find_parent('form')
+        self.test.assertEqual(form['method'].upper(), 'POST')
+
+        data = {i['name']: i.get('value', u'')
+                for i in form.find_all(['input', 'button', 'textarea'])
+                if i.get('name') != 'save'}
+
+        delete_category_path = urlparse(urljoin(url, form['action'])).path
+        response = self.client.post(delete_category_path, data=data)
+
+        return self.follow_redirect(response, 303)
+
     def request_feedback(self, url, soup, feedback_str):
         ''' Look for form to request feedback, submit it and return URL and soup.
         '''
@@ -2001,7 +2040,7 @@ class ChimeTestClient:
         form = body.find_parent('form')
         self.test.assertEqual(form['method'].upper(), 'POST')
 
-        data = {i['name']: i.get('value')
+        data = {i['name']: i.get('value', u'')
                 for i in form.find_all(['input', 'button', 'textarea'])
                 if i.get('value') != 'Leave a Comment'}
 
@@ -2020,7 +2059,7 @@ class ChimeTestClient:
         form = body.find_parent('form')
         self.test.assertEqual(form['method'].upper(), 'POST')
 
-        data = {i['name']: i.get('value')
+        data = {i['name']: i.get('value', u'')
                 for i in form.find_all(['input', 'button', 'textarea'])
                 if i.get('value') != 'Looks Good!'}
 
@@ -2039,7 +2078,7 @@ class ChimeTestClient:
         form = body.find_parent('form')
         self.test.assertEqual(form['method'].upper(), 'POST')
 
-        data = {i['name']: i.get('value')
+        data = {i['name']: i.get('value', u'')
                 for i in form.find_all(['input', 'button', 'textarea'])
                 if i.get('value') != 'Leave a Comment'}
 
@@ -2056,7 +2095,7 @@ class ChimeTestClient:
         form = body.find_parent('form')
         self.test.assertEqual(form['method'].upper(), 'POST')
 
-        data = {i['name']: i.get('value')
+        data = {i['name']: i.get('value', u'')
                 for i in form.find_all(['input', 'button', 'textarea'])
                 if i.get('value') != 'Leave a Comment'}
 
@@ -2251,16 +2290,16 @@ class TestApp (TestCase):
 
         raise Exception('Asked for unknown URL ' + url.geturl())
 
-    def mock_persona_verify(self, url, request):
+    def mock_persona_verify_erica(self, url, request):
         if url.geturl() == 'https://verifier.login.persona.org/verify':
             return response(200, '''{"status": "okay", "email": "erica@example.com"}''', headers=dict(Link='<https://api.github.com/user/337792/repos?page=1>; rel="prev", <https://api.github.com/user/337792/repos?page=1>; rel="first"'))
 
         else:
             return self.auth_csv_example_allowed(url, request)
 
-    def mock_other_persona_verify(self, url, request):
+    def mock_persona_verify_frances(self, url, request):
         if url.geturl() == 'https://verifier.login.persona.org/verify':
-            return response(200, '''{"status": "okay", "email": "tomas@example.com"}''', headers=dict(Link='<https://api.github.com/user/337792/repos?page=1>; rel="prev", <https://api.github.com/user/337792/repos?page=1>; rel="first"'))
+            return response(200, '''{"status": "okay", "email": "frances@example.com"}''', headers=dict(Link='<https://api.github.com/user/337792/repos?page=1>; rel="prev", <https://api.github.com/user/337792/repos?page=1>; rel="first"'))
 
         else:
             return self.auth_csv_example_allowed(url, request)
@@ -2336,7 +2375,7 @@ class TestApp (TestCase):
         response = self.test_client.get('/')
         self.assertFalse('erica@example.com' in response.data)
 
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
             self.assertEqual(response.status_code, 200)
 
@@ -2351,7 +2390,7 @@ class TestApp (TestCase):
         response = self.test_client.get('/')
         self.assertFalse('Start' in response.data)
 
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
             self.assertEqual(response.status_code, 200)
 
@@ -2372,11 +2411,11 @@ class TestApp (TestCase):
         fake_task_description = u'do things'
         fake_task_beneficiary = u'somebody else'
         fake_author_email = u'erica@example.com'
-        fake_endorser_email = u'tomas@example.com'
+        fake_endorser_email = u'frances@example.com'
         fake_page_slug = u'hello'
         fake_page_path = u'{}/index.{}'.format(fake_page_slug, view_functions.CONTENT_FILE_EXTENSION)
         fake_page_content = u'Hello world.'
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'email': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
@@ -2443,7 +2482,7 @@ class TestApp (TestCase):
         #
         #
         # Log in as a different person
-        with HTTMock(self.mock_other_persona_verify):
+        with HTTMock(self.mock_persona_verify_frances):
             self.test_client.post('/sign-in', data={'email': fake_endorser_email})
 
         # Endorse the change
@@ -2466,7 +2505,7 @@ class TestApp (TestCase):
         ''' Delete a task that you can see on the activity list but haven't viewed or edited.
         '''
         fake_author_email = u'erica@example.com'
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'email': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
@@ -2511,11 +2550,11 @@ class TestApp (TestCase):
         fake_task_description = u'groom pets'
         fake_task_beneficiary = u'pet owners'
         fake_author_email = u'erica@example.com'
-        fake_endorser_email = u'tomas@example.com'
+        fake_endorser_email = u'frances@example.com'
         fake_page_slug = u'hello'
 
         # log in
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'email': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
@@ -2565,7 +2604,7 @@ class TestApp (TestCase):
         #
         #
         # Log in as a different person
-        with HTTMock(self.mock_other_persona_verify):
+        with HTTMock(self.mock_persona_verify_frances):
             self.test_client.post('/sign-in', data={'email': fake_endorser_email})
 
         with HTTMock(self.auth_csv_example_allowed):
@@ -2594,7 +2633,7 @@ class TestApp (TestCase):
             self.assertTrue(u'{} {}'.format(fake_endorser_email, repo_functions.ACTIVITY_ENDORSED_MESSAGE) in response.data)
 
         # log back in as the original editor
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'email': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
@@ -2629,7 +2668,7 @@ class TestApp (TestCase):
     def test_get_request_does_not_create_branch(self):
         ''' Navigating to a made-up URL should not create a branch
         '''
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
 
         with HTTMock(self.auth_csv_example_allowed):
@@ -2671,7 +2710,7 @@ class TestApp (TestCase):
         fake_page_slug = u'hello'
         fake_page_path = u'{}/index.{}'.format(fake_page_slug, view_functions.CONTENT_FILE_EXTENSION)
 
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
 
         with HTTMock(self.auth_csv_example_allowed):
@@ -2742,7 +2781,7 @@ class TestApp (TestCase):
             fetches the remote branch and allows access
         '''
         fake_author_email = u'erica@example.com'
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'email': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
@@ -2786,7 +2825,7 @@ class TestApp (TestCase):
         ''' The Git merge strategy has been implmemented for a new clone.
         '''
         fake_author_email = u'erica@example.com'
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'email': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
@@ -2812,7 +2851,7 @@ class TestApp (TestCase):
         ''' Task metadata file should exist but doesn't
         '''
         fake_author_email = u'erica@example.com'
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'email': fake_author_email})
 
         fake_task_description = u'unimportant task'
@@ -2847,7 +2886,7 @@ class TestApp (TestCase):
     def test_google_callback_is_successful(self):
         ''' Ensure we get a successful page load on callback from Google authentication
         '''
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
 
         with HTTMock(self.mock_google_authorization):
@@ -2866,7 +2905,7 @@ class TestApp (TestCase):
 
     # in TestApp
     def test_analytics_setup_is_successful(self):
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
 
         with HTTMock(self.mock_google_authorization):
@@ -2897,7 +2936,7 @@ class TestApp (TestCase):
     def test_google_callback_fails(self):
         ''' Ensure that we get an appropriate error flashed when we fail to auth with google
         '''
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
 
         with HTTMock(self.mock_google_authorization):
@@ -2914,7 +2953,7 @@ class TestApp (TestCase):
     def test_invalid_access_token(self):
         ''' Ensure that we get an appropriate error flashed when we have an invalid access token
         '''
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
             self.assertEqual(response.status_code, 200)
 
@@ -2930,7 +2969,7 @@ class TestApp (TestCase):
         ''' Ensure that we get an appropriate error flashed when no analytics properties are
             associated with the authorized Google account
         '''
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
             self.assertEqual(response.status_code, 200)
 
@@ -2945,7 +2984,7 @@ class TestApp (TestCase):
     def test_redirect(self):
         ''' Check redirect to BROWSERID_URL.
         '''
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             response = self.test_client.get('/not-allowed', headers={'Host': 'wrong.local'})
 
         expected_url = urljoin(self.app.config['BROWSERID_URL'], '/not-allowed')
@@ -2958,7 +2997,7 @@ class TestApp (TestCase):
         ''' Creating a new category creates a directory with an appropriate index file inside.
         '''
         fake_author_email = u'erica@example.com'
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'email': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
@@ -2997,7 +3036,7 @@ class TestApp (TestCase):
         ''' If we ask to create a category that exists, let's not and say we did.
         '''
         fake_author_email = u'erica@example.com'
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'email': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
@@ -3039,7 +3078,7 @@ class TestApp (TestCase):
         ''' Non-empty categories and articles can be deleted
         '''
         fake_author_email = u'erica@example.com'
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'email': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
@@ -3109,11 +3148,67 @@ class TestApp (TestCase):
             self.assertFalse(exists(cata_location))
 
     # in TestApp
+    def test_delete_commit_accuracy(self):
+        ''' The record of a delete in the corresponding commit is accurate.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            client = ChimeTestClient(self.test_client, self)
+            client.sign_in(email='erica@example.com')
+
+            # Start a new task
+            _, soup1 = client.start_task(description=u'Ferment Tuber Fibres Using Symbiotic Bacteria in the Intestines', beneficiary=u'Naked Mole Rats')
+            # Get the branch name
+            branch_name = client.get_branch_name(soup1)
+
+            # Enter the "other" folder
+            base_path, base_soup = client.follow_link(soup=soup1, href='/tree/{}/edit/other'.format(branch_name))
+
+            # Create a category and fill it with some subcategories and articles
+            category_names = [u'Indigestible Cellulose']
+            subcategory_names = [u'Volatile Fatty Acids', u'Non-Reproducing Females', u'Arid African Deserts']
+            article_names = [u'Eusocial Exhibition', u'Old Enough to Eat Solid Food', u'Contributing to Extension of Tunnels', u'Foraging and Nest Building']
+            category_path, category_soup = client.add_category(url=base_path, soup=base_soup, category_name=category_names[0])
+            subcategory_path, subcategory_soup = client.add_subcategory(url=category_path, soup=category_soup, subcategory_name=subcategory_names[0])
+            client.add_subcategory(url=category_path, soup=category_soup, subcategory_name=subcategory_names[1])
+            client.add_subcategory(url=category_path, soup=category_soup, subcategory_name=subcategory_names[2])
+            client.add_article(url=subcategory_path, soup=subcategory_soup, article_name=article_names[0])
+            client.add_article(url=subcategory_path, soup=subcategory_soup, article_name=article_names[1])
+            client.add_article(url=subcategory_path, soup=subcategory_soup, article_name=article_names[2])
+            client.add_article(url=subcategory_path, soup=subcategory_soup, article_name=article_names[3])
+
+            # Delete the all-containing category
+            modify_form_path, modify_form_soup = client.follow_modify_category_link(category_soup, category_names[0])
+            deleted_category_path, deleted_category_soup = client.delete_category(modify_form_path, modify_form_soup)
+
+            # get and check the history
+            repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email='erica@example.com')
+            activity_history = view_functions.make_activity_history(repo)
+            delete_history = json.loads(activity_history[0]['commit_body'])
+            for item in delete_history:
+                self.assertEqual(item['action'], u'delete')
+                if item['title'] in category_names:
+                    self.assertEqual(item['display_type'], u'category')
+                    category_names.remove(item['title'])
+
+                elif item['title'] in subcategory_names:
+                    self.assertEqual(item['display_type'], u'category')
+                    subcategory_names.remove(item['title'])
+
+                elif item['title'] in article_names:
+                    self.assertEqual(item['display_type'], u'article')
+                    article_names.remove(item['title'])
+
+            # we should have fewer category, subcategory, and article names
+            self.assertEqual(len(category_names), 0)
+            self.assertEqual(len(subcategory_names), 0)
+            self.assertEqual(len(article_names), 0)
+
+    # in TestApp
     def test_delete_article(self):
         ''' An article can be deleted
         '''
         fake_author_email = u'erica@example.com'
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'email': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
@@ -3161,7 +3256,7 @@ class TestApp (TestCase):
         ''' An article with unicode in its title is created and logged as expected.
         '''
         fake_author_email = u'erica@example.com'
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'email': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
@@ -3209,7 +3304,7 @@ class TestApp (TestCase):
         ''' A slugified directory name and display title are created when a new category or article is created.
         '''
         fake_author_email = u'erica@example.com'
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'email': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
@@ -3283,7 +3378,7 @@ class TestApp (TestCase):
         ''' A category's title and description can be edited.
         '''
         fake_author_email = u'erica@example.com'
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'email': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
@@ -3363,7 +3458,7 @@ class TestApp (TestCase):
         ''' A category can be deleted
         '''
         fake_author_email = u'erica@example.com'
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'email': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
@@ -3426,7 +3521,7 @@ class TestApp (TestCase):
         ''' Order and description can be set to and retrieved from an article's or category's front matter.
         '''
         fake_author_email = u'erica@example.com'
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'email': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
@@ -3503,7 +3598,7 @@ class TestApp (TestCase):
             field will create category folders where folders don't already exist
         '''
         fake_author_email = u'erica@example.com'
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'email': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
@@ -3573,7 +3668,7 @@ class TestApp (TestCase):
         ''' The column navigation structure matches the structure of the site.
         '''
         fake_author_email = u'erica@example.com'
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'email': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
@@ -3635,7 +3730,7 @@ class TestApp (TestCase):
         ''' The activity history page accurately displays the activity history
         '''
         fake_author_email = u'erica@example.com'
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'email': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
@@ -3701,7 +3796,7 @@ class TestApp (TestCase):
         ''' Creating a new page creates a directory with an editable index file inside.
         '''
         fake_author_email = u'erica@example.com'
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'email': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
@@ -3742,7 +3837,7 @@ class TestApp (TestCase):
         ''' Can rename an editable directory.
         '''
         fake_author_email = u'erica@example.com'
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'email': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
@@ -3802,7 +3897,7 @@ class TestApp (TestCase):
         ''' Can't rename an editable directory in a way which moves it inside itself
         '''
         fake_author_email = u'erica@example.com'
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'email': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
@@ -3860,7 +3955,7 @@ class TestApp (TestCase):
         ''' Editable directories (directories containing only an editable index file) are displayed as articles.
         '''
         fake_author_email = u'erica@example.com'
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'email': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
@@ -3896,7 +3991,7 @@ class TestApp (TestCase):
         ''' A 404 page is generated when we get an address that doesn't exist
         '''
         fake_author_email = u'erica@example.com'
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'email': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
@@ -3922,7 +4017,7 @@ class TestApp (TestCase):
     def test_internal_server_error(self):
         ''' A 500 page is generated when we provoke a server error
         '''
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
 
         with HTTMock(self.mock_internal_server_error):
@@ -3936,7 +4031,7 @@ class TestApp (TestCase):
     def test_exception_error(self):
         ''' A 500 page is generated when we provoke an uncaught exception
         '''
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
 
         with HTTMock(self.mock_exception):
@@ -3955,7 +4050,7 @@ class TestApp (TestCase):
         fake_task_description_2 = u'do other things'
         fake_task_beneficiary_2 = u'somebody even else'
         fake_email_1 = u'erica@example.com'
-        fake_email_2 = u'tomas@example.com'
+        fake_email_2 = u'frances@example.com'
         fake_page_slug = u'hello'
         fake_page_path = u'{}/index.{}'.format(fake_page_slug, view_functions.CONTENT_FILE_EXTENSION)
         fake_page_content_1 = u'Hello world.'
@@ -3963,7 +4058,7 @@ class TestApp (TestCase):
         #
         #
         # Log in as person 1
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'email': fake_email_1})
 
         with HTTMock(self.auth_csv_example_allowed):
@@ -4000,7 +4095,7 @@ class TestApp (TestCase):
         #
         #
         # Log in as person 2
-        with HTTMock(self.mock_other_persona_verify):
+        with HTTMock(self.mock_persona_verify_frances):
             self.test_client.post('/sign-in', data={'email': fake_email_2})
 
         with HTTMock(self.auth_csv_example_allowed):
@@ -4045,7 +4140,7 @@ class TestApp (TestCase):
         #
         #
         # Log in as person 1
-        with HTTMock(self.mock_persona_verify):
+        with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'email': fake_email_1})
 
         # Endorse person 2's change
