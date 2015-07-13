@@ -41,6 +41,10 @@ if __name__ == '__main__':
         except:
             traceback.print_exc(file=sys.stderr)
         
+        #
+        # Periodically push to upstream backup remote from origin, triggered
+        # in @synch_required and @synched_checkout_required decorators.
+        #
         try:
             push_upstream_if_needed(Repo(repo_path), running_state_dir)
         except:
