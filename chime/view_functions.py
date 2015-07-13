@@ -70,17 +70,26 @@ def dos2unix(string):
     '''
     return string.replace('\r\n', '\n').replace('\r', '\n') if string else string
 
-def get_repo(flask_app):
+def get_repo(flask_app=None, repo_path=None, work_path=None, email=None):
     ''' Gets repository for the current user, cloned from the origin.
 
         Uses the first-ever commit in the origin repository to name
         the cloned directory, to reduce history conflicts when tweaking
         the repository during development.
     '''
-    source_repo = ChimeRepo(flask_app.config['REPO_PATH'])
+    # If a flask_app is passed use it, otherwise use the passed params.
+    if flask_app:
+        repo_path = flask_app.config['REPO_PATH']
+        work_path = flask_app.config['WORK_PATH']
+
+    # if no email was passed, get it from the session
+    if not email:
+        email = session.get('email', 'nobody')
+
+    source_repo = ChimeRepo(repo_path)
     first_commit = list(source_repo.iter_commits())[-1].hexsha
-    dir_name = 'repo-{}-{}'.format(first_commit[:8], slugify(session.get('email', 'nobody')))
-    user_dir = realpath(join(flask_app.config['WORK_PATH'], quote(dir_name)))
+    dir_name = 'repo-{}-{}'.format(first_commit[:8], slugify(email))
+    user_dir = realpath(join(work_path, quote(dir_name)))
 
     if isdir(user_dir):
         user_repo = ChimeRepo(user_dir)
@@ -517,7 +526,7 @@ def synched_checkout_required(route_function):
             Logger.debug('  fetching origin {}'.format(repo))
             repo.git.fetch('origin', with_exceptions=True)
 
-        checkout = get_repo(current_app)
+        checkout = get_repo(flask_app=current_app)
         # get the branch name from request.form if it's not in kwargs
         branch_name_raw = kwargs['branch_name'] if 'branch_name' in kwargs else None
         if not branch_name_raw:
@@ -731,7 +740,7 @@ def make_directory_columns(clone, branch_name, repo_path=None, showallfiles=Fals
 def publish_or_destroy_activity(branch_name, action):
     ''' Publish, abandon, or clobber the activity defined by the passed branch name.
     '''
-    repo = get_repo(current_app)
+    repo = get_repo(flask_app=current_app)
     master_name = current_app.config['default_branch']
 
     # contains 'author_email', 'task_description', 'task_beneficiary'
@@ -961,7 +970,7 @@ def delete_page(repo, browse_path, target_path):
 def update_activity_review_status(branch_name, comment_text, action_list):
     ''' Comment and/or update the review state.
     '''
-    repo = get_repo(current_app)
+    repo = get_repo(flask_app=current_app)
     # which submit button was pressed?
     action = u''
     possible_actions = ['comment', 'request_feedback', 'endorse_edits', 'merge', 'abandon', 'clobber']

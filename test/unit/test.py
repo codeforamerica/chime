@@ -2491,7 +2491,7 @@ class TestApp (TestCase):
                 with self.app.test_request_context():
                     from flask import session
                     session['email'] = fake_author_email
-                    new_clone = view_functions.get_repo(self.app)
+                    new_clone = view_functions.get_repo(flask_app=self.app)
                     self.assertFalse(check_branch.name in new_clone.branches)
 
             # load the activity list and verify that the branch is visible there
@@ -2767,7 +2767,7 @@ class TestApp (TestCase):
                 with self.app.test_request_context():
                     from flask import session
                     session['email'] = fake_author_email
-                    new_clone = view_functions.get_repo(self.app)
+                    new_clone = view_functions.get_repo(flask_app=self.app)
                     self.assertFalse(check_branch.name in new_clone.branches)
 
             # request an edit page for the check branch through the http interface
@@ -2795,7 +2795,7 @@ class TestApp (TestCase):
                 with self.app.test_request_context():
                     from flask import session
                     session['email'] = fake_author_email
-                    new_clone = view_functions.get_repo(self.app)
+                    new_clone = view_functions.get_repo(flask_app=self.app)
 
             # check for the config setting
             self.assertEqual(new_clone.config_reader().get_value('merge "ignored"', 'driver'), True)
