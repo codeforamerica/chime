@@ -2040,6 +2040,24 @@ class ChimeTestClient:
 
         return self.follow_redirect(response, 303)
 
+    def delete_article(self, soup, url, title_str):
+        ''' Look for the delete button, submit it, return URL and soup.
+        '''
+        del_link = soup.find(lambda tag: bool(tag.name == 'a' and tag.text == title_str))
+        del_li = del_link.find_parent('li')
+        del_span = del_li.find(lambda tag: bool(tag.name == 'span' and 'fa-trash' in tag.get('class')))
+        del_form = del_span.find_parent('form')
+
+        self.test.assertEqual(del_form['method'].upper(), 'POST')
+
+        data = {i['name']: i.get('value', u'')
+                for i in del_form.find_all(['input', 'button', 'textarea'])}
+
+        delete_article_path = urlparse(urljoin(url, del_form['action'])).path
+        response = self.client.post(delete_article_path, data=data)
+
+        return self.follow_redirect(response, 303)
+
     def request_feedback(self, url, soup, feedback_str):
         ''' Look for form to request feedback, submit it and return URL and soup.
         '''
