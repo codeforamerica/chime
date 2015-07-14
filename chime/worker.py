@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 from logging import getLogger
 Logger = getLogger('chime.worker')
 
@@ -8,6 +8,9 @@ import time
 import sys
 import traceback
 
+from git import Repo
+
+from .repo_functions import NEEDS_PUSH_FILE, push_upstream_if_needed
 from .google_api_functions import (
     is_overdue_ga_config, read_ga_config, request_new_google_access_token
 )
@@ -18,9 +21,9 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    running_state_dir, ga_client_id, ga_client_secret = \
+    running_state_dir, ga_client_id, ga_client_secret, repo_path = \
         os.environ['RUNNING_STATE_DIR'], os.environ['GA_CLIENT_ID'], \
-        os.environ['GA_CLIENT_SECRET']
+        os.environ['GA_CLIENT_SECRET'], os.environ['REPO_PATH']
 
     while True:
         #
@@ -35,6 +38,15 @@ if __name__ == '__main__':
                     running_state_dir, ga_client_id, ga_client_secret
                 )
                 request_new_google_access_token(*token_args)
+        except:
+            traceback.print_exc(file=sys.stderr)
+        
+        #
+        # Periodically push to upstream backup remote from origin, triggered
+        # in @synch_required and @synched_checkout_required decorators.
+        #
+        try:
+            push_upstream_if_needed(Repo(repo_path), running_state_dir)
         except:
             traceback.print_exc(file=sys.stderr)
 

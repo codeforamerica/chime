@@ -23,9 +23,16 @@ from requests import get
 
 from . import publish
 from .edit_functions import create_new_page, delete_file, update_page
-from .repo_functions import get_existing_branch, ignore_task_metadata_on_merge, get_message_classification, ChimeRepo, ACTIVITY_CREATED_MESSAGE, get_task_metadata_for_branch, complete_branch, abandon_branch, clobber_default_branch, MergeConflict, get_review_state_and_authorized, save_working_file, update_review_state, provide_feedback, move_existing_file, TASK_METADATA_FILENAME, REVIEW_STATE_EDITED, REVIEW_STATE_FEEDBACK, REVIEW_STATE_ENDORSED, REVIEW_STATE_PUBLISHED
 from .jekyll_functions import load_jekyll_doc, load_languages
 from .google_api_functions import read_ga_config, fetch_google_analytics_for_page
+from .repo_functions import (
+    get_existing_branch, ignore_task_metadata_on_merge, get_message_classification, ChimeRepo,
+    ACTIVITY_CREATED_MESSAGE, get_task_metadata_for_branch, complete_branch, abandon_branch,
+    clobber_default_branch, MergeConflict, get_review_state_and_authorized, save_working_file,
+    update_review_state, provide_feedback, move_existing_file, TASK_METADATA_FILENAME,
+    REVIEW_STATE_EDITED, REVIEW_STATE_FEEDBACK, REVIEW_STATE_ENDORSED, REVIEW_STATE_PUBLISHED,
+    NEEDS_PUSH_FILE, mark_upstream_push_needed, _remote_exists
+    )
 
 from .href import needs_redirect, get_redirect
 
@@ -443,23 +450,6 @@ def login_required(route_function):
 
     return decorated_function
 
-def _remote_exists(repo, remote):
-    ''' Check whether a named remote exists in a repository.
-
-        This should be as simple as `remote in repo.remotes`,
-        but GitPython has a bug in git.util.IterableList:
-
-            https://github.com/gitpython-developers/GitPython/issues/11
-    '''
-    try:
-        repo.remotes[remote]
-
-    except IndexError:
-        return False
-
-    else:
-        return True
-
 def browserid_hostname_required(route_function):
     ''' Decorator for routes that enforces the hostname set in the BROWSERID_URL config variable
     '''
@@ -485,27 +475,11 @@ def synch_required(route_function):
     '''
     @wraps(route_function)
     def decorated_function(*args, **kwargs):
-        Logger.debug('<' * 40 + '-' * 40)
-
-        repo = Repo(current_app.config['REPO_PATH'])
-
-        if _remote_exists(repo, 'origin'):
-            Logger.debug('  fetching origin {}'.format(repo))
-            repo.git.fetch('origin', with_exceptions=True)
-
-        Logger.debug('- ' * 40)
-
         response = route_function(*args, **kwargs)
 
-        # Push to origin only if the request method indicates a change.
+        # Push upstream only if the request method indicates a change.
         if request.method in ('PUT', 'POST', 'DELETE'):
-            Logger.debug('- ' * 40)
-
-            if _remote_exists(repo, 'origin'):
-                Logger.debug('  pushing origin {}'.format(repo))
-                repo.git.push('origin', all=True, with_exceptions=True)
-
-        Logger.debug('-' * 40 + '>' * 40)
+            mark_upstream_push_needed(current_app.config['RUNNING_STATE_DIR'])
 
         return response
 
@@ -518,14 +492,6 @@ def synched_checkout_required(route_function):
     '''
     @wraps(route_function)
     def decorated_function(*args, **kwargs):
-        Logger.debug('<' * 40 + '-' * 40)
-
-        repo = Repo(current_app.config['REPO_PATH'])
-
-        if _remote_exists(repo, 'origin'):
-            Logger.debug('  fetching origin {}'.format(repo))
-            repo.git.fetch('origin', with_exceptions=True)
-
         checkout = get_repo(flask_app=current_app)
         # get the branch name from request.form if it's not in kwargs
         branch_name_raw = kwargs['branch_name'] if 'branch_name' in kwargs else None
@@ -545,19 +511,11 @@ def synched_checkout_required(route_function):
         branch.checkout()
 
         Logger.debug('  checked out to {}'.format(branch))
-        Logger.debug('- ' * 40)
-
         response = route_function(*args, **kwargs)
 
-        # Push to origin only if the request method indicates a change.
+        # Push upstream only if the request method indicates a change.
         if request.method in ('PUT', 'POST', 'DELETE'):
-            Logger.debug('- ' * 40)
-
-            if _remote_exists(repo, 'origin'):
-                Logger.debug('  pushing origin {}'.format(repo))
-                repo.git.push('origin', all=True, with_exceptions=True)
-
-        Logger.debug('-' * 40 + '>' * 40)
+            mark_upstream_push_needed(current_app.config['RUNNING_STATE_DIR'])
 
         return response
 

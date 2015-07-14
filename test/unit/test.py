@@ -2252,6 +2252,18 @@ class TestProcess (TestCase):
             task_path, soup8 = client.leave_feedback(url=task_path, soup=soup7, feedback_str='It is super-great.')
             approved_path, soup9 = client.approve_activity(url=task_path, soup=soup8)
             published_path, soup10 = client.publish_activity(url=approved_path, soup=soup9)
+            
+            #
+            # Check with upstream repository.
+            #
+            origin_commit = self.origin.refs.master.commit.hexsha
+            upstream_commit = self.upstream.refs.master.commit.hexsha
+            self.assertNotEqual(origin_commit, upstream_commit, 'Origin and upstream should not match before explicit synch')
+            
+            running_state_dir = self.app.config['RUNNING_STATE_DIR']
+            repo_functions.push_upstream_if_needed(self.origin, running_state_dir)
+            upstream_commit = self.upstream.refs.master.commit.hexsha
+            self.assertEqual(origin_commit, upstream_commit, 'Origin and upstream should match after explicit synch')
 
             #
             # Switch back and try to make another edit, but watch it fail.
