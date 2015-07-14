@@ -746,7 +746,8 @@ def push_upstream_if_needed(repo, running_state_dir):
 
     if exists(needs_push_file):
         with google_api_functions.WriteLocked(needs_push_file) as file:
-            if _remote_exists(repo, 'origin'):
-                logging.info('  pushing origin {}'.format(repo))
-                repo.git.push('origin', all=True, with_exceptions=True)
             remove(file.name)
+
+        if _remote_exists(repo, 'origin'):
+            logging.info('  pushing origin {}'.format(repo))
+            repo.git.push('origin', all=True, with_exceptions=True)
