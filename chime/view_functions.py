@@ -659,8 +659,8 @@ def summarize_activity_history(repo=None, history=None, branch_name=u''):
             summary_sentence_parts = []
             display_type_tally = Counter(display_types_encountered)
             display_lookup = (
-                (display_type_tally['Article'], u'article', u'articles'),
-                (display_type_tally['Category'], u'category', u'categories')
+                (display_type_tally[ARTICLE_LAYOUT.title()], unicode(ARTICLE_LAYOUT), unicode(file_type_plural(ARTICLE_LAYOUT))),
+                (display_type_tally[CATEGORY_LAYOUT.title()], unicode(CATEGORY_LAYOUT), unicode(file_type_plural(CATEGORY_LAYOUT)))
             )
             for tally, singular, plural in display_lookup:
                 if tally:
@@ -939,7 +939,7 @@ def render_edit_view(repo, branch_name, path, file):
 def add_article_or_category(repo, dir_path, request_path, create_what):
     ''' Add an article or category
     '''
-    if create_what not in ('article', 'category'):
+    if create_what not in (ARTICLE_LAYOUT, CATEGORY_LAYOUT):
         raise ValueError(u'Can\'t create {} in {}.'.format(create_what, join(dir_path, request_path)))
 
     request_path = request_path.rstrip('/')
@@ -966,10 +966,10 @@ def add_article_or_category(repo, dir_path, request_path, create_what):
     name = u'{}/index.{}'.format(display_name, CONTENT_FILE_EXTENSION)
     file_path = repo.canonicalize_path(dir_path, name)
 
-    if create_what == 'article':
+    if create_what == ARTICLE_LAYOUT:
         redirect_path = file_path
         create_front = dict(title=u'', description=u'', order=0, layout=ARTICLE_LAYOUT)
-    elif create_what == 'category':
+    elif create_what == CATEGORY_LAYOUT:
         redirect_path = strip_index_file(file_path)
         create_front = dict(title=u'', description=u'', order=0, layout=CATEGORY_LAYOUT)
 
