@@ -16,7 +16,7 @@ from . import chime as app
 from . import repo_functions, edit_functions
 from . import publish
 from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
-from .view_functions import branch_name2path, branch_var2name, get_repo, login_required, browserid_hostname_required, synch_required, synched_checkout_required, should_redirect, make_redirect, get_auth_data_file, is_allowed_email, common_template_args, log_application_errors, is_article_dir, is_category_dir, make_activity_history, publish_or_destroy_activity, render_edit_view, render_modify_dir, render_list_dir, add_article_or_category, strip_index_file, delete_page, update_activity_review_status, save_page, CONTENT_FILE_EXTENSION
+from .view_functions import branch_name2path, branch_var2name, get_repo, login_required, browserid_hostname_required, synch_required, synched_checkout_required, should_redirect, make_redirect, get_auth_data_file, is_allowed_email, common_template_args, log_application_errors, is_article_dir, is_category_dir, make_activity_history, summarize_activity_history, publish_or_destroy_activity, render_edit_view, render_modify_dir, render_list_dir, add_article_or_category, strip_index_file, delete_page, update_activity_review_status, save_page, CONTENT_FILE_EXTENSION
 
 from .google_api_functions import read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens, authorize_google, get_google_personal_info, get_google_analytics_properties
 
@@ -505,7 +505,8 @@ def show_activity_overview(branch_name):
     if ga_config.get('access_token'):
         app_authorized = True
 
-    history = make_activity_history(repo)
+    history = make_activity_history(repo=repo)
+    history_summary = summarize_activity_history(history=history, branch_name=branch_name)
 
     # get the current review state and authorized status
     review_state, review_authorized = repo_functions.get_review_state_and_authorized(
@@ -525,8 +526,9 @@ def show_activity_overview(branch_name):
     activity.update(date_created=date_created, date_updated=date_updated,
                     edit_path=u'/tree/{}/edit/'.format(safe_branch),
                     overview_path=u'/tree/{}/'.format(safe_branch), safe_branch=safe_branch,
-                    branch=safe_branch, history=history, review_state=review_state,
-                    review_authorized=review_authorized, last_edited_email=last_edited_email)
+                    branch=safe_branch, history=history, history_summary=history_summary,
+                    review_state=review_state, review_authorized=review_authorized,
+                    last_edited_email=last_edited_email)
 
     kwargs.update(activity=activity, app_authorized=app_authorized, languages=languages)
 

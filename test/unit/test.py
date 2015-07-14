@@ -1285,7 +1285,7 @@ class TestRepo (TestCase):
         working_branch.checkout()
 
         # get and check the history
-        activity_history = view_functions.make_activity_history(new_clone)
+        activity_history = view_functions.make_activity_history(repo=new_clone)
         self.assertEqual(len(activity_history), 10)
 
         # check the creation of the activity
@@ -3244,7 +3244,7 @@ class TestApp (TestCase):
 
             # get and check the history
             repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email='erica@example.com')
-            activity_history = view_functions.make_activity_history(repo)
+            activity_history = view_functions.make_activity_history(repo=repo)
             delete_history = json.loads(activity_history[0]['commit_body'])
             for item in delete_history:
                 self.assertEqual(item['action'], u'delete')

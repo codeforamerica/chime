@@ -55,8 +55,9 @@
             </li>
         </ul>
 
-<!--         <div class="activity-summary row">
-            <a href="#" class="activity-summary__toggle">3 articles and categories have been changed (click to review)</a>
+        {% if activity.history_summary.changes | length > 0 %}
+        <div class="activity-summary row">
+            <a href="#" class="activity-summary__toggle">{{ activity.history_summary.summary }} (click to review)</a>
             <table class="activity-summary__table">
                 <thead>
                     <tr>
@@ -66,24 +67,21 @@
                     </tr>
                 </thead>
                 <tbody>
+                    {% for change in activity.history_summary.changes %}
                     <tr>
-                        <td class="activity-summary__name">Snowstorm Operations</td>
-                        <td class="activity-summary__filetype">Article</td>
-                        <td class="activity-summary__changes">Created, Edited</td>
+                        {% if change.edit_path %}
+                        <td class="activity-summary__name"><a href="{{ change.edit_path }}">{{ change.title }}</a></td>
+                        {% else %}
+                        <td class="activity-summary__name">{{ change.title }}</td>
+                        {% endif %}
+                        <td class="activity-summary__filetype">{{ change.display_type }}</td>
+                        <td class="activity-summary__changes">{{ change.actions }}</td>
                     </tr>
-                    <tr>
-                        <td class="activity-summary__name">Public Safety</td>
-                        <td class="activity-summary__filetype">Category</td>
-                        <td class="activity-summary__changes">Description Edited</td>
-                    </tr>
-                    <tr>
-                        <td class="activity-summary__name">Snowstorm Operations</td>
-                        <td class="activity-summary__filetype">Article</td>
-                        <td class="activity-summary__changes">Created, Edited</td>
-                    </tr>
+                    {% endfor %}
                 </tbody>
             </table>
-        </div> -->
+        </div>
+        {% endif %}
 
         <div class="activity-log row">
 
