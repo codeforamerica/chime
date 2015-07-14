@@ -475,24 +475,11 @@ def synch_required(route_function):
     '''
     @wraps(route_function)
     def decorated_function(*args, **kwargs):
-        Logger.debug('<' * 40 + '-' * 40)
-
-        repo = Repo(current_app.config['REPO_PATH'])
-
-        if _remote_exists(repo, 'origin'):
-            Logger.debug('  fetching origin {}'.format(repo))
-            repo.git.fetch('origin', with_exceptions=True)
-
-        Logger.debug('- ' * 40)
-
         response = route_function(*args, **kwargs)
 
-        # Push to origin only if the request method indicates a change.
+        # Push upstream only if the request method indicates a change.
         if request.method in ('PUT', 'POST', 'DELETE'):
-            Logger.debug('- ' * 40)
             mark_upstream_push_needed(current_app.config['RUNNING_STATE_DIR'])
-
-        Logger.debug('-' * 40 + '>' * 40)
 
         return response
 
@@ -505,14 +492,6 @@ def synched_checkout_required(route_function):
     '''
     @wraps(route_function)
     def decorated_function(*args, **kwargs):
-        Logger.debug('<' * 40 + '-' * 40)
-
-        repo = Repo(current_app.config['REPO_PATH'])
-
-        if _remote_exists(repo, 'origin'):
-            Logger.debug('  fetching origin {}'.format(repo))
-            repo.git.fetch('origin', with_exceptions=True)
-
         checkout = get_repo(flask_app=current_app)
         # get the branch name from request.form if it's not in kwargs
         branch_name_raw = kwargs['branch_name'] if 'branch_name' in kwargs else None
@@ -532,16 +511,11 @@ def synched_checkout_required(route_function):
         branch.checkout()
 
         Logger.debug('  checked out to {}'.format(branch))
-        Logger.debug('- ' * 40)
-
         response = route_function(*args, **kwargs)
 
-        # Push to origin only if the request method indicates a change.
+        # Push upstream only if the request method indicates a change.
         if request.method in ('PUT', 'POST', 'DELETE'):
-            Logger.debug('- ' * 40)
             mark_upstream_push_needed(current_app.config['RUNNING_STATE_DIR'])
-
-        Logger.debug('-' * 40 + '>' * 40)
 
         return response
 
