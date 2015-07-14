@@ -36,7 +36,7 @@ def page_not_found(error):
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(common_error_template_args(current_app.config))
     # if we can extract a branch name from the URL, construct an edit link for it
-    repo = get_repo(current_app)
+    repo = get_repo(flask_app=current_app)
     path = urlparse(request.url).path
     for branch_name_candidate in path.split('/'):
         if branch_name_candidate in repo.branches:

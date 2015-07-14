@@ -119,8 +119,6 @@ def sign_in():
     Logger.info("Logged in as '{}'".format(session['email']))
     return 'OK'
 
-
-
 def _verify_persona_assertion(assertion):
     posted = post('https://verifier.login.persona.org/verify',
                   data=dict(assertion=assertion,
@@ -246,7 +244,7 @@ def authorization_failed():
 @login_required
 @synch_required
 def start_branch():
-    repo = get_repo(current_app)
+    repo = get_repo(flask_app=current_app)
     task_description = request.form.get('task_description')
     task_beneficiary = request.form.get('task_beneficiary')
     master_name = current_app.config['default_branch']
@@ -280,7 +278,7 @@ def update_activity():
 def get_checkout(ref):
     '''
     '''
-    r = get_repo(current_app)
+    r = get_repo(flask_app=current_app)
 
     bytes = publish.retrieve_commit_checkout(current_app.config['RUNNING_STATE_DIR'], r, ref)
 
@@ -292,7 +290,7 @@ def get_checkout(ref):
 @login_required
 @synched_checkout_required
 def branch_view(branch_name, path=None):
-    r = get_repo(current_app)
+    r = get_repo(flask_app=current_app)
 
     build_jekyll_site(r.working_dir)
 
@@ -317,7 +315,7 @@ def branch_view(branch_name, path=None):
 @login_required
 @synched_checkout_required
 def branch_edit(branch_name, path=None):
-    repo = get_repo(current_app)
+    repo = get_repo(flask_app=current_app)
     branch_name = branch_var2name(branch_name)
 
     full_path = join(repo.working_dir, path or '.').rstrip('/')
@@ -344,7 +342,7 @@ def branch_edit(branch_name, path=None):
 @login_required
 @synched_checkout_required
 def branch_show_category_form(branch_name, path=None):
-    repo = get_repo(current_app)
+    repo = get_repo(flask_app=current_app)
     branch_name = branch_var2name(branch_name)
     full_path = join(repo.working_dir, path or '.').rstrip('/')
 
@@ -372,7 +370,7 @@ def branch_show_category_form(branch_name, path=None):
 def branch_modify_category(branch_name, path=u''):
     ''' Save edits to a category's title and description or delete a category and its contents.
     '''
-    repo = get_repo(current_app)
+    repo = get_repo(flask_app=current_app)
     # get a path to the category's index file
     path = path.rstrip('/')
     index_slug = path
@@ -445,7 +443,7 @@ def branch_modify_category(branch_name, path=u''):
 @login_required
 @synched_checkout_required
 def branch_edit_file(branch_name, path=None):
-    repo = get_repo(current_app)
+    repo = get_repo(flask_app=current_app)
     commit = repo.commit()
 
     path = path or u''
@@ -489,7 +487,7 @@ def branch_edit_file(branch_name, path=None):
 @synched_checkout_required
 def show_activity_overview(branch_name):
     branch_name = branch_var2name(branch_name)
-    repo = get_repo(current_app)
+    repo = get_repo(flask_app=current_app)
     safe_branch = branch_name2path(branch_name)
 
     # contains 'author_email', 'task_description', 'task_beneficiary'
@@ -525,9 +523,9 @@ def show_activity_overview(branch_name):
     date_updated = repo.git.log('--format=%ad', '--date=relative').split('\n')[0]
 
     activity.update(date_created=date_created, date_updated=date_updated,
-                    edit_path=u'/tree/{}/edit/'.format(branch_name2path(branch_name)),
-                    overview_path=u'/tree/{}/'.format(branch_name2path(branch_name)),
-                    safe_branch=safe_branch, history=history, review_state=review_state,
+                    edit_path=u'/tree/{}/edit/'.format(safe_branch),
+                    overview_path=u'/tree/{}/'.format(safe_branch), safe_branch=safe_branch,
+                    branch=safe_branch, history=history, review_state=review_state,
                     review_authorized=review_authorized, last_edited_email=last_edited_email)
 
     kwargs.update(activity=activity, app_authorized=app_authorized, languages=languages)
@@ -561,7 +559,7 @@ def edit_activity_overview(branch_name):
 def branch_history(branch_name, path=None):
     branch_name = branch_var2name(branch_name)
 
-    repo = get_repo(current_app)
+    repo = get_repo(flask_app=current_app)
 
     safe_branch = branch_name2path(branch_name)
 
@@ -610,7 +608,7 @@ def branch_history(branch_name, path=None):
 def branch_save(branch_name, path):
     ''' Handle a submission from the article-edit form.
     '''
-    repo = get_repo(current_app)
+    repo = get_repo(flask_app=current_app)
     safe_branch = branch_name2path(branch_var2name(branch_name))
     new_path, did_save = save_page(repo, current_app.config['default_branch'], branch_name, path, request.form)
     return redirect('/tree/{}/edit/{}'.format(safe_branch, new_path), code=303)

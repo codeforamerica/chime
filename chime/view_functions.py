@@ -13,7 +13,7 @@ from io import BytesIO
 from slugify import slugify
 import csv
 import re
-import sys
+import json
 
 from git import Repo
 from dateutil import parser, tz
@@ -22,7 +22,7 @@ from flask import request, session, current_app, redirect, flash, render_templat
 from requests import get
 
 from . import publish
-from .edit_functions import create_new_page, delete_file, list_contained_files, update_page
+from .edit_functions import create_new_page, delete_file, update_page
 from .repo_functions import get_existing_branch, ignore_task_metadata_on_merge, get_message_classification, ChimeRepo, ACTIVITY_CREATED_MESSAGE, get_task_metadata_for_branch, complete_branch, abandon_branch, clobber_default_branch, MergeConflict, get_review_state_and_authorized, save_working_file, update_review_state, provide_feedback, move_existing_file, TASK_METADATA_FILENAME, REVIEW_STATE_EDITED, REVIEW_STATE_FEEDBACK, REVIEW_STATE_ENDORSED, REVIEW_STATE_PUBLISHED
 from .jekyll_functions import load_jekyll_doc, load_languages
 from .google_api_functions import read_ga_config, fetch_google_analytics_for_page
@@ -70,17 +70,26 @@ def dos2unix(string):
     '''
     return string.replace('\r\n', '\n').replace('\r', '\n') if string else string
 
-def get_repo(flask_app):
+def get_repo(flask_app=None, repo_path=None, work_path=None, email=None):
     ''' Gets repository for the current user, cloned from the origin.
 
         Uses the first-ever commit in the origin repository to name
         the cloned directory, to reduce history conflicts when tweaking
         the repository during development.
     '''
-    source_repo = ChimeRepo(flask_app.config['REPO_PATH'])
+    # If a flask_app is passed use it, otherwise use the passed params.
+    if flask_app:
+        repo_path = flask_app.config['REPO_PATH']
+        work_path = flask_app.config['WORK_PATH']
+
+    # if no email was passed, get it from the session
+    if not email:
+        email = session.get('email', 'nobody')
+
+    source_repo = ChimeRepo(repo_path)
     first_commit = list(source_repo.iter_commits())[-1].hexsha
-    dir_name = 'repo-{}-{}'.format(first_commit[:8], slugify(session.get('email', 'nobody')))
-    user_dir = realpath(join(flask_app.config['WORK_PATH'], quote(dir_name)))
+    dir_name = 'repo-{}-{}'.format(first_commit[:8], slugify(email))
+    user_dir = realpath(join(work_path, quote(dir_name)))
 
     if isdir(user_dir):
         user_repo = ChimeRepo(user_dir)
@@ -226,7 +235,7 @@ def describe_directory_contents(clone, file_path):
             display_type, title = index_path_display_type_and_title(check_path)
             short_path = re.sub('{}/'.format(clone.working_dir), '', check_path)
             is_root = file_path == short_path or file_path == split(short_path)[0]
-            described_files.append({"display_type": display_type, "title": title, "short_path": short_path, "is_root": is_root})
+            described_files.append({"display_type": display_type, "title": title, "file_path": short_path, "is_root": is_root})
 
     return described_files
 
@@ -517,7 +526,7 @@ def synched_checkout_required(route_function):
             Logger.debug('  fetching origin {}'.format(repo))
             repo.git.fetch('origin', with_exceptions=True)
 
-        checkout = get_repo(current_app)
+        checkout = get_repo(flask_app=current_app)
         # get the branch name from request.form if it's not in kwargs
         branch_name_raw = kwargs['branch_name'] if 'branch_name' in kwargs else None
         if not branch_name_raw:
@@ -567,16 +576,18 @@ def make_delete_display_commit_message(repo, request_path):
     message_details = {}
     root_file = {}
     for file_details in targeted_files:
-        display_type = file_details['display_type']
-        if display_type not in message_details:
-            message_details[display_type] = {}
-            message_details[display_type]['noun'] = display_type
-            message_details[display_type]['files'] = []
-        else:
-            message_details[display_type]['noun'] = file_type_plural(display_type)
-        message_details[display_type]['files'].append(file_details)
+        # don't include the root file in the count
         if file_details['is_root']:
             root_file = file_details
+        else:
+            display_type = file_details['display_type']
+            if display_type not in message_details:
+                message_details[display_type] = {}
+                message_details[display_type]['noun'] = display_type
+                message_details[display_type]['files'] = []
+            else:
+                message_details[display_type]['noun'] = file_type_plural(display_type)
+            message_details[display_type]['files'].append(file_details)
     commit_message = u'The "{}" {}'.format(root_file['title'], root_file['display_type'])
     if len(targeted_files) > 1:
         message_counts = []
@@ -586,6 +597,14 @@ def make_delete_display_commit_message(repo, request_path):
         commit_message = commit_message + u' (containing {})'.format(u', '.join(message_counts[:-2] + [u' and '.join(message_counts[-2:])]))
 
     commit_message = commit_message + u' was deleted'
+
+    # alter targeted_files and dump it to the message body as json
+    altered_files = []
+    for file_description in targeted_files:
+        del file_description['is_root']
+        file_description['action'] = u'delete'
+        altered_files.append(file_description)
+    commit_message = commit_message + u'\n\n' + json.dumps(altered_files, ensure_ascii=False)
 
     return commit_message
 
@@ -721,7 +740,7 @@ def make_directory_columns(clone, branch_name, repo_path=None, showallfiles=Fals
 def publish_or_destroy_activity(branch_name, action):
     ''' Publish, abandon, or clobber the activity defined by the passed branch name.
     '''
-    repo = get_repo(current_app)
+    repo = get_repo(flask_app=current_app)
     master_name = current_app.config['default_branch']
 
     # contains 'author_email', 'task_description', 'task_beneficiary'
@@ -877,10 +896,10 @@ def render_edit_view(repo, branch_name, path, file):
 def add_article_or_category(repo, dir_path, request_path, create_what):
     ''' Add an article or category
     '''
+    if create_what not in ('article', 'category'):
+        raise ValueError(u'Can\'t create {} in {}.'.format(create_what, join(dir_path, request_path)))
+
     request_path = request_path.rstrip('/')
-    article_front = dict(title=u'', description=u'', order=0, layout=ARTICLE_LAYOUT)
-    cat_front = dict(title=u'', description=u'', order=0, layout=CATEGORY_LAYOUT)
-    body = u''
 
     # create and commit intermediate categories recursively
     if u'/' in request_path:
@@ -889,38 +908,36 @@ def add_article_or_category(repo, dir_path, request_path, create_what):
         for i in range(len(cat_paths)):
             cat_path = cat_paths[i]
             dir_cat_path = join(dir_path, sep.join(cat_paths[:i]))
-            message, file_path, _, do_save = add_article_or_category(repo, dir_cat_path, cat_path, CATEGORY_LAYOUT)
+            commit_message, file_path, _, do_save = add_article_or_category(repo, dir_cat_path, cat_path, CATEGORY_LAYOUT)
             if do_save:
                 Logger.debug('save')
-                save_working_file(repo, file_path, message, repo.commit().hexsha, current_app.config['default_branch'])
+                save_working_file(repo, file_path, commit_message, repo.commit().hexsha, current_app.config['default_branch'])
             else:
-                flash_messages.append(message)
+                flash_messages.append(commit_message)
 
         if len(flash_messages):
             flash(', '.join(flash_messages), u'notice')
 
-    name = u'{}/index.{}'.format(splitext(request_path)[0], CONTENT_FILE_EXTENSION)
+    # create the article or category
+    display_name = splitext(request_path)[0]
+    name = u'{}/index.{}'.format(display_name, CONTENT_FILE_EXTENSION)
+    file_path = repo.canonicalize_path(dir_path, name)
 
     if create_what == 'article':
-        file_path = repo.canonicalize_path(dir_path, name)
-        if repo.exists(file_path):
-            return 'Article "{}" already exists'.format(request_path), file_path, file_path, False
-        else:
-            file_path = create_new_page(repo, dir_path, name, article_front, body)
-            message = u'The "{}" article was created\n\ncreated new file {}'.format(name.split('/')[-2], file_path)
-            redirect_path = file_path
-            return message, file_path, redirect_path, True
+        redirect_path = file_path
+        create_front = dict(title=u'', description=u'', order=0, layout=ARTICLE_LAYOUT)
     elif create_what == 'category':
-        file_path = repo.canonicalize_path(dir_path, name)
-        if repo.exists(file_path):
-            return 'Category "{}" already exists'.format(request_path), file_path, strip_index_file(file_path), False
-        else:
-            file_path = create_new_page(repo, dir_path, name, cat_front, body)
-            message = u'The "{}" category was created\n\ncreated new file {}'.format(name.split('/')[-2], file_path)
-            redirect_path = strip_index_file(file_path)
-            return message, file_path, redirect_path, True
-    else:
-        raise ValueError(u'Can\'t create {} in {}.'.format(create_what, join(dir_path, request_path)))
+        redirect_path = strip_index_file(file_path)
+        create_front = dict(title=u'', description=u'', order=0, layout=CATEGORY_LAYOUT)
+
+    if repo.exists(file_path):
+        return '{} "{}" already exists'.format(create_what.title(), request_path), file_path, redirect_path, False
+
+    file_path = create_new_page(clone=repo, dir_path=dir_path, request_path=name, front=create_front, body=u'')
+    action_descriptions = [{'action': u'create', 'title': display_name, 'display_type': create_what, 'file_path': file_path}]
+    commit_message = u'The "{}" {} was created\n\n{}'.format(display_name, create_what, json.dumps(action_descriptions, ensure_ascii=False))
+
+    return commit_message, file_path, redirect_path, True
 
 def strip_index_file(file_path):
     return re.sub(r'index.{}$'.format(CONTENT_FILE_EXTENSION), '', file_path)
@@ -938,12 +955,7 @@ def delete_page(repo, browse_path, target_path):
     commit_message = make_delete_display_commit_message(repo, target_path)
 
     # delete the file(s)
-    candidate_file_paths = list_contained_files(repo, target_path)
     deleted_file_paths, do_save = delete_file(repo, target_path)
-
-    # add details to the commit message
-    file_files = u'files' if len(candidate_file_paths) > 1 else u'file'
-    commit_message = commit_message + u'\n\ndeleted {} "{}"'.format(file_files, u'", "'.join(candidate_file_paths))
 
     # if we're in the path that's been deleted, redirect to the first still-existing directory in the path
     path_dirs = browse_path.split('/')
@@ -953,12 +965,15 @@ def delete_page(repo, browse_path, target_path):
     else:
         redirect_path = browse_path
 
+    if redirect_path and not redirect_path.endswith('/'):
+        redirect_path = redirect_path + '/'
+
     return redirect_path, do_save, commit_message
 
 def update_activity_review_status(branch_name, comment_text, action_list):
     ''' Comment and/or update the review state.
     '''
-    repo = get_repo(current_app)
+    repo = get_repo(flask_app=current_app)
     # which submit button was pressed?
     action = u''
     possible_actions = ['comment', 'request_feedback', 'endorse_edits', 'merge', 'abandon', 'clobber']
@@ -1012,7 +1027,7 @@ def update_activity_review_status(branch_name, comment_text, action_list):
 
     return action, action_authorized
 
-def save_page(repo, default_branch_name, working_branch_name, path, new_values):
+def save_page(repo, default_branch_name, working_branch_name, file_path, new_values):
     ''' Save the page with the passed values
     '''
     working_branch_name = branch_var2name(working_branch_name)
@@ -1021,7 +1036,7 @@ def save_page(repo, default_branch_name, working_branch_name, path, new_values):
 
     if not existing_branch:
         flash(u'There is no {} branch!'.format(working_branch_name), u'warning')
-        return path, False
+        return file_path, False
 
     commit = existing_branch.commit
 
@@ -1053,18 +1068,21 @@ def save_page(repo, default_branch_name, working_branch_name, path, new_values):
             front['body-' + iso] = dos2unix(new_values.get(iso + '-body', ''))
 
     body = dos2unix(new_values.get('en-body', ''))
-    update_page(repo, path, front, body)
+    update_page(repo, file_path, front, body)
 
     #
     # Try to merge from the master to the current branch.
     #
     try:
-        message = u'The "{}" {} was edited\n\nsaved file "{}"'.format(new_values.get('en-title'), new_values.get('layout'), path)
-        c2 = save_working_file(repo, path, message, commit.hexsha, default_branch_name)
+        display_name = new_values.get('en-title')
+        display_type = new_values.get('layout')
+        action_descriptions = [{'action': u'edit', 'title': display_name, 'display_type': display_type, 'file_path': file_path}]
+        commit_message = u'The "{}" {} was edited\n\n{}'.format(display_name, display_type, json.dumps(action_descriptions, ensure_ascii=False))
+        c2 = save_working_file(repo, file_path, commit_message, commit.hexsha, default_branch_name)
         # they may've renamed the page by editing the URL slug
-        original_slug = path
-        if re.search(r'\/index.{}$'.format(CONTENT_FILE_EXTENSION), path):
-            original_slug = re.sub(ur'index.{}$'.format(CONTENT_FILE_EXTENSION), u'', path)
+        original_slug = file_path
+        if re.search(r'\/index.{}$'.format(CONTENT_FILE_EXTENSION), file_path):
+            original_slug = re.sub(ur'index.{}$'.format(CONTENT_FILE_EXTENSION), u'', file_path)
 
         # do some simple input cleaning
         new_slug = new_values.get('url-slug')
@@ -1080,25 +1098,25 @@ def save_page(repo, default_branch_name, working_branch_name, path, new_values):
                     # let unexpected errors raise normally
                     if error_type:
                         flash(error_message, error_type)
-                        return path, True
+                        return file_path, True
                     else:
                         raise
 
-                path = new_slug
+                file_path = new_slug
                 # append the index file if it's an editable directory
                 if is_article_dir(join(repo.working_dir, new_slug)):
-                    path = join(new_slug, u'index.{}'.format(CONTENT_FILE_EXTENSION))
+                    file_path = join(new_slug, u'index.{}'.format(CONTENT_FILE_EXTENSION))
 
     except MergeConflict as conflict:
         repo.git.reset(commit.hexsha, hard=True)
 
         Logger.debug('1 {}'.format(conflict.remote_commit))
-        Logger.debug('  {}'.format(repr(conflict.remote_commit.tree[path].data_stream.read())))
+        Logger.debug('  {}'.format(repr(conflict.remote_commit.tree[file_path].data_stream.read())))
         Logger.debug('2 {}'.format(conflict.local_commit))
-        Logger.debug('  {}'.format(repr(conflict.local_commit.tree[path].data_stream.read())))
+        Logger.debug('  {}'.format(repr(conflict.local_commit.tree[file_path].data_stream.read())))
         raise conflict
 
-    return path, True
+    return file_path, True
 
 def should_redirect():
     ''' Return True if the current flask.request should redirect.
