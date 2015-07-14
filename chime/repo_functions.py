@@ -734,7 +734,7 @@ def mark_upstream_push_needed(running_state_dir):
     ''' Add needs-push file for use by push_upstream_if_needed().
     '''
     needs_push_file = join(running_state_dir, NEEDS_PUSH_FILE)
-    
+
     with google_api_functions.WriteLocked(needs_push_file) as file:
         file.truncate()
         file.write('Yes')

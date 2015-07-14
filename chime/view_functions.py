@@ -15,7 +15,6 @@ import csv
 import re
 import json
 
-from git import Repo
 from dateutil import parser, tz
 from dateutil.relativedelta import relativedelta
 from flask import request, session, current_app, redirect, flash, render_template
@@ -31,8 +30,8 @@ from .repo_functions import (
     clobber_default_branch, MergeConflict, get_review_state_and_authorized, save_working_file,
     update_review_state, provide_feedback, move_existing_file, TASK_METADATA_FILENAME,
     REVIEW_STATE_EDITED, REVIEW_STATE_FEEDBACK, REVIEW_STATE_ENDORSED, REVIEW_STATE_PUBLISHED,
-    NEEDS_PUSH_FILE, mark_upstream_push_needed, _remote_exists
-    )
+    mark_upstream_push_needed
+)
 
 from .href import needs_redirect, get_redirect
 

@@ -186,10 +186,17 @@ mike@teczno.com,Code for America,Mike Migurski
 
             return response(404, '')
 
-        good_file = lambda: view_functions.get_auth_data_file('http://example.com/good-file.csv')
-        org_file = lambda: view_functions.get_auth_data_file('http://example.com/org-file.csv')
-        addr_file = lambda: view_functions.get_auth_data_file('http://example.com/addr-file.csv')
-        no_file = lambda: view_functions.get_auth_data_file('http://example.com/no-file.csv')
+        def good_file():
+            return view_functions.get_auth_data_file('http://example.com/good-file.csv')
+
+        def org_file():
+            return view_functions.get_auth_data_file('http://example.com/org-file.csv')
+
+        def addr_file():
+            return view_functions.get_auth_data_file('http://example.com/addr-file.csv')
+
+        def no_file():
+            return view_functions.get_auth_data_file('http://example.com/no-file.csv')
 
         with HTTMock(mock_remote_authentication_file):
             self.assertTrue(view_functions.is_allowed_email(good_file(), 'mike@codeforamerica.org'))
@@ -2155,7 +2162,7 @@ class TestProcess (TestCase):
 
     def tearDown(self):
         rmtree(self.work_path)
-    
+
     def auth_csv_example_allowed(self, url, request):
         if url.geturl() == 'http://example.com/auth.csv':
             return response(200, '''Email domain,Organization\nexample.com,Example Org''')
@@ -2182,10 +2189,10 @@ class TestProcess (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             client = ChimeTestClient(self.test_client, self)
             client.sign_in('erica@example.com')
-            
+
             # Start a new task, "Diving for Dollars".
             _, soup1 = client.start_task('Diving', 'Dollars')
-            
+
             # Look for an "other" link that we know about - is it a category?
             categories_path, soup2 = client.follow_link(soup1, '/tree/9313f09/edit/other')
 
@@ -2193,14 +2200,14 @@ class TestProcess (TestCase):
             subcategories_path, soup3 = client.add_category(categories_path, soup2, 'Ninjas')
             articles_path, soup4 = client.add_subcategory(subcategories_path, soup3, 'Flipping Out')
             article_path, soup5 = client.add_article(articles_path, soup4, 'So Awesome')
-            
+
             # Edit the new article.
             client.edit_article(article_path, soup5, 'So, So Awesome', 'It was the best of times.')
-            
+
             # Ask for feedback
             task_path, soup6 = client.follow_link(soup5, '/tree/9313f09')
             client.request_feedback(task_path, soup6, 'Is this okay?')
-            
+
             #
             # Switch users and comment on the activity.
             #
@@ -2213,7 +2220,7 @@ class TestProcess (TestCase):
             #
             client.sign_in('erica@example.com')
             soup8 = client.open_link(task_path)
-            
+
             words = soup8.find(text='It is super-great.')
             comment = words.find_parent('div').find_parent('div')
             author = comment.find(text='frances@example.com')
@@ -2252,14 +2259,14 @@ class TestProcess (TestCase):
             task_path, soup8 = client.leave_feedback(url=task_path, soup=soup7, feedback_str='It is super-great.')
             approved_path, soup9 = client.approve_activity(url=task_path, soup=soup8)
             published_path, soup10 = client.publish_activity(url=approved_path, soup=soup9)
-            
+
             #
             # Check with upstream repository.
             #
             origin_commit = self.origin.refs.master.commit.hexsha
             upstream_commit = self.upstream.refs.master.commit.hexsha
             self.assertNotEqual(origin_commit, upstream_commit, 'Origin and upstream should not match before explicit synch')
-            
+
             running_state_dir = self.app.config['RUNNING_STATE_DIR']
             repo_functions.push_upstream_if_needed(self.origin, running_state_dir)
             upstream_commit = self.upstream.refs.master.commit.hexsha
