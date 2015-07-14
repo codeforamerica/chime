@@ -3806,7 +3806,7 @@ class TestApp (TestCase):
             self.assertTrue(dir_columns[3]['files'][0]['name'] == slug_are)
 
     # in TestApp
-    def test_activity_history_page_is_accurate(self):
+    def test_activity_overview_page_is_accurate(self):
         ''' The activity history page accurately displays the activity history
         '''
         fake_author_email = u'erica@example.com'
