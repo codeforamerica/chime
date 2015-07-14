@@ -601,15 +601,18 @@ def summarize_activity_history(repo=None, history=None, branch_name=u''):
             ]
         }
     '''
+    # an empty summary object
+    summary = dict(summary=u'', changes=[])
+
+    # make sure we've got what we need
     if not history:
         try:
             history = make_activity_history(repo=repo)
         except:
-            raise Exception(u'Unable to summarize activity history')
+            # we weren't give what we need, return an empty summary
+            return summary
 
     ed_lookup = {'create': u'created', 'edit': u'edited', 'delete': u'deleted'}
-
-    summary = dict(summary=u'', changes=[])
     change_lookup = {}
     display_types_encountered = []
     for action in reversed(history):
@@ -619,7 +622,8 @@ def summarize_activity_history(repo=None, history=None, branch_name=u''):
             try:
                 commit_body = json.loads(action['commit_body'])
             except:
-                raise Exception(u'Couldn\'t parse json in commit body')
+                # could't parse json in the commit body, return an empty summary
+                return dict(summary=u'', changes=[])
 
             # step through the changed files
             for file_change in commit_body:
@@ -630,46 +634,42 @@ def summarize_activity_history(repo=None, history=None, branch_name=u''):
                 except:
                     action = file_change['action'].title()
                 file_path = file_change['file_path']
-                edit_path = join(u'/tree/{}/edit/'.format(branch_name), strip_index_file(file_path))
+                # if the last action is delete, we don't want an edit_path to a file that no longer exists
+                edit_path = join(u'/tree/{}/edit/'.format(branch_name), strip_index_file(file_path)) if action != u'Deleted' else u''
                 sort_time = datetime.now()
                 if file_path in change_lookup:
                     change_lookup[file_path]['sort_time'] = sort_time
                     # add the action to the end of the list if it's different from the last action added
                     if not re.search(r'{}$'.format(action), change_lookup[file_path]['actions']):
                         change_lookup[file_path]['actions'] = change_lookup[file_path]['actions'] + u', {}'.format(action)
-                    # if the last action is delete, we don't want an edit_path to a file that no longer exists
-                    if action == u'Deleted':
-                        change_lookup[file_path]['edit_path'] = u''
-                    else:
-                        change_lookup[file_path]['edit_path'] = edit_path
                     # add the other variables, which may've changed
+                    change_lookup[file_path]['edit_path'] = edit_path
                     change_lookup[file_path]['title'] = title
                     change_lookup[file_path]['display_type'] = display_type
                 else:
                     change_lookup[file_path] = dict(title=title, display_type=display_type, actions=action, edit_path=edit_path, sort_time=sort_time)
                     display_types_encountered.append(display_type)
 
-            # flatten and sort the changes
-            changes = [change_lookup[item] for item in change_lookup]
-            changes_count = len(changes)
-            changes.sort(key=lambda k: k['sort_time'], reverse=True)
-            summary['changes'] = changes
+    # flatten and sort the changes
+    changes = [change_lookup[item] for item in change_lookup]
+    if len(changes):
+        changes.sort(key=lambda k: k['sort_time'], reverse=True)
+        summary['changes'] = changes
 
-            # now construct the summary sentence
-            summary_sentence_parts = []
-            display_type_tally = Counter(display_types_encountered)
-            display_lookup = (
-                (display_type_tally[ARTICLE_LAYOUT.title()], unicode(ARTICLE_LAYOUT), unicode(file_type_plural(ARTICLE_LAYOUT))),
-                (display_type_tally[CATEGORY_LAYOUT.title()], unicode(CATEGORY_LAYOUT), unicode(file_type_plural(CATEGORY_LAYOUT)))
-            )
-            for tally, singular, plural in display_lookup:
-                if tally:
-                    summary_sentence_parts.append("{} {}".format(tally, singular if tally == 1 else plural))
-            has_have = u''
-            if changes_count:
-                has_have = u'have' if changes_count > 1 else u'has'
-            summary_sentence = u'{} {} been changed'.format(u', '.join(summary_sentence_parts[:-2] + [u' and '.join(summary_sentence_parts[-2:])]), has_have)
-            summary['summary'] = summary_sentence
+        # now construct the summary sentence
+        summary_sentence_parts = []
+        display_type_tally = Counter(display_types_encountered)
+        display_lookup = (
+            (display_type_tally[ARTICLE_LAYOUT.title()], unicode(ARTICLE_LAYOUT), unicode(file_type_plural(ARTICLE_LAYOUT))),
+            (display_type_tally[CATEGORY_LAYOUT.title()], unicode(CATEGORY_LAYOUT), unicode(file_type_plural(CATEGORY_LAYOUT)))
+        )
+        for tally, singular, plural in display_lookup:
+            if tally:
+                summary_sentence_parts.append("{} {}".format(tally, singular if tally == 1 else plural))
+        has_have = u''
+        has_have = u'have' if len(changes) > 1 else u'has'
+        summary_sentence = u'{} {} been changed'.format(u', '.join(summary_sentence_parts[:-2] + [u' and '.join(summary_sentence_parts[-2:])]), has_have)
+        summary['summary'] = summary_sentence
 
     return summary
 
