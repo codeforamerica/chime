@@ -3872,6 +3872,85 @@ class TestApp (TestCase):
                 self.assertTrue(PATTERN_OVERVIEW_ITEM_CREATED.format(**{"created_name": detail[1], "created_type": detail[2], "author_email": fake_author_email}), response_data)
 
     # in TestApp
+    def test_activity_history_summary_accuracy(self):
+        ''' The summary of an activity's history is displayed as expected.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            client = ChimeTestClient(self.test_client, self)
+            client.sign_in(email='erica@example.com')
+
+            # Start a new task
+            _, enter_soup = client.start_task(description=u'Parasitize with Ichneumonidae', beneficiary=u'Moth Larvae')
+            # Get the branch name
+            branch_name = client.get_branch_name(enter_soup)
+
+            # Load the activity overview page
+            _, overview_soup = client.follow_link(soup=enter_soup, href='/tree/{}'.format(branch_name))
+            # there shouldn't be a summary yet
+            summary_div = overview_soup.find("div", class_="activity-summary")
+            self.assertIsNone(summary_div)
+
+            # Enter the "other" folder
+            base_path, base_soup = client.follow_link(soup=enter_soup, href='/tree/{}/edit/other'.format(branch_name))
+
+            # Create a category, sub-category, article
+            category_name = u'Antennae Segments'
+            subcategory_name = u'Short Ovipositors'
+            article_names = [u'Inject Eggs Directly Into a Host Body', u'A Technique Of Celestial Navigation Called Transverse Orientation']
+            category_path, category_soup = client.add_category(url=base_path, soup=base_soup, category_name=category_name)
+            subcategory_path, subcategory_soup = client.add_subcategory(url=category_path, soup=category_soup, subcategory_name=subcategory_name)
+            article_path, article_soup = client.add_article(url=subcategory_path, soup=subcategory_soup, article_name=article_names[0])
+
+            # edit the article
+            client.edit_article(url=article_path, soup=article_soup, title_str=article_names[0], body_str=u'Inject venom along with the egg')
+            # create another article and delete it
+            client.add_article(url=subcategory_path, soup=subcategory_soup, article_name=article_names[1])
+            subcategory_soup = client.open_link(subcategory_path)
+            client.delete_article(subcategory_soup, subcategory_path, article_names[1])
+
+            # Load the activity overview page
+            _, overview_soup = client.follow_link(soup=article_soup, href='/tree/{}'.format(branch_name))
+            # there is a summary
+            summary_div = overview_soup.find("div", class_="activity-summary")
+            self.assertIsNotNone(summary_div)
+            # it's right about what's changed
+            self.assertIsNotNone(summary_div.find(lambda tag: bool(tag.name == 'a' and '2 articles and 2 categories' in tag.text)))
+            # grab all the table rows
+            check_rows = summary_div.find_all('tr')
+
+            # make sure they match what we did above
+            category_row = check_rows.pop()
+            category_cells = category_row.find_all('td')
+            self.assertIsNotNone(category_cells[0].find('a'))
+            self.assertEqual(category_cells[0].text, category_name)
+            self.assertEqual(category_cells[1].text, u'Category')
+            self.assertEqual(category_cells[2].text, u'Created')
+
+            subcategory_row = check_rows.pop()
+            subcategory_cells = subcategory_row.find_all('td')
+            self.assertIsNotNone(subcategory_cells[0].find('a'))
+            self.assertEqual(subcategory_cells[0].text, subcategory_name)
+            self.assertEqual(subcategory_cells[1].text, u'Category')
+            self.assertEqual(subcategory_cells[2].text, u'Created')
+
+            article_1_row = check_rows.pop()
+            article_1_cells = article_1_row.find_all('td')
+            self.assertIsNotNone(article_1_cells[0].find('a'))
+            self.assertEqual(article_1_cells[0].text, article_names[0])
+            self.assertEqual(article_1_cells[1].text, u'Article')
+            self.assertEqual(article_1_cells[2].text, u'Created, Edited')
+
+            article_2_row = check_rows.pop()
+            article_2_cells = article_2_row.find_all('td')
+            self.assertIsNone(article_2_cells[0].find('a'))
+            self.assertEqual(article_2_cells[0].text, article_names[1])
+            self.assertEqual(article_2_cells[1].text, u'Article')
+            self.assertEqual(article_2_cells[2].text, u'Created, Deleted')
+
+            # only the header row's left
+            self.assertEqual(len(check_rows), 1)
+
+    # in TestApp
     def test_create_page_creates_directory_containing_index(self):
         ''' Creating a new page creates a directory with an editable index file inside.
         '''
