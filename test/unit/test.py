@@ -3118,6 +3118,38 @@ class TestApp (TestCase):
             self.assertTrue(view_functions.is_category_dir(dir_location))
 
     # in TestApp
+    def test_period_in_category_name(self):
+        ''' Putting a period in a category or subcategory name doesn't crop it.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.test_client, self)
+                erica.sign_in(email='erica@example.com')
+
+            # Start a new task
+            erica.start_task(description=u'Be Shot Hundreds Of Feet Into The Air', beneficiary=u'A Geyser Of Highly Pressurized Water')
+            # Get the branch name
+            branch_name = erica.get_branch_name()
+
+            # Enter the "other" folder
+            other_slug = u'other'
+            erica.follow_link(href='/tree/{}/edit/{}'.format(branch_name, other_slug))
+
+            # Create a category that has a period in its name
+            category_name = u'Mt. Splashmore'
+            category_slug = slugify(category_name)
+            erica.add_category(category_name=category_name)
+            # the category is correctly represented on the page
+            self.assertIsNotNone(erica.soup.find(lambda tag: bool(tag.name == 'a' and category_name in tag.text)))
+            self.assertIsNotNone(erica.soup.find(lambda tag: bool(tag.name == 'a' and category_slug in tag['href'])))
+
+            # the category is correctly represented on disk
+            repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email='erica@example.com')
+            cat_location = join(repo.working_dir, u'{}/{}'.format(other_slug, category_slug))
+            self.assertTrue(exists(cat_location))
+            self.assertTrue(view_functions.is_category_dir(cat_location))
+
+    # in TestApp
     def test_create_duplicate_category(self):
         ''' If we ask to create a category that exists, let's not and say we did.
         '''
