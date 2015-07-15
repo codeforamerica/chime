@@ -1872,7 +1872,7 @@ class ChimeTestClient:
         self.open_link(self.path)
 
     def open_link(self, url):
-        ''' Open a link and return its soupy representation.
+        ''' Open a link
         '''
         response = self.client.get(url)
         self.test.assertEqual(response.status_code, 200)
@@ -1882,12 +1882,12 @@ class ChimeTestClient:
     def follow_link(self, href):
         ''' Follow a link after making sure it's present in the page.
         '''
-        # Look for a link to the categories, here called "other".
+        # Look for the link
         link = self.soup.find(lambda tag: bool(tag.name == 'a' and tag['href'] == href))
         response = self.client.get(link['href'])
         self.test.assertTrue(response.status_code in (301, 302)) # Watch out for a redirect here.
 
-        # Drop down into "other", where the categories are?
+        # Load the page
         redirect = urlparse(response.headers['Location']).path
         response = self.client.get(redirect)
         self.test.assertEqual(response.status_code, 200)
@@ -1906,7 +1906,7 @@ class ChimeTestClient:
         self.path, self.soup = redirect, BeautifulSoup(response.data)
 
     def get_branch_name(self):
-        ''' Extract and return the branch name from the passed soup.
+        ''' Extract and return the branch name from the current soup.
         '''
         # Assumes there is an HTML comment in the format '<!-- branch: 1234567 -->'
         branch_search = search(r'<!-- branch: (.{{{}}}) -->'.format(repo_functions.BRANCH_NAME_LENGTH), unicode(self.soup))
@@ -1924,7 +1924,7 @@ class ChimeTestClient:
         data = {'task_description': description, 'task_beneficiary': beneficiary}
         response = self.client.post('/start', data=data)
 
-        return self.follow_redirect(response, 303)
+        self.follow_redirect(response, 303)
 
     def add_category(self, category_name):
         ''' Look for form to add a category, submit it.
@@ -1940,7 +1940,7 @@ class ChimeTestClient:
         response = self.client.post(add_category_path, data=data)
 
         # Drop down to where the subcategories are.
-        return self.follow_redirect(response, 303)
+        self.follow_redirect(response, 303)
 
     def add_subcategory(self, subcategory_name):
         ''' Look for form to add a subcategory, submit it..
@@ -1956,7 +1956,7 @@ class ChimeTestClient:
         response = self.client.post(add_subcategory_path, data=data)
 
         # Drop down into the subcategory where the articles are.
-        return self.follow_redirect(response, 303)
+        self.follow_redirect(response, 303)
 
     def add_article(self, article_name):
         ''' Look for form to add an article, submit it.
@@ -1974,7 +1974,7 @@ class ChimeTestClient:
         response = self.client.post(add_article_path, data=data)
 
         # View the new article.
-        return self.follow_redirect(response, 303)
+        self.follow_redirect(response, 303)
 
     def edit_article(self, title_str, body_str):
         ''' Look for form to edit an article, submit it.
@@ -1995,7 +1995,7 @@ class ChimeTestClient:
         response = self.client.post(edit_article_path, data=data)
 
         # View the updated article.
-        return self.follow_redirect(response, 303)
+        self.follow_redirect(response, 303)
 
     def edit_outdated_article(self, title_str, body_str):
         ''' Look for form to edit an article we know to be outdated, submit it and assert that the sumbission fails.
@@ -2023,7 +2023,7 @@ class ChimeTestClient:
         mod_li = mod_link.find_parent('li')
         mod_span = mod_li.find(lambda tag: bool(tag.name == 'span' and 'fa-pencil' in tag.get('class')))
         mod_link = mod_span.find_parent('a')
-        return self.follow_link(mod_link['href'])
+        self.follow_link(mod_link['href'])
 
     def delete_category(self):
         ''' Look for the delete button, submit it.
@@ -2039,7 +2039,7 @@ class ChimeTestClient:
         delete_category_path = urlparse(urljoin(self.path, form['action'])).path
         response = self.client.post(delete_category_path, data=data)
 
-        return self.follow_redirect(response, 303)
+        self.follow_redirect(response, 303)
 
     def delete_article(self, title_str):
         ''' Look for the article delete button, submit it
@@ -2076,7 +2076,7 @@ class ChimeTestClient:
         response = self.client.post(save_feedback_path, data=data)
 
         # View the saved feedback.
-        return self.follow_redirect(response, 303)
+        self.follow_redirect(response, 303)
 
     def leave_feedback(self, feedback_str):
         ''' Look for form to leave feedback, submit it.
@@ -2095,7 +2095,7 @@ class ChimeTestClient:
         response = self.client.post(save_feedback_path, data=data)
 
         # View the saved feedback.
-        return self.follow_redirect(response, 303)
+        self.follow_redirect(response, 303)
 
     def approve_activity(self):
         ''' Look for form to approve activity, submit it.
@@ -2112,7 +2112,7 @@ class ChimeTestClient:
         response = self.client.post(approve_activity_path, data=data)
 
         # View the saved feedback.
-        return self.follow_redirect(response, 303)
+        self.follow_redirect(response, 303)
 
     def publish_activity(self):
         ''' Look for form to publish activity, submit it.
@@ -2129,7 +2129,7 @@ class ChimeTestClient:
         response = self.client.post(publish_activity_path, data=data)
 
         # View the published activity.
-        return self.follow_redirect(response, 303)
+        self.follow_redirect(response, 303)
 
 class TestProcess (TestCase):
 
