@@ -877,7 +877,7 @@ def add_article_or_category(repo, dir_path, request_path, create_what):
             flash(', '.join(flash_messages), u'notice')
 
     # create the article or category
-    display_name = splitext(request_path)[0]
+    display_name = request_path
     name = u'{}/index.{}'.format(display_name, CONTENT_FILE_EXTENSION)
     file_path = repo.canonicalize_path(dir_path, name)
 

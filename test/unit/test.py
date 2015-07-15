@@ -3203,6 +3203,37 @@ class TestApp (TestCase):
             self.assertFalse(exists(cata_location))
 
     # in TestApp
+    def test_period_in_category_name(self):
+        ''' Putting a period in a category or subcategory name doesn't crop it.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            client = ChimeTestClient(self.test_client, self)
+            client.sign_in(email='erica@example.com')
+
+            # Start a new task
+            _, soup_task = client.start_task(description=u'Be Shot Hundreds Of Feet Into The Air', beneficiary=u'A Geyser Of Highly Pressurized Water')
+            # Get the branch name
+            branch_name = client.get_branch_name(soup_task)
+
+            # Enter the "other" folder
+            other_slug = u'other'
+            base_path, base_soup = client.follow_link(soup=soup_task, href='/tree/{}/edit/{}'.format(branch_name, other_slug))
+
+            # Create a category that has a period in its name
+            category_name = u'Mt. Splashmore'
+            category_slug = slugify(category_name)
+            category_path, category_soup = client.add_category(url=base_path, soup=base_soup, category_name=category_name)
+            # the category is correctly represented on the page
+            self.assertIsNotNone(category_soup.find(lambda tag: bool(tag.name == 'a' and category_name in tag.text)))
+            self.assertIsNotNone(category_soup.find(lambda tag: bool(tag.name == 'a' and category_slug in tag['href'])))
+
+            # the category is correctly represented on disk
+            repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email='erica@example.com')
+            cat_location = join(repo.working_dir, u'{}/{}'.format(other_slug, category_slug))
+            self.assertTrue(exists(cat_location))
+            self.assertTrue(view_functions.is_category_dir(cat_location))
+
+    # in TestApp
     def test_delete_commit_accuracy(self):
         ''' The record of a delete in the corresponding commit is accurate.
         '''
