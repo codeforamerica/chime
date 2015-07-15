@@ -31,7 +31,7 @@ from .repo_functions import (
     clobber_default_branch, MergeConflict, get_review_state_and_authorized, save_working_file,
     update_review_state, provide_feedback, move_existing_file, TASK_METADATA_FILENAME,
     REVIEW_STATE_EDITED, REVIEW_STATE_FEEDBACK, REVIEW_STATE_ENDORSED, REVIEW_STATE_PUBLISHED,
-    mark_upstream_push_needed
+    MESSAGE_CATEGORY_EDIT, mark_upstream_push_needed
 )
 
 from .href import needs_redirect, get_redirect
@@ -609,46 +609,48 @@ def summarize_activity_history(repo=None, history=None, branch_name=u''):
         try:
             history = make_activity_history(repo=repo)
         except:
-            # we weren't give what we need, return an empty summary
+            # we weren't given what we need, return an empty summary
             return summary
 
     ed_lookup = {'create': u'created', 'edit': u'edited', 'delete': u'deleted'}
     change_lookup = {}
     display_types_encountered = []
-    for action in reversed(history):
-        # we only care about edits
-        if action['commit_category'] == u'edit':
-            # get the list of changed files from the commit body
-            try:
-                commit_body = json.loads(action['commit_body'])
-            except:
-                # could't parse json in the commit body, return an empty summary
-                return dict(summary=u'', changes=[])
+    # we only care about edits
+    edit_history = [action for action in reversed(history) if action['commit_category'] == MESSAGE_CATEGORY_EDIT]
+    for action in edit_history:
+        # get the list of changed files from the commit body
+        try:
+            commit_body = json.loads(action['commit_body'])
+        except:
+            # could't parse json in the commit body, keep moving
+            continue
 
-            # step through the changed files
-            for file_change in commit_body:
-                title = file_change['title']
-                display_type = file_change['display_type'].title()
-                try:
-                    action = ed_lookup[file_change['action']].title()
-                except:
-                    action = file_change['action'].title()
-                file_path = file_change['file_path']
-                # if the last action is delete, we don't want an edit_path to a file that no longer exists
-                edit_path = join(u'/tree/{}/edit/'.format(branch_name), strip_index_file(file_path)) if action != u'Deleted' else u''
-                sort_time = datetime.now()
-                if file_path in change_lookup:
-                    change_lookup[file_path]['sort_time'] = sort_time
-                    # add the action to the end of the list if it's different from the last action added
-                    if not re.search(r'{}$'.format(action), change_lookup[file_path]['actions']):
-                        change_lookup[file_path]['actions'] = change_lookup[file_path]['actions'] + u', {}'.format(action)
-                    # add the other variables, which may've changed
-                    change_lookup[file_path]['edit_path'] = edit_path
-                    change_lookup[file_path]['title'] = title
-                    change_lookup[file_path]['display_type'] = display_type
-                else:
-                    change_lookup[file_path] = dict(title=title, display_type=display_type, actions=action, edit_path=edit_path, sort_time=sort_time)
-                    display_types_encountered.append(display_type)
+        # step through the changed files
+        for file_change in commit_body:
+            # the passed title or the filename if no title is there
+            title = file_change['title'] or file_change['file_path'].split('/')[-1]
+            # the passed display type or Unknown if no type is there
+            display_type = file_change['display_type'].title() or u'Unknown'
+            try:
+                action = ed_lookup[file_change['action']].title()
+            except:
+                action = file_change['action'].title()
+            file_path = file_change['file_path']
+            # if the last action is delete, we don't want an edit_path to a file that no longer exists
+            edit_path = join(u'/tree/{}/edit/'.format(branch_name), strip_index_file(file_path)) if action != u'Deleted' else u''
+            sort_time = datetime.now()
+            if file_path in change_lookup:
+                change_lookup[file_path]['sort_time'] = sort_time
+                # add the action to the end of the list if it's different from the last action added
+                if not re.search(r'{}$'.format(action), change_lookup[file_path]['actions']):
+                    change_lookup[file_path]['actions'] = change_lookup[file_path]['actions'] + u', {}'.format(action)
+                # add the other variables, which may've changed
+                change_lookup[file_path]['edit_path'] = edit_path
+                change_lookup[file_path]['title'] = title
+                change_lookup[file_path]['display_type'] = display_type
+            else:
+                change_lookup[file_path] = dict(title=title, display_type=display_type, actions=action, edit_path=edit_path, sort_time=sort_time)
+                display_types_encountered.append(display_type)
 
     # flatten and sort the changes
     changes = [change_lookup[item] for item in change_lookup]
