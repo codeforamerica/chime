@@ -1850,22 +1850,27 @@ class ChimeTestClient:
 
         response = self.client.get('/')
         self.test.assertFalse('Start' in response.data)
+        
+        self.path, self.soup = '/', BeautifulSoup(response.data)
+    
+    def reload(self):
+        ''' Reload the current path.
+        '''
+        self.open_link(self.path)
 
     def open_link(self, url):
         ''' Open a link and return its soupy representation.
         '''
         response = self.client.get(url)
         self.test.assertEqual(response.status_code, 200)
+        
+        self.path, self.soup = url, BeautifulSoup(response.data)
 
-        soup = BeautifulSoup(response.data)
-
-        return soup
-
-    def follow_link(self, soup, href):
+    def follow_link(self, href):
         ''' Follow a link after making sure it's present in the page.
         '''
         # Look for a link to the categories, here called "other".
-        link = soup.find(lambda tag: bool(tag.name == 'a' and tag['href'] == href))
+        link = self.soup.find(lambda tag: bool(tag.name == 'a' and tag['href'] == href))
         response = self.client.get(link['href'])
         self.test.assertTrue(response.status_code in (301, 302)) # Watch out for a redirect here.
 
@@ -1874,9 +1879,7 @@ class ChimeTestClient:
         response = self.client.get(redirect)
         self.test.assertEqual(response.status_code, 200)
 
-        soup = BeautifulSoup(response.data)
-
-        return redirect, soup
+        self.path, self.soup = redirect, BeautifulSoup(response.data)
 
     def follow_redirect(self, response, code):
         ''' Expect and follow a response HTTP redirect.
@@ -1887,13 +1890,13 @@ class ChimeTestClient:
         response = self.client.get(redirect)
         self.test.assertEqual(response.status_code, 200)
 
-        return redirect, BeautifulSoup(response.data)
+        self.path, self.soup = redirect, BeautifulSoup(response.data)
 
-    def get_branch_name(self, soup):
+    def get_branch_name(self):
         ''' Extract and return the branch name from the passed soup.
         '''
         # Assumes there is an HTML comment in the format '<!-- branch: 1234567 -->'
-        branch_search = search(r'<!-- branch: (.{{{}}}) -->'.format(repo_functions.BRANCH_NAME_LENGTH), unicode(soup))
+        branch_search = search(r'<!-- branch: (.{{{}}}) -->'.format(repo_functions.BRANCH_NAME_LENGTH), unicode(self.soup))
         self.test.assertIsNotNone(branch_search)
         try:
             branch_name = branch_search.group(1)
@@ -1918,67 +1921,67 @@ class ChimeTestClient:
         self.test.assertTrue('Start' in response.data)
 
     def start_task(self, description, beneficiary):
-        ''' Start a new task and return URL and soup of the resulting page.
+        ''' Start a new task.
         '''
         data = {'task_description': description, 'task_beneficiary': beneficiary}
         response = self.client.post('/start', data=data)
 
         return self.follow_redirect(response, 303)
 
-    def add_category(self, url, soup, category_name):
-        ''' Look for form to add a category, submit it and return URL and soup.
+    def add_category(self, category_name):
+        ''' Look for form to add a category, submit it.
         '''
-        input = soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add Category'))
+        input = self.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add Category'))
         form = input.find_parent('form')
         self.test.assertEqual(form['method'].upper(), 'POST')
 
         data = {i['name']: i.get('value', u'') for i in form.find_all('input')}
         data[input['name']] = category_name
 
-        add_category_path = urlparse(urljoin(url, form['action'])).path
+        add_category_path = urlparse(urljoin(self.path, form['action'])).path
         response = self.client.post(add_category_path, data=data)
 
         # Drop down to where the subcategories are.
         return self.follow_redirect(response, 303)
 
-    def add_subcategory(self, url, soup, subcategory_name):
-        ''' Look for form to add a subcategory, submit it and return URL and soup.
+    def add_subcategory(self, subcategory_name):
+        ''' Look for form to add a subcategory, submit it..
         '''
-        input = soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add Subcategory'))
+        input = self.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add Subcategory'))
         form = input.find_parent('form')
         self.test.assertEqual(form['method'].upper(), 'POST')
 
         data = {i['name']: i.get('value', u'') for i in form.find_all('input')}
         data[input['name']] = subcategory_name
 
-        add_subcategory_path = urlparse(urljoin(url, form['action'])).path
+        add_subcategory_path = urlparse(urljoin(self.path, form['action'])).path
         response = self.client.post(add_subcategory_path, data=data)
 
         # Drop down into the subcategory where the articles are.
         return self.follow_redirect(response, 303)
 
-    def add_article(self, url, soup, article_name):
-        ''' Look for form to add an article, submit it and return URL and soup.
+    def add_article(self, article_name):
+        ''' Look for form to add an article, submit it.
         '''
         # Create a new article.
 
-        input = soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add Article'))
+        input = self.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add Article'))
         form = input.find_parent('form')
         self.test.assertEqual(form['method'].upper(), 'POST')
 
         data = {i['name']: i.get('value', u'') for i in form.find_all('input')}
         data[input['name']] = article_name
 
-        add_article_path = urlparse(urljoin(url, form['action'])).path
+        add_article_path = urlparse(urljoin(self.path, form['action'])).path
         response = self.client.post(add_article_path, data=data)
 
         # View the new article.
         return self.follow_redirect(response, 303)
 
-    def edit_article(self, url, soup, title_str, body_str):
-        ''' Look for form to edit an article, submit it and return URL and soup.
+    def edit_article(self, title_str, body_str):
+        ''' Look for form to edit an article, submit it.
         '''
-        body = soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'en-body'))
+        body = self.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'en-body'))
         form = body.find_parent('form')
         title = form.find(lambda tag: bool(tag.name == 'input' and tag.get('name') == 'en-title'))
         self.test.assertEqual(form['method'].upper(), 'POST')
@@ -1990,16 +1993,16 @@ class ChimeTestClient:
         data[title['name']] = title_str
         data[body['name']] = body_str
 
-        edit_article_path = urlparse(urljoin(url, form['action'])).path
+        edit_article_path = urlparse(urljoin(self.path, form['action'])).path
         response = self.client.post(edit_article_path, data=data)
 
         # View the updated article.
         return self.follow_redirect(response, 303)
 
-    def edit_outdated_article(self, url, soup, title_str, body_str):
+    def edit_outdated_article(self, title_str, body_str):
         ''' Look for form to edit an article we know to be outdated, submit it and assert that the sumbission fails.
         '''
-        body = soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'en-body'))
+        body = self.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'en-body'))
         form = body.find_parent('form')
         title = form.find(lambda tag: bool(tag.name == 'input' and tag.get('name') == 'en-title'))
         self.test.assertEqual(form['method'].upper(), 'POST')
@@ -2011,23 +2014,23 @@ class ChimeTestClient:
         data[title['name']] = title_str
         data[body['name']] = body_str
 
-        edit_article_path = urlparse(urljoin(url, form['action'])).path
+        edit_article_path = urlparse(urljoin(self.path, form['action'])).path
         response = self.client.post(edit_article_path, data=data)
         self.test.assertEqual(response.status_code, 500)
 
-    def follow_modify_category_link(self, soup, title_str):
-        ''' Find the (sub-)category edit button in the passed soup and follow it
+    def follow_modify_category_link(self, title_str):
+        ''' Find the (sub-)category edit button in the last soup and follow it.
         '''
-        mod_link = soup.find(lambda tag: bool(tag.name == 'a' and tag.text == title_str))
+        mod_link = self.soup.find(lambda tag: bool(tag.name == 'a' and tag.text == title_str))
         mod_li = mod_link.find_parent('li')
         mod_span = mod_li.find(lambda tag: bool(tag.name == 'span' and 'fa-pencil' in tag.get('class')))
         mod_link = mod_span.find_parent('a')
-        return self.follow_link(soup, mod_link['href'])
+        return self.follow_link(mod_link['href'])
 
-    def delete_category(self, url, soup):
-        ''' Look for the delete button, submit it, return URL and soup.
+    def delete_category(self):
+        ''' Look for the delete button, submit it.
         '''
-        body = soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'en-description'))
+        body = self.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'en-description'))
         form = body.find_parent('form')
         self.test.assertEqual(form['method'].upper(), 'POST')
 
@@ -2035,15 +2038,15 @@ class ChimeTestClient:
                 for i in form.find_all(['input', 'button', 'textarea'])
                 if i.get('name') != 'save'}
 
-        delete_category_path = urlparse(urljoin(url, form['action'])).path
+        delete_category_path = urlparse(urljoin(self.path, form['action'])).path
         response = self.client.post(delete_category_path, data=data)
 
         return self.follow_redirect(response, 303)
 
-    def delete_article(self, soup, url, title_str):
-        ''' Look for the delete button, submit it, return URL and soup.
+    def delete_article(self, title_str):
+        ''' Look for the article delete button, submit it
         '''
-        del_link = soup.find(lambda tag: bool(tag.name == 'a' and tag.text == title_str))
+        del_link = self.soup.find(lambda tag: bool(tag.name == 'a' and tag.text == title_str))
         del_li = del_link.find_parent('li')
         del_span = del_li.find(lambda tag: bool(tag.name == 'span' and 'fa-trash' in tag.get('class')))
         del_form = del_span.find_parent('form')
@@ -2053,15 +2056,15 @@ class ChimeTestClient:
         data = {i['name']: i.get('value', u'')
                 for i in del_form.find_all(['input', 'button', 'textarea'])}
 
-        delete_article_path = urlparse(urljoin(url, del_form['action'])).path
+        delete_article_path = urlparse(urljoin(self.path, del_form['action'])).path
         response = self.client.post(delete_article_path, data=data)
 
-        return self.follow_redirect(response, 303)
+        self.follow_redirect(response, 303)
 
-    def request_feedback(self, url, soup, feedback_str):
-        ''' Look for form to request feedback, submit it and return URL and soup.
+    def request_feedback(self, feedback_str):
+        ''' Look for form to request feedback, submit it.
         '''
-        body = soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'comment_text'))
+        body = self.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'comment_text'))
         form = body.find_parent('form')
         self.test.assertEqual(form['method'].upper(), 'POST')
 
@@ -2071,16 +2074,16 @@ class ChimeTestClient:
 
         data[body['name']] = feedback_str
 
-        save_feedback_path = urlparse(urljoin(url, form['action'])).path
+        save_feedback_path = urlparse(urljoin(self.path, form['action'])).path
         response = self.client.post(save_feedback_path, data=data)
 
         # View the saved feedback.
         return self.follow_redirect(response, 303)
 
-    def leave_feedback(self, url, soup, feedback_str):
-        ''' Look for form to leave feedback, submit it and return URL and soup.
+    def leave_feedback(self, feedback_str):
+        ''' Look for form to leave feedback, submit it.
         '''
-        body = soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'comment_text'))
+        body = self.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'comment_text'))
         form = body.find_parent('form')
         self.test.assertEqual(form['method'].upper(), 'POST')
 
@@ -2090,16 +2093,16 @@ class ChimeTestClient:
 
         data[body['name']] = feedback_str
 
-        save_feedback_path = urlparse(urljoin(url, form['action'])).path
+        save_feedback_path = urlparse(urljoin(self.path, form['action'])).path
         response = self.client.post(save_feedback_path, data=data)
 
         # View the saved feedback.
         return self.follow_redirect(response, 303)
 
-    def approve_activity(self, url, soup):
-        ''' Look for form to approve activity, submit it and return URL and soup.
+    def approve_activity(self):
+        ''' Look for form to approve activity, submit it.
         '''
-        body = soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'comment_text'))
+        body = self.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'comment_text'))
         form = body.find_parent('form')
         self.test.assertEqual(form['method'].upper(), 'POST')
 
@@ -2107,16 +2110,16 @@ class ChimeTestClient:
                 for i in form.find_all(['input', 'button', 'textarea'])
                 if i.get('value') != 'Leave a Comment'}
 
-        approve_activity_path = urlparse(urljoin(url, form['action'])).path
+        approve_activity_path = urlparse(urljoin(self.path, form['action'])).path
         response = self.client.post(approve_activity_path, data=data)
 
         # View the saved feedback.
         return self.follow_redirect(response, 303)
 
-    def publish_activity(self, url, soup):
-        ''' Look for form to publish activity, submit it and return URL and soup.
+    def publish_activity(self):
+        ''' Look for form to publish activity, submit it.
         '''
-        body = soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'comment_text'))
+        body = self.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'comment_text'))
         form = body.find_parent('form')
         self.test.assertEqual(form['method'].upper(), 'POST')
 
@@ -2124,7 +2127,7 @@ class ChimeTestClient:
                 for i in form.find_all(['input', 'button', 'textarea'])
                 if i.get('value') != 'Leave a Comment'}
 
-        publish_activity_path = urlparse(urljoin(url, form['action'])).path
+        publish_activity_path = urlparse(urljoin(self.path, form['action'])).path
         response = self.client.post(publish_activity_path, data=data)
 
         # View the published activity.
@@ -2210,35 +2213,34 @@ class TestProcess (TestCase):
             frances.sign_in('frances@example.com')
             
             # Start a new task, "Diving for Dollars".
-            _, soup1 = erica.start_task('Diving', 'Dollars')
+            erica.start_task('Diving', 'Dollars')
             
             # Look for an "other" link that we know about - is it a category?
-            categories_path, soup2 = erica.follow_link(soup1, '/tree/9313f09/edit/other')
+            erica.follow_link('/tree/9313f09/edit/other')
 
             # Create a new category "Ninjas", subcategory "Flipping Out", and article "So Awesome".
-            subcategories_path, soup3 = erica.add_category(categories_path, soup2, 'Ninjas')
-            articles_path, soup4 = erica.add_subcategory(subcategories_path, soup3, 'Flipping Out')
-            article_path, soup5 = erica.add_article(articles_path, soup4, 'So Awesome')
+            erica.add_category('Ninjas')
+            erica.add_subcategory('Flipping Out')
+            erica.add_article('So Awesome')
             
             # Edit the new article.
-            erica.edit_article(article_path, soup5, 'So, So Awesome', 'It was the best of times.')
+            erica.edit_article('So, So Awesome', 'It was the best of times.')
             
             # Ask for feedback
-            task_path, soup6 = erica.follow_link(soup5, '/tree/9313f09')
-            erica.request_feedback(task_path, soup6, 'Is this okay?')
+            erica.follow_link('/tree/9313f09')
+            erica.request_feedback('Is this okay?')
             
             #
             # Switch users and comment on the activity.
             #
-            soup7 = frances.open_link(task_path)
-            frances.leave_feedback(task_path, soup7, 'It is super-great.')
+            frances.open_link(erica.path)
+            frances.leave_feedback('It is super-great.')
 
             #
             # Switch back and look for that bit of feedback.
             #
-            soup8 = erica.open_link(task_path)
-            
-            words = soup8.find(text='It is super-great.')
+            erica.reload()
+            words = erica.soup.find(text='It is super-great.')
             comment = words.find_parent('div').find_parent('div')
             author = comment.find(text='frances@example.com')
             self.assertTrue(author is not None)
@@ -2254,30 +2256,31 @@ class TestProcess (TestCase):
             frances.sign_in('frances@example.com')
 
             # Start a new task, "Diving for Dollars".
-            _, soup1 = erica.start_task(description='Diving', beneficiary='Dollars')
+            erica.start_task(description='Diving', beneficiary='Dollars')
 
             # Look for an "other" link that we know about - is it a category?
-            categories_path, soup2 = erica.follow_link(soup=soup1, href='/tree/9313f09/edit/other')
+            erica.follow_link(href='/tree/9313f09/edit/other')
 
             # Create a new category "Ninjas", subcategory "Flipping Out", and article "So Awesome".
-            subcategories_path, soup3 = erica.add_category(url=categories_path, soup=soup2, category_name='Ninjas')
-            articles_path, soup4 = erica.add_subcategory(url=subcategories_path, soup=soup3, subcategory_name='Flipping Out')
-            article_path, soup5 = erica.add_article(url=articles_path, soup=soup4, article_name='So Awesome')
+            erica.add_category(category_name='Ninjas')
+            erica.add_subcategory(subcategory_name='Flipping Out')
+            erica.add_article(article_name='So Awesome')
 
             # Edit the new article.
-            erica.edit_article(url=article_path, soup=soup5, title_str='So, So Awesome', body_str='It was the best of times.')
+            erica.edit_article(title_str='So, So Awesome', body_str='It was the best of times.')
+            article_path = erica.path
 
             # Ask for feedback
-            task_path, soup6 = erica.follow_link(soup=soup5, href='/tree/9313f09')
-            erica.request_feedback(url=task_path, soup=soup6, feedback_str='Is this okay?')
+            erica.follow_link(href='/tree/9313f09')
+            erica.request_feedback(feedback_str='Is this okay?')
 
             #
             # Switch users and publish the article.
             #
-            soup7 = frances.open_link(url=task_path)
-            task_path, soup8 = frances.leave_feedback(url=task_path, soup=soup7, feedback_str='It is super-great.')
-            approved_path, soup9 = frances.approve_activity(url=task_path, soup=soup8)
-            published_path, soup10 = frances.publish_activity(url=approved_path, soup=soup9)
+            frances.open_link(url=erica.path)
+            frances.leave_feedback(feedback_str='It is super-great.')
+            frances.approve_activity()
+            frances.publish_activity()
             
             #
             # Check with upstream repository.
@@ -2294,7 +2297,8 @@ class TestProcess (TestCase):
             #
             # Switch back and try to make another edit, but watch it fail.
             #
-            erica.edit_outdated_article(url=article_path, soup=soup5, title_str='Just Awful', body_str='It was the worst of times.')
+            erica.open_link(article_path)
+            erica.edit_outdated_article(title_str='Just Awful', body_str='It was the worst of times.')
 
 class TestApp (TestCase):
 
@@ -3232,33 +3236,43 @@ class TestApp (TestCase):
         ''' The record of a delete in the corresponding commit is accurate.
         '''
         with HTTMock(self.auth_csv_example_allowed):
-            client = ChimeTestClient(self.test_client, self)
-            client.sign_in(email='erica@example.com')
+            user = ChimeTestClient(self.test_client, self)
+            user.sign_in(email='erica@example.com')
 
             # Start a new task
-            _, soup1 = client.start_task(description=u'Ferment Tuber Fibres Using Symbiotic Bacteria in the Intestines', beneficiary=u'Naked Mole Rats')
+            user.start_task(description=u'Ferment Tuber Fibres Using Symbiotic Bacteria in the Intestines', beneficiary=u'Naked Mole Rats')
             # Get the branch name
-            branch_name = client.get_branch_name(soup1)
+            branch_name = user.get_branch_name()
 
             # Enter the "other" folder
-            base_path, base_soup = client.follow_link(soup=soup1, href='/tree/{}/edit/other'.format(branch_name))
+            user.follow_link(href='/tree/{}/edit/other'.format(branch_name))
 
             # Create a category and fill it with some subcategories and articles
             category_names = [u'Indigestible Cellulose']
             subcategory_names = [u'Volatile Fatty Acids', u'Non-Reproducing Females', u'Arid African Deserts']
             article_names = [u'Eusocial Exhibition', u'Old Enough to Eat Solid Food', u'Contributing to Extension of Tunnels', u'Foraging and Nest Building']
-            category_path, category_soup = client.add_category(url=base_path, soup=base_soup, category_name=category_names[0])
-            subcategory_path, subcategory_soup = client.add_subcategory(url=category_path, soup=category_soup, subcategory_name=subcategory_names[0])
-            client.add_subcategory(url=category_path, soup=category_soup, subcategory_name=subcategory_names[1])
-            client.add_subcategory(url=category_path, soup=category_soup, subcategory_name=subcategory_names[2])
-            client.add_article(url=subcategory_path, soup=subcategory_soup, article_name=article_names[0])
-            client.add_article(url=subcategory_path, soup=subcategory_soup, article_name=article_names[1])
-            client.add_article(url=subcategory_path, soup=subcategory_soup, article_name=article_names[2])
-            client.add_article(url=subcategory_path, soup=subcategory_soup, article_name=article_names[3])
+            user.add_category(category_name=category_names[0])
+            
+            category_path = user.path
+            user.add_subcategory(subcategory_name=subcategory_names[0])
+            user.open_link(category_path)
+            user.add_subcategory(subcategory_name=subcategory_names[1])
+            user.open_link(category_path)
+            user.add_subcategory(subcategory_name=subcategory_names[2])
+
+            subcategory_path = user.path
+            user.add_article(article_name=article_names[0])
+            user.open_link(subcategory_path)
+            user.add_article(article_name=article_names[1])
+            user.open_link(subcategory_path)
+            user.add_article(article_name=article_names[2])
+            user.open_link(subcategory_path)
+            user.add_article(article_name=article_names[3])
 
             # Delete the all-containing category
-            modify_form_path, modify_form_soup = client.follow_modify_category_link(category_soup, category_names[0])
-            deleted_category_path, deleted_category_soup = client.delete_category(modify_form_path, modify_form_soup)
+            user.open_link(category_path)
+            user.follow_modify_category_link(category_names[0])
+            user.delete_category()
 
             # get and check the history
             repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email='erica@example.com')
@@ -3876,42 +3890,45 @@ class TestApp (TestCase):
         ''' The summary of an activity's history is displayed as expected.
         '''
         with HTTMock(self.auth_csv_example_allowed):
-            client = ChimeTestClient(self.test_client, self)
-            client.sign_in(email='erica@example.com')
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.test_client, self)
+                erica.sign_in(email='erica@example.com')
 
             # Start a new task
-            _, enter_soup = client.start_task(description=u'Parasitize with Ichneumonidae', beneficiary=u'Moth Larvae')
+            erica.start_task(description=u'Parasitize with Ichneumonidae', beneficiary=u'Moth Larvae')
             # Get the branch name
-            branch_name = client.get_branch_name(enter_soup)
+            branch_name = erica.get_branch_name()
 
             # Load the activity overview page
-            _, overview_soup = client.follow_link(soup=enter_soup, href='/tree/{}'.format(branch_name))
+            erica.follow_link(href='/tree/{}'.format(branch_name))
             # there shouldn't be a summary yet
-            summary_div = overview_soup.find("div", class_="activity-summary")
+            summary_div = erica.soup.find("div", class_="activity-summary")
             self.assertIsNone(summary_div)
 
-            # Enter the "other" folder
-            base_path, base_soup = client.follow_link(soup=enter_soup, href='/tree/{}/edit/other'.format(branch_name))
+            # Load the "other" folder
+            erica.open_link(url='/tree/{}/edit/other/'.format(branch_name))
 
             # Create a category, sub-category, article
             category_name = u'Antennae Segments'
             subcategory_name = u'Short Ovipositors'
             article_names = [u'Inject Eggs Directly Into a Host Body', u'A Technique Of Celestial Navigation Called Transverse Orientation']
-            category_path, category_soup = client.add_category(url=base_path, soup=base_soup, category_name=category_name)
-            subcategory_path, subcategory_soup = client.add_subcategory(url=category_path, soup=category_soup, subcategory_name=subcategory_name)
-            article_path, article_soup = client.add_article(url=subcategory_path, soup=subcategory_soup, article_name=article_names[0])
+            erica.add_category(category_name=category_name)
+            erica.add_subcategory(subcategory_name=subcategory_name)
+            subcategory_path = erica.path
+            erica.add_article(article_name=article_names[0])
 
             # edit the article
-            client.edit_article(url=article_path, soup=article_soup, title_str=article_names[0], body_str=u'Inject venom along with the egg')
+            erica.edit_article(title_str=article_names[0], body_str=u'Inject venom along with the egg')
             # create another article and delete it
-            client.add_article(url=subcategory_path, soup=subcategory_soup, article_name=article_names[1])
-            subcategory_soup = client.open_link(subcategory_path)
-            client.delete_article(subcategory_soup, subcategory_path, article_names[1])
+            erica.open_link(subcategory_path)
+            erica.add_article(article_name=article_names[1])
+            erica.open_link(subcategory_path)
+            erica.delete_article(article_names[1])
 
             # Load the activity overview page
-            _, overview_soup = client.follow_link(soup=article_soup, href='/tree/{}'.format(branch_name))
+            erica.open_link(url='/tree/{}/'.format(branch_name))
             # there is a summary
-            summary_div = overview_soup.find("div", class_="activity-summary")
+            summary_div = erica.soup.find("div", class_="activity-summary")
             self.assertIsNotNone(summary_div)
             # it's right about what's changed
             self.assertIsNotNone(summary_div.find(lambda tag: bool(tag.name == 'a' and '2 articles and 2 categories' in tag.text)))
