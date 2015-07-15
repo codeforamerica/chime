@@ -2176,8 +2176,6 @@ class TestProcess (TestCase):
 
         random.choice = MagicMock(return_value="P")
 
-        self.test_client = self.app.test_client()
-
     def tearDown(self):
         rmtree(self.work_path)
 
@@ -2205,40 +2203,41 @@ class TestProcess (TestCase):
         ''' Check edit process with a user looking at feedback from another user.
         '''
         with HTTMock(self.auth_csv_example_allowed):
-            client = ChimeTestClient(self.test_client, self)
-            client.sign_in('erica@example.com')
-
+            erica = ChimeTestClient(self.app.test_client(), self)
+            erica.sign_in('erica@example.com')
+            
+            frances = ChimeTestClient(self.app.test_client(), self)
+            frances.sign_in('frances@example.com')
+            
             # Start a new task, "Diving for Dollars".
-            _, soup1 = client.start_task('Diving', 'Dollars')
-
+            _, soup1 = erica.start_task('Diving', 'Dollars')
+            
             # Look for an "other" link that we know about - is it a category?
-            categories_path, soup2 = client.follow_link(soup1, '/tree/9313f09/edit/other')
+            categories_path, soup2 = erica.follow_link(soup1, '/tree/9313f09/edit/other')
 
             # Create a new category "Ninjas", subcategory "Flipping Out", and article "So Awesome".
-            subcategories_path, soup3 = client.add_category(categories_path, soup2, 'Ninjas')
-            articles_path, soup4 = client.add_subcategory(subcategories_path, soup3, 'Flipping Out')
-            article_path, soup5 = client.add_article(articles_path, soup4, 'So Awesome')
-
+            subcategories_path, soup3 = erica.add_category(categories_path, soup2, 'Ninjas')
+            articles_path, soup4 = erica.add_subcategory(subcategories_path, soup3, 'Flipping Out')
+            article_path, soup5 = erica.add_article(articles_path, soup4, 'So Awesome')
+            
             # Edit the new article.
-            client.edit_article(article_path, soup5, 'So, So Awesome', 'It was the best of times.')
-
+            erica.edit_article(article_path, soup5, 'So, So Awesome', 'It was the best of times.')
+            
             # Ask for feedback
-            task_path, soup6 = client.follow_link(soup5, '/tree/9313f09')
-            client.request_feedback(task_path, soup6, 'Is this okay?')
-
+            task_path, soup6 = erica.follow_link(soup5, '/tree/9313f09')
+            erica.request_feedback(task_path, soup6, 'Is this okay?')
+            
             #
             # Switch users and comment on the activity.
             #
-            client.sign_in('frances@example.com')
-            soup7 = client.open_link(task_path)
-            client.leave_feedback(task_path, soup7, 'It is super-great.')
+            soup7 = frances.open_link(task_path)
+            frances.leave_feedback(task_path, soup7, 'It is super-great.')
 
             #
             # Switch back and look for that bit of feedback.
             #
-            client.sign_in('erica@example.com')
-            soup8 = client.open_link(task_path)
-
+            soup8 = erica.open_link(task_path)
+            
             words = soup8.find(text='It is super-great.')
             comment = words.find_parent('div').find_parent('div')
             author = comment.find(text='frances@example.com')
@@ -2248,36 +2247,38 @@ class TestProcess (TestCase):
         ''' Check edit process with a user attempting to change an activity that's been published.
         '''
         with HTTMock(self.auth_csv_example_allowed):
-            client = ChimeTestClient(self.test_client, self)
-            client.sign_in(email='erica@example.com')
+            erica = ChimeTestClient(self.app.test_client(), self)
+            erica.sign_in(email='erica@example.com')
+            
+            frances = ChimeTestClient(self.app.test_client(), self)
+            frances.sign_in('frances@example.com')
 
             # Start a new task, "Diving for Dollars".
-            _, soup1 = client.start_task(description='Diving', beneficiary='Dollars')
+            _, soup1 = erica.start_task(description='Diving', beneficiary='Dollars')
 
             # Look for an "other" link that we know about - is it a category?
-            categories_path, soup2 = client.follow_link(soup=soup1, href='/tree/9313f09/edit/other')
+            categories_path, soup2 = erica.follow_link(soup=soup1, href='/tree/9313f09/edit/other')
 
             # Create a new category "Ninjas", subcategory "Flipping Out", and article "So Awesome".
-            subcategories_path, soup3 = client.add_category(url=categories_path, soup=soup2, category_name='Ninjas')
-            articles_path, soup4 = client.add_subcategory(url=subcategories_path, soup=soup3, subcategory_name='Flipping Out')
-            article_path, soup5 = client.add_article(url=articles_path, soup=soup4, article_name='So Awesome')
+            subcategories_path, soup3 = erica.add_category(url=categories_path, soup=soup2, category_name='Ninjas')
+            articles_path, soup4 = erica.add_subcategory(url=subcategories_path, soup=soup3, subcategory_name='Flipping Out')
+            article_path, soup5 = erica.add_article(url=articles_path, soup=soup4, article_name='So Awesome')
 
             # Edit the new article.
-            client.edit_article(url=article_path, soup=soup5, title_str='So, So Awesome', body_str='It was the best of times.')
+            erica.edit_article(url=article_path, soup=soup5, title_str='So, So Awesome', body_str='It was the best of times.')
 
             # Ask for feedback
-            task_path, soup6 = client.follow_link(soup=soup5, href='/tree/9313f09')
-            client.request_feedback(url=task_path, soup=soup6, feedback_str='Is this okay?')
+            task_path, soup6 = erica.follow_link(soup=soup5, href='/tree/9313f09')
+            erica.request_feedback(url=task_path, soup=soup6, feedback_str='Is this okay?')
 
             #
             # Switch users and publish the article.
             #
-            client.sign_in(email='frances@example.com')
-            soup7 = client.open_link(url=task_path)
-            task_path, soup8 = client.leave_feedback(url=task_path, soup=soup7, feedback_str='It is super-great.')
-            approved_path, soup9 = client.approve_activity(url=task_path, soup=soup8)
-            published_path, soup10 = client.publish_activity(url=approved_path, soup=soup9)
-
+            soup7 = frances.open_link(url=task_path)
+            task_path, soup8 = frances.leave_feedback(url=task_path, soup=soup7, feedback_str='It is super-great.')
+            approved_path, soup9 = frances.approve_activity(url=task_path, soup=soup8)
+            published_path, soup10 = frances.publish_activity(url=approved_path, soup=soup9)
+            
             #
             # Check with upstream repository.
             #
@@ -2293,8 +2294,7 @@ class TestProcess (TestCase):
             #
             # Switch back and try to make another edit, but watch it fail.
             #
-            client.sign_in(email='erica@example.com')
-            client.edit_outdated_article(url=article_path, soup=soup5, title_str='Just Awful', body_str='It was the worst of times.')
+            erica.edit_outdated_article(url=article_path, soup=soup5, title_str='Just Awful', body_str='It was the worst of times.')
 
 class TestApp (TestCase):
 
