@@ -1841,9 +1841,10 @@ class TestAppConfig (TestCase):
         self.assertEqual(template_args['support_phone_number'], fake_support_phone_number)
 
 class ChimeTestClient:
-
+    ''' Stateful client for Chime Flask test client.
+    '''
     def __init__(self, client, test):
-        ''' Create a new client, with Flask test client and TestApps instance.
+        ''' Create a new client, with Flask test client and TestCase instances.
         '''
         self.client = client
         self.test = test
@@ -1853,6 +1854,18 @@ class ChimeTestClient:
         
         self.path, self.soup = '/', BeautifulSoup(response.data)
     
+    def sign_in(self, email):
+        ''' Sign in with a given email address.
+        
+            Should be used inside an HTTMock that overrides Chime's internal
+            call to Persona verifier: https://verifier.login.persona.org/verify
+        '''
+        response = self.client.post('/sign-in', data={'email': email})
+        self.test.assertEqual(response.status_code, 200)
+
+        response = self.client.get('/')
+        self.test.assertTrue('Start' in response.data)
+
     def reload(self):
         ''' Reload the current path.
         '''
@@ -1904,21 +1917,6 @@ class ChimeTestClient:
             raise Exception('No match for generated branch name.')
 
         return branch_name
-
-    def sign_in(self, email):
-        if email == 'erica@example.com':
-            with HTTMock(self.test.mock_persona_verify_erica):
-                response = self.client.post('/sign-in', data={'email': email})
-                self.test.assertEqual(response.status_code, 200)
-        elif email == 'frances@example.com':
-            with HTTMock(self.test.mock_persona_verify_frances):
-                response = self.client.post('/sign-in', data={'email': email})
-                self.test.assertEqual(response.status_code, 200)
-        else:
-            raise ValueError(email)
-
-        response = self.client.get('/')
-        self.test.assertTrue('Start' in response.data)
 
     def start_task(self, description, beneficiary):
         ''' Start a new task.
@@ -2206,11 +2204,13 @@ class TestProcess (TestCase):
         ''' Check edit process with a user looking at feedback from another user.
         '''
         with HTTMock(self.auth_csv_example_allowed):
-            erica = ChimeTestClient(self.app.test_client(), self)
-            erica.sign_in('erica@example.com')
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
             
-            frances = ChimeTestClient(self.app.test_client(), self)
-            frances.sign_in('frances@example.com')
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in('frances@example.com')
             
             # Start a new task, "Diving for Dollars".
             erica.start_task('Diving', 'Dollars')
@@ -2249,11 +2249,13 @@ class TestProcess (TestCase):
         ''' Check edit process with a user attempting to change an activity that's been published.
         '''
         with HTTMock(self.auth_csv_example_allowed):
-            erica = ChimeTestClient(self.app.test_client(), self)
-            erica.sign_in(email='erica@example.com')
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
             
-            frances = ChimeTestClient(self.app.test_client(), self)
-            frances.sign_in('frances@example.com')
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in('frances@example.com')
 
             # Start a new task, "Diving for Dollars".
             erica.start_task(description='Diving', beneficiary='Dollars')
@@ -3236,8 +3238,9 @@ class TestApp (TestCase):
         ''' The record of a delete in the corresponding commit is accurate.
         '''
         with HTTMock(self.auth_csv_example_allowed):
-            user = ChimeTestClient(self.test_client, self)
-            user.sign_in(email='erica@example.com')
+            with HTTMock(self.mock_persona_verify_erica):
+                user = ChimeTestClient(self.test_client, self)
+                user.sign_in(email='erica@example.com')
 
             # Start a new task
             user.start_task(description=u'Ferment Tuber Fibres Using Symbiotic Bacteria in the Intestines', beneficiary=u'Naked Mole Rats')
