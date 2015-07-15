@@ -11,11 +11,11 @@ from mimetypes import guess_type
 from functools import wraps
 from io import BytesIO
 from slugify import slugify
+from collections import Counter
 import csv
 import re
 import json
 
-from git import Repo
 from dateutil import parser, tz
 from dateutil.relativedelta import relativedelta
 from flask import request, session, current_app, redirect, flash, render_template
@@ -31,8 +31,8 @@ from .repo_functions import (
     clobber_default_branch, MergeConflict, get_review_state_and_authorized, save_working_file,
     update_review_state, provide_feedback, move_existing_file, TASK_METADATA_FILENAME,
     REVIEW_STATE_EDITED, REVIEW_STATE_FEEDBACK, REVIEW_STATE_ENDORSED, REVIEW_STATE_PUBLISHED,
-    NEEDS_PUSH_FILE, mark_upstream_push_needed, _remote_exists
-    )
+    MESSAGE_CATEGORY_EDIT, mark_upstream_push_needed
+)
 
 from .href import needs_redirect, get_redirect
 
@@ -316,7 +316,6 @@ def get_relative_date_string(file_datetime, now_utc):
         (time_ago.hours, "hour", "hours"),
         (time_ago.minutes, "minute", "minutes")
     )
-
     for period, singular, plural in periods:
         if period:
             return "%d %s ago" % (period, singular if period == 1 else plural)
@@ -588,6 +587,94 @@ def make_activity_history(repo):
 
     return history
 
+def summarize_activity_history(repo=None, history=None, branch_name=u''):
+    ''' Make an object that summarizes an activity's history. If no history is passed, will get a new one from make_activity_history()
+
+        The object looks like this:
+        {
+            'summary': u'3 articles and 1 category have been changed',
+            'changes': [
+                {'edit_path': u'', 'display_type': u'Article', 'actions': u'Created, Edited, Deleted', 'title': u'How to Find Us'},
+                {'edit_path': u'/tree/34246e3/edit/contact/hours-of-operation/', 'display_type': u'Article', 'actions': u'Created, Edited', 'title': u'Hours of Operation'},
+                {'edit_path': u'/tree/34246e3/edit/contact/driving-directions/', 'display_type': u'Article', 'actions': u'Created, Edited', 'title': u'Driving Directions'},
+                {'edit_path': u'/tree/34246e3/edit/contact/', 'display_type': u'Category', 'actions': u'Created', 'title': u'Contact'}
+            ]
+        }
+    '''
+    # an empty summary object
+    summary = dict(summary=u'', changes=[])
+
+    # make sure we've got what we need
+    if not history:
+        try:
+            history = make_activity_history(repo=repo)
+        except:
+            # we weren't given what we need, return an empty summary
+            return summary
+
+    ed_lookup = {'create': u'created', 'edit': u'edited', 'delete': u'deleted'}
+    change_lookup = {}
+    display_types_encountered = []
+    # we only care about edits
+    edit_history = [action for action in reversed(history) if action['commit_category'] == MESSAGE_CATEGORY_EDIT]
+    for action in edit_history:
+        # get the list of changed files from the commit body
+        try:
+            commit_body = json.loads(action['commit_body'])
+        except:
+            # could't parse json in the commit body, keep moving
+            continue
+
+        # step through the changed files
+        for file_change in commit_body:
+            # the passed title or the filename if no title is there
+            title = file_change['title'] or file_change['file_path'].split('/')[-1]
+            # the passed display type or Unknown if no type is there
+            display_type = file_change['display_type'].title() or u'Unknown'
+            try:
+                action = ed_lookup[file_change['action']].title()
+            except:
+                action = file_change['action'].title()
+            file_path = file_change['file_path']
+            # if the last action is delete, we don't want an edit_path to a file that no longer exists
+            edit_path = join(u'/tree/{}/edit/'.format(branch_name), strip_index_file(file_path)) if action != u'Deleted' else u''
+            sort_time = datetime.now()
+            if file_path in change_lookup:
+                change_lookup[file_path]['sort_time'] = sort_time
+                # add the action to the end of the list if it's different from the last action added
+                if not re.search(r'{}$'.format(action), change_lookup[file_path]['actions']):
+                    change_lookup[file_path]['actions'] = change_lookup[file_path]['actions'] + u', {}'.format(action)
+                # add the other variables, which may've changed
+                change_lookup[file_path]['edit_path'] = edit_path
+                change_lookup[file_path]['title'] = title
+                change_lookup[file_path]['display_type'] = display_type
+            else:
+                change_lookup[file_path] = dict(title=title, display_type=display_type, actions=action, edit_path=edit_path, sort_time=sort_time)
+                display_types_encountered.append(display_type)
+
+    # flatten and sort the changes
+    changes = [change_lookup[item] for item in change_lookup]
+    if len(changes):
+        changes.sort(key=lambda k: k['sort_time'], reverse=True)
+        summary['changes'] = changes
+
+        # now construct the summary sentence
+        summary_sentence_parts = []
+        display_type_tally = Counter(display_types_encountered)
+        display_lookup = (
+            (display_type_tally[ARTICLE_LAYOUT.title()], unicode(ARTICLE_LAYOUT), unicode(file_type_plural(ARTICLE_LAYOUT))),
+            (display_type_tally[CATEGORY_LAYOUT.title()], unicode(CATEGORY_LAYOUT), unicode(file_type_plural(CATEGORY_LAYOUT)))
+        )
+        for tally, singular, plural in display_lookup:
+            if tally:
+                summary_sentence_parts.append("{} {}".format(tally, singular if tally == 1 else plural))
+        has_have = u''
+        has_have = u'have' if len(changes) > 1 else u'has'
+        summary_sentence = u'{} {} been changed'.format(u', '.join(summary_sentence_parts[:-2] + [u' and '.join(summary_sentence_parts[-2:])]), has_have)
+        summary['summary'] = summary_sentence
+
+    return summary
+
 def sorted_paths(repo, branch_name, path=None, showallfiles=False):
     ''' Returns a list of files and their attributes in the passed directory.
     '''
@@ -854,7 +941,7 @@ def render_edit_view(repo, branch_name, path, file):
 def add_article_or_category(repo, dir_path, request_path, create_what):
     ''' Add an article or category
     '''
-    if create_what not in ('article', 'category'):
+    if create_what not in (ARTICLE_LAYOUT, CATEGORY_LAYOUT):
         raise ValueError(u'Can\'t create {} in {}.'.format(create_what, join(dir_path, request_path)))
 
     request_path = request_path.rstrip('/')
@@ -881,10 +968,10 @@ def add_article_or_category(repo, dir_path, request_path, create_what):
     name = u'{}/index.{}'.format(display_name, CONTENT_FILE_EXTENSION)
     file_path = repo.canonicalize_path(dir_path, name)
 
-    if create_what == 'article':
+    if create_what == ARTICLE_LAYOUT:
         redirect_path = file_path
         create_front = dict(title=u'', description=u'', order=0, layout=ARTICLE_LAYOUT)
-    elif create_what == 'category':
+    elif create_what == CATEGORY_LAYOUT:
         redirect_path = strip_index_file(file_path)
         create_front = dict(title=u'', description=u'', order=0, layout=CATEGORY_LAYOUT)
 

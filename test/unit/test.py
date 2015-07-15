@@ -186,10 +186,17 @@ mike@teczno.com,Code for America,Mike Migurski
 
             return response(404, '')
 
-        good_file = lambda: view_functions.get_auth_data_file('http://example.com/good-file.csv')
-        org_file = lambda: view_functions.get_auth_data_file('http://example.com/org-file.csv')
-        addr_file = lambda: view_functions.get_auth_data_file('http://example.com/addr-file.csv')
-        no_file = lambda: view_functions.get_auth_data_file('http://example.com/no-file.csv')
+        def good_file():
+            return view_functions.get_auth_data_file('http://example.com/good-file.csv')
+
+        def org_file():
+            return view_functions.get_auth_data_file('http://example.com/org-file.csv')
+
+        def addr_file():
+            return view_functions.get_auth_data_file('http://example.com/addr-file.csv')
+
+        def no_file():
+            return view_functions.get_auth_data_file('http://example.com/no-file.csv')
 
         with HTTMock(mock_remote_authentication_file):
             self.assertTrue(view_functions.is_allowed_email(good_file(), 'mike@codeforamerica.org'))
@@ -1278,7 +1285,7 @@ class TestRepo (TestCase):
         working_branch.checkout()
 
         # get and check the history
-        activity_history = view_functions.make_activity_history(new_clone)
+        activity_history = view_functions.make_activity_history(repo=new_clone)
         self.assertEqual(len(activity_history), 10)
 
         # check the creation of the activity
@@ -2033,6 +2040,24 @@ class ChimeTestClient:
 
         return self.follow_redirect(response, 303)
 
+    def delete_article(self, soup, url, title_str):
+        ''' Look for the delete button, submit it, return URL and soup.
+        '''
+        del_link = soup.find(lambda tag: bool(tag.name == 'a' and tag.text == title_str))
+        del_li = del_link.find_parent('li')
+        del_span = del_li.find(lambda tag: bool(tag.name == 'span' and 'fa-trash' in tag.get('class')))
+        del_form = del_span.find_parent('form')
+
+        self.test.assertEqual(del_form['method'].upper(), 'POST')
+
+        data = {i['name']: i.get('value', u'')
+                for i in del_form.find_all(['input', 'button', 'textarea'])}
+
+        delete_article_path = urlparse(urljoin(url, del_form['action'])).path
+        response = self.client.post(delete_article_path, data=data)
+
+        return self.follow_redirect(response, 303)
+
     def request_feedback(self, url, soup, feedback_str):
         ''' Look for form to request feedback, submit it and return URL and soup.
         '''
@@ -2155,7 +2180,7 @@ class TestProcess (TestCase):
 
     def tearDown(self):
         rmtree(self.work_path)
-    
+
     def auth_csv_example_allowed(self, url, request):
         if url.geturl() == 'http://example.com/auth.csv':
             return response(200, '''Email domain,Organization\nexample.com,Example Org''')
@@ -2182,10 +2207,10 @@ class TestProcess (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             client = ChimeTestClient(self.test_client, self)
             client.sign_in('erica@example.com')
-            
+
             # Start a new task, "Diving for Dollars".
             _, soup1 = client.start_task('Diving', 'Dollars')
-            
+
             # Look for an "other" link that we know about - is it a category?
             categories_path, soup2 = client.follow_link(soup1, '/tree/9313f09/edit/other')
 
@@ -2193,14 +2218,14 @@ class TestProcess (TestCase):
             subcategories_path, soup3 = client.add_category(categories_path, soup2, 'Ninjas')
             articles_path, soup4 = client.add_subcategory(subcategories_path, soup3, 'Flipping Out')
             article_path, soup5 = client.add_article(articles_path, soup4, 'So Awesome')
-            
+
             # Edit the new article.
             client.edit_article(article_path, soup5, 'So, So Awesome', 'It was the best of times.')
-            
+
             # Ask for feedback
             task_path, soup6 = client.follow_link(soup5, '/tree/9313f09')
             client.request_feedback(task_path, soup6, 'Is this okay?')
-            
+
             #
             # Switch users and comment on the activity.
             #
@@ -2213,7 +2238,7 @@ class TestProcess (TestCase):
             #
             client.sign_in('erica@example.com')
             soup8 = client.open_link(task_path)
-            
+
             words = soup8.find(text='It is super-great.')
             comment = words.find_parent('div').find_parent('div')
             author = comment.find(text='frances@example.com')
@@ -2252,14 +2277,14 @@ class TestProcess (TestCase):
             task_path, soup8 = client.leave_feedback(url=task_path, soup=soup7, feedback_str='It is super-great.')
             approved_path, soup9 = client.approve_activity(url=task_path, soup=soup8)
             published_path, soup10 = client.publish_activity(url=approved_path, soup=soup9)
-            
+
             #
             # Check with upstream repository.
             #
             origin_commit = self.origin.refs.master.commit.hexsha
             upstream_commit = self.upstream.refs.master.commit.hexsha
             self.assertNotEqual(origin_commit, upstream_commit, 'Origin and upstream should not match before explicit synch')
-            
+
             running_state_dir = self.app.config['RUNNING_STATE_DIR']
             repo_functions.push_upstream_if_needed(self.origin, running_state_dir)
             upstream_commit = self.upstream.refs.master.commit.hexsha
@@ -3237,7 +3262,7 @@ class TestApp (TestCase):
 
             # get and check the history
             repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email='erica@example.com')
-            activity_history = view_functions.make_activity_history(repo)
+            activity_history = view_functions.make_activity_history(repo=repo)
             delete_history = json.loads(activity_history[0]['commit_body'])
             for item in delete_history:
                 self.assertEqual(item['action'], u'delete')
@@ -3781,7 +3806,7 @@ class TestApp (TestCase):
             self.assertTrue(dir_columns[3]['files'][0]['name'] == slug_are)
 
     # in TestApp
-    def test_activity_history_page_is_accurate(self):
+    def test_activity_overview_page_is_accurate(self):
         ''' The activity history page accurately displays the activity history
         '''
         fake_author_email = u'erica@example.com'
@@ -3845,6 +3870,85 @@ class TestApp (TestCase):
             self.assertTrue(PATTERN_OVERVIEW_ITEM_DELETED.format(**{"deleted_name": title_fig_zh, "deleted_type": view_functions.CATEGORY_LAYOUT, "deleted_also": u'(containing 1 category and 1 article) ', "author_email": fake_author_email}) in response_data)
             for detail in create_details:
                 self.assertTrue(PATTERN_OVERVIEW_ITEM_CREATED.format(**{"created_name": detail[1], "created_type": detail[2], "author_email": fake_author_email}), response_data)
+
+    # in TestApp
+    def test_activity_history_summary_accuracy(self):
+        ''' The summary of an activity's history is displayed as expected.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            client = ChimeTestClient(self.test_client, self)
+            client.sign_in(email='erica@example.com')
+
+            # Start a new task
+            _, enter_soup = client.start_task(description=u'Parasitize with Ichneumonidae', beneficiary=u'Moth Larvae')
+            # Get the branch name
+            branch_name = client.get_branch_name(enter_soup)
+
+            # Load the activity overview page
+            _, overview_soup = client.follow_link(soup=enter_soup, href='/tree/{}'.format(branch_name))
+            # there shouldn't be a summary yet
+            summary_div = overview_soup.find("div", class_="activity-summary")
+            self.assertIsNone(summary_div)
+
+            # Enter the "other" folder
+            base_path, base_soup = client.follow_link(soup=enter_soup, href='/tree/{}/edit/other'.format(branch_name))
+
+            # Create a category, sub-category, article
+            category_name = u'Antennae Segments'
+            subcategory_name = u'Short Ovipositors'
+            article_names = [u'Inject Eggs Directly Into a Host Body', u'A Technique Of Celestial Navigation Called Transverse Orientation']
+            category_path, category_soup = client.add_category(url=base_path, soup=base_soup, category_name=category_name)
+            subcategory_path, subcategory_soup = client.add_subcategory(url=category_path, soup=category_soup, subcategory_name=subcategory_name)
+            article_path, article_soup = client.add_article(url=subcategory_path, soup=subcategory_soup, article_name=article_names[0])
+
+            # edit the article
+            client.edit_article(url=article_path, soup=article_soup, title_str=article_names[0], body_str=u'Inject venom along with the egg')
+            # create another article and delete it
+            client.add_article(url=subcategory_path, soup=subcategory_soup, article_name=article_names[1])
+            subcategory_soup = client.open_link(subcategory_path)
+            client.delete_article(subcategory_soup, subcategory_path, article_names[1])
+
+            # Load the activity overview page
+            _, overview_soup = client.follow_link(soup=article_soup, href='/tree/{}'.format(branch_name))
+            # there is a summary
+            summary_div = overview_soup.find("div", class_="activity-summary")
+            self.assertIsNotNone(summary_div)
+            # it's right about what's changed
+            self.assertIsNotNone(summary_div.find(lambda tag: bool(tag.name == 'a' and '2 articles and 2 categories' in tag.text)))
+            # grab all the table rows
+            check_rows = summary_div.find_all('tr')
+
+            # make sure they match what we did above
+            category_row = check_rows.pop()
+            category_cells = category_row.find_all('td')
+            self.assertIsNotNone(category_cells[0].find('a'))
+            self.assertEqual(category_cells[0].text, category_name)
+            self.assertEqual(category_cells[1].text, u'Category')
+            self.assertEqual(category_cells[2].text, u'Created')
+
+            subcategory_row = check_rows.pop()
+            subcategory_cells = subcategory_row.find_all('td')
+            self.assertIsNotNone(subcategory_cells[0].find('a'))
+            self.assertEqual(subcategory_cells[0].text, subcategory_name)
+            self.assertEqual(subcategory_cells[1].text, u'Category')
+            self.assertEqual(subcategory_cells[2].text, u'Created')
+
+            article_1_row = check_rows.pop()
+            article_1_cells = article_1_row.find_all('td')
+            self.assertIsNotNone(article_1_cells[0].find('a'))
+            self.assertEqual(article_1_cells[0].text, article_names[0])
+            self.assertEqual(article_1_cells[1].text, u'Article')
+            self.assertEqual(article_1_cells[2].text, u'Created, Edited')
+
+            article_2_row = check_rows.pop()
+            article_2_cells = article_2_row.find_all('td')
+            self.assertIsNone(article_2_cells[0].find('a'))
+            self.assertEqual(article_2_cells[0].text, article_names[1])
+            self.assertEqual(article_2_cells[1].text, u'Article')
+            self.assertEqual(article_2_cells[2].text, u'Created, Deleted')
+
+            # only the header row's left
+            self.assertEqual(len(check_rows), 1)
 
     # in TestApp
     def test_create_page_creates_directory_containing_index(self):
