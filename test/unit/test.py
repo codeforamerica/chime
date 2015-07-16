@@ -644,8 +644,10 @@ class TestRepo (TestCase):
         fake_author_email = u'erica@example.com'
         task_description, task_beneficiary = str(uuid4()), str(uuid4())
         branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
-        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_description, task_beneficiary, fake_author_email)
+        branch2 = repo_functions.get_existing_branch(self.clone2, 'master', branch1.name)
         branch1_name = branch1.name
+        self.assertIsNotNone(branch2)
+        self.assertEqual(branch2.name, branch1_name)
 
         #
         # Make new files in each branch and save them.
@@ -2214,9 +2216,10 @@ class TestProcess (TestCase):
             
             # Start a new task, "Diving for Dollars".
             erica.start_task('Diving', 'Dollars')
+            branch_name = erica.get_branch_name()
             
             # Look for an "other" link that we know about - is it a category?
-            erica.follow_link('/tree/9313f09/edit/other')
+            erica.follow_link('/tree/{}/edit/other'.format(branch_name))
 
             # Create a new category "Ninjas", subcategory "Flipping Out", and article "So Awesome".
             erica.add_category('Ninjas')
@@ -2227,7 +2230,7 @@ class TestProcess (TestCase):
             erica.edit_article('So, So Awesome', 'It was the best of times.')
             
             # Ask for feedback
-            erica.follow_link('/tree/9313f09')
+            erica.follow_link('/tree/{}'.format(branch_name))
             erica.request_feedback('Is this okay?')
             
             #
@@ -2259,9 +2262,10 @@ class TestProcess (TestCase):
 
             # Start a new task, "Diving for Dollars".
             erica.start_task(description='Diving', beneficiary='Dollars')
+            branch_name = erica.get_branch_name()
 
             # Look for an "other" link that we know about - is it a category?
-            erica.follow_link(href='/tree/9313f09/edit/other')
+            erica.follow_link(href='/tree/{}/edit/other'.format(branch_name))
 
             # Create a new category "Ninjas", subcategory "Flipping Out", and article "So Awesome".
             erica.add_category(category_name='Ninjas')
@@ -2273,7 +2277,7 @@ class TestProcess (TestCase):
             article_path = erica.path
 
             # Ask for feedback
-            erica.follow_link(href='/tree/9313f09')
+            erica.follow_link(href='/tree/{}'.format(branch_name))
             erica.request_feedback(feedback_str='Is this okay?')
 
             #
