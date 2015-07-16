@@ -5,14 +5,14 @@ from os import mkdir, remove
 from os.path import join, split, exists, isdir, sep
 from git import Repo
 from git.cmd import GitCommandError
-import hashlib
 import yaml
 from re import match, search
+import random
 
 from . import edit_functions, google_api_functions
 
 TASK_METADATA_FILENAME = u'_task.yml'
-BRANCH_NAME_LENGTH = 7
+BRANCH_NAME_LENGTH = 9
 DESCRIPTION_MAX_LENGTH = 15
 ACTIVITY_CREATED_MESSAGE = u'activity was started'
 ACTIVITY_UPDATED_MESSAGE = u'activity was updated'
@@ -316,11 +316,11 @@ def make_shortened_task_description(task_description):
     return suggested
 
 def make_branch_sha(task_description, task_beneficiary, author_email):
-    ''' use details about a branch to generate a 'unique' name
+    ''' generate a random branch name
     '''
-    # get epoch seconds as a string
-    seed = u'{}{}{}'.format(unicode(task_description), unicode(task_beneficiary), unicode(author_email))
-    return hashlib.sha1(seed.encode('utf-8')).hexdigest()
+    # no vowels, no hex letters
+    seed = u'ghjklmnpqrstvwxz'
+    return ''.join(random.SystemRandom().choice(seed) for _ in range(BRANCH_NAME_LENGTH))
 
 def make_branch_name(task_description, task_beneficiary, author_email):
     ''' Return a short, URL- and Git-compatible name for a branch
