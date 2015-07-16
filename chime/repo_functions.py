@@ -7,6 +7,7 @@ from git import Repo
 from git.cmd import GitCommandError
 import yaml
 from re import match, search
+import json
 import random
 
 from . import edit_functions, google_api_functions
@@ -378,14 +379,19 @@ def complete_branch(clone, default_branch_name, working_branch_name):
             # amend the merge commit to include the deletion and push it
             clone.git.commit('--amend', '--no-edit', '--reset-author')
 
-    # now push the changes to origin
-    clone.git.push('origin', default_branch_name)
+    # tag the commit with the branch name and a json object containing the task metadata
+    task_metadata_json = json.dumps(task_metadata, ensure_ascii=False)
+    clone.create_tag(working_branch_name, message=task_metadata_json)
 
     #
     # Delete the working branch.
     #
     clone.remotes.origin.push(':' + working_branch_name)
     clone.delete_head([working_branch_name])
+
+    # now push the changes and the tag to origin
+    clone.git.push('origin', default_branch_name)
+    clone.git.push('--tags')
 
     return clone.commit()
 
