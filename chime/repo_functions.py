@@ -320,7 +320,7 @@ def make_branch_sha(task_description, task_beneficiary, author_email):
     '''
     # no vowels, no hex letters
     seed = u'ghjklmnpqrstvwxz'
-    return ''.join(random.SystemRandom().choice(seed) for _ in range(BRANCH_NAME_LENGTH))
+    return u''.join(random.SystemRandom().choice(seed) for _ in range(BRANCH_NAME_LENGTH))
 
 def make_branch_name(task_description, task_beneficiary, author_email):
     ''' Return a short, URL- and Git-compatible name for a branch
