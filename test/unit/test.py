@@ -2092,6 +2092,7 @@ class TestApp (TestCase):
 
     def setUp(self):
         self.work_path = mkdtemp(prefix='chime-repo-clones-')
+        self.publish_path = mkdtemp(prefix='chime-publish-path-')
 
         repo_path = dirname(abspath(__file__)) + '/../test-app.git'
         temp_repo_dir = mkdtemp(prefix='chime-root')
@@ -2123,6 +2124,7 @@ class TestApp (TestCase):
         create_app_environ['AUTH_DATA_HREF'] = 'http://example.com/auth.csv'
         create_app_environ['BROWSERID_URL'] = 'http://localhost'
         create_app_environ['LIVE_SITE_URL'] = 'http://example.org/'
+        create_app_environ['PUBLISH_PATH'] = self.publish_path
 
         create_app_environ['SUPPORT_EMAIL_ADDRESS'] = u'support@example.com'
         create_app_environ['SUPPORT_PHONE_NUMBER'] = u'(123) 456-7890'
@@ -2145,6 +2147,7 @@ class TestApp (TestCase):
         self.test_client = self.app.test_client()
 
     def tearDown(self):
+        rmtree(self.publish_path)
         rmtree(self.work_path)
         rmtree(self.ga_config_dir)
         rmtree(self.origin.git_dir)

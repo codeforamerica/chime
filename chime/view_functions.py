@@ -22,7 +22,6 @@ from dateutil.relativedelta import relativedelta
 from flask import request, session, current_app, redirect, flash, render_template
 from requests import get
 
-from . import publish
 from .edit_functions import create_new_page, delete_file, update_page
 from .jekyll_functions import load_jekyll_doc, load_languages
 from .google_api_functions import read_ga_config, fetch_google_analytics_for_page
@@ -819,11 +818,11 @@ def publish_or_destroy_activity(branch_name, action):
         else:
             raise Exception(u'Tried to {} an activity, and I don\'t know how to do that.'.format(action))
 
-        if current_app.config['PUBLISH_SERVICE_URL']:
-            publish.announce_commit(current_app.config['BROWSERID_URL'], repo, repo.commit().hexsha)
-
-        else:
-            publish.release_commit(current_app.config['RUNNING_STATE_DIR'], repo, repo.commit().hexsha)
+        # if current_app.config['PUBLISH_SERVICE_URL']:
+        #     publish.announce_commit(current_app.config['BROWSERID_URL'], repo, repo.commit().hexsha)
+        # 
+        # else:
+        #     publish.release_commit(current_app.config['RUNNING_STATE_DIR'], repo, repo.commit().hexsha)
 
     except MergeConflict as conflict:
         raise conflict
