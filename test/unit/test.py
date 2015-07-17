@@ -1524,6 +1524,49 @@ class TestRepo (TestCase):
         self.assertFalse(repo_functions.verify_file_exists_in_branch(self.origin, repo_functions.TASK_METADATA_FILENAME, 'master'))
 
     # in TestRepo
+    def test_merge_tagged_with_branch_metadata(self):
+        ''' The merge commit is tagged with branch metadata on publish.
+        '''
+        erica_email = u'erica@example.com'
+        task_description = u'Attract Insects With Anthocyanin Pigments To The Cavity Formed By A Cupped Leaf'
+        task_beneficiary = u'Nepenthes'
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, erica_email)
+        branch1_name = branch1.name
+        branch1.checkout()
+
+        # get the task metadata
+        task_metadata = repo_functions.get_task_metadata_for_branch(self.clone1, branch1_name)
+
+        # Add a file and complete the branch
+        edit_functions.create_new_page(self.clone1, '', 'happy.md', dict(title='Hello'), 'Hello hello.')
+        args1 = self.clone1, 'happy.md', 'added cool file', branch1.commit.hexsha, 'master'
+        repo_functions.save_working_file(*args1)
+        merge_commit = repo_functions.complete_branch(self.clone1, 'master', branch1_name)
+
+        # collect the tag ref, object, name
+        clone_tag_ref = self.clone1.tags[0]
+        clone_tag = clone_tag_ref.tag
+        clone_tag_name = clone_tag.tag
+        origin_tag_ref = self.origin.tags[0]
+        origin_tag = origin_tag_ref.tag
+        origin_tag_name = origin_tag.tag
+        # the tag exists
+        self.assertIsNotNone(clone_tag_ref)
+        self.assertIsNotNone(origin_tag_ref)
+        # it's attached to the merge commit
+        self.assertEqual(clone_tag_ref.commit, merge_commit)
+        self.assertEqual(origin_tag_ref.commit, merge_commit)
+        # it has the same name as the branch
+        self.assertEqual(clone_tag_name, branch1_name)
+        self.assertEqual(origin_tag_name, branch1_name)
+
+        # the tag message is the jsonified task metadata
+        clone_tag_metadata = json.loads(clone_tag.message)
+        origin_tag_metadata = json.loads(origin_tag.message)
+        self.assertEqual(clone_tag_metadata, task_metadata)
+        self.assertEqual(origin_tag_metadata, task_metadata)
+
+    # in TestRepo
     def test_task_metadata_merge_conflict(self):
         ''' Task metadata file merge conflict is handled correctly
         '''
