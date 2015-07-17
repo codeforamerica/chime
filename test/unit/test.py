@@ -1589,6 +1589,12 @@ class TestRepo (TestCase):
         self.assertEqual(clone2_tag_metadata, clone1_branch_task_metadata)
         self.assertEqual(origin_tag_metadata, clone1_branch_task_metadata)
 
+        # the file we published in clone1 isn't in clone2's local branch, but it is in clone2 master
+        self.assertFalse(repo_functions.verify_file_exists_in_branch(self.clone2, 'happy.md', branch_name))
+        self.clone2.branches['master'].checkout()
+        self.clone2.git.pull('origin', 'master')
+        self.assertTrue(repo_functions.verify_file_exists_in_branch(self.clone2, 'happy.md', 'master'))
+
     # in TestRepo
     def test_task_metadata_merge_conflict(self):
         ''' Task metadata file merge conflict is handled correctly
