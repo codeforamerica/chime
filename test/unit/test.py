@@ -1543,27 +1543,38 @@ class TestRepo (TestCase):
         repo_functions.save_working_file(*args1)
         merge_commit = repo_functions.complete_branch(self.clone1, 'master', branch1_name)
 
+        # update clone2
+        self.clone2.git.fetch('origin')
+
         # collect the tag ref, object, name
-        clone_tag_ref = self.clone1.tags[0]
-        clone_tag = clone_tag_ref.tag
-        clone_tag_name = clone_tag.tag
+        clone1_tag_ref = self.clone1.tags[0]
+        clone1_tag = clone1_tag_ref.tag
+        clone1_tag_name = clone1_tag.tag
+        clone2_tag_ref = self.clone2.tags[0]
+        clone2_tag = clone2_tag_ref.tag
+        clone2_tag_name = clone2_tag.tag
         origin_tag_ref = self.origin.tags[0]
         origin_tag = origin_tag_ref.tag
         origin_tag_name = origin_tag.tag
         # the tag exists
-        self.assertIsNotNone(clone_tag_ref)
+        self.assertIsNotNone(clone1_tag_ref)
+        self.assertIsNotNone(clone2_tag_ref)
         self.assertIsNotNone(origin_tag_ref)
         # it's attached to the merge commit
-        self.assertEqual(clone_tag_ref.commit, merge_commit)
+        self.assertEqual(clone1_tag_ref.commit, merge_commit)
+        self.assertEqual(clone2_tag_ref.commit, merge_commit)
         self.assertEqual(origin_tag_ref.commit, merge_commit)
         # it has the same name as the branch
-        self.assertEqual(clone_tag_name, branch1_name)
+        self.assertEqual(clone1_tag_name, branch1_name)
+        self.assertEqual(clone2_tag_name, branch1_name)
         self.assertEqual(origin_tag_name, branch1_name)
 
         # the tag message is the jsonified task metadata
-        clone_tag_metadata = json.loads(clone_tag.message)
+        clone1_tag_metadata = json.loads(clone1_tag.message)
+        clone2_tag_metadata = json.loads(clone2_tag.message)
         origin_tag_metadata = json.loads(origin_tag.message)
-        self.assertEqual(clone_tag_metadata, task_metadata)
+        self.assertEqual(clone1_tag_metadata, task_metadata)
+        self.assertEqual(clone2_tag_metadata, task_metadata)
         self.assertEqual(origin_tag_metadata, task_metadata)
 
     # in TestRepo
