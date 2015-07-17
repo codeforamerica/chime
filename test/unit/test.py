@@ -18,6 +18,7 @@ import sys
 from chime.repo_functions import ChimeRepo
 from slugify import slugify
 import json
+import time
 
 repo_root = abspath(join(dirname(__file__), '..'))
 sys.path.insert(0, repo_root)
@@ -26,7 +27,7 @@ from bs4 import BeautifulSoup
 from git.cmd import GitCommandError
 from box.util.rotunicode import RotUnicode
 from httmock import response, HTTMock
-from mock import MagicMock
+from mock import MagicMock, patch
 
 from chime import (
     create_app, jekyll_functions, repo_functions, edit_functions,
@@ -2483,6 +2484,44 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             response = self.test_client.get('/')
             self.assertTrue('Start' in response.data)
+
+            response = self.test_client.post('/sign-out')
+            self.assertEqual(response.status_code, 200)
+
+            response = self.test_client.get('/')
+            self.assertFalse('Start' in response.data)
+
+    # in TestApp
+    @patch('chime.view_functions.AUTH_CHECK_LIFESPAN', new=1.0)
+    def test_login_timeout(self):
+        ''' Check basic log in / log out flow with auth check lifespan.
+        '''
+        response = self.test_client.get('/')
+        self.assertFalse('Start' in response.data)
+
+        with HTTMock(self.mock_persona_verify_erica):
+            response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
+            self.assertEqual(response.status_code, 200)
+
+        with HTTMock(self.auth_csv_example_allowed):
+            response = self.test_client.get('/')
+            self.assertTrue('Start' in response.data)
+
+        with HTTMock(self.mock_exception):
+            # Show that email status does not require a call to auth CSV.
+            response = self.test_client.get('/')
+            self.assertEqual(response.status_code, 200, 'Should have worked')
+            self.assertTrue('Start' in response.data)
+            
+            # Show that a call to auth CSV was made, outside the timeout period.
+            time.sleep(1.1)
+            response = self.test_client.get('/')
+            self.assertEqual(response.status_code, 500, 'Should be an error')
+
+        with HTTMock(self.auth_csv_example_allowed):
+            # Show that email status was correctly updatedw with call to CSV.
+            response = self.test_client.get('/')
+            self.assertEqual(response.status_code, 200, 'Should have worked')
 
             response = self.test_client.post('/sign-out')
             self.assertEqual(response.status_code, 200)
