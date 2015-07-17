@@ -1527,24 +1527,36 @@ class TestRepo (TestCase):
     def test_merge_tagged_with_branch_metadata(self):
         ''' The merge commit is tagged with branch metadata on publish.
         '''
+        # start an activity on clone1
         erica_email = u'erica@example.com'
         task_description = u'Attract Insects With Anthocyanin Pigments To The Cavity Formed By A Cupped Leaf'
         task_beneficiary = u'Nepenthes'
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, erica_email)
-        branch1_name = branch1.name
-        branch1.checkout()
+        clone1_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, erica_email)
+        branch_name = clone1_branch.name
+        clone1_branch.checkout()
+        clone1_branch_task_metadata = repo_functions.get_task_metadata_for_branch(self.clone1, branch_name)
 
-        # get the task metadata
-        task_metadata = repo_functions.get_task_metadata_for_branch(self.clone1, branch1_name)
+        # check out the branch on clone2 and verify that it's the same
+        clone2_branch = repo_functions.get_existing_branch(self.clone2, 'master', branch_name)
+        clone2_branch.checkout()
+        clone2_branch_task_metadata = repo_functions.get_task_metadata_for_branch(self.clone2, branch_name)
+        self.assertEqual(clone2_branch.commit.hexsha, clone1_branch.commit.hexsha)
+        self.assertEqual(clone1_branch_task_metadata, clone2_branch_task_metadata)
 
-        # Add a file and complete the branch
+        # On clone1, add a file and complete the branch
         edit_functions.create_new_page(self.clone1, '', 'happy.md', dict(title='Hello'), 'Hello hello.')
-        args1 = self.clone1, 'happy.md', 'added cool file', branch1.commit.hexsha, 'master'
+        args1 = self.clone1, 'happy.md', 'added cool file', clone1_branch.commit.hexsha, 'master'
         repo_functions.save_working_file(*args1)
-        merge_commit = repo_functions.complete_branch(self.clone1, 'master', branch1_name)
+        merge_commit = repo_functions.complete_branch(self.clone1, 'master', branch_name)
 
         # update clone2
         self.clone2.git.fetch('origin')
+
+        # the branch is no longer in clone1 or origin
+        self.assertFalse(branch_name in self.clone1.branches)
+        self.assertFalse(branch_name in self.origin.branches)
+        # but it's still there in clone2
+        self.assertTrue(branch_name in self.clone2.branches)
 
         # collect the tag ref, object, name
         clone1_tag_ref = self.clone1.tags[0]
@@ -1565,17 +1577,17 @@ class TestRepo (TestCase):
         self.assertEqual(clone2_tag_ref.commit, merge_commit)
         self.assertEqual(origin_tag_ref.commit, merge_commit)
         # it has the same name as the branch
-        self.assertEqual(clone1_tag_name, branch1_name)
-        self.assertEqual(clone2_tag_name, branch1_name)
-        self.assertEqual(origin_tag_name, branch1_name)
+        self.assertEqual(clone1_tag_name, branch_name)
+        self.assertEqual(clone2_tag_name, branch_name)
+        self.assertEqual(origin_tag_name, branch_name)
 
         # the tag message is the jsonified task metadata
         clone1_tag_metadata = json.loads(clone1_tag.message)
         clone2_tag_metadata = json.loads(clone2_tag.message)
         origin_tag_metadata = json.loads(origin_tag.message)
-        self.assertEqual(clone1_tag_metadata, task_metadata)
-        self.assertEqual(clone2_tag_metadata, task_metadata)
-        self.assertEqual(origin_tag_metadata, task_metadata)
+        self.assertEqual(clone1_tag_metadata, clone1_branch_task_metadata)
+        self.assertEqual(clone2_tag_metadata, clone1_branch_task_metadata)
+        self.assertEqual(origin_tag_metadata, clone1_branch_task_metadata)
 
     # in TestRepo
     def test_task_metadata_merge_conflict(self):
