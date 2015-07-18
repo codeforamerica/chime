@@ -9,7 +9,7 @@ ENV CODE_PATH /opt/chime/webapp
 ENV DATA_PATH /var/opt/chime/data/default
 ENV PUBLISH_PATH /var/opt/chime/publish/default
 ENV LOG_PATH /var/log/chime
-ENV REPO_PATH $DATA_PATH/master
+ENV REPO_PATH $DATA_PATH/repo
 ENV WORK_PATH $DATA_PATH/work
 ENV RUNNING_STATE_DIR /var/run/chime
 ENV USER chime
@@ -75,6 +75,7 @@ CMD  honcho start
 #   -v /real/path/to/logs:/var/log/chime
 #   -e 'LIVE_SITE_URL=http://127.0.0.1/'
 #   -p 5000:5000
+
 #
 # The -v lines map real directories with persistent/sharable data
 # to spots inside the container. the -e lines set up necessary local
