@@ -97,7 +97,10 @@ class ChimeTestClient:
         data = {'task_description': description, 'task_beneficiary': beneficiary}
         response = self.client.post('/start', data=data)
 
-        self.follow_redirect(response, 303)
+        if response.status_code == 200:
+            self.soup = BeautifulSoup(response.data)
+        else:
+            self.follow_redirect(response, 303)
 
     def add_category(self, category_name):
         ''' Look for form to add a category, submit it.

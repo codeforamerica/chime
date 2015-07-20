@@ -30,6 +30,7 @@ from git.cmd import GitCommandError
 from box.util.rotunicode import RotUnicode
 from httmock import response, HTTMock
 from mock import MagicMock, patch
+from bs4 import Comment
 
 from chime import (
     create_app, jekyll_functions, repo_functions, edit_functions,
@@ -2327,6 +2328,36 @@ class TestApp (TestCase):
             response = self.test_client.get('/')
             self.assertFalse('Start' in response.data)
 
+    def test_need_description_to_start_activity(self):
+        ''' You need a description to start a new activity
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.test_client, self)
+                erica.sign_in(email='erica@example.com')
+
+            pattern_template_comment_stripped = sub(ur'<!--|-->', u'', PATTERN_TEMPLATE_COMMENT)
+            flash_message_text = u'Please describe what you\'re doing when you start a new activity!'
+
+            # start a new task without a description or beneficiary
+            erica.start_task(description=u'', beneficiary=u'')
+            # the activities-list template reloaded
+            comments = erica.soup.findAll(text=lambda text: isinstance(text, Comment))
+            self.assertTrue(pattern_template_comment_stripped.format(u'activities-list') in comments)
+            # verify that there's a flash message warning about submitting an empty description
+            self.assertEqual(flash_message_text, erica.soup.find('li', class_='flash').text)
+
+            # start a new task with no description but with a beneficiary
+            fake_task_beneficiary = u'Scary Ghosts'
+            erica.start_task(description=u'', beneficiary=fake_task_beneficiary)
+            # the activities-list template reloaded
+            comments = erica.soup.findAll(text=lambda text: isinstance(text, Comment))
+            self.assertTrue(pattern_template_comment_stripped.format(u'activities-list') in comments)
+            # verify that there's a flash message warning about submitting an empty description
+            self.assertEqual(flash_message_text, erica.soup.find('li', class_='flash').text)
+            # verify that the entered beneficiary text has been pre-filled in the form
+            self.assertEqual(fake_task_beneficiary, erica.soup.find('input', attrs={'name': u'task_beneficiary'}).attrs['value'])
+
     # in TestApp
     def test_branches(self):
         ''' Check basic branching functionality.
@@ -2646,7 +2677,6 @@ class TestApp (TestCase):
             #
             fake_task_description = u'This should not create a branch'
             fake_task_beneficiary = u'Nobody'
-            fake_author_email = u'erica@example.com'
             fake_branch_name = repo_functions.make_branch_name()
             response = self.test_client.post('/tree/{}/edit/'.format(fake_branch_name), data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': fake_page_slug}, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
