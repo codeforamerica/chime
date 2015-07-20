@@ -15,6 +15,7 @@ from collections import Counter
 import csv
 import re
 import json
+import time
 import sys
 
 from dateutil import parser, tz
@@ -36,6 +37,9 @@ from .repo_functions import (
 )
 
 from .href import needs_redirect, get_redirect
+
+# Maximum age of an authentication check in seconds.
+AUTH_CHECK_LIFESPAN = 300.0
 
 # when creating a content file, what extension should it have?
 CONTENT_FILE_EXTENSION = u'markdown'
@@ -448,10 +452,24 @@ def login_required(route_function):
             return redirect(redirect_url)
 
         auth_data_href = current_app.config['AUTH_DATA_HREF']
-        if not is_allowed_email(get_auth_data_file(auth_data_href), email):
+        last_check = session.get('auth_check', {}).get('last_check', 0.0)
+        last_result = session.get('auth_check', {}).get('last_result')
+
+        if last_result is True and (last_check + AUTH_CHECK_LIFESPAN) > time.time():
+            # Email still allowed
+            pass
+
+        elif not is_allowed_email(get_auth_data_file(auth_data_href), email):
+            Logger.debug('Remembering that email was not allowed')
+            session['auth_check'] = dict(last_check=time.time(), last_result=False)
+
             redirect_url = '/not-allowed'
             Logger.info("Email not allowed; redirecting to %s", redirect_url)
             return redirect(redirect_url)
+        
+        else:
+            Logger.debug('Remembering that email was allowed in')
+            session['auth_check'] = dict(last_check=time.time(), last_result=True)
 
         environ['GIT_AUTHOR_NAME'] = ' '
         environ['GIT_AUTHOR_EMAIL'] = email.encode('utf-8')
