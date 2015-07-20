@@ -797,7 +797,7 @@ def make_directory_columns(clone, branch_name, repo_path=None, showallfiles=Fals
     return dir_listings
 
 def publish_commit(repo, publish_path):
-    '''
+    ''' Publish current commit from the given repo to the publish_path directory.
     '''
     try:
         checkout_dir = mkdtemp(prefix='built-site-')
