@@ -799,27 +799,26 @@ def publish_commit(repo, publish_path):
     '''
     from tempfile import mkdtemp
     from subprocess import Popen
-
-    checkout_dir = mkdtemp(prefix='built-site-')
-
+    
     try:
+        checkout_dir = mkdtemp(prefix='built-site-')
+
         # http://stackoverflow.com/questions/4479960/git-checkout-to-a-specific-folder
         environ['GIT_WORK_TREE'], old_GWT = checkout_dir, environ.get('GIT_WORK_TREE')
         repo.git.checkout(repo.commit().hexsha, '.')
-    finally:
-        if old_GWT:
-            environ['GIT_WORK_TREE'] = old_GWT
 
-    built_dir = build_jekyll_site(checkout_dir)
+        built_dir = build_jekyll_site(checkout_dir)
 
-    try:
         call = 'rsync -ur --delete {built_dir}/ {publish_path}/'.format(**locals())
         rsync = Popen(call.split())
         rsync.wait()
-    except:
-        error_message = u'Unexpected rsync failure running {}'.format(call)
-        Logger.error(error_message)
-        raise Exception(error_message)
+    
+    finally:
+        # Clean up GIT_WORK_TREE so we don't pollute the environment.
+        if old_GWT:
+            environ['GIT_WORK_TREE'] = old_GWT
+        else:
+            del environ['GIT_WORK_TREE']
 
 def publish_or_destroy_activity(branch_name, action):
     ''' Publish, abandon, or clobber the activity defined by the passed branch name.
