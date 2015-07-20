@@ -443,7 +443,8 @@ def login_required(route_function):
         last_result = session.get('auth_check', {}).get('last_result')
 
         if last_result is True and (last_check + AUTH_CHECK_LIFESPAN) > time.time():
-            Logger.info("Email still allowed.")
+            # Email still allowed
+            pass
 
         elif not is_allowed_email(get_auth_data_file(auth_data_href), email):
             Logger.debug('Remembering that email was not allowed')
