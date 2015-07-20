@@ -2298,7 +2298,7 @@ class TestApp (TestCase):
         fake_endorser_email = u'frances@example.com'
         fake_page_slug = u'hello'
         fake_page_path = u'{}/index.{}'.format(fake_page_slug, view_functions.CONTENT_FILE_EXTENSION)
-        fake_page_content = u'Hello world.'
+        fake_page_content = u'People of earth we salute you.'
         with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'email': fake_author_email})
 
@@ -2383,6 +2383,10 @@ class TestApp (TestCase):
         self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('activities-list') in response.data)
         # the activity we just published shouldn't be listed on the page
         self.assertTrue(generated_branch_name not in response.data)
+        
+        # Look in the published directory and see if the words are there.
+        with open(join(self.publish_path, fake_page_slug, 'index.html')) as file:
+            self.assertTrue(fake_page_content in file.read())
 
     # in TestApp
     def test_delete_strange_tasks(self):
