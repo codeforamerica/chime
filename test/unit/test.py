@@ -2647,7 +2647,7 @@ class TestApp (TestCase):
             fake_task_description = u'This should not create a branch'
             fake_task_beneficiary = u'Nobody'
             fake_author_email = u'erica@example.com'
-            fake_branch_name = repo_functions.make_branch_name(fake_task_description, fake_task_beneficiary, fake_author_email)
+            fake_branch_name = repo_functions.make_branch_name()
             response = self.test_client.post('/tree/{}/edit/'.format(fake_branch_name), data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': fake_page_slug}, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # the branch name should not be in the returned HTML
