@@ -92,6 +92,8 @@ class TestJekyll (TestCase):
 class TestViewFunctions (TestCase):
 
     def setUp(self):
+        self.old_tempdir, tempfile.tempdir = tempfile.tempdir, mkdtemp(prefix='chime-TestViewFunctions-')
+
         repo_path = dirname(abspath(__file__)) + '/../test-app.git'
         temp_repo_dir = mkdtemp(prefix='chime-root')
         temp_repo_path = temp_repo_dir + '/test-app.git'
@@ -109,8 +111,8 @@ class TestViewFunctions (TestCase):
         environ['GIT_COMMITTER_EMAIL'] = self.session['email']
 
     def tearDown(self):
-        rmtree(self.origin.git_dir)
-        rmtree(self.clone.working_dir)
+        rmtree(tempfile.tempdir)
+        tempfile.tempdir = self.old_tempdir
 
     # in TestViewFunctions
     def test_sorted_paths(self):
@@ -223,6 +225,8 @@ mike@teczno.com,Code for America,Mike Migurski
 class TestRepo (TestCase):
 
     def setUp(self):
+        self.old_tempdir, tempfile.tempdir = tempfile.tempdir, mkdtemp(prefix='chime-TestRepo-')
+
         self.work_path = mkdtemp(prefix='chime-repo-clones-')
         repo_path = dirname(abspath(__file__)) + '/../test-app.git'
         temp_repo_dir = mkdtemp(prefix='chime-root')
@@ -244,9 +248,8 @@ class TestRepo (TestCase):
         environ['GIT_COMMITTER_EMAIL'] = self.session['email']
 
     def tearDown(self):
-        rmtree(self.origin.git_dir)
-        rmtree(self.clone1.working_dir)
-        rmtree(self.clone2.working_dir)
+        rmtree(tempfile.tempdir)
+        tempfile.tempdir = self.old_tempdir
 
     # in TestRepo
     def test_repo_features(self):
@@ -1656,6 +1659,8 @@ class TestRepo (TestCase):
 class TestGoogleApiFunctions (TestCase):
 
     def setUp(self):
+        self.old_tempdir, tempfile.tempdir = tempfile.tempdir, mkdtemp(prefix='chime-TestGoogleApiFunctions-')
+
         create_app_environ = {}
         create_app_environ['BROWSERID_URL'] = 'http://example.com'
         create_app_environ['LIVE_SITE_URL'] = 'http://example.org/'
@@ -1678,7 +1683,8 @@ class TestGoogleApiFunctions (TestCase):
             google_api_functions.write_ga_config(config_values, self.app.config['RUNNING_STATE_DIR'])
 
     def tearDown(self):
-        rmtree(self.ga_config_dir)
+        rmtree(tempfile.tempdir)
+        tempfile.tempdir = self.old_tempdir
 
     def mock_successful_request_new_google_access_token(self, url, request):
         if google_api_functions.GOOGLE_ANALYTICS_TOKENS_URL in url.geturl():
@@ -1919,6 +1925,8 @@ class TestAppConfig (TestCase):
 class TestProcess (TestCase):
 
     def setUp(self):
+        self.old_tempdir, tempfile.tempdir = tempfile.tempdir, mkdtemp(prefix='chime-TestProcess-')
+
         self.work_path = mkdtemp(prefix='chime-repo-clones-')
 
         repo_path = dirname(abspath(__file__)) + '/../test-app.git'
@@ -1963,7 +1971,8 @@ class TestProcess (TestCase):
         random.choice = MagicMock(return_value="P")
 
     def tearDown(self):
-        rmtree(self.work_path)
+        rmtree(tempfile.tempdir)
+        tempfile.tempdir = self.old_tempdir
 
     def auth_csv_example_allowed(self, url, request):
         if url.geturl() == 'http://example.com/auth.csv':
@@ -2151,11 +2160,7 @@ class TestApp (TestCase):
 
     def tearDown(self):
         rmtree(tempfile.tempdir)
-        
-        if self.old_tempdir:
-            tempfile.tempdir = self.old_tempdir
-        else:
-            del tempfile.tempdir
+        tempfile.tempdir = self.old_tempdir
 
     def auth_csv_example_disallowed(self, url, request):
         if url.geturl() == 'http://example.com/auth.csv':
@@ -4166,6 +4171,8 @@ class TestApp (TestCase):
 class TestPublishApp (TestCase):
 
     def setUp(self):
+        self.old_tempdir, tempfile.tempdir = tempfile.tempdir, mkdtemp(prefix='chime-TestPublishApp-')
+
         self.work_path = mkdtemp(prefix='chime-publish-app-')
 
         app_args = {}
@@ -4174,7 +4181,8 @@ class TestPublishApp (TestCase):
         self.client = self.app.test_client()
 
     def tearDown(self):
-        rmtree(self.work_path)
+        rmtree(tempfile.tempdir)
+        tempfile.tempdir = self.old_tempdir
 
     def mock_github_request(self, url, request):
         '''
