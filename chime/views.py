@@ -219,9 +219,9 @@ def update_activity():
         if action in ('merge', 'abandon', 'clobber'):
             return publish_or_destroy_activity(safe_branch, action)
         else:
-            return redirect('/'.format(safe_branch), code=303)
+            return redirect('/', code=303)
     else:
-        return redirect('/'.format(safe_branch), code=303)
+        return redirect('/', code=303)
 
 @app.route('/checkouts/<ref>.zip')
 @log_application_errors
