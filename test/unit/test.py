@@ -29,6 +29,7 @@ from git.cmd import GitCommandError
 from box.util.rotunicode import RotUnicode
 from httmock import response, HTTMock
 from mock import MagicMock, patch
+from bs4 import Comment
 
 from chime import (
     create_app, jekyll_functions, repo_functions, edit_functions,
@@ -2973,6 +2974,70 @@ class TestApp (TestCase):
             cat_location = join(repo.working_dir, u'{}/{}'.format(other_slug, category_slug))
             self.assertTrue(exists(cat_location))
             self.assertTrue(view_functions.is_category_dir(cat_location))
+
+    # in TestApp
+    def test_empty_category_or_article_name(self):
+        ''' Submitting an empty category or article name reloads with a warning.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.test_client, self)
+                erica.sign_in(email='erica@example.com')
+
+            pattern_template_comment_stripped = sub(ur'<!--|-->', u'', PATTERN_TEMPLATE_COMMENT)
+
+            # Start a new task
+            erica.start_task(description=u'Deep-Fry a Buffalo in Forty Seconds', beneficiary=u'Moe')
+            # Get the branch name
+            branch_name = erica.get_branch_name()
+
+            # Enter the "other" folder
+            other_slug = u'other'
+            erica.follow_link(href='/tree/{}/edit/{}'.format(branch_name, other_slug))
+
+            # Try to create a category with no name
+            category_name = u''
+            erica.add_category(category_name=category_name)
+            # the articles-list template reloaded
+            comments = erica.soup.findAll(text=lambda text: isinstance(text, Comment))
+            self.assertTrue(pattern_template_comment_stripped.format(u'articles-list') in comments)
+            # verify that there's a flash message warning about submitting an empty description
+            self.assertEqual(u'Please enter a name to create a category!', erica.soup.find('li', class_='flash').text)
+
+            # Try to create a category with a name that slufigies to an empty string
+            category_name = u'(╯□）╯︵ ┻━┻'
+            self.assertEqual(u'', slugify(category_name))
+            erica.add_category(category_name=category_name)
+            # the articles-list template reloaded
+            comments = erica.soup.findAll(text=lambda text: isinstance(text, Comment))
+            self.assertTrue(pattern_template_comment_stripped.format(u'articles-list') in comments)
+            # verify that there's a flash message warning about submitting an empty description
+            self.assertEqual(u'{} is not an acceptable category name!'.format(category_name), erica.soup.find('li', class_='flash').text)
+
+            # Create a category and sub-category
+            category_name = u'Mammals'
+            subcategory_name = u'Bison'
+            erica.add_category(category_name=category_name)
+            erica.add_subcategory(subcategory_name=subcategory_name)
+
+            # Try to create an article with no name
+            article_name = u''
+            erica.add_article(article_name=article_name)
+            # the articles-list template reloaded
+            comments = erica.soup.findAll(text=lambda text: isinstance(text, Comment))
+            self.assertTrue(pattern_template_comment_stripped.format(u'articles-list') in comments)
+            # verify that there's a flash message warning about submitting an empty description
+            self.assertEqual(u'Please enter a name to create an article!', erica.soup.find('li', class_='flash').text)
+
+            # Try to create a article with a name that slufigies to an empty string
+            article_name = u'(╯□）╯︵ ┻━┻'
+            self.assertEqual(u'', slugify(article_name))
+            erica.add_article(article_name=article_name)
+            # the articles-list template reloaded
+            comments = erica.soup.findAll(text=lambda text: isinstance(text, Comment))
+            self.assertTrue(pattern_template_comment_stripped.format(u'articles-list') in comments)
+            # verify that there's a flash message warning about submitting an empty description
+            self.assertEqual(u'{} is not an acceptable article name!'.format(article_name), erica.soup.find('li', class_='flash').text)
 
     # in TestApp
     def test_create_duplicate_category(self):
