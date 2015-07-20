@@ -12,6 +12,8 @@ from functools import wraps
 from io import BytesIO
 from slugify import slugify
 from collections import Counter
+from tempfile import mkdtemp
+from subprocess import Popen
 import csv
 import re
 import json
@@ -797,9 +799,6 @@ def make_directory_columns(clone, branch_name, repo_path=None, showallfiles=Fals
 def publish_commit(repo, publish_path):
     '''
     '''
-    from tempfile import mkdtemp
-    from subprocess import Popen
-    
     try:
         checkout_dir = mkdtemp(prefix='built-site-')
 

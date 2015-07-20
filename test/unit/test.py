@@ -19,6 +19,7 @@ from chime.repo_functions import ChimeRepo
 from slugify import slugify
 import json
 import logging
+import tempfile
 logging.disable(logging.CRITICAL)
 
 repo_root = abspath(join(dirname(__file__), '..'))
@@ -2091,6 +2092,8 @@ class TestProcess (TestCase):
 class TestApp (TestCase):
 
     def setUp(self):
+        self.old_tempdir, tempfile.tempdir = tempfile.tempdir, mkdtemp(prefix='chime-TestApp-')
+
         self.work_path = mkdtemp(prefix='chime-repo-clones-')
         self.publish_path = mkdtemp(prefix='chime-publish-path-')
 
@@ -2147,11 +2150,12 @@ class TestApp (TestCase):
         self.test_client = self.app.test_client()
 
     def tearDown(self):
-        rmtree(self.publish_path)
-        rmtree(self.work_path)
-        rmtree(self.ga_config_dir)
-        rmtree(self.origin.git_dir)
-        rmtree(self.clone1.working_dir)
+        rmtree(tempfile.tempdir)
+        
+        if self.old_tempdir:
+            tempfile.tempdir = self.old_tempdir
+        else:
+            del tempfile.tempdir
 
     def auth_csv_example_disallowed(self, url, request):
         if url.geturl() == 'http://example.com/auth.csv':
