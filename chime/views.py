@@ -214,14 +214,20 @@ def update_activity():
     safe_branch = branch_name2path(branch_var2name(request.form.get('branch')))
     action_list = [item for item in request.form if item != 'comment_text']
     action, action_authorized = get_activity_action_and_authorized(branch_name=safe_branch, comment_text=u'', action_list=action_list)
-    update_activity_review_status(action=action, action_authorized=action_authorized, comment_text=u'')
     if action_authorized:
         if action in ('merge', 'abandon', 'clobber'):
-            return publish_or_destroy_activity(safe_branch, action)
+            try:
+                return_redirect = publish_or_destroy_activity(safe_branch, action)
+            except repo_functions.MergeConflict as conflict:
+                raise conflict
         else:
-            return redirect('/', code=303)
+            return_redirect = redirect('/', code=303)
     else:
-        return redirect('/', code=303)
+        return_redirect = redirect('/', code=303)
+
+    update_activity_review_status(action=action, action_authorized=action_authorized, comment_text=u'')
+    return return_redirect
+
 
 @app.route('/checkouts/<ref>.zip')
 @log_application_errors
@@ -507,14 +513,20 @@ def edit_activity_overview(branch_name):
     comment_text = request.form.get('comment_text', u'').strip()
     action_list = [item for item in request.form if item != 'comment_text']
     action, action_authorized = get_activity_action_and_authorized(branch_name=safe_branch, comment_text=comment_text, action_list=action_list)
-    update_activity_review_status(action=action, action_authorized=action_authorized, comment_text=comment_text)
     if action_authorized:
         if action in ('merge', 'abandon', 'clobber'):
-            return publish_or_destroy_activity(safe_branch, action)
+            try:
+                return_redirect = publish_or_destroy_activity(safe_branch, action)
+            except repo_functions.MergeConflict as conflict:
+                raise conflict
         else:
-            return redirect('/tree/{}/'.format(safe_branch), code=303)
+            return_redirect = redirect('/tree/{}/'.format(safe_branch), code=303)
     else:
-        return redirect('/tree/{}/'.format(safe_branch), code=303)
+        return_redirect = redirect('/tree/{}/'.format(safe_branch), code=303)
+
+    # update and return the redirect
+    update_activity_review_status(action=action, action_authorized=action_authorized, comment_text=comment_text)
+    return return_redirect
 
 @app.route('/tree/<branch_name>/history/', methods=['GET'])
 @app.route('/tree/<branch_name>/history/<path:path>', methods=['GET'])
