@@ -78,7 +78,7 @@ def create_app(environ):
     app.config['SINGLE_USER'] = bool(environ.get('SINGLE_USER', False))
     app.config['AUTH_DATA_HREF'] = environ.get('AUTH_DATA_HREF', 'data/authentication.csv')
     app.config['LIVE_SITE_URL'] = environ.get('LIVE_SITE_URL', 'http://127.0.0.1:5001/')
-    app.config['PUBLISH_SERVICE_URL'] = environ.get('PUBLISH_SERVICE_URL', False)
+    app.config['PUBLISH_PATH'] = environ.get('PUBLISH_PATH')
     app.config['SNS_ALERTS_TOPIC'] = environ.get('SNS_ALERTS_TOPIC')
     app.config['SUPPORT_EMAIL_ADDRESS'] = environ.get('SUPPORT_EMAIL_ADDRESS')
     app.config['SUPPORT_PHONE_NUMBER'] = environ.get('SUPPORT_PHONE_NUMBER')

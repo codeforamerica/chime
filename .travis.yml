@@ -8,6 +8,10 @@ before_install:
   -in fabfile/cfa-chime-keypair.id_rsa.enc -out fabfile/cfa-chime-keypair.id_rsa -d
 - chmod 400 fabfile/cfa-chime-keypair.id_rsa
 install:
+- git clone https://github.com/sstephenson/rbenv.git ~/.rbenv
+- eval "$(rbenv init -)"
+- export PATH="$HOME/.rbenv/bin:$PATH"
+- ./jekyll/install-jekyll.sh
 - pip install -r requirements.txt
 - pip install -r fabfile/requirements.txt
 script:

@@ -12,6 +12,8 @@ from functools import wraps
 from io import BytesIO
 from slugify import slugify
 from collections import Counter
+from tempfile import mkdtemp
+from subprocess import Popen
 import csv
 import re
 import json
@@ -23,9 +25,8 @@ from dateutil.relativedelta import relativedelta
 from flask import request, session, current_app, redirect, flash, render_template
 from requests import get
 
-from . import publish
 from .edit_functions import create_new_page, delete_file, update_page
-from .jekyll_functions import load_jekyll_doc, load_languages
+from .jekyll_functions import load_jekyll_doc, load_languages, build_jekyll_site
 from .google_api_functions import read_ga_config, fetch_google_analytics_for_page
 from .repo_functions import (
     get_existing_branch, ignore_task_metadata_on_merge, get_message_classification, ChimeRepo,
@@ -813,6 +814,29 @@ def make_directory_columns(clone, branch_name, repo_path=None, showallfiles=Fals
 
     return dir_listings
 
+def publish_commit(repo, publish_path):
+    ''' Publish current commit from the given repo to the publish_path directory.
+    '''
+    try:
+        checkout_dir = mkdtemp(prefix='built-site-')
+
+        # http://stackoverflow.com/questions/4479960/git-checkout-to-a-specific-folder
+        environ['GIT_WORK_TREE'], old_GWT = checkout_dir, environ.get('GIT_WORK_TREE')
+        repo.git.checkout(repo.commit().hexsha, '.')
+
+        built_dir = build_jekyll_site(checkout_dir)
+
+        call = 'rsync -ur --delete {built_dir}/ {publish_path}/'.format(**locals())
+        rsync = Popen(call.split())
+        rsync.wait()
+    
+    finally:
+        # Clean up GIT_WORK_TREE so we don't pollute the environment.
+        if old_GWT:
+            environ['GIT_WORK_TREE'] = old_GWT
+        else:
+            del environ['GIT_WORK_TREE']
+
 def publish_or_destroy_activity(branch_name, action):
     ''' Publish, abandon, or clobber the activity defined by the passed branch name.
     '''
@@ -837,11 +861,8 @@ def publish_or_destroy_activity(branch_name, action):
         else:
             raise Exception(u'Tried to {} an activity, and I don\'t know how to do that.'.format(action))
 
-        if current_app.config['PUBLISH_SERVICE_URL']:
-            publish.announce_commit(current_app.config['BROWSERID_URL'], repo, repo.commit().hexsha)
-
-        else:
-            publish.release_commit(current_app.config['RUNNING_STATE_DIR'], repo, repo.commit().hexsha)
+        if current_app.config['PUBLISH_PATH']:
+            publish_commit(repo, current_app.config['PUBLISH_PATH'])
 
     except MergeConflict as conflict:
         raise conflict

@@ -20,6 +20,7 @@ from slugify import slugify
 import json
 import time
 import logging
+import tempfile
 logging.disable(logging.CRITICAL)
 
 repo_root = abspath(join(dirname(__file__), '..'))
@@ -92,6 +93,8 @@ class TestJekyll (TestCase):
 class TestViewFunctions (TestCase):
 
     def setUp(self):
+        self.old_tempdir, tempfile.tempdir = tempfile.tempdir, mkdtemp(prefix='chime-TestViewFunctions-')
+
         repo_path = dirname(abspath(__file__)) + '/../test-app.git'
         temp_repo_dir = mkdtemp(prefix='chime-root')
         temp_repo_path = temp_repo_dir + '/test-app.git'
@@ -109,8 +112,8 @@ class TestViewFunctions (TestCase):
         environ['GIT_COMMITTER_EMAIL'] = self.session['email']
 
     def tearDown(self):
-        rmtree(self.origin.git_dir)
-        rmtree(self.clone.working_dir)
+        rmtree(tempfile.tempdir)
+        tempfile.tempdir = self.old_tempdir
 
     # in TestViewFunctions
     def test_sorted_paths(self):
@@ -223,6 +226,8 @@ mike@teczno.com,Code for America,Mike Migurski
 class TestRepo (TestCase):
 
     def setUp(self):
+        self.old_tempdir, tempfile.tempdir = tempfile.tempdir, mkdtemp(prefix='chime-TestRepo-')
+
         self.work_path = mkdtemp(prefix='chime-repo-clones-')
         repo_path = dirname(abspath(__file__)) + '/../test-app.git'
         temp_repo_dir = mkdtemp(prefix='chime-root')
@@ -244,9 +249,8 @@ class TestRepo (TestCase):
         environ['GIT_COMMITTER_EMAIL'] = self.session['email']
 
     def tearDown(self):
-        rmtree(self.origin.git_dir)
-        rmtree(self.clone1.working_dir)
-        rmtree(self.clone2.working_dir)
+        rmtree(tempfile.tempdir)
+        tempfile.tempdir = self.old_tempdir
 
     # in TestRepo
     def test_repo_features(self):
@@ -1656,6 +1660,8 @@ class TestRepo (TestCase):
 class TestGoogleApiFunctions (TestCase):
 
     def setUp(self):
+        self.old_tempdir, tempfile.tempdir = tempfile.tempdir, mkdtemp(prefix='chime-TestGoogleApiFunctions-')
+
         create_app_environ = {}
         create_app_environ['BROWSERID_URL'] = 'http://example.com'
         create_app_environ['LIVE_SITE_URL'] = 'http://example.org/'
@@ -1678,7 +1684,8 @@ class TestGoogleApiFunctions (TestCase):
             google_api_functions.write_ga_config(config_values, self.app.config['RUNNING_STATE_DIR'])
 
     def tearDown(self):
-        rmtree(self.ga_config_dir)
+        rmtree(tempfile.tempdir)
+        tempfile.tempdir = self.old_tempdir
 
     def mock_successful_request_new_google_access_token(self, url, request):
         if google_api_functions.GOOGLE_ANALYTICS_TOKENS_URL in url.geturl():
@@ -1919,6 +1926,8 @@ class TestAppConfig (TestCase):
 class TestProcess (TestCase):
 
     def setUp(self):
+        self.old_tempdir, tempfile.tempdir = tempfile.tempdir, mkdtemp(prefix='chime-TestProcess-')
+
         self.work_path = mkdtemp(prefix='chime-repo-clones-')
 
         repo_path = dirname(abspath(__file__)) + '/../test-app.git'
@@ -1963,7 +1972,8 @@ class TestProcess (TestCase):
         random.choice = MagicMock(return_value="P")
 
     def tearDown(self):
-        rmtree(self.work_path)
+        rmtree(tempfile.tempdir)
+        tempfile.tempdir = self.old_tempdir
 
     def auth_csv_example_allowed(self, url, request):
         if url.geturl() == 'http://example.com/auth.csv':
@@ -2092,7 +2102,10 @@ class TestProcess (TestCase):
 class TestApp (TestCase):
 
     def setUp(self):
+        self.old_tempdir, tempfile.tempdir = tempfile.tempdir, mkdtemp(prefix='chime-TestApp-')
+
         self.work_path = mkdtemp(prefix='chime-repo-clones-')
+        self.publish_path = mkdtemp(prefix='chime-publish-path-')
 
         repo_path = dirname(abspath(__file__)) + '/../test-app.git'
         temp_repo_dir = mkdtemp(prefix='chime-root')
@@ -2124,6 +2137,7 @@ class TestApp (TestCase):
         create_app_environ['AUTH_DATA_HREF'] = 'http://example.com/auth.csv'
         create_app_environ['BROWSERID_URL'] = 'http://localhost'
         create_app_environ['LIVE_SITE_URL'] = 'http://example.org/'
+        create_app_environ['PUBLISH_PATH'] = self.publish_path
 
         create_app_environ['SUPPORT_EMAIL_ADDRESS'] = u'support@example.com'
         create_app_environ['SUPPORT_PHONE_NUMBER'] = u'(123) 456-7890'
@@ -2146,10 +2160,8 @@ class TestApp (TestCase):
         self.test_client = self.app.test_client()
 
     def tearDown(self):
-        rmtree(self.work_path)
-        rmtree(self.ga_config_dir)
-        rmtree(self.origin.git_dir)
-        rmtree(self.clone1.working_dir)
+        rmtree(tempfile.tempdir)
+        tempfile.tempdir = self.old_tempdir
 
     def auth_csv_example_disallowed(self, url, request):
         if url.geturl() == 'http://example.com/auth.csv':
@@ -2325,7 +2337,7 @@ class TestApp (TestCase):
         fake_endorser_email = u'frances@example.com'
         fake_page_slug = u'hello'
         fake_page_path = u'{}/index.{}'.format(fake_page_slug, view_functions.CONTENT_FILE_EXTENSION)
-        fake_page_content = u'Hello world.'
+        fake_page_content = u'People of earth we salute you.'
         with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'email': fake_author_email})
 
@@ -2410,6 +2422,10 @@ class TestApp (TestCase):
         self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('activities-list') in response.data)
         # the activity we just published shouldn't be listed on the page
         self.assertTrue(generated_branch_name not in response.data)
+        
+        # Look in the published directory and see if the words are there.
+        with open(join(self.publish_path, fake_page_slug, 'index.html')) as file:
+            self.assertTrue(fake_page_content in file.read())
 
     # in TestApp
     def test_delete_strange_tasks(self):
@@ -4198,6 +4214,8 @@ class TestApp (TestCase):
 class TestPublishApp (TestCase):
 
     def setUp(self):
+        self.old_tempdir, tempfile.tempdir = tempfile.tempdir, mkdtemp(prefix='chime-TestPublishApp-')
+
         self.work_path = mkdtemp(prefix='chime-publish-app-')
 
         app_args = {}
@@ -4206,7 +4224,8 @@ class TestPublishApp (TestCase):
         self.client = self.app.test_client()
 
     def tearDown(self):
-        rmtree(self.work_path)
+        rmtree(tempfile.tempdir)
+        tempfile.tempdir = self.old_tempdir
 
     def mock_github_request(self, url, request):
         '''
