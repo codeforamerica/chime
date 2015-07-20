@@ -1126,8 +1126,8 @@ def delete_page(repo, browse_path, target_path):
 
     return redirect_path, do_save, commit_message
 
-def update_activity_review_status(branch_name, comment_text, action_list):
-    ''' Comment and/or update the review state.
+def get_activity_action_and_authorized(branch_name, comment_text, action_list):
+    ''' Return the proposed action and whether it's authorized
     '''
     repo = get_repo(flask_app=current_app)
     # which submit button was pressed?
@@ -1143,36 +1143,50 @@ def update_activity_review_status(branch_name, comment_text, action_list):
         repo=repo, default_branch_name=current_app.config['default_branch'],
         working_branch_name=branch_name, actor_email=session.get('email', None)
     )
-    action_authorized = (action == 'comment' and comment_text)
+    action_authorized = (action == 'comment')
 
     # handle a review action
     if action != 'comment':
         if action == 'request_feedback':
             if review_state == REVIEW_STATE_EDITED and review_authorized:
-                update_review_state(repo, REVIEW_STATE_FEEDBACK)
                 action_authorized = True
         elif action == 'endorse_edits':
             if review_state == REVIEW_STATE_FEEDBACK and review_authorized:
-                update_review_state(repo, REVIEW_STATE_ENDORSED)
                 action_authorized = True
         elif action == 'merge':
             if review_state == REVIEW_STATE_ENDORSED and review_authorized:
-                update_review_state(repo, REVIEW_STATE_PUBLISHED)
                 action_authorized = True
         elif action == 'clobber' or action == 'abandon':
             action_authorized = True
 
     if not action:
-        raise Exception(u'Tried to update an activity\'s review status but wasn\'t given a valid action.')
+        action_authorized = False
 
-    # comment if comment text was sent and the action is authorized
-    if comment_text and action_authorized:
-        provide_feedback(repo, comment_text)
+    return action, action_authorized
 
-    # flash a message if the action wasn't authorized
-    if action == 'comment' and not comment_text:
-        flash(u'You can\'t leave an empty comment!', u'error')
-    elif not action_authorized:
+def update_activity_review_status(action, action_authorized, comment_text):
+    ''' Comment and/or update the review state.
+    '''
+    repo = get_repo(flask_app=current_app)
+
+    if action_authorized:
+        # handle a review action
+        if action != 'comment':
+            if action == 'request_feedback':
+                update_review_state(repo, REVIEW_STATE_FEEDBACK)
+            elif action == 'endorse_edits':
+                update_review_state(repo, REVIEW_STATE_ENDORSED)
+            elif action == 'merge':
+                update_review_state(repo, REVIEW_STATE_PUBLISHED)
+        elif not comment_text:
+            flash(u'You can\'t leave an empty comment!', u'warning')
+
+        # comment if comment text was sent and the action is authorized
+        if comment_text:
+            provide_feedback(repo, comment_text)
+
+    else:
+        # flash a message if the action wasn't authorized
         action_lookup = {
             'comment': u'leave a comment',
             'request_feedback': u'request feedback',
@@ -1180,8 +1194,6 @@ def update_activity_review_status(branch_name, comment_text, action_list):
             'merge': u'publish the edits'
         }
         flash(u'Something changed behind the scenes and we couldn\'t {}! Please try again.'.format(action_lookup[action]), u'error')
-
-    return action, action_authorized
 
 def save_page(repo, default_branch_name, working_branch_name, file_path, new_values):
     ''' Save the page with the passed values

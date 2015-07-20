@@ -17,7 +17,8 @@ from . import chime as app
 from . import repo_functions, edit_functions
 from . import publish
 from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
-from .view_functions import branch_name2path, branch_var2name, get_repo, login_required, browserid_hostname_required, synch_required, synched_checkout_required, should_redirect, make_redirect, get_auth_data_file, is_allowed_email, common_template_args, log_application_errors, is_article_dir, is_category_dir, make_activity_history, summarize_activity_history, publish_or_destroy_activity, render_edit_view, render_modify_dir, render_list_dir, add_article_or_category, strip_index_file, delete_page, update_activity_review_status, save_page, render_activities_list, CONTENT_FILE_EXTENSION
+
+from .view_functions import branch_name2path, branch_var2name, get_repo, login_required, browserid_hostname_required, synch_required, synched_checkout_required, should_redirect, make_redirect, get_auth_data_file, is_allowed_email, common_template_args, log_application_errors, is_article_dir, is_category_dir, make_activity_history, summarize_activity_history, publish_or_destroy_activity, render_edit_view, render_modify_dir, render_list_dir, add_article_or_category, strip_index_file, delete_page, update_activity_review_status, get_activity_action_and_authorized, save_page, render_activities_list, CONTENT_FILE_EXTENSION
 
 from .google_api_functions import read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens, authorize_google, get_google_personal_info, get_google_analytics_properties
 
@@ -212,7 +213,8 @@ def update_activity():
     '''
     safe_branch = branch_name2path(branch_var2name(request.form.get('branch')))
     action_list = [item for item in request.form if item != 'comment_text']
-    action, action_authorized = update_activity_review_status(branch_name=safe_branch, comment_text=u'', action_list=action_list)
+    action, action_authorized = get_activity_action_and_authorized(branch_name=safe_branch, comment_text=u'', action_list=action_list)
+    update_activity_review_status(action=action, action_authorized=action_authorized, comment_text=u'')
     if action_authorized:
         if action in ('merge', 'abandon', 'clobber'):
             return publish_or_destroy_activity(safe_branch, action)
@@ -504,7 +506,8 @@ def edit_activity_overview(branch_name):
     safe_branch = branch_name2path(branch_var2name(branch_name))
     comment_text = request.form.get('comment_text', u'').strip()
     action_list = [item for item in request.form if item != 'comment_text']
-    action, action_authorized = update_activity_review_status(branch_name=safe_branch, comment_text=comment_text, action_list=action_list)
+    action, action_authorized = get_activity_action_and_authorized(branch_name=safe_branch, comment_text=comment_text, action_list=action_list)
+    update_activity_review_status(action=action, action_authorized=action_authorized, comment_text=comment_text)
     if action_authorized:
         if action in ('merge', 'abandon', 'clobber'):
             return publish_or_destroy_activity(safe_branch, action)
