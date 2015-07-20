@@ -189,11 +189,16 @@ def authorization_failed():
 @synch_required
 def start_branch():
     repo = get_repo(flask_app=current_app)
-    task_description = request.form.get('task_description')
-    task_beneficiary = request.form.get('task_beneficiary')
+    task_description = request.form.get('task_description').strip()
+    task_beneficiary = request.form.get('task_beneficiary').strip()
     master_name = current_app.config['default_branch']
-    branch = repo_functions.get_start_branch(repo, master_name, task_description, task_beneficiary, session['email'])
 
+    # require a task description
+    if len(task_description) == 0:
+        flash(u'Please describe what you\'re doing when you start a new activity!', u'warning')
+        return render_activities_list(task_beneficiary=task_beneficiary)
+
+    branch = repo_functions.get_start_branch(repo, master_name, task_description, task_beneficiary, session['email'])
     safe_branch = branch_name2path(branch.name)
     return redirect('/tree/{}/edit/'.format(safe_branch), code=303)
 
