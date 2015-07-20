@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from logging import getLogger
 Logger = getLogger('chime.view_functions')
 
-from os.path import join, isdir, realpath, basename, exists, sep, split, splitext
+from os.path import join, isdir, realpath, basename, exists, sep, split
 from datetime import datetime
 from os import listdir, environ, walk
 from urllib import quote, unquote
@@ -16,6 +16,7 @@ import csv
 import re
 import json
 import time
+import sys
 
 from dateutil import parser, tz
 from dateutil.relativedelta import relativedelta
@@ -419,8 +420,20 @@ def log_application_errors(route_function):
         try:
             return route_function(*args, **kwargs)
         except Exception as e:
-            Logger.error(e, exc_info=True, extra={'request': request})
-            raise
+            # save the details of the original exception
+            t, v, tb = sys.exc_info()
+            # not all exceptions have a 'code' attribute
+            try:
+                error_code = e.code
+            except:
+                error_code = 0
+
+            if error_code in range(400, 499):
+                Logger.info(e, exc_info=False, extra={'request': request})
+            else:
+                Logger.error(e, exc_info=True, extra={'request': request})
+
+            raise t, v, tb
 
     return decorated_function
 

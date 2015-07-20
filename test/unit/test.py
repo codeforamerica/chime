@@ -19,11 +19,12 @@ from chime.repo_functions import ChimeRepo
 from slugify import slugify
 import json
 import time
+import logging
+logging.disable(logging.CRITICAL)
 
 repo_root = abspath(join(dirname(__file__), '..'))
 sys.path.insert(0, repo_root)
 
-from bs4 import BeautifulSoup
 from git.cmd import GitCommandError
 from box.util.rotunicode import RotUnicode
 from httmock import response, HTTMock
@@ -34,11 +35,10 @@ from chime import (
     google_api_functions, view_functions, publish,
     google_access_token_update, errors)
 
+from unit.chime_test_client import ChimeTestClient
+
 import codecs
 codecs.register(RotUnicode.search_function)
-
-import logging
-logging.disable(logging.CRITICAL)
 
 # these patterns help us search the HTML of a response to determine if the expected page loaded
 PATTERN_BRANCH_COMMENT = u'<!-- branch: {} -->'
@@ -645,8 +645,10 @@ class TestRepo (TestCase):
         fake_author_email = u'erica@example.com'
         task_description, task_beneficiary = str(uuid4()), str(uuid4())
         branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
-        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_description, task_beneficiary, fake_author_email)
+        branch2 = repo_functions.get_existing_branch(self.clone2, 'master', branch1.name)
         branch1_name = branch1.name
+        self.assertIsNotNone(branch2)
+        self.assertEqual(branch2.name, branch1_name)
 
         #
         # Make new files in each branch and save them.
@@ -1031,7 +1033,7 @@ class TestRepo (TestCase):
 
     # in TestRepo
     def test_article_creation_with_unicode(self):
-        ''' An article with unicode in its title is created and logged as expected.
+        ''' An article with unicode in its title is created as expected.
         '''
         # start a new branch
         fake_author_email = u'erica@example.com'
@@ -1523,6 +1525,79 @@ class TestRepo (TestCase):
         self.assertFalse(repo_functions.verify_file_exists_in_branch(self.origin, repo_functions.TASK_METADATA_FILENAME, 'master'))
 
     # in TestRepo
+    def test_merge_tagged_with_branch_metadata(self):
+        ''' The merge commit is tagged with branch metadata on publish.
+        '''
+        # start an activity on clone1
+        erica_email = u'erica@example.com'
+        task_description = u'Attract Insects With Anthocyanin Pigments To The Cavity Formed By A Cupped Leaf'
+        task_beneficiary = u'Nepenthes'
+        clone1_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, erica_email)
+        branch_name = clone1_branch.name
+        clone1_branch.checkout()
+        clone1_branch_task_metadata = repo_functions.get_task_metadata_for_branch(self.clone1, branch_name)
+
+        # check out the branch on clone2 and verify that it's the same
+        clone2_branch = repo_functions.get_existing_branch(self.clone2, 'master', branch_name)
+        clone2_branch.checkout()
+        clone2_branch_task_metadata = repo_functions.get_task_metadata_for_branch(self.clone2, branch_name)
+        self.assertEqual(clone2_branch.commit.hexsha, clone1_branch.commit.hexsha)
+        self.assertEqual(clone1_branch_task_metadata, clone2_branch_task_metadata)
+
+        # On clone1, add a file and complete the branch
+        edit_functions.create_new_page(self.clone1, '', 'happy.md', dict(title='Hello'), 'Hello hello.')
+        args1 = self.clone1, 'happy.md', 'added cool file', clone1_branch.commit.hexsha, 'master'
+        repo_functions.save_working_file(*args1)
+        merge_commit = repo_functions.complete_branch(self.clone1, 'master', branch_name)
+
+        # update clone2
+        self.clone2.git.fetch('origin')
+
+        # the branch is no longer in clone1 or origin
+        self.assertFalse(branch_name in self.clone1.branches)
+        self.assertFalse(branch_name in self.origin.branches)
+        # but it's still there in clone2
+        self.assertTrue(branch_name in self.clone2.branches)
+
+        # collect the tag ref, object, name
+        clone1_tag_ref = self.clone1.tags[0]
+        clone1_tag = clone1_tag_ref.tag
+        clone1_tag_name = clone1_tag.tag
+        clone2_tag_ref = self.clone2.tags[0]
+        clone2_tag = clone2_tag_ref.tag
+        clone2_tag_name = clone2_tag.tag
+        origin_tag_ref = self.origin.tags[0]
+        origin_tag = origin_tag_ref.tag
+        origin_tag_name = origin_tag.tag
+        # the tag exists
+        self.assertIsNotNone(clone1_tag_ref)
+        self.assertIsNotNone(clone2_tag_ref)
+        self.assertIsNotNone(origin_tag_ref)
+        # it's attached to the merge commit
+        self.assertEqual(clone1_tag_ref.commit, merge_commit)
+        self.assertEqual(clone2_tag_ref.commit, merge_commit)
+        self.assertEqual(origin_tag_ref.commit, merge_commit)
+        # it has the same name as the branch
+        self.assertEqual(clone1_tag_name, branch_name)
+        self.assertEqual(clone2_tag_name, branch_name)
+        self.assertEqual(origin_tag_name, branch_name)
+
+        # the tag message is the jsonified task metadata
+        clone1_tag_metadata = json.loads(clone1_tag.message)
+        clone2_tag_metadata = json.loads(clone2_tag.message)
+        origin_tag_metadata = json.loads(origin_tag.message)
+        self.assertEqual(clone1_tag_metadata, clone1_branch_task_metadata)
+        self.assertEqual(clone2_tag_metadata, clone1_branch_task_metadata)
+        self.assertEqual(origin_tag_metadata, clone1_branch_task_metadata)
+
+        # the file we published in clone1 is in clone2's local branch and master
+        self.clone2.git.pull('origin', branch_name)
+        self.assertTrue(repo_functions.verify_file_exists_in_branch(self.clone2, 'happy.md', branch_name))
+        self.clone2.branches['master'].checkout()
+        self.clone2.git.pull('origin', 'master')
+        self.assertTrue(repo_functions.verify_file_exists_in_branch(self.clone2, 'happy.md', 'master'))
+
+    # in TestRepo
     def test_task_metadata_merge_conflict(self):
         ''' Task metadata file merge conflict is handled correctly
         '''
@@ -1841,297 +1916,6 @@ class TestAppConfig (TestCase):
         self.assertEqual(template_args['support_email'], fake_support_email)
         self.assertEqual(template_args['support_phone_number'], fake_support_phone_number)
 
-class ChimeTestClient:
-    ''' Stateful client for Chime Flask test client.
-    '''
-    def __init__(self, client, test):
-        ''' Create a new client, with Flask test client and TestCase instances.
-        '''
-        self.client = client
-        self.test = test
-
-        response = self.client.get('/')
-        self.test.assertFalse('Start' in response.data)
-        
-        self.path, self.soup = '/', BeautifulSoup(response.data)
-    
-    def sign_in(self, email):
-        ''' Sign in with a given email address.
-        
-            Should be used inside an HTTMock that overrides Chime's internal
-            call to Persona verifier: https://verifier.login.persona.org/verify
-        '''
-        response = self.client.post('/sign-in', data={'email': email})
-        self.test.assertEqual(response.status_code, 200)
-
-        response = self.client.get('/')
-        self.test.assertTrue('Start' in response.data)
-
-    def reload(self):
-        ''' Reload the current path.
-        '''
-        self.open_link(self.path)
-
-    def open_link(self, url):
-        ''' Open a link
-        '''
-        response = self.client.get(url)
-        self.test.assertEqual(response.status_code, 200)
-        
-        self.path, self.soup = url, BeautifulSoup(response.data)
-
-    def follow_link(self, href):
-        ''' Follow a link after making sure it's present in the page.
-        '''
-        # Look for the link
-        link = self.soup.find(lambda tag: bool(tag.name == 'a' and tag['href'] == href))
-        response = self.client.get(link['href'])
-        self.test.assertTrue(response.status_code in (301, 302)) # Watch out for a redirect here.
-
-        # Load the page
-        redirect = urlparse(response.headers['Location']).path
-        response = self.client.get(redirect)
-        self.test.assertEqual(response.status_code, 200)
-
-        self.path, self.soup = redirect, BeautifulSoup(response.data)
-
-    def follow_redirect(self, response, code):
-        ''' Expect and follow a response HTTP redirect.
-        '''
-        self.test.assertEqual(response.status_code, code, 'Status {} should have been {}'.format(response.status_code, code))
-
-        redirect = urlparse(response.headers['Location']).path
-        response = self.client.get(redirect)
-        self.test.assertEqual(response.status_code, 200)
-
-        self.path, self.soup = redirect, BeautifulSoup(response.data)
-
-    def get_branch_name(self):
-        ''' Extract and return the branch name from the current soup.
-        '''
-        # Assumes there is an HTML comment in the format '<!-- branch: 1234567 -->'
-        branch_search = search(r'<!-- branch: (.{{{}}}) -->'.format(repo_functions.BRANCH_NAME_LENGTH), unicode(self.soup))
-        self.test.assertIsNotNone(branch_search)
-        try:
-            branch_name = branch_search.group(1)
-        except AttributeError:
-            raise Exception('No match for generated branch name.')
-
-        return branch_name
-
-    def start_task(self, description, beneficiary):
-        ''' Start a new task.
-        '''
-        data = {'task_description': description, 'task_beneficiary': beneficiary}
-        response = self.client.post('/start', data=data)
-
-        self.follow_redirect(response, 303)
-
-    def add_category(self, category_name):
-        ''' Look for form to add a category, submit it.
-        '''
-        input = self.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add Category'))
-        form = input.find_parent('form')
-        self.test.assertEqual(form['method'].upper(), 'POST')
-
-        data = {i['name']: i.get('value', u'') for i in form.find_all('input')}
-        data[input['name']] = category_name
-
-        add_category_path = urlparse(urljoin(self.path, form['action'])).path
-        response = self.client.post(add_category_path, data=data)
-
-        # Drop down to where the subcategories are.
-        self.follow_redirect(response, 303)
-
-    def add_subcategory(self, subcategory_name):
-        ''' Look for form to add a subcategory, submit it..
-        '''
-        input = self.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add Subcategory'))
-        form = input.find_parent('form')
-        self.test.assertEqual(form['method'].upper(), 'POST')
-
-        data = {i['name']: i.get('value', u'') for i in form.find_all('input')}
-        data[input['name']] = subcategory_name
-
-        add_subcategory_path = urlparse(urljoin(self.path, form['action'])).path
-        response = self.client.post(add_subcategory_path, data=data)
-
-        # Drop down into the subcategory where the articles are.
-        self.follow_redirect(response, 303)
-
-    def add_article(self, article_name):
-        ''' Look for form to add an article, submit it.
-        '''
-        # Create a new article.
-
-        input = self.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add Article'))
-        form = input.find_parent('form')
-        self.test.assertEqual(form['method'].upper(), 'POST')
-
-        data = {i['name']: i.get('value', u'') for i in form.find_all('input')}
-        data[input['name']] = article_name
-
-        add_article_path = urlparse(urljoin(self.path, form['action'])).path
-        response = self.client.post(add_article_path, data=data)
-
-        # View the new article.
-        self.follow_redirect(response, 303)
-
-    def edit_article(self, title_str, body_str):
-        ''' Look for form to edit an article, submit it.
-        '''
-        body = self.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'en-body'))
-        form = body.find_parent('form')
-        title = form.find(lambda tag: bool(tag.name == 'input' and tag.get('name') == 'en-title'))
-        self.test.assertEqual(form['method'].upper(), 'POST')
-
-        data = {i['name']: i.get('value', u'')
-                for i in form.find_all(['input', 'button', 'textarea'])
-                if i.get('type') != 'submit'}
-
-        data[title['name']] = title_str
-        data[body['name']] = body_str
-
-        edit_article_path = urlparse(urljoin(self.path, form['action'])).path
-        response = self.client.post(edit_article_path, data=data)
-
-        # View the updated article.
-        self.follow_redirect(response, 303)
-
-    def edit_outdated_article(self, title_str, body_str):
-        ''' Look for form to edit an article we know to be outdated, submit it and assert that the sumbission fails.
-        '''
-        body = self.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'en-body'))
-        form = body.find_parent('form')
-        title = form.find(lambda tag: bool(tag.name == 'input' and tag.get('name') == 'en-title'))
-        self.test.assertEqual(form['method'].upper(), 'POST')
-
-        data = {i['name']: i.get('value', u'')
-                for i in form.find_all(['input', 'button', 'textarea'])
-                if i.get('type') != 'submit'}
-
-        data[title['name']] = title_str
-        data[body['name']] = body_str
-
-        edit_article_path = urlparse(urljoin(self.path, form['action'])).path
-        response = self.client.post(edit_article_path, data=data)
-        self.test.assertEqual(response.status_code, 500)
-
-    def follow_modify_category_link(self, title_str):
-        ''' Find the (sub-)category edit button in the last soup and follow it.
-        '''
-        mod_link = self.soup.find(lambda tag: bool(tag.name == 'a' and tag.text == title_str))
-        mod_li = mod_link.find_parent('li')
-        mod_span = mod_li.find(lambda tag: bool(tag.name == 'span' and 'fa-pencil' in tag.get('class')))
-        mod_link = mod_span.find_parent('a')
-        self.follow_link(mod_link['href'])
-
-    def delete_category(self):
-        ''' Look for the delete button, submit it.
-        '''
-        body = self.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'en-description'))
-        form = body.find_parent('form')
-        self.test.assertEqual(form['method'].upper(), 'POST')
-
-        data = {i['name']: i.get('value', u'')
-                for i in form.find_all(['input', 'button', 'textarea'])
-                if i.get('name') != 'save'}
-
-        delete_category_path = urlparse(urljoin(self.path, form['action'])).path
-        response = self.client.post(delete_category_path, data=data)
-
-        self.follow_redirect(response, 303)
-
-    def delete_article(self, title_str):
-        ''' Look for the article delete button, submit it
-        '''
-        del_link = self.soup.find(lambda tag: bool(tag.name == 'a' and tag.text == title_str))
-        del_li = del_link.find_parent('li')
-        del_span = del_li.find(lambda tag: bool(tag.name == 'span' and 'fa-trash' in tag.get('class')))
-        del_form = del_span.find_parent('form')
-
-        self.test.assertEqual(del_form['method'].upper(), 'POST')
-
-        data = {i['name']: i.get('value', u'')
-                for i in del_form.find_all(['input', 'button', 'textarea'])}
-
-        delete_article_path = urlparse(urljoin(self.path, del_form['action'])).path
-        response = self.client.post(delete_article_path, data=data)
-
-        self.follow_redirect(response, 303)
-
-    def request_feedback(self, feedback_str):
-        ''' Look for form to request feedback, submit it.
-        '''
-        body = self.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'comment_text'))
-        form = body.find_parent('form')
-        self.test.assertEqual(form['method'].upper(), 'POST')
-
-        data = {i['name']: i.get('value', u'')
-                for i in form.find_all(['input', 'button', 'textarea'])
-                if i.get('value') != 'Leave a Comment'}
-
-        data[body['name']] = feedback_str
-
-        save_feedback_path = urlparse(urljoin(self.path, form['action'])).path
-        response = self.client.post(save_feedback_path, data=data)
-
-        # View the saved feedback.
-        self.follow_redirect(response, 303)
-
-    def leave_feedback(self, feedback_str):
-        ''' Look for form to leave feedback, submit it.
-        '''
-        body = self.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'comment_text'))
-        form = body.find_parent('form')
-        self.test.assertEqual(form['method'].upper(), 'POST')
-
-        data = {i['name']: i.get('value', u'')
-                for i in form.find_all(['input', 'button', 'textarea'])
-                if i.get('value') != 'Looks Good!'}
-
-        data[body['name']] = feedback_str
-
-        save_feedback_path = urlparse(urljoin(self.path, form['action'])).path
-        response = self.client.post(save_feedback_path, data=data)
-
-        # View the saved feedback.
-        self.follow_redirect(response, 303)
-
-    def approve_activity(self):
-        ''' Look for form to approve activity, submit it.
-        '''
-        body = self.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'comment_text'))
-        form = body.find_parent('form')
-        self.test.assertEqual(form['method'].upper(), 'POST')
-
-        data = {i['name']: i.get('value', u'')
-                for i in form.find_all(['input', 'button', 'textarea'])
-                if i.get('value') != 'Leave a Comment'}
-
-        approve_activity_path = urlparse(urljoin(self.path, form['action'])).path
-        response = self.client.post(approve_activity_path, data=data)
-
-        # View the saved feedback.
-        self.follow_redirect(response, 303)
-
-    def publish_activity(self):
-        ''' Look for form to publish activity, submit it.
-        '''
-        body = self.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'comment_text'))
-        form = body.find_parent('form')
-        self.test.assertEqual(form['method'].upper(), 'POST')
-
-        data = {i['name']: i.get('value', u'')
-                for i in form.find_all(['input', 'button', 'textarea'])
-                if i.get('value') != 'Leave a Comment'}
-
-        publish_activity_path = urlparse(urljoin(self.path, form['action'])).path
-        response = self.client.post(publish_activity_path, data=data)
-
-        # View the published activity.
-        self.follow_redirect(response, 303)
-
 class TestProcess (TestCase):
 
     def setUp(self):
@@ -2215,9 +1999,10 @@ class TestProcess (TestCase):
             
             # Start a new task, "Diving for Dollars".
             erica.start_task('Diving', 'Dollars')
+            branch_name = erica.get_branch_name()
             
             # Look for an "other" link that we know about - is it a category?
-            erica.follow_link('/tree/9313f09/edit/other')
+            erica.follow_link('/tree/{}/edit/other'.format(branch_name))
 
             # Create a new category "Ninjas", subcategory "Flipping Out", and article "So Awesome".
             erica.add_category('Ninjas')
@@ -2228,7 +2013,7 @@ class TestProcess (TestCase):
             erica.edit_article('So, So Awesome', 'It was the best of times.')
             
             # Ask for feedback
-            erica.follow_link('/tree/9313f09')
+            erica.follow_link('/tree/{}'.format(branch_name))
             erica.request_feedback('Is this okay?')
             
             #
@@ -2260,9 +2045,10 @@ class TestProcess (TestCase):
 
             # Start a new task, "Diving for Dollars".
             erica.start_task(description='Diving', beneficiary='Dollars')
+            branch_name = erica.get_branch_name()
 
             # Look for an "other" link that we know about - is it a category?
-            erica.follow_link(href='/tree/9313f09/edit/other')
+            erica.follow_link(href='/tree/{}/edit/other'.format(branch_name))
 
             # Create a new category "Ninjas", subcategory "Flipping Out", and article "So Awesome".
             erica.add_category(category_name='Ninjas')
@@ -2274,7 +2060,7 @@ class TestProcess (TestCase):
             article_path = erica.path
 
             # Ask for feedback
-            erica.follow_link(href='/tree/9313f09')
+            erica.follow_link(href='/tree/{}'.format(branch_name))
             erica.request_feedback(feedback_str='Is this okay?')
 
             #
@@ -3421,7 +3207,7 @@ class TestApp (TestCase):
 
     # in TestApp
     def test_article_creation_with_unicode_via_web_interface(self):
-        ''' An article with unicode in its title is created and logged as expected.
+        ''' An article with unicode in its title is created as expected.
         '''
         fake_author_email = u'erica@example.com'
         with HTTMock(self.mock_persona_verify_erica):

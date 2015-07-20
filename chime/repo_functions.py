@@ -5,14 +5,15 @@ from os import mkdir, remove
 from os.path import join, split, exists, isdir, sep
 from git import Repo
 from git.cmd import GitCommandError
-import hashlib
 import yaml
 from re import match, search
+import json
+import random
 
 from . import edit_functions, google_api_functions
 
 TASK_METADATA_FILENAME = u'_task.yml'
-BRANCH_NAME_LENGTH = 7
+BRANCH_NAME_LENGTH = 9
 DESCRIPTION_MAX_LENGTH = 15
 ACTIVITY_CREATED_MESSAGE = u'activity was started'
 ACTIVITY_UPDATED_MESSAGE = u'activity was updated'
@@ -316,11 +317,11 @@ def make_shortened_task_description(task_description):
     return suggested
 
 def make_branch_sha(task_description, task_beneficiary, author_email):
-    ''' use details about a branch to generate a 'unique' name
+    ''' generate a random branch name
     '''
-    # get epoch seconds as a string
-    seed = u'{}{}{}'.format(unicode(task_description), unicode(task_beneficiary), unicode(author_email))
-    return hashlib.sha1(seed.encode('utf-8')).hexdigest()
+    # no vowels, no hex letters
+    seed = u'ghjklmnpqrstvwxz'
+    return u''.join(random.SystemRandom().choice(seed) for _ in range(BRANCH_NAME_LENGTH))
 
 def make_branch_name(task_description, task_beneficiary, author_email):
     ''' Return a short, URL- and Git-compatible name for a branch
@@ -378,14 +379,19 @@ def complete_branch(clone, default_branch_name, working_branch_name):
             # amend the merge commit to include the deletion and push it
             clone.git.commit('--amend', '--no-edit', '--reset-author')
 
-    # now push the changes to origin
-    clone.git.push('origin', default_branch_name)
+    # tag the commit with the branch name and a json object containing the task metadata
+    task_metadata_json = json.dumps(task_metadata, ensure_ascii=False)
+    clone.create_tag(working_branch_name, message=task_metadata_json)
 
     #
     # Delete the working branch.
     #
     clone.remotes.origin.push(':' + working_branch_name)
     clone.delete_head([working_branch_name])
+
+    # now push the changes and the tag to origin
+    clone.git.push('origin', default_branch_name)
+    clone.git.push('--tags')
 
     return clone.commit()
 
