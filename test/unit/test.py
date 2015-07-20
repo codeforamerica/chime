@@ -2507,16 +2507,16 @@ class TestApp (TestCase):
             response = self.test_client.get('/')
             self.assertTrue('Start' in response.data)
 
-        with HTTMock(self.mock_exception):
+        with patch('chime.view_functions.get_auth_data_file') as get_auth_data_file:
             # Show that email status does not require a call to auth CSV.
             response = self.test_client.get('/')
             self.assertEqual(response.status_code, 200, 'Should have worked')
-            self.assertTrue('Start' in response.data)
+            self.assertEqual(get_auth_data_file.call_count, 0, 'Should not have called get_auth_data_file()')
             
             # Show that a call to auth CSV was made, outside the timeout period.
             time.sleep(1.1)
             response = self.test_client.get('/')
-            self.assertEqual(response.status_code, 500, 'Should be an error')
+            self.assertEqual(get_auth_data_file.call_count, 1, 'Should have called get_auth_data_file()')
 
         with HTTMock(self.auth_csv_example_allowed):
             # Show that email status was correctly updatedw with call to CSV.
