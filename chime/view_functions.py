@@ -14,6 +14,7 @@ from slugify import slugify
 from collections import Counter
 from tempfile import mkdtemp
 from subprocess import Popen
+from git.cmd import GitCommandError
 import csv
 import re
 import json
@@ -32,7 +33,7 @@ from .repo_functions import (
     get_existing_branch, ignore_task_metadata_on_merge, get_message_classification, ChimeRepo,
     ACTIVITY_CREATED_MESSAGE, get_task_metadata_for_branch, complete_branch, abandon_branch,
     clobber_default_branch, MergeConflict, get_review_state_and_authorized, save_working_file,
-    update_review_state, provide_feedback, move_existing_file, TASK_METADATA_FILENAME,
+    update_review_state, provide_feedback, move_existing_file, get_last_edited_email, TASK_METADATA_FILENAME,
     REVIEW_STATE_EDITED, REVIEW_STATE_FEEDBACK, REVIEW_STATE_ENDORSED, REVIEW_STATE_PUBLISHED,
     MESSAGE_CATEGORY_EDIT, mark_upstream_push_needed
 )
@@ -877,6 +878,64 @@ def publish_or_destroy_activity(branch_name, action):
             flash(u'You clobbered the {activity_blurb}!'.format(activity_blurb=activity_blurb), u'notice')
 
         return redirect('/', code=303)
+
+def render_activities_list(task_description=None, task_beneficiary=None):
+    ''' Render the activities list page
+    '''
+    repo = ChimeRepo(current_app.config['REPO_PATH'])
+    master_name = current_app.config['default_branch']
+    branch_names = [b.name for b in repo.branches if b.name != master_name]
+
+    activities = []
+
+    for branch_name in branch_names:
+        safe_branch = branch_name2path(branch_name)
+
+        try:
+            repo.git.merge_base(master_name, branch_name)
+        except GitCommandError:
+            # Skip this branch if it looks to be an orphan. Just don't show it.
+            continue
+
+        # contains 'author_email', 'task_description', 'task_beneficiary'
+        activity = get_task_metadata_for_branch(repo, branch_name)
+        activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
+        activity['task_description'] = activity['task_description'] if 'task_description' in activity else branch_name
+        activity['task_beneficiary'] = activity['task_beneficiary'] if 'task_beneficiary' in activity else u''
+
+        # get the current review state and authorized status
+        review_state, review_authorized = get_review_state_and_authorized(
+            repo=repo, default_branch_name=current_app.config['default_branch'],
+            working_branch_name=branch_name, actor_email=session.get('email', None)
+        )
+
+        date_created = repo.git.log('--format=%ad', '--date=relative', '--', TASK_METADATA_FILENAME).split('\n')[-1]
+        date_updated = repo.git.log('--format=%ad', '--date=relative').split('\n')[0]
+
+        # the email of the last person who edited the activity
+        last_edited_email = get_last_edited_email(
+            repo=repo, default_branch_name=current_app.config['default_branch'],
+            working_branch_name=branch_name
+        )
+
+        activity.update(date_created=date_created, date_updated=date_updated,
+                        edit_path=u'/tree/{}/edit/'.format(branch_name2path(branch_name)),
+                        overview_path=u'/tree/{}/'.format(branch_name2path(branch_name)),
+                        safe_branch=safe_branch, review_state=review_state,
+                        review_authorized=review_authorized, last_edited_email=last_edited_email)
+
+        activities.append(activity)
+
+    kwargs = common_template_args(current_app.config, session)
+    kwargs.update(activities=activities)
+
+    # pre-populate the new activity form with description and/or beneficiary values if they were passed
+    if task_description:
+        kwargs.update(task_description=task_description)
+    if task_beneficiary:
+        kwargs.update(task_beneficiary=task_beneficiary)
+
+    return render_template('activities-list.html', **kwargs)
 
 def make_kwargs_for_activity_files_page(repo, branch_name, path):
     ''' Assemble the kwargs for a page that shows an activity's files.
