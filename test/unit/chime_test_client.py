@@ -72,11 +72,14 @@ class ChimeTestClient:
         '''
         self.test.assertEqual(response.status_code, code, 'Status {} should have been {}'.format(response.status_code, code))
 
-        redirect = urlparse(response.headers['Location']).path
-        response = self.client.get(redirect)
-        self.test.assertEqual(response.status_code, 200)
+        if code in range(500, 599):
+            self.soup = BeautifulSoup(response.data)
+        else:
+            redirect = urlparse(response.headers['Location']).path
+            response = self.client.get(redirect)
+            self.test.assertEqual(response.status_code, 200)
 
-        self.path, self.soup = redirect, BeautifulSoup(response.data)
+            self.path, self.soup = redirect, BeautifulSoup(response.data)
 
     def get_branch_name(self):
         ''' Extract and return the branch name from the current soup.
@@ -290,7 +293,7 @@ class ChimeTestClient:
         # View the saved feedback.
         self.follow_redirect(response, 303)
 
-    def publish_activity(self):
+    def publish_activity(self, expected_code=303):
         ''' Look for form to publish activity, submit it.
         '''
         body = self.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'comment_text'))
@@ -303,6 +306,5 @@ class ChimeTestClient:
 
         publish_activity_path = urlparse(urljoin(self.path, form['action'])).path
         response = self.client.post(publish_activity_path, data=data)
-
         # View the published activity.
-        self.follow_redirect(response, 303)
+        self.follow_redirect(response, expected_code)
