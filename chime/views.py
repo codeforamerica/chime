@@ -7,8 +7,6 @@ from re import compile, MULTILINE, sub, search
 from mimetypes import guess_type
 from glob import glob
 
-from git import Repo
-from git.cmd import GitCommandError
 from requests import post
 from slugify import slugify
 from flask import current_app, flash, render_template, redirect, request, Response, session, abort
