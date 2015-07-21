@@ -10,6 +10,7 @@ from glob import glob
 from git import Repo
 from git.cmd import GitCommandError
 from requests import post
+from slugify import slugify
 from flask import current_app, flash, render_template, redirect, request, Response, session, abort
 
 from . import chime as app
@@ -445,6 +446,7 @@ def branch_modify_category(branch_name, path=u''):
 def branch_edit_file(branch_name, path=None):
     repo = get_repo(flask_app=current_app)
     commit = repo.commit()
+    safe_branch = branch_name2path(branch_var2name(branch_name))
 
     path = path or u''
     action = request.form.get('action', '').lower()
@@ -460,6 +462,16 @@ def branch_edit_file(branch_name, path=None):
         commit_message = u'Uploaded file "{}"'.format(file_path)
 
     elif action == 'create' and (create_what == 'article' or create_what == 'category') and create_path is not None:
+        # don't allow empty names for categories or articles
+        request_path = request.form['request_path'].strip()
+        if len(request_path) == 0 or len(slugify(request_path)) == 0:
+            if len(request_path) != 0:
+                flash(u'{} is not an acceptable {} name!'.format(request_path, create_what), u'warning')
+            else:
+                describe_what = u'an article' if create_what == 'article' else u'a category'
+                flash(u'Please enter a name to create {}!'.format(describe_what), u'warning')
+            return redirect('/tree/{}/edit/{}'.format(safe_branch, file_path), code=303)
+
         add_message, file_path, redirect_path, do_save = add_article_or_category(repo, create_path, request.form['request_path'], create_what)
         if do_save:
             commit = repo.commit()
@@ -478,7 +490,6 @@ def branch_edit_file(branch_name, path=None):
         Logger.debug('save')
         repo_functions.save_working_file(clone=repo, path=file_path, message=commit_message, base_sha=commit.hexsha, default_branch_name=master_name)
 
-    safe_branch = branch_name2path(branch_var2name(branch_name))
     return redirect('/tree/{}/edit/{}'.format(safe_branch, redirect_path), code=303)
 
 @app.route('/tree/<branch_name>/', methods=['GET'])
