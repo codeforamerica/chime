@@ -1957,6 +1957,8 @@ class TestProcess (TestCase):
         create_app_environ['AUTH_DATA_HREF'] = 'http://example.com/auth.csv'
         create_app_environ['BROWSERID_URL'] = 'http://localhost'
         create_app_environ['LIVE_SITE_URL'] = 'http://example.org/'
+        create_app_environ['SUPPORT_EMAIL_ADDRESS'] = u'support@example.com'
+        create_app_environ['SUPPORT_PHONE_NUMBER'] = u'(123) 456-7890'
 
         self.app = create_app(create_app_environ)
 
@@ -1996,6 +1998,7 @@ class TestProcess (TestCase):
         else:
             return self.auth_csv_example_allowed(url, request)
 
+    # in TestProcess
     def test_editing_process_with_two_users(self):
         ''' Check edit process with a user looking at feedback from another user.
         '''
@@ -2042,6 +2045,7 @@ class TestProcess (TestCase):
             author = comment.find(text='frances@example.com')
             self.assertTrue(author is not None)
 
+    # in TestProcess
     def test_editing_process_with_conflicting_publish(self):
         ''' Check edit process with a user attempting to change an activity that's been published.
         '''
@@ -2099,6 +2103,84 @@ class TestProcess (TestCase):
             #
             erica.open_link(article_path)
             erica.edit_outdated_article(title_str='Just Awful', body_str='It was the worst of times.')
+
+    # in TestProcess
+    def test_task_not_marked_published_after_merge_conflict(self):
+        ''' When publishing an activity results in a merge conflict, it shouldn't be marked published.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
+
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in('frances@example.com')
+
+            # Start a new task
+            erica.start_task(description='Eating Carrion', beneficiary='Vultures')
+            erica_branch_name = erica.get_branch_name()
+
+            # Look for an "other" link that we know about - is it a category?
+            erica.follow_link(href='/tree/{}/edit/other'.format(erica_branch_name))
+
+            # Create a new category, subcategory, and article
+            erica.add_category(category_name=u'Forage')
+            erica.add_subcategory(subcategory_name='Dead Animals')
+            erica.add_article(article_name='Dingos')
+
+            # Edit the new article.
+            erica.edit_article(title_str='Dingos', body_str='Canis Lupus Dingo')
+
+            # Ask for feedback
+            erica.follow_link(href='/tree/{}'.format(erica_branch_name))
+            erica.request_feedback(feedback_str='Is this okay?')
+
+            #
+            # Switch users
+            #
+            # Start a new task
+            frances.start_task(description='Flying in Circles', beneficiary='Vultures')
+            frances_branch_name = frances.get_branch_name()
+
+            # Look for an "other" link that we know about - is it a category?
+            frances.follow_link(href='/tree/{}/edit/other'.format(frances_branch_name))
+
+            # Create a duplicate new category, subcategory, and article
+            frances.add_category(category_name=u'Forage')
+            frances.add_subcategory(subcategory_name='Dead Animals')
+            frances.add_article(article_name='Dingos')
+
+            # Edit the new article.
+            frances.edit_article(title_str='Dingos', body_str='Apex Predator')
+
+            # Ask for feedback
+            frances.follow_link(href='/tree/{}'.format(frances_branch_name))
+            frances.request_feedback(feedback_str='Is this okay?')
+            frances_overview_path = frances.path
+
+            # frances approves and publishes erica's changes
+            frances.open_link(url=erica.path)
+            frances.leave_feedback(feedback_str='It is perfect.')
+            frances.approve_activity()
+            frances.publish_activity()
+
+            # erica approves and publishes frances's changes
+            erica.open_link(url=frances_overview_path)
+            erica.leave_feedback(feedback_str='It is not bad.')
+            erica.approve_activity()
+            erica.publish_activity(expected_code=500)
+
+            # we got a 500 error page about a merge conflict
+            pattern_template_comment_stripped = sub(ur'<!--|-->', u'', PATTERN_TEMPLATE_COMMENT)
+            comments = erica.soup.find_all(text=lambda text: isinstance(text, Comment))
+            self.assertTrue(pattern_template_comment_stripped.format(u'error-500') in comments)
+            self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'a' and u'MergeConflict' in tag['href']))
+
+            # re-load the overview page
+            erica.open_link(url=frances_overview_path)
+            # verify that the publish button is still available
+            self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'input' and tag['value'] == u'Publish'))
 
 class TestApp (TestCase):
 
