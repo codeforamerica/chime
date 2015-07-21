@@ -343,12 +343,7 @@ def complete_branch(clone, default_branch_name, working_branch_name):
     # get the task metadata
     task_metadata = get_task_metadata_for_branch(clone)
 
-    try:
-        kwargs = dict(task_metadata)
-        kwargs.update({"working_branch_name": working_branch_name})
-        message = u'Merged work by {author_email} for the task {task_description} (for {task_beneficiary}) from branch {working_branch_name}'.format(**kwargs)
-    except KeyError:
-        message = u'Merged work from "{}"'.format(working_branch_name)
+    message = u'{subject}\n\n{body}'.format(subject=REVIEW_STATE_COMMIT_PREFIX, body=ACTIVITY_PUBLISHED_MESSAGE)
 
     clone.git.checkout(default_branch_name)
     clone.git.pull('origin', default_branch_name)
@@ -695,16 +690,14 @@ def add_empty_commit(clone, subject, body):
 def update_review_state(clone, new_state):
     ''' Adds a new empty commit changing the review state
     '''
-    if new_state not in (REVIEW_STATE_FEEDBACK, REVIEW_STATE_ENDORSED, REVIEW_STATE_PUBLISHED):
-        raise Exception(u'The review state can\'t be set to {}'.format(new_state))
+    if new_state not in (REVIEW_STATE_FEEDBACK, REVIEW_STATE_ENDORSED):
+        raise Exception(u'The review state can\'t be set to {} here.'.format(new_state))
 
     message_text = u''
     if new_state == REVIEW_STATE_FEEDBACK:
         message_text = ACTIVITY_FEEDBACK_MESSAGE
     elif new_state == REVIEW_STATE_ENDORSED:
         message_text = ACTIVITY_ENDORSED_MESSAGE
-    elif new_state == REVIEW_STATE_PUBLISHED:
-        message_text = ACTIVITY_PUBLISHED_MESSAGE
 
     return add_empty_commit(clone, REVIEW_STATE_COMMIT_PREFIX, message_text)
 
