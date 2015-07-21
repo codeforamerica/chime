@@ -17,7 +17,7 @@ from . import chime as app
 from . import repo_functions, edit_functions
 from . import publish
 from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
-from .view_functions import branch_name2path, branch_var2name, get_repo, login_required, browserid_hostname_required, synch_required, synched_checkout_required, should_redirect, make_redirect, get_auth_data_file, is_allowed_email, common_template_args, log_application_errors, is_article_dir, is_category_dir, make_activity_history, summarize_activity_history, publish_or_destroy_activity, render_edit_view, render_modify_dir, render_list_dir, add_article_or_category, strip_index_file, delete_page, update_activity_review_status, save_page, CONTENT_FILE_EXTENSION
+from .view_functions import branch_name2path, branch_var2name, get_repo, login_required, browserid_hostname_required, synch_required, synched_checkout_required, should_redirect, make_redirect, get_auth_data_file, is_allowed_email, common_template_args, log_application_errors, is_article_dir, is_category_dir, make_activity_history, summarize_activity_history, publish_or_destroy_activity, render_edit_view, render_modify_dir, render_list_dir, add_article_or_category, strip_index_file, delete_page, update_activity_review_status, save_page, render_activities_list, CONTENT_FILE_EXTENSION
 
 from .google_api_functions import read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens, authorize_google, get_google_personal_info, get_google_analytics_properties
 
@@ -26,63 +26,7 @@ from .google_api_functions import read_ga_config, write_ga_config, request_new_g
 @login_required
 @synch_required
 def index():
-    repo = Repo(current_app.config['REPO_PATH']) # bare repo
-    master_name = current_app.config['default_branch']
-    branch_names = [b.name for b in repo.branches if b.name != master_name]
-
-    activities = []
-
-    for branch_name in branch_names:
-        safe_branch = branch_name2path(branch_name)
-
-        try:
-            repo.git.merge_base(master_name, branch_name)
-        except GitCommandError:
-            # Skip this branch if it looks to be an orphan. Just don't show it.
-            continue
-
-        # behind_raw = repo.git.log(base + '..' + master_name, format='%H %at %ae')
-        # ahead_raw = repo.git.log(base + '..' + branch_name, format='%H %at %ae')
-
-        # pattern = compile(r'^(\w+) (\d+) (.+)$', MULTILINE)
-        # # behind = [r.commit(sha) for (sha, t, e) in pattern.findall(behind_raw)]
-        # # ahead = [r.commit(sha) for (sha, t, e) in pattern.findall(ahead_raw)]
-        # behind = pattern.findall(behind_raw)
-        # ahead = pattern.findall(ahead_raw)
-
-        # contains 'author_email', 'task_description', 'task_beneficiary'
-        activity = repo_functions.get_task_metadata_for_branch(repo, branch_name)
-        activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
-        activity['task_description'] = activity['task_description'] if 'task_description' in activity else branch_name
-        activity['task_beneficiary'] = activity['task_beneficiary'] if 'task_beneficiary' in activity else u''
-
-        # get the current review state and authorized status
-        review_state, review_authorized = repo_functions.get_review_state_and_authorized(
-            repo=repo, default_branch_name=current_app.config['default_branch'],
-            working_branch_name=branch_name, actor_email=session.get('email', None)
-        )
-
-        date_created = repo.git.log('--format=%ad', '--date=relative', '--', repo_functions.TASK_METADATA_FILENAME).split('\n')[-1]
-        date_updated = repo.git.log('--format=%ad', '--date=relative').split('\n')[0]
-
-        # the email of the last person who edited the activity
-        last_edited_email = repo_functions.get_last_edited_email(
-            repo=repo, default_branch_name=current_app.config['default_branch'],
-            working_branch_name=branch_name
-        )
-
-        activity.update(date_created=date_created, date_updated=date_updated,
-                        edit_path=u'/tree/{}/edit/'.format(branch_name2path(branch_name)),
-                        overview_path=u'/tree/{}/'.format(branch_name2path(branch_name)),
-                        safe_branch=safe_branch, review_state=review_state,
-                        review_authorized=review_authorized, last_edited_email=last_edited_email)
-
-        activities.append(activity)
-
-    kwargs = common_template_args(current_app.config, session)
-    kwargs.update(activities=activities)
-
-    return render_template('activities-list.html', **kwargs)
+    return render_activities_list()
 
 @app.route('/not-allowed')
 @log_application_errors
@@ -246,11 +190,16 @@ def authorization_failed():
 @synch_required
 def start_branch():
     repo = get_repo(flask_app=current_app)
-    task_description = request.form.get('task_description')
-    task_beneficiary = request.form.get('task_beneficiary')
+    task_description = request.form.get('task_description').strip()
+    task_beneficiary = request.form.get('task_beneficiary').strip()
     master_name = current_app.config['default_branch']
-    branch = repo_functions.get_start_branch(repo, master_name, task_description, task_beneficiary, session['email'])
 
+    # require a task description
+    if len(task_description) == 0:
+        flash(u'Please describe what you\'re doing when you start a new activity!', u'warning')
+        return render_activities_list(task_beneficiary=task_beneficiary)
+
+    branch = repo_functions.get_start_branch(repo, master_name, task_description, task_beneficiary, session['email'])
     safe_branch = branch_name2path(branch.name)
     return redirect('/tree/{}/edit/'.format(safe_branch), code=303)
 

@@ -165,8 +165,8 @@ def get_start_branch(clone, default_branch_name, task_description, task_benefici
         with the same name, use it instead of creating a fresh branch.
     '''
 
-    # make a branch name based on unique details
-    new_branch_name = make_branch_name(task_description, task_beneficiary, author_email)
+    # make a new branch name
+    new_branch_name = make_branch_name()
 
     existing_branch = get_existing_branch(clone, default_branch_name, new_branch_name)
     if existing_branch:
@@ -316,18 +316,12 @@ def make_shortened_task_description(task_description):
 
     return suggested
 
-def make_branch_sha(task_description, task_beneficiary, author_email):
-    ''' generate a random branch name
+def make_branch_name():
+    ''' Return a short, URL- and Git-compatible name for a branch
     '''
     # no vowels, no hex letters
     seed = u'ghjklmnpqrstvwxz'
     return u''.join(random.SystemRandom().choice(seed) for _ in range(BRANCH_NAME_LENGTH))
-
-def make_branch_name(task_description, task_beneficiary, author_email):
-    ''' Return a short, URL- and Git-compatible name for a branch
-    '''
-    short_sha = make_branch_sha(task_description, task_beneficiary, author_email)[0:BRANCH_NAME_LENGTH]
-    return short_sha
 
 def complete_branch(clone, default_branch_name, working_branch_name):
     ''' Complete a branch merging, deleting it, and returning the merge commit.
