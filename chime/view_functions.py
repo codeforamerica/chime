@@ -393,14 +393,17 @@ def is_allowed_email(file, email):
     #
     for row in rows:
         if domain_index is not None:
+            # If we find the domain "*" we'll know that anyone's allowed in.
             if row[domain_index] == '*':
                 return True
 
+            # Allow this email if the domain matches.
             if domain_pat.match(row[domain_index]):
                 domain = domain_pat.match(row[domain_index]).group('domain')
                 if email_domain == domain:
                     return True
 
+        # Allow this email if the entire string matches.
         if address_index is not None:
             if email == row[address_index]:
                 return True
