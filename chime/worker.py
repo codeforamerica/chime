@@ -23,7 +23,7 @@ if __name__ == '__main__':
 
     running_state_dir, ga_client_id, ga_client_secret, repo_path = \
         os.environ['RUNNING_STATE_DIR'], os.environ['GA_CLIENT_ID'], \
-        os.environ['GA_CLIENT_SECRET'], os.environ['REPO_PATH']
+        os.environ['GA_CLIENT_SECRET'], environ.get('REPO_PATH', 'sample-site')
 
     while True:
         #
