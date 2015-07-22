@@ -2395,6 +2395,15 @@ class TestApp (TestCase):
             self.assertTrue('Start' in response.data)
 
     # in TestApp
+    def test_default_auth_href_warning(self):
+        ''' Check basic log in / log out flow without talking to Persona.
+        '''
+        with patch('chime.view_functions.AUTH_DATA_HREF_DEFAULT', new='http://example.com/auth.csv'):
+            response = self.test_client.get('/not-allowed')
+            expected = 'Your Chime <code>AUTH_DATA_HREF</code> is set to default value.'
+            self.assertTrue(expected in response.data, 'Should see a warning')
+
+    # in TestApp
     @patch('chime.view_functions.AUTH_CHECK_LIFESPAN', new=1.0)
     def test_login_timeout(self):
         ''' Check basic log in / log out flow with auth check lifespan.

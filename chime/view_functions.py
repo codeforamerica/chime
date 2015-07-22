@@ -46,6 +46,9 @@ AUTH_CHECK_LIFESPAN = 300.0
 # when creating a content file, what extension should it have?
 CONTENT_FILE_EXTENSION = u'markdown'
 
+# Name of default AUTH_DATA_HREF value
+AUTH_DATA_HREF_DEFAULT = 'data/authentication.csv'
+
 # the names of layouts, used in jekyll front matter and also in interface text
 CATEGORY_LAYOUT = 'category'
 ARTICLE_LAYOUT = 'article'
