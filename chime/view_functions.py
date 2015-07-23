@@ -847,6 +847,26 @@ def publish_commit(repo, publish_path):
         else:
             del environ['GIT_WORK_TREE']
 
+def update_activity_state(safe_branch, comment_text, action_list, redirect_path):
+    ''' Update the activity review state, which may include merging, abandoning, or clobbering
+        the associated branch.
+    '''
+    action, action_authorized = get_activity_action_and_authorized(branch_name=safe_branch, comment_text=comment_text, action_list=action_list)
+    if action_authorized:
+        if action in ('merge', 'abandon', 'clobber'):
+            try:
+                return_redirect = publish_or_destroy_activity(safe_branch, action, comment_text)
+            except MergeConflict as conflict:
+                raise conflict
+        else:
+            return_redirect = redirect(redirect_path, code=303)
+    else:
+        return_redirect = redirect(redirect_path, code=303)
+
+    # update and return the redirect
+    update_activity_review_status(action=action, action_authorized=action_authorized, comment_text=comment_text)
+    return return_redirect
+
 def publish_or_destroy_activity(branch_name, action, comment_text=None):
     ''' Publish, abandon, or clobber the activity defined by the passed branch name.
     '''

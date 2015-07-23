@@ -323,6 +323,7 @@ def make_branch_name():
     seed = u'ghjklmnpqrstvwxz'
     return u''.join(random.SystemRandom().choice(seed) for _ in range(BRANCH_NAME_LENGTH))
 
+# consolidate, close, finish, publish, merge <= other verbs Tomas thinks of before 'complete'
 def complete_branch(clone, default_branch_name, working_branch_name, comment_text=None):
     ''' Complete a branch merging, deleting it, and returning the merge commit.
 

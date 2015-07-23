@@ -23,7 +23,7 @@ from .view_functions import (
     make_activity_history, summarize_activity_history, publish_or_destroy_activity,
     render_edit_view, render_modify_dir, render_list_dir, add_article_or_category, strip_index_file,
     delete_page, update_activity_review_status, get_activity_action_and_authorized, save_page,
-    render_activities_list, CONTENT_FILE_EXTENSION
+    render_activities_list, update_activity_state, CONTENT_FILE_EXTENSION
     )
 
 from .google_api_functions import (
@@ -223,23 +223,10 @@ def start_branch():
 def update_activity():
     ''' Update the activity review state or merge, abandon, or clobber the posted branch
     '''
-    safe_branch = branch_name2path(branch_var2name(request.form.get('branch')))
+    comment_text = u''
     action_list = [item for item in request.form if item != 'comment_text']
-    action, action_authorized = get_activity_action_and_authorized(branch_name=safe_branch, comment_text=u'', action_list=action_list)
-    if action_authorized:
-        if action in ('merge', 'abandon', 'clobber'):
-            try:
-                return_redirect = publish_or_destroy_activity(safe_branch, action)
-            except repo_functions.MergeConflict as conflict:
-                raise conflict
-        else:
-            return_redirect = redirect('/', code=303)
-    else:
-        return_redirect = redirect('/', code=303)
-
-    update_activity_review_status(action=action, action_authorized=action_authorized, comment_text=u'')
-    return return_redirect
-
+    safe_branch = branch_name2path(branch_var2name(request.form.get('branch')))
+    return update_activity_state(safe_branch=safe_branch, comment_text=comment_text, action_list=action_list, redirect_path='/tree/{}/'.format(safe_branch))
 
 @app.route('/checkouts/<ref>.zip')
 @log_application_errors
@@ -521,24 +508,10 @@ def show_activity_overview(branch_name):
 def edit_activity_overview(branch_name):
     ''' Handle a POST from a form on the activity overview page
     '''
-    safe_branch = branch_name2path(branch_var2name(branch_name))
     comment_text = request.form.get('comment_text', u'').strip()
     action_list = [item for item in request.form if item != 'comment_text']
-    action, action_authorized = get_activity_action_and_authorized(branch_name=safe_branch, comment_text=comment_text, action_list=action_list)
-    if action_authorized:
-        if action in ('merge', 'abandon', 'clobber'):
-            try:
-                return_redirect = publish_or_destroy_activity(safe_branch, action, comment_text)
-            except repo_functions.MergeConflict as conflict:
-                raise conflict
-        else:
-            return_redirect = redirect('/tree/{}/'.format(safe_branch), code=303)
-    else:
-        return_redirect = redirect('/tree/{}/'.format(safe_branch), code=303)
-
-    # update and return the redirect
-    update_activity_review_status(action=action, action_authorized=action_authorized, comment_text=comment_text)
-    return return_redirect
+    safe_branch = branch_name2path(branch_var2name(branch_name))
+    return update_activity_state(safe_branch=safe_branch, comment_text=comment_text, action_list=action_list, redirect_path='/tree/{}/'.format(safe_branch))
 
 @app.route('/tree/<branch_name>/history/', methods=['GET'])
 @app.route('/tree/<branch_name>/history/<path:path>', methods=['GET'])
