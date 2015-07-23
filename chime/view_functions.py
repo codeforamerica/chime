@@ -847,7 +847,7 @@ def publish_commit(repo, publish_path):
         else:
             del environ['GIT_WORK_TREE']
 
-def publish_or_destroy_activity(branch_name, action):
+def publish_or_destroy_activity(branch_name, action, comment_text=None):
     ''' Publish, abandon, or clobber the activity defined by the passed branch name.
     '''
     repo = get_repo(flask_app=current_app)
@@ -860,7 +860,7 @@ def publish_or_destroy_activity(branch_name, action):
     activity['task_beneficiary'] = activity['task_beneficiary'] if 'task_beneficiary' in activity else u''
 
     try:
-        args = repo, master_name, branch_name
+        args = repo, master_name, branch_name, comment_text
 
         if action == 'merge':
             complete_branch(*args)
@@ -1179,20 +1179,18 @@ def update_activity_review_status(action, action_authorized, comment_text):
     repo = get_repo(flask_app=current_app)
 
     if action_authorized:
+        # comment if comment text was sent and the action is authorized
+        if comment_text:
+            provide_feedback(clone=repo, comment_text=comment_text, push=True)
+
         # handle a review action
         if action != 'comment':
             if action == 'request_feedback':
-                update_review_state(repo, REVIEW_STATE_FEEDBACK)
+                update_review_state(clone=repo, new_state=REVIEW_STATE_FEEDBACK, push=True)
             elif action == 'endorse_edits':
-                update_review_state(repo, REVIEW_STATE_ENDORSED)
-            elif action == 'merge':
-                update_review_state(repo, REVIEW_STATE_PUBLISHED)
+                update_review_state(clone=repo, new_state=REVIEW_STATE_ENDORSED, push=True)
         elif not comment_text:
             flash(u'You can\'t leave an empty comment!', u'warning')
-
-        # comment if comment text was sent and the action is authorized
-        if comment_text:
-            provide_feedback(repo, comment_text)
 
     else:
         # flash a message if the action wasn't authorized

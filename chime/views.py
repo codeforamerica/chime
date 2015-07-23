@@ -528,7 +528,7 @@ def edit_activity_overview(branch_name):
     if action_authorized:
         if action in ('merge', 'abandon', 'clobber'):
             try:
-                return_redirect = publish_or_destroy_activity(safe_branch, action)
+                return_redirect = publish_or_destroy_activity(safe_branch, action, comment_text)
             except repo_functions.MergeConflict as conflict:
                 raise conflict
         else:

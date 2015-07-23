@@ -323,7 +323,7 @@ def make_branch_name():
     seed = u'ghjklmnpqrstvwxz'
     return u''.join(random.SystemRandom().choice(seed) for _ in range(BRANCH_NAME_LENGTH))
 
-def complete_branch(clone, default_branch_name, working_branch_name):
+def complete_branch(clone, default_branch_name, working_branch_name, comment_text=None):
     ''' Complete a branch merging, deleting it, and returning the merge commit.
 
         Checks out the default branch, merges the working branch in.
@@ -416,7 +416,7 @@ def complete_branch(clone, default_branch_name, working_branch_name):
     # clone.remotes.origin.push(':' + working_branch_name)
     # clone.delete_head([working_branch_name])
 
-def abandon_branch(clone, default_branch_name, working_branch_name):
+def abandon_branch(clone, default_branch_name, working_branch_name, comment_text=None):
     ''' Complete work on a branch by abandoning and deleting it.
     '''
     message = u'Abandoned work from "%s"' % working_branch_name
@@ -435,7 +435,7 @@ def abandon_branch(clone, default_branch_name, working_branch_name):
     if working_branch_name in clone.branches:
         clone.git.branch('-D', working_branch_name)
 
-def clobber_default_branch(clone, default_branch_name, working_branch_name):
+def clobber_default_branch(clone, default_branch_name, working_branch_name, comment_text=None):
     ''' Complete work on a branch by clobbering master and deleting it.
     '''
     message = u'Clobbered with work from "{}"'.format(working_branch_name)
