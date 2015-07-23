@@ -14,7 +14,7 @@ def get_filehandler(dirnames):
 
         Choose a logfile path based on priority-ordered list of directories.
     '''
-    writeable_dirs = [d for d in dirnames if os.access(d, os.W_OK | os.X_OK)]
+    writeable_dirs = [d for d in dirnames if d and os.access(d, os.W_OK | os.X_OK)]
 
     if not writeable_dirs:
         raise RuntimeError('Unable to pick a writeable directory name for logs.')

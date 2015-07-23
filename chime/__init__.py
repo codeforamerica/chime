@@ -74,6 +74,7 @@ def create_app(environ):
     app.config['GA_CLIENT_SECRET'] = environ['GA_CLIENT_SECRET']
     app.config['GA_REDIRECT_URI'] = environ.get('GA_REDIRECT_URI', 'http://127.0.0.1:5000/callback')
     app.config['WORK_PATH'] = environ.get('WORK_PATH', '.')
+    app.config['LOG_PATH'] = environ.get('LOG_PATH')
     app.config['REPO_PATH'] = environ.get('REPO_PATH', 'sample-site')
     app.config['BROWSERID_URL'] = environ['BROWSERID_URL']
     app.config['SINGLE_USER'] = bool(environ.get('SINGLE_USER', False))
@@ -95,7 +96,7 @@ def create_app(environ):
 
     @app.before_first_request
     def before_first_request():
-        directories = '/var/log/chime', app.config['WORK_PATH']
+        directories = app.config['LOG_PATH'], '/var/log/chime', app.config['WORK_PATH']
         logger.addHandler(get_filehandler(directories))
         logger.setLevel(DEBUG if app.debug else INFO)
 
