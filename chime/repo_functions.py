@@ -692,7 +692,6 @@ def add_empty_commit(clone, subject, body, push=True):
     ''' Adds a new empty commit with the passed details
     '''
     clone.index.commit(make_commit_message(subject=subject, body=body).encode('utf-8'))
-    return clone.active_branch.commit
     active_branch_name = clone.active_branch.name
 
     #
