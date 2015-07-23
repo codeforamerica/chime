@@ -851,6 +851,7 @@ def update_activity_state(safe_branch, comment_text, action_list, redirect_path)
     ''' Update the activity review state, which may include merging, abandoning, or clobbering
         the associated branch.
     '''
+    repo = get_repo(flask_app=current_app)
     action, action_authorized = get_activity_action_and_authorized(branch_name=safe_branch, comment_text=comment_text, action_list=action_list)
     if action_authorized:
         if action in ('merge', 'abandon', 'clobber'):
@@ -859,12 +860,33 @@ def update_activity_state(safe_branch, comment_text, action_list, redirect_path)
             except MergeConflict as conflict:
                 raise conflict
         else:
+            # comment if comment text was sent and the action is authorized
+            if comment_text:
+                provide_feedback(clone=repo, comment_text=comment_text, push=True)
+
+            # handle a review action
+            if action != 'comment':
+                if action == 'request_feedback':
+                    update_review_state(clone=repo, new_state=REVIEW_STATE_FEEDBACK, push=True)
+                elif action == 'endorse_edits':
+                    update_review_state(clone=repo, new_state=REVIEW_STATE_ENDORSED, push=True)
+            elif not comment_text:
+                flash(u'You can\'t leave an empty comment!', u'warning')
+
             return_redirect = redirect(redirect_path, code=303)
     else:
+        # flash a message if the action wasn't authorized
+        action_lookup = {
+            'comment': u'leave a comment',
+            'request_feedback': u'request feedback',
+            'endorse_edits': u'endorse the edits',
+            'merge': u'publish the edits'
+        }
+        flash(u'Something changed behind the scenes and we couldn\'t {}! Please try again.'.format(action_lookup[action]), u'error')
+
         return_redirect = redirect(redirect_path, code=303)
 
-    # update and return the redirect
-    update_activity_review_status(action=action, action_authorized=action_authorized, comment_text=comment_text)
+    # return the redirect
     return return_redirect
 
 def publish_or_destroy_activity(branch_name, action, comment_text=None):
@@ -1192,35 +1214,6 @@ def get_activity_action_and_authorized(branch_name, comment_text, action_list):
         action_authorized = False
 
     return action, action_authorized
-
-def update_activity_review_status(action, action_authorized, comment_text):
-    ''' Comment and/or update the review state.
-    '''
-    repo = get_repo(flask_app=current_app)
-
-    if action_authorized:
-        # comment if comment text was sent and the action is authorized
-        if comment_text:
-            provide_feedback(clone=repo, comment_text=comment_text, push=True)
-
-        # handle a review action
-        if action != 'comment':
-            if action == 'request_feedback':
-                update_review_state(clone=repo, new_state=REVIEW_STATE_FEEDBACK, push=True)
-            elif action == 'endorse_edits':
-                update_review_state(clone=repo, new_state=REVIEW_STATE_ENDORSED, push=True)
-        elif not comment_text:
-            flash(u'You can\'t leave an empty comment!', u'warning')
-
-    else:
-        # flash a message if the action wasn't authorized
-        action_lookup = {
-            'comment': u'leave a comment',
-            'request_feedback': u'request feedback',
-            'endorse_edits': u'endorse the edits',
-            'merge': u'publish the edits'
-        }
-        flash(u'Something changed behind the scenes and we couldn\'t {}! Please try again.'.format(action_lookup[action]), u'error')
 
 def save_page(repo, default_branch_name, working_branch_name, file_path, new_values):
     ''' Save the page with the passed values
