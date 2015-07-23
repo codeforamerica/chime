@@ -18,9 +18,22 @@ from . import repo_functions, edit_functions
 from . import publish
 from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
 
-from .view_functions import branch_name2path, branch_var2name, get_repo, login_required, browserid_hostname_required, synch_required, synched_checkout_required, should_redirect, make_redirect, get_auth_data_file, is_allowed_email, common_template_args, log_application_errors, is_article_dir, is_category_dir, make_activity_history, summarize_activity_history, publish_or_destroy_activity, render_edit_view, render_modify_dir, render_list_dir, add_article_or_category, strip_index_file, delete_page, update_activity_review_status, get_activity_action_and_authorized, save_page, render_activities_list, CONTENT_FILE_EXTENSION
+from .view_functions import (
+    branch_name2path, branch_var2name, get_repo, login_required, browserid_hostname_required,
+    synch_required, synched_checkout_required, should_redirect, make_redirect, get_auth_data_file,
+    is_allowed_email, common_template_args, log_application_errors, is_article_dir, is_category_dir,
+    make_activity_history, summarize_activity_history, publish_or_destroy_activity,
+    render_edit_view, render_modify_dir, render_list_dir, add_article_or_category, strip_index_file,
+    delete_page, update_activity_review_status, get_activity_action_and_authorized, save_page,
+    render_activities_list, CONTENT_FILE_EXTENSION
+    )
 
-from .google_api_functions import read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens, authorize_google, get_google_personal_info, get_google_analytics_properties
+from .google_api_functions import (
+    read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens, authorize_google,
+    get_google_personal_info, get_google_analytics_properties
+    )
+
+from . import view_functions
 
 @app.route('/', methods=['GET'])
 @log_application_errors
@@ -35,9 +48,10 @@ def index():
 def not_allowed():
     email = session.get('email', None)
     auth_data_href = current_app.config['AUTH_DATA_HREF']
+    is_auth_data_default = bool(auth_data_href == view_functions.AUTH_DATA_HREF_DEFAULT)
 
     kwargs = common_template_args(current_app.config, session)
-    kwargs.update(auth_url=auth_data_href)
+    kwargs.update(auth_url=auth_data_href, is_auth_data_default=is_auth_data_default)
 
     if not email:
         return render_template('signin.html', **kwargs)

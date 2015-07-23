@@ -2254,7 +2254,7 @@ class TestApp (TestCase):
 
     def auth_csv_example_allowed(self, url, request):
         if url.geturl() == 'http://example.com/auth.csv':
-            return response(200, '''Email domain,Organization\nexample.com,Example Org''')
+            return response(200, '''Email domain,Organization\nexample.com,Example Org\n*,Anyone''')
 
         raise Exception('Asked for unknown URL ' + url.geturl())
 
@@ -2268,6 +2268,13 @@ class TestApp (TestCase):
     def mock_persona_verify_frances(self, url, request):
         if url.geturl() == 'https://verifier.login.persona.org/verify':
             return response(200, '''{"status": "okay", "email": "frances@example.com"}''', headers=dict(Link='<https://api.github.com/user/337792/repos?page=1>; rel="prev", <https://api.github.com/user/337792/repos?page=1>; rel="first"'))
+
+        else:
+            return self.auth_csv_example_allowed(url, request)
+
+    def mock_persona_verify_william(self, url, request):
+        if url.geturl() == 'https://verifier.login.persona.org/verify':
+            return response(200, '''{"status": "okay", "email": "william@example.org"}''', headers=dict(Link='<https://api.github.com/user/337792/repos?page=1>; rel="prev", <https://api.github.com/user/337792/repos?page=1>; rel="first"'))
 
         else:
             return self.auth_csv_example_allowed(url, request)
@@ -2371,6 +2378,30 @@ class TestApp (TestCase):
 
             response = self.test_client.get('/')
             self.assertFalse('Start' in response.data)
+
+    # in TestApp
+    def test_login_splat(self):
+        ''' Check basic log in / log out flow without talking to Persona.
+        '''
+        response = self.test_client.get('/')
+        self.assertFalse('Start' in response.data)
+
+        with HTTMock(self.mock_persona_verify_william):
+            response = self.test_client.post('/sign-in', data={'email': 'william@example.org'})
+            self.assertEqual(response.status_code, 200)
+
+        with HTTMock(self.auth_csv_example_allowed):
+            response = self.test_client.get('/')
+            self.assertTrue('Start' in response.data)
+
+    # in TestApp
+    def test_default_auth_href_warning(self):
+        ''' Check basic log in / log out flow without talking to Persona.
+        '''
+        with patch('chime.view_functions.AUTH_DATA_HREF_DEFAULT', new='http://example.com/auth.csv'):
+            response = self.test_client.get('/not-allowed')
+            expected = 'Your Chime <code>AUTH_DATA_HREF</code> is set to default value.'
+            self.assertTrue(expected in response.data, 'Should see a warning')
 
     # in TestApp
     @patch('chime.view_functions.AUTH_CHECK_LIFESPAN', new=1.0)

@@ -15,6 +15,11 @@
             <p>To access the website editor, you need to be signed in.</p>
             <input type="button" id="signin" value="Sign in with Persona" class="button button--green button--large">
         {% endif %}
+        {% if is_auth_data_default %}
+            <p>
+                <strong>Your Chime <code>AUTH_DATA_HREF</code> is set to default value.</strong>
+            </p>
+        {% endif %}
     </div>
 </div>
 <div class="row">
