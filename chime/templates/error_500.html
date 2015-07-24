@@ -6,39 +6,67 @@
 {% set template_name = 'error-500' %}
 {% block body_class %}{{template_name}}{% endblock %}
 
+{% set support_phone_number = "510-965-8938" %}
+{% set support_email = "norris@codeforamerica.org" %}
+
 {% block content %}
 <!-- template name: {{ template_name }} -->
-<div class="row col__flex message-500">
-    <p>SOMETHING WENT WRONG</p>
+<div class="row row--main col__flex">
 
-{% if error_type == 'merge-conflict' %}
-    <p>We couldn't automatically resolve the differences between your changes and those of a co-worker.</p>
-    <ul>
-    {% for file in changed_files %}
-        <li><strong>{{ file.name }}</strong> (path: {{ file.path }}) was changed</li>
-    {% endfor %}
-    {% for file in new_files %}
-        <li><strong>{{ file.name }}</strong> (path: {{ file.path }}) is new</li>
-    {% endfor %}
-    {% for file in gone_files %}
-        <li><strong>{{ file.name }}</strong> (path: {{ file.path }}) is gone</li>
-    {% endfor %}
-    </ul>
-{% endif %}
+    <div class="message-500">
 
-{% if support_phone_number or support_email %}
-    <p>If you need help:</p>
-{% endif %}
-{% if support_phone_number %}
-    <p>Call us at {{ support_phone_number }}</p>
-{% endif %}
-{% if support_email %}
-    <p>Send an email to <a href="mailto:{{ support_email }}{{ email_params }}">{{ support_email }}</a>
-{% endif %}
+        {% if error_type == 'merge-conflict' or true %}
+            <h1>We apologize. There were conflicting changes between your work and changes published to the live site that couldn't be resolved.</h1>
+            <ul>
 
-{% if activities_path %}
-    <a href="{{ activities_path }}" class="button button--green button--large">Return to the list of activities</a>
-{% endif %}
+            <table class="conflict-table">
+                <thead>
+                    <tr>
+                        <th>File</th>
+                        <th>Your changes</th>
+                        <th>On live site</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Paying your Parking Ticket</td>
+                        <td>Edited</td>
+                        <td>Deleted</td>
+                    </tr>
+                    <tr>
+                        <td>Snowstorm Operations</td>
+                        <td>Edited</td>
+                        <td>Edited</td>
+                    </tr>
+                    <tr>
+                        <td>Permitting</td>
+                        <td>Deleted</td>
+                        <td>Edited</td>
+                    </tr>
+                </tbody>
+            </table>
+
+
+            {% for file in changed_files %}
+                <li><strong>{{ file.name }}</strong> (path: {{ file.path }}) was changed</li>
+            {% endfor %}
+            {% for file in new_files %}
+                <li><strong>{{ file.name }}</strong> (path: {{ file.path }}) is new</li>
+            {% endfor %}
+            {% for file in gone_files %}
+                <li><strong>{{ file.name }}</strong> (path: {{ file.path }}) is gone</li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <h1>We apologize, something went wrong.</h1>
+        {% endif %}
+
+        {% if support_phone_number or support_email %}
+        <p>Please {% if support_phone_number %}call us at {{ support_phone_number }}{% if support_email %} or {% endif %}{% endif %}{% if support_email %} <a href="mailto:{{ support_email }}{{ email_params }}">send us an email</a>{% endif %}.</p>
+        {% endif %}
+
+        <p><a href="{{ activities_path }}">Return to the activities list</a></p>
+    </div>
 
 </div>
 
