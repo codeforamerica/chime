@@ -58,11 +58,12 @@ class ChimeTestClient:
         # Look for the link
         link = self.soup.find(lambda tag: bool(tag.name == 'a' and tag['href'] == href))
         response = self.client.get(link['href'])
-        self.test.assertTrue(response.status_code in (301, 302)) # Watch out for a redirect here.
+        redirect_count = 0
+        while response.status_code in (301, 302) and redirect_count < 3:
+            redirect = urlparse(response.headers['Location']).path
+            response = self.client.get(redirect)
+            redirect_count = redirect_count + 1
 
-        # Load the page
-        redirect = urlparse(response.headers['Location']).path
-        response = self.client.get(redirect)
         self.test.assertEqual(response.status_code, 200)
 
         self.path, self.soup = redirect, BeautifulSoup(response.data)
