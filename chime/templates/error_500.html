@@ -6,18 +6,14 @@
 {% set template_name = 'error-500' %}
 {% block body_class %}{{template_name}}{% endblock %}
 
-{% set support_phone_number = "510-965-8938" %}
-{% set support_email = "norris@codeforamerica.org" %}
-
 {% block content %}
 <!-- template name: {{ template_name }} -->
 <div class="row row--main col__flex">
 
     <div class="message-500">
 
-        {% if error_type == 'merge-conflict' or true %}
+        {% if error_type == 'merge-conflict' %}
             <h1>We apologize. There were conflicting changes between your work and changes published to the live site that couldn't be resolved.</h1>
-            <ul>
 
             <table class="conflict-table">
                 <thead>
@@ -28,35 +24,30 @@
                     </tr>
                 </thead>
                 <tbody>
+                    {% for file in changed_files %}
                     <tr>
-                        <td>Paying your Parking Ticket</td>
-                        <td>Edited</td>
-                        <td>Deleted</td>
+                        <td>{{ file.path }}{{ file.name }}</td>
+                        <td>???</td>
+                        <td>edited</td>
                     </tr>
+                    {% endfor %}
+                    {% for file in new_files %}
                     <tr>
-                        <td>Snowstorm Operations</td>
-                        <td>Edited</td>
-                        <td>Edited</td>
+                        <td>{{ file.path }}{{ file.name }}</td>
+                        <td>???</td>
+                        <td>created</td>
                     </tr>
+                    {% endfor %}
+                    {% for file in gone_files %}
                     <tr>
-                        <td>Permitting</td>
-                        <td>Deleted</td>
-                        <td>Edited</td>
+                        <td>{{ file.path }}{{ file.name }}</td>
+                        <td>???</td>
+                        <td>deleted</td>
                     </tr>
+                    {% endfor %}
                 </tbody>
             </table>
 
-
-            {% for file in changed_files %}
-                <li><strong>{{ file.name }}</strong> (path: {{ file.path }}) was changed</li>
-            {% endfor %}
-            {% for file in new_files %}
-                <li><strong>{{ file.name }}</strong> (path: {{ file.path }}) is new</li>
-            {% endfor %}
-            {% for file in gone_files %}
-                <li><strong>{{ file.name }}</strong> (path: {{ file.path }}) is gone</li>
-            {% endfor %}
-            </ul>
         {% else %}
             <h1>We apologize, something went wrong.</h1>
         {% endif %}
