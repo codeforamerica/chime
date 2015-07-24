@@ -9,16 +9,16 @@
 {% block content %}
 <!-- template name: {{ template_name }} -->
 <div class="row row--main col__flex">
-	<div class="message-404">
-		    <h1>We apologize. The page you're trying to access doesn't appear to exist.</h1>
+    <div class="message-404">
+            <h1>We apologize. The page you're trying to access doesn't appear to exist.</h1>
 
-			{% if support_phone_number or support_email %}
-			<p>If you need help, please {% if support_phone_number %}call us at {{ support_phone_number }}{% if support_email %} or {% endif %}{% endif %}{% if support_email %} <a href="mailto:{{ support_email }}{{ email_params }}">send us an email</a>{% endif %}.</p>
-			{% endif %}
+            {% if support_phone_number or support_email %}
+            <p>If you need help, please {% if support_phone_number %}call us at {{ support_phone_number }}{% if support_email %} or {% endif %}{% endif %}{% if support_email %} <a href="mailto:{{ support_email }}{{ email_params }}">send us an email</a>{% endif %}.</p>
+            {% endif %}
 
-			<p><a href="{{ activities_path }}">Return to the activities list</a>{% if edit_path %} or <a href="{{ edit_path }}">continue working on this activity</a>{% endif %}</p>
+            <p><a href="{{ activities_path }}">Return to the activities list</a>{% if edit_path %} or <a href="{{ edit_path }}">continue working on this activity</a>{% endif %}</p>
 
-	</div>
+    </div>
 </div>
 
 {% endblock %}
