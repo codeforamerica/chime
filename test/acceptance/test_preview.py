@@ -129,7 +129,6 @@ class TestPreview(ChimeTestCase):
         self.driver.find_element_by_class_name('create').click()
 
         # create a new page
-        self.driver.find_element_by_link_text("categories").click()
         self.driver.find_element_by_id("create-category-name").send_keys(self.marked_string('category'))
         self.driver.find_element_by_id("create-category-button").click()
         self.driver.find_element_by_id("create-subcategory-name").send_keys(self.marked_string('subcategory'))
