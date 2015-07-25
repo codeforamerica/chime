@@ -2,7 +2,8 @@ from . import chime as app
 from flask import current_app, render_template, session, request
 from urlparse import urlparse
 from urllib import quote
-from .view_functions import common_template_args, get_repo
+from os.path import join
+from .view_functions import common_template_args, get_repo, strip_index_file, path_display_type, get_value_from_front_matter
 from .repo_functions import MergeConflict
 
 ERROR_TYPE_404 = u'404'
@@ -33,21 +34,34 @@ def make_email_params(message, path=None):
 def page_not_found(error):
     ''' Render a 404 error page
     '''
+    repo = get_repo(flask_app=current_app)
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(common_error_template_args(current_app.config))
-    # if we can extract a branch name from the URL, construct an edit link for it
-    repo = get_repo(flask_app=current_app)
+    # if we can extract a branch name from the path, construct an edit link for it
     path = urlparse(request.url).path
-    for branch_name_candidate in path.split('/'):
-        if branch_name_candidate in repo.branches:
-            kwargs.update({"edit_path": u'/tree/{}/edit/'.format(branch_name_candidate)})
-            break
+    branch_name = repo.active_branch.name
+    if branch_name == current_app.config['default_branch']:
+        branch_name = extract_branch_name_from_path(path)
+
+    branch_name = extract_branch_name_from_path(path)
+    if branch_name:
+        kwargs.update({"edit_path": u'/tree/{}/edit/'.format(branch_name)})
 
     kwargs.update({"error_type": ERROR_TYPE_404})
     template_message = u'(404) {}'.format(path)
     kwargs.update({"message": template_message})
     kwargs.update({"email_params": make_email_params(message=template_message)})
     return render_template('error_404.html', **kwargs), 404
+
+def extract_branch_name_from_path(path):
+    ''' If the name of a branch that exists in the passed repo is in the passed URL, return it
+    '''
+    repo = get_repo(flask_app=current_app)
+    for branch_name_candidate in path.split('/'):
+        if branch_name_candidate in repo.branches:
+            return branch_name_candidate
+
+    return None
 
 @app.app_errorhandler(500)
 def internal_server_error(error):
@@ -66,30 +80,60 @@ def internal_server_error(error):
 def merge_conflict(error):
     ''' Render a 500 error page with merge conflict details
     '''
-    new_files, gone_files, changed_files = error.files()
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(common_error_template_args(current_app.config))
-    kwargs.update(new_files=new_files, gone_files=gone_files, changed_files=changed_files)
-    file_count = len(new_files) + len(gone_files) + len(changed_files)
 
-    files_messages = []
-    message = u'No files were affected.'
-    if len(changed_files):
-        files_messages.append(u'Changed: {}'.format(u', '.join([item['path'] for item in changed_files])))
-    if len(new_files):
-        files_messages.append(u'New: {}'.format(u', '.join([item['path'] for item in new_files])))
-    if len(gone_files):
-        files_messages.append(u'Gone: {}'.format(u', '.join([item['path'] for item in gone_files])))
+    kwargs.update({"conflict_files": summarize_conflict_details(error)})
 
-    if len(files_messages):
-        message = u'Affected files: {}'.format(u'; '.join(files_messages))
-
-    kwargs.update({"file_count": file_count})
     kwargs.update({"error_type": ERROR_TYPE_MERGE_CONFLICT})
-    template_message = u'(MergeConflict) {}'.format(message)
+
+    message = u'\n'.join([u'{} {}'.format(item['actions'], item['path']) for item in error.files()])
+    template_message = u'(MergeConflict)\n{}'.format(message)
     kwargs.update({"message": template_message})
     kwargs.update({"email_params": make_email_params(message=template_message, path=urlparse(request.url).path)})
+
     return render_template('error_500.html', **kwargs), 500
+
+def summarize_conflict_details(error):
+    ''' Make an object that summarizes the files affected by a merge conflict.
+
+        The object looks like this:
+        [
+            {'edit_path': u'', 'display_type': u'Article', 'actions': u'Deleted', 'title': u'How to Find Us'},
+            {'edit_path': u'/tree/34246e3/edit/contact/hours-of-operation/', 'display_type': u'Article', 'actions': u'Edited', 'title': u'Hours of Operation'},
+            {'edit_path': u'/tree/34246e3/edit/contact/driving-directions/', 'display_type': u'Article', 'actions': u'Edited', 'title': u'Driving Directions'},
+            {'edit_path': u'/tree/34246e3/edit/contact/', 'display_type': u'Category', 'actions': u'Created', 'title': u'Contact'}
+        ]
+    '''
+    repo = get_repo(flask_app=current_app)
+    path = urlparse(request.url).path
+    # get the branch name (unless it's the default branch)
+    branch_name = repo.active_branch.name
+    if branch_name == current_app.config['default_branch']:
+        branch_name = extract_branch_name_from_path(path)
+
+    conflict_files = error.files()
+    summary = []
+    for id_file in conflict_files:
+        file_description = {'actions': id_file['actions']}
+        edit_path = u''
+        display_type = u''
+        title = u''
+        if id_file['actions'] != u'Deleted':
+            file_loc = join(repo.working_dir, id_file['path'])
+            dir_path = strip_index_file(id_file['path'])
+            dir_loc = join(repo.working_dir, dir_path)
+            display_type = path_display_type(dir_loc)
+            title = get_value_from_front_matter('title', file_loc)
+            edit_path = join(u'/tree/{}/edit/'.format(branch_name), dir_path)
+
+        file_description['edit_path'] = edit_path
+        file_description['display_type'] = display_type
+        file_description['title'] = title
+
+        summary.append(file_description)
+
+    return summary
 
 @app.app_errorhandler(Exception)
 def exception(error):

@@ -18,31 +18,21 @@
             <table class="conflict-table">
                 <thead>
                     <tr>
-                        <th>File</th>
-                        <th>Your changes</th>
-                        <th>On live site</th>
+                        <th>Title</th>
+                        <th>Type</th>
+                        <th>Changes</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for file in changed_files %}
+                    {% for file in conflict_files %}
                     <tr>
-                        <td>{{ file.path }}{{ file.name }}</td>
-                        <td>???</td>
-                        <td>edited</td>
-                    </tr>
-                    {% endfor %}
-                    {% for file in new_files %}
-                    <tr>
-                        <td>{{ file.path }}{{ file.name }}</td>
-                        <td>???</td>
-                        <td>created</td>
-                    </tr>
-                    {% endfor %}
-                    {% for file in gone_files %}
-                    <tr>
-                        <td>{{ file.path }}{{ file.name }}</td>
-                        <td>???</td>
-                        <td>deleted</td>
+                        {% if file.edit_path %}
+                        <td><a href="{{ file.edit_path }}">{{ file.title }}</a></td>
+                        {% else %}
+                        <td>{{ file.title }}</td>
+                        {% endif %}
+                        <td>{{ file.display_type }}</td>
+                        <td>{{ file.actions }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
