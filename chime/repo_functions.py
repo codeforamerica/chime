@@ -50,6 +50,11 @@ REVIEW_STATE_PUBLISHED = u'changes published'
 # Name of file in running state dir that signals a need to push upstream.
 NEEDS_PUSH_FILE = 'needs-push'
 
+# actions for merge conflict descriptions
+CONFLICT_ACTION_CREATED = u'created'
+CONFLICT_ACTION_DELETED = u'deleted'
+CONFLICT_ACTION_EDITED = u'edited'
+
 class MergeConflict (Exception):
     def __init__(self, remote_commit, local_commit):
         self.remote_commit = remote_commit
@@ -58,11 +63,11 @@ class MergeConflict (Exception):
     def files(self):
         diffs = self.remote_commit.diff(self.local_commit)
 
-        new_files = [{"name": d.b_blob.name, "path": d.b_blob.path} for d in diffs if d.new_file]
-        gone_files = [{"name": d.a_blob.name, "path": d.a_blob.path} for d in diffs if d.deleted_file]
-        changed_files = [{"name": d.a_blob.name, "path": d.a_blob.path} for d in diffs if not (d.deleted_file or d.new_file)]
+        created_files = [{"actions": CONFLICT_ACTION_CREATED, "path": d.b_blob.path} for d in diffs if d.new_file]
+        deleted_files = [{"actions": CONFLICT_ACTION_DELETED, "path": d.a_blob.path} for d in diffs if d.deleted_file]
+        edited_files = [{"actions": CONFLICT_ACTION_EDITED, "path": d.a_blob.path} for d in diffs if not (d.deleted_file or d.new_file)]
 
-        return new_files, gone_files, changed_files
+        return created_files + deleted_files + edited_files
 
     def __str__(self):
         return 'MergeConflict(%s, %s)' % (self.remote_commit, self.local_commit)

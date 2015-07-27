@@ -2374,44 +2374,39 @@ input[type="submit"]:disabled:hover {
 }
 
 /* line 5, ../sass/templates/_error-404.scss */
-.message-404 {
-  position: absolute;
-  top: 50%;
-  width: 600px;
-  margin-top: -5em;
-}
-/* line 10, ../sass/templates/_error-404.scss */
-.message-404 p {
-  font-size: 28px;
-  font-weight: 300;
-  margin: 0;
-}
-/* line 14, ../sass/templates/_error-404.scss */
-.message-404 p a {
-  color: inherit;
-  text-decoration: underline;
-}
-
-/* line 1, ../sass/templates/_error-500.scss */
 .error-500 {
   background-image: url("../images/error-500-bg.png");
 }
 
-/* line 5, ../sass/templates/_error-500.scss */
-.message-500 {
-  position: absolute;
-  top: 50%;
-  width: 600px;
-  margin-top: -5em;
+/* line 9, ../sass/templates/_error-404.scss */
+.message-404, .message-500 {
+  background-color: #fff;
+  margin: 3em auto;
+  max-width: 680px;
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.25);
+  padding: 40px;
+  text-align: center;
 }
-/* line 10, ../sass/templates/_error-500.scss */
-.message-500 p {
-  font-size: 28px;
-  font-weight: 300;
-  margin: 0;
+/* line 16, ../sass/templates/_error-404.scss */
+.message-404 h1, .message-500 h1 {
+  margin-top: 0;
+  margin-bottom: 2em;
 }
-/* line 14, ../sass/templates/_error-500.scss */
-.message-500 p a {
+/* line 20, ../sass/templates/_error-404.scss */
+.message-404 p, .message-500 p {
+  font-weight: 400;
+}
+/* line 23, ../sass/templates/_error-404.scss */
+.message-404 a, .message-500 a {
   color: inherit;
   text-decoration: underline;
+}
+
+/* line 29, ../sass/templates/_error-404.scss */
+.conflict-table {
+  margin-bottom: 3em;
+}
+/* line 31, ../sass/templates/_error-404.scss */
+.conflict-table tbody tr td:first-of-type {
+  font-weight: bold;
 }

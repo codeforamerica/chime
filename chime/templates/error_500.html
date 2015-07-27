@@ -8,37 +8,46 @@
 
 {% block content %}
 <!-- template name: {{ template_name }} -->
-<div class="row col__flex message-500">
-    <p>SOMETHING WENT WRONG</p>
+<div class="row row--main col__flex">
 
-{% if error_type == 'merge-conflict' %}
-    <p>We couldn't automatically resolve the differences between your changes and those of a co-worker.</p>
-    <ul>
-    {% for file in changed_files %}
-        <li><strong>{{ file.name }}</strong> (path: {{ file.path }}) was changed</li>
-    {% endfor %}
-    {% for file in new_files %}
-        <li><strong>{{ file.name }}</strong> (path: {{ file.path }}) is new</li>
-    {% endfor %}
-    {% for file in gone_files %}
-        <li><strong>{{ file.name }}</strong> (path: {{ file.path }}) is gone</li>
-    {% endfor %}
-    </ul>
-{% endif %}
+    <div class="message-500">
 
-{% if support_phone_number or support_email %}
-    <p>If you need help:</p>
-{% endif %}
-{% if support_phone_number %}
-    <p>Call us at {{ support_phone_number }}</p>
-{% endif %}
-{% if support_email %}
-    <p>Send an email to <a href="mailto:{{ support_email }}{{ email_params }}">{{ support_email }}</a>
-{% endif %}
+        {% if error_type == 'merge-conflict' %}
+            <h1>We apologize. There were conflicting changes between your work and changes published to the live site that couldn't be resolved.</h1>
 
-{% if activities_path %}
-    <a href="{{ activities_path }}" class="button button--green button--large">Return to the list of activities</a>
-{% endif %}
+            <table class="conflict-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Changes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for file in conflict_files %}
+                    <tr>
+                        {% if file.edit_path %}
+                        <td><a href="{{ file.edit_path }}">{{ file.title }}</a></td>
+                        {% else %}
+                        <td>{{ file.title }}</td>
+                        {% endif %}
+                        <td>{{ file.display_type }}</td>
+                        <td>{{ file.actions }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+        {% else %}
+            <h1>We apologize, something went wrong.</h1>
+        {% endif %}
+
+        {% if support_phone_number or support_email %}
+        <p>Please {% if support_phone_number %}call us at {{ support_phone_number }}{% if support_email %} or {% endif %}{% endif %}{% if support_email %} <a href="mailto:{{ support_email }}{{ email_params }}">send us an email</a>{% endif %}.</p>
+        {% endif %}
+
+        <p><a href="{{ activities_path }}">Return to the activities list</a></p>
+    </div>
 
 </div>
 

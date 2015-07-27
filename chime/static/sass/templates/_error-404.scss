@@ -2,18 +2,33 @@
     background-image: url('../images/error-404-bg.jpg');
 }
 
-.message-404 {
-    position: absolute;
-    top: 50%;
-    width: 600px;
-    margin-top: -5em;
+.error-500 {
+    background-image: url('../images/error-500-bg.png');
+}
+
+.message-404, .message-500 {
+    background-color: #fff;
+    margin: 3em auto;
+    max-width: 680px;
+    box-shadow: $box-shadow-1;
+    padding: $site-margins;
+    text-align: center;
+    h1 {
+        margin-top: 0;
+        margin-bottom: 2em;
+    }
     p {
-        font-size: $h2-font-size;
-        font-weight: 300;
-        margin: 0;
-        a {
-            color: inherit;
-            text-decoration: underline;
-        }
+        font-weight: 400;
+    }
+    a {
+        color: inherit;
+        text-decoration: underline;
+    }
+}
+
+.conflict-table {
+    margin-bottom: 3em;
+    tbody tr td:first-of-type {
+        font-weight: bold;
     }
 }

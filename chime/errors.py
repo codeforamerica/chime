@@ -1,7 +1,7 @@
 from . import chime as app
 from flask import current_app, render_template, session, request
 from urlparse import urlparse
-from urllib import quote
+from .error_functions import common_error_template_args, make_email_params, summarize_conflict_details, extract_branch_name_from_path
 from .view_functions import common_template_args, get_repo
 from .repo_functions import MergeConflict
 
@@ -9,39 +9,23 @@ ERROR_TYPE_404 = u'404'
 ERROR_TYPE_500 = u'500'
 ERROR_TYPE_MERGE_CONFLICT = u'merge-conflict'
 ERROR_TYPE_EXCEPTION = u'exception'
-EMAIL_SUBJECT_TEXT = u'Chime Error Report'
-EMAIL_BODY_PREFIX = u'\n\n----- Please add any relevant details above this line -----\n\n'
-
-def common_error_template_args(app_config):
-    ''' Return dictionary of template arguments common to error pages.
-    '''
-    return {
-        "activities_path": u'/',
-        "support_email": app_config.get('SUPPORT_EMAIL_ADDRESS'),
-        "support_phone_number": app_config.get('SUPPORT_PHONE_NUMBER')
-    }
-
-def make_email_params(message, path=None):
-    ''' Construct email params to send to the template.
-    '''
-    email_message = EMAIL_BODY_PREFIX + message
-    if path:
-        email_message = u'\n'.join([email_message, u'path: {}'.format(path)])
-    return u'?subject={}&body={}'.format(quote(EMAIL_SUBJECT_TEXT), quote(email_message))
 
 @app.app_errorhandler(404)
 def page_not_found(error):
     ''' Render a 404 error page
     '''
+    repo = get_repo(flask_app=current_app)
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(common_error_template_args(current_app.config))
-    # if we can extract a branch name from the URL, construct an edit link for it
-    repo = get_repo(flask_app=current_app)
+    # if we can extract a branch name from the path, construct an edit link for it
     path = urlparse(request.url).path
-    for branch_name_candidate in path.split('/'):
-        if branch_name_candidate in repo.branches:
-            kwargs.update({"edit_path": u'/tree/{}/edit/'.format(branch_name_candidate)})
-            break
+    branch_name = repo.active_branch.name
+    if branch_name == current_app.config['default_branch']:
+        branch_name = extract_branch_name_from_path(path)
+
+    branch_name = extract_branch_name_from_path(path)
+    if branch_name:
+        kwargs.update({"edit_path": u'/tree/{}/edit/'.format(branch_name)})
 
     kwargs.update({"error_type": ERROR_TYPE_404})
     template_message = u'(404) {}'.format(path)
@@ -66,29 +50,18 @@ def internal_server_error(error):
 def merge_conflict(error):
     ''' Render a 500 error page with merge conflict details
     '''
-    new_files, gone_files, changed_files = error.files()
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(common_error_template_args(current_app.config))
-    kwargs.update(new_files=new_files, gone_files=gone_files, changed_files=changed_files)
-    file_count = len(new_files) + len(gone_files) + len(changed_files)
 
-    files_messages = []
-    message = u'No files were affected.'
-    if len(changed_files):
-        files_messages.append(u'Changed: {}'.format(u', '.join([item['path'] for item in changed_files])))
-    if len(new_files):
-        files_messages.append(u'New: {}'.format(u', '.join([item['path'] for item in new_files])))
-    if len(gone_files):
-        files_messages.append(u'Gone: {}'.format(u', '.join([item['path'] for item in gone_files])))
+    kwargs.update({"conflict_files": summarize_conflict_details(error)})
 
-    if len(files_messages):
-        message = u'Affected files: {}'.format(u'; '.join(files_messages))
-
-    kwargs.update({"file_count": file_count})
     kwargs.update({"error_type": ERROR_TYPE_MERGE_CONFLICT})
-    template_message = u'(MergeConflict) {}'.format(message)
+
+    message = u'\n'.join([u'{} {}'.format(item['actions'], item['path']) for item in error.files()])
+    template_message = u'(MergeConflict)\n{}'.format(message)
     kwargs.update({"message": template_message})
     kwargs.update({"email_params": make_email_params(message=template_message, path=urlparse(request.url).path)})
+
     return render_template('error_500.html', **kwargs), 500
 
 @app.app_errorhandler(Exception)
