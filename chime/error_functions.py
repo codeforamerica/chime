@@ -87,7 +87,7 @@ def summarize_conflict_details(error):
             display_type = u'Unknown'
 
         file_description['edit_path'] = edit_path
-        file_description['display_type'] = display_type
+        file_description['display_type'] = display_type.title()
         file_description['title'] = title
 
         summary.append(file_description)
