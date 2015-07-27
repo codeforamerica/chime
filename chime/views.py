@@ -22,7 +22,7 @@ from .view_functions import (
     is_allowed_email, common_template_args, log_application_errors, is_article_dir, is_category_dir,
     make_activity_history, summarize_activity_history, publish_or_destroy_activity,
     render_edit_view, render_modify_dir, render_list_dir, add_article_or_category, strip_index_file,
-    delete_page, update_activity_review_status, get_activity_action_and_authorized, save_page,
+    delete_page, get_activity_action_and_authorized, save_page,
     render_activities_list, sorted_paths, update_activity_state, CONTENT_FILE_EXTENSION, FOLDER_FILE_TYPE
     )
 
