@@ -4376,9 +4376,10 @@ class TestApp (TestCase):
             response = self.test_client.get('/tree/{}/edit/{}'.format(generated_branch_name_2, fake_page_path))
             hexsha = search(r'<input name="hexsha" value="(\w+)"', response.data).group(1)
             # now save the file with new content
+            fake_new_title = u'Bloople'
             response = self.test_client.post('/tree/{}/save/{}'.format(generated_branch_name_2, fake_page_path),
                                              data={'layout': view_functions.ARTICLE_LAYOUT, 'hexsha': hexsha,
-                                                   'en-title': 'Bloople',
+                                                   'en-title': fake_new_title,
                                                    'en-body': u'{}\n'.format(fake_page_content_2),
                                                    'url-slug': u'{}/index'.format(fake_page_slug)},
                                              follow_redirects=True)
@@ -4413,6 +4414,11 @@ class TestApp (TestCase):
         self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('error-500') in response.data)
         self.assertTrue(u'MergeConflict' in response.data)
         self.assertTrue(u'{}/index.{}'.format(fake_page_slug, view_functions.CONTENT_FILE_EXTENSION) in response.data)
+
+        self.assertTrue(u'<td><a href="/tree/{}/edit/{}/">{}</a></td>'.format(generated_branch_name_2, fake_page_slug, fake_new_title))
+        self.assertTrue(u'<td>Article</td>' in response.data)
+        self.assertTrue(u'<td>Edited</td>' in response.data)
+
         # these values are set in setUp() above
         self.assertTrue(u'support@example.com' in response.data)
         self.assertTrue(u'(123) 456-7890' in response.data)
