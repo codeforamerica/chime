@@ -323,7 +323,8 @@ def make_branch_name():
     seed = u'ghjklmnpqrstvwxz'
     return u''.join(random.SystemRandom().choice(seed) for _ in range(BRANCH_NAME_LENGTH))
 
-def complete_branch(clone, default_branch_name, working_branch_name):
+# consolidate, close, finish, publish, merge <= other verbs Tomas thinks of before 'complete'
+def complete_branch(clone, default_branch_name, working_branch_name, comment_text=None):
     ''' Complete a branch merging, deleting it, and returning the merge commit.
 
         Checks out the default branch, merges the working branch in.
@@ -340,16 +341,17 @@ def complete_branch(clone, default_branch_name, working_branch_name):
         Deletes the working branch in the clone and the origin, and leaves
         the working directory checked out to the merged default branch.
     '''
+    # remember where we started
+    working_reset_commit = clone.branches[working_branch_name].commit
+    default_reset_commit = clone.branches[default_branch_name].commit
+
     # get the task metadata
     task_metadata = get_task_metadata_for_branch(clone)
 
-    try:
-        kwargs = dict(task_metadata)
-        kwargs.update({"working_branch_name": working_branch_name})
-        message = u'Merged work by {author_email} for the task {task_description} (for {task_beneficiary}) from branch {working_branch_name}'.format(**kwargs)
-    except KeyError:
-        message = u'Merged work from "{}"'.format(working_branch_name)
+    # build a standard publish commit message
+    message = make_commit_message(subject=REVIEW_STATE_COMMIT_PREFIX, body=ACTIVITY_PUBLISHED_MESSAGE)
 
+    # checkout master and make sure it's up-to-date
     clone.git.checkout(default_branch_name)
     clone.git.pull('origin', default_branch_name)
 
@@ -357,20 +359,29 @@ def complete_branch(clone, default_branch_name, working_branch_name):
     # Merge the working branch back to the default branch.
     #
     try:
+        # if comment text was passed, post the comment now
+        if comment_text:
+            provide_feedback(clone=clone, comment_text=comment_text, push=False)
+
+        # try to merge
         clone.git.merge(working_branch_name, '--no-ff', m=message)
 
     except GitCommandError:
         # raise the two commits in conflict.
         remote_commit = clone.refs[_origin(default_branch_name)].commit
-        clone.git.reset(default_branch_name, hard=True)
+        # revert the default repo
+        clone.git.reset(default_reset_commit.hexsha, hard=True)
+        # revert the working repo
         clone.git.checkout(working_branch_name)
+        clone.git.reset(working_reset_commit.hexsha, hard=True)
+
         raise MergeConflict(remote_commit, clone.commit())
 
     else:
         # remove the task metadata file if it exists
         _, do_save = edit_functions.delete_file(clone, TASK_METADATA_FILENAME)
         if do_save:
-            # amend the merge commit to include the deletion and push it
+            # amend the merge commit to include the deletion
             clone.git.commit('--amend', '--no-edit', '--reset-author')
 
     # tag the commit with the branch name and a json object containing the task metadata
@@ -421,7 +432,7 @@ def complete_branch(clone, default_branch_name, working_branch_name):
     # clone.remotes.origin.push(':' + working_branch_name)
     # clone.delete_head([working_branch_name])
 
-def abandon_branch(clone, default_branch_name, working_branch_name):
+def abandon_branch(clone, default_branch_name, working_branch_name, comment_text=None):
     ''' Complete work on a branch by abandoning and deleting it.
     '''
     message = u'Abandoned work from "%s"' % working_branch_name
@@ -440,7 +451,7 @@ def abandon_branch(clone, default_branch_name, working_branch_name):
     if working_branch_name in clone.branches:
         clone.git.branch('-D', working_branch_name)
 
-def clobber_default_branch(clone, default_branch_name, working_branch_name):
+def clobber_default_branch(clone, default_branch_name, working_branch_name, comment_text=None):
     ''' Complete work on a branch by clobbering master and deleting it.
     '''
     message = u'Clobbered with work from "{}"'.format(working_branch_name)
@@ -673,10 +684,15 @@ def get_review_state_and_author_email(repo, default_branch_name, working_branch_
 
     return state, author
 
-def add_empty_commit(clone, subject, body):
+def make_commit_message(subject, body):
+    ''' Construct a commit message with subject & body
+    '''
+    return u'{subject}\n\n{body}'.format(subject=subject, body=body)
+
+def add_empty_commit(clone, subject, body, push=True):
     ''' Adds a new empty commit with the passed details
     '''
-    clone.index.commit(u'{subject}\n\n{body}'.format(**{"subject": subject, "body": body}).encode('utf-8'))
+    clone.index.commit(make_commit_message(subject=subject, body=body).encode('utf-8'))
     active_branch_name = clone.active_branch.name
 
     #
@@ -688,30 +704,29 @@ def add_empty_commit(clone, subject, body):
         except MergeConflict as conflict:
             raise conflict
 
-    clone.git.push('origin', active_branch_name)
+    if push:
+        clone.git.push('origin', active_branch_name)
 
     return clone.active_branch.commit
 
-def update_review_state(clone, new_state):
+def update_review_state(clone, new_state, push=True):
     ''' Adds a new empty commit changing the review state
     '''
-    if new_state not in (REVIEW_STATE_FEEDBACK, REVIEW_STATE_ENDORSED, REVIEW_STATE_PUBLISHED):
-        raise Exception(u'The review state can\'t be set to {}'.format(new_state))
+    if new_state not in (REVIEW_STATE_FEEDBACK, REVIEW_STATE_ENDORSED):
+        raise Exception(u'The review state can\'t be set to {} here.'.format(new_state))
 
     message_text = u''
     if new_state == REVIEW_STATE_FEEDBACK:
         message_text = ACTIVITY_FEEDBACK_MESSAGE
     elif new_state == REVIEW_STATE_ENDORSED:
         message_text = ACTIVITY_ENDORSED_MESSAGE
-    elif new_state == REVIEW_STATE_PUBLISHED:
-        message_text = ACTIVITY_PUBLISHED_MESSAGE
 
-    return add_empty_commit(clone, REVIEW_STATE_COMMIT_PREFIX, message_text)
+    return add_empty_commit(clone=clone, subject=REVIEW_STATE_COMMIT_PREFIX, body=message_text, push=push)
 
-def provide_feedback(clone, comment_text):
+def provide_feedback(clone, comment_text, push=True):
     ''' Adds a new empty commit adding a comment
     '''
-    return add_empty_commit(clone, COMMENT_COMMIT_PREFIX, comment_text)
+    return add_empty_commit(clone=clone, subject=COMMENT_COMMIT_PREFIX, body=comment_text, push=push)
 
 def _remote_exists(repo, remote):
     ''' Check whether a named remote exists in a repository.

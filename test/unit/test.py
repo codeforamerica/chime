@@ -539,7 +539,7 @@ class TestRepo (TestCase):
 
         self.assertEqual(front2b[title_key_name], front1[title_key_name])
         self.assertEqual(body2b, body2)
-        self.assertTrue(self.clone2.commit().message.startswith('Merged work from'))
+        self.assertTrue(repo_functions.ACTIVITY_PUBLISHED_MESSAGE in self.clone2.commit().message)
 
     # in TestRepo
     def test_content_merge_extra_change(self):
@@ -1023,15 +1023,9 @@ class TestRepo (TestCase):
         #
         # Publish the work
         #
-        # first set & check the state
-        repo_functions.update_review_state(self.clone1, repo_functions.REVIEW_STATE_PUBLISHED)
-        review_state, review_authorized = repo_functions.get_review_state_and_authorized(self.clone1, 'master', branch1_name, fake_nonprofit_email)
-        self.assertEqual(review_state, repo_functions.REVIEW_STATE_PUBLISHED)
-        self.assertFalse(review_authorized)
-        # actually publish
-        merge_commit = repo_functions.complete_branch(self.clone1, 'master', branch1_name)
+        merge_commit = repo_functions.complete_branch(clone=self.clone1, default_branch_name='master', working_branch_name=branch1_name)
         # The commit message is expected
-        self.assertTrue('Merged' in merge_commit.message and branch1_name in merge_commit.message)
+        self.assertTrue(repo_functions.ACTIVITY_PUBLISHED_MESSAGE in merge_commit.message)
         # The branch is gone
         self.assertFalse(branch1_name in self.origin.branches)
         self.assertFalse(branch1_name in self.clone1.branches)
@@ -1518,7 +1512,7 @@ class TestRepo (TestCase):
         merge_commit = repo_functions.complete_branch(self.clone1, 'master', branch1_name)
 
         # The commit message is expected
-        self.assertTrue('Merged' in merge_commit.message and branch1_name in merge_commit.message)
+        self.assertTrue(repo_functions.ACTIVITY_PUBLISHED_MESSAGE in merge_commit.message)
         # The branch is gone
         self.assertFalse(branch1_name in self.origin.branches)
         self.assertFalse(branch1_name in self.clone1.branches)
