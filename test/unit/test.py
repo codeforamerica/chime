@@ -793,11 +793,10 @@ class TestRepo (TestCase):
         self.assertEqual(conflict.exception.local_commit, self.clone2.commit())
 
         # conflict.exception is the MergeConflict exception object
-        _, _, changed_files = conflict.exception.files()
-
-        self.assertEqual(len(changed_files), 1)
-        self.assertEqual(changed_files[0]['name'], 'conflict.md')
-        self.assertEqual(changed_files[0]['path'], 'conflict.md')
+        conflict_files = conflict.exception.files()
+        edited_files = [item for item in conflict_files if item['actions'] == repo_functions.CONFLICT_ACTION_EDITED]
+        self.assertEqual(len(edited_files), 1)
+        self.assertEqual(edited_files[0]['path'], 'conflict.md')
 
     # in TestRepo
     def test_conflict_resolution_clobber(self):
