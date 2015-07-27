@@ -7,6 +7,7 @@ from urllib import quote
 from urlparse import urlparse
 from os.path import join
 from .view_functions import get_repo, strip_index_file, path_display_type, get_value_from_front_matter
+from .repo_functions import CONFLICT_ACTION_DELETED
 
 EMAIL_SUBJECT_TEXT = u'Chime Error Report'
 EMAIL_BODY_PREFIX = u'\n\n----- Please add any relevant details above this line -----\n\n'
@@ -59,11 +60,12 @@ def summarize_conflict_details(error):
     conflict_files = error.files()
     summary = []
     for id_file in conflict_files:
-        file_description = {'actions': id_file['actions']}
+        file_description = {'actions': id_file['actions'].title()}
         edit_path = u''
         display_type = u''
         title = u''
-        if id_file['actions'] != u'Deleted':
+        # construct location info if the file wasn't deleted
+        if id_file['actions'] != CONFLICT_ACTION_DELETED:
             file_loc = join(repo.working_dir, id_file['path'])
             dir_path = strip_index_file(id_file['path'])
             dir_loc = join(repo.working_dir, dir_path)
