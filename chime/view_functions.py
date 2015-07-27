@@ -434,10 +434,7 @@ def log_application_errors(route_function):
             # save the details of the original exception
             t, v, tb = sys.exc_info()
             # not all exceptions have a 'code' attribute
-            try:
-                error_code = e.code
-            except:
-                error_code = 0
+            error_code = getattr(e, 'code', 500)
 
             if error_code in range(400, 499):
                 Logger.info(e, exc_info=False, extra={'request': request})
