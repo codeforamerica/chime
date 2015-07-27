@@ -5,9 +5,9 @@ Logger = getLogger('chime.error_functions')
 from flask import current_app, request
 from urllib import quote
 from urlparse import urlparse
-from os.path import join
-from .view_functions import get_repo, strip_index_file, path_display_type, get_value_from_front_matter
-from .repo_functions import CONFLICT_ACTION_DELETED, TASK_METADATA_FILENAME
+from os.path import join, exists
+from .view_functions import get_repo, strip_index_file, path_display_type, get_value_from_front_matter, FOLDER_FILE_TYPE
+from .repo_functions import TASK_METADATA_FILENAME
 
 EMAIL_SUBJECT_TEXT = u'Chime Error Report'
 EMAIL_BODY_PREFIX = u'\n\n----- Please add any relevant details above this line -----\n\n'
@@ -68,14 +68,23 @@ def summarize_conflict_details(error):
         edit_path = u''
         display_type = u''
         title = id_file['path'].split('/')[-1]
-        # construct location info if the file wasn't deleted
-        if id_file['actions'] != CONFLICT_ACTION_DELETED:
-            file_loc = join(repo.working_dir, id_file['path'])
+        # construct location info if the file's there
+        file_loc = join(repo.working_dir, id_file['path'])
+        if exists(file_loc):
             dir_path = strip_index_file(id_file['path'])
             dir_loc = join(repo.working_dir, dir_path)
             display_type = path_display_type(dir_loc)
+            # if it's not a category or article, it's just a file
+            if display_type == FOLDER_FILE_TYPE:
+                display_type = path_display_type(file_loc)
+
             title = get_value_from_front_matter('title', file_loc) or title
             edit_path = join(u'/tree/{}/edit/'.format(branch_name), dir_path)
+
+        else:
+            # the file's not there, so just dump the whole path into the title
+            title = id_file['path']
+            display_type = u'Unknown'
 
         file_description['edit_path'] = edit_path
         file_description['display_type'] = display_type
