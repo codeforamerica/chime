@@ -20,16 +20,15 @@ from .view_functions import (
     branch_name2path, branch_var2name, get_repo, login_required, browserid_hostname_required,
     synch_required, synched_checkout_required, should_redirect, make_redirect, get_auth_data_file,
     is_allowed_email, common_template_args, log_application_errors, is_article_dir, is_category_dir,
-    make_activity_history, summarize_activity_history, publish_or_destroy_activity,
-    render_edit_view, render_modify_dir, render_list_dir, add_article_or_category, strip_index_file,
-    delete_page, get_activity_action_and_authorized, save_page,
-    render_activities_list, sorted_paths, update_activity_state, CONTENT_FILE_EXTENSION, FOLDER_FILE_TYPE
-    )
+    make_activity_history, summarize_activity_history, render_edit_view, render_modify_dir, render_list_dir,
+    add_article_or_category, strip_index_file, delete_page, save_page, render_activities_list, sorted_paths,
+    update_activity_state, CONTENT_FILE_EXTENSION, FOLDER_FILE_TYPE
+)
 
 from .google_api_functions import (
     read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens, authorize_google,
     get_google_personal_info, get_google_analytics_properties
-    )
+)
 
 from . import view_functions
 
