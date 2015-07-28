@@ -30,11 +30,11 @@ from .jekyll_functions import load_jekyll_doc, load_languages, build_jekyll_site
 from .google_api_functions import read_ga_config, fetch_google_analytics_for_page
 from .repo_functions import (
     get_existing_branch, ignore_task_metadata_on_merge, get_message_classification, ChimeRepo,
-    ACTIVITY_CREATED_MESSAGE, get_task_metadata_for_branch, complete_branch, abandon_branch,
-    clobber_default_branch, MergeConflict, get_review_state_and_authorized, save_working_file,
-    update_review_state, provide_feedback, move_existing_file, get_last_edited_email, TASK_METADATA_FILENAME,
-    REVIEW_STATE_EDITED, REVIEW_STATE_FEEDBACK, REVIEW_STATE_ENDORSED, REVIEW_STATE_PUBLISHED,
-    MESSAGE_CATEGORY_EDIT, mark_upstream_push_needed
+    get_task_metadata_for_branch, complete_branch, abandon_branch, clobber_default_branch,
+    get_review_state_and_authorized, save_working_file, update_review_state, provide_feedback,
+    move_existing_file, get_last_edited_email, mark_upstream_push_needed, MergeConflict,
+    ACTIVITY_CREATED_MESSAGE, TASK_METADATA_FILENAME, REVIEW_STATE_EDITED, REVIEW_STATE_FEEDBACK,
+    REVIEW_STATE_ENDORSED, MESSAGE_CATEGORY_EDIT
 )
 
 from .href import needs_redirect, get_redirect
