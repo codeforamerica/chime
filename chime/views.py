@@ -20,15 +20,15 @@ from .view_functions import (
     branch_name2path, branch_var2name, get_repo, login_required, browserid_hostname_required,
     synch_required, synched_checkout_required, should_redirect, make_redirect, get_auth_data_file,
     is_allowed_email, common_template_args, log_application_errors, is_article_dir, is_category_dir,
-    make_activity_history, summarize_activity_history, render_edit_view, render_modify_dir,
-    render_list_dir, add_article_or_category, strip_index_file, delete_page, save_page,
-    render_activities_list, update_activity_state, CONTENT_FILE_EXTENSION
-    )
+    make_activity_history, summarize_activity_history, render_edit_view, render_modify_dir, render_list_dir,
+    add_article_or_category, strip_index_file, delete_page, save_page, render_activities_list, sorted_paths,
+    update_activity_state, CONTENT_FILE_EXTENSION, FOLDER_FILE_TYPE
+)
 
 from .google_api_functions import (
     read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens, authorize_google,
     get_google_personal_info, get_google_analytics_properties
-    )
+)
 
 from . import view_functions
 
@@ -284,6 +284,16 @@ def branch_edit(branch_name, path=None):
 
         # if the directory path didn't end with a slash, add it
         if path and not path.endswith('/'):
+            return redirect('/tree/{}/edit/{}/'.format(branch_name2path(branch_name), path), code=302)
+
+        # if, in this directory, there is a non-article or -category directory that's the
+        # only visible object in the hierarchy, redirect inside
+        directory_contents = sorted_paths(repo=repo, branch_name=branch_name, path=path)
+        if len(directory_contents) == 1 and directory_contents[0]['display_type'] == FOLDER_FILE_TYPE:
+            if path:
+                path = join(path, directory_contents[0]['name'])
+            else:
+                path = directory_contents[0]['name']
             return redirect('/tree/{}/edit/{}/'.format(branch_name2path(branch_name), path), code=302)
 
         # render the directory contents

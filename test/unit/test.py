@@ -8,7 +8,7 @@ from StringIO import StringIO
 from os.path import join, exists, dirname, isdir, abspath, isfile, sep, realpath
 from urlparse import urlparse, urljoin
 from urllib import quote
-from os import environ, remove
+from os import environ, remove, mkdir
 from shutil import rmtree, copytree
 from uuid import uuid4
 from re import search, sub
@@ -4416,6 +4416,34 @@ class TestApp (TestCase):
         # these values are set in setUp() above
         self.assertTrue(u'support@example.com' in response.data)
         self.assertTrue(u'(123) 456-7890' in response.data)
+
+    # in TestApp
+    def test_redirect_into_solo_folder(self):
+        ''' Loading a folder with a sole non-article or -category directory in it redirects to the contents of that directory.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
+
+            # Start a new task
+            erica.start_task(description=u'Be Shot Hundreds Of Feet Into The Air', beneficiary=u'A Geyser Of Highly Pressurized Water')
+            # Get the branch name
+            branch_name = erica.get_branch_name()
+
+            # create a directory containing only another directory
+            repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email='erica@example.com')
+            testing_slug = u'testing'
+            categories_slug = u'categories'
+            mkdir(join(repo.working_dir, testing_slug))
+            mkdir(join(repo.working_dir, testing_slug, categories_slug))
+
+            # open the top level directory
+            erica.open_link(url='/tree/{}/edit/'.format(branch_name))
+            # enter the 'testing' directory
+            erica.follow_link(href='/tree/{}/edit/{}'.format(branch_name, testing_slug))
+            # we should've automatically been redirected into the 'categories' directory
+            self.assertEqual(erica.path, '/tree/{}/edit/{}/'.format(branch_name, join(testing_slug, categories_slug)))
 
 class TestPublishApp (TestCase):
 
