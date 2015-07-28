@@ -19,7 +19,6 @@ import csv
 import re
 import json
 import time
-import sys
 
 from dateutil import parser, tz
 from dateutil.relativedelta import relativedelta
@@ -446,8 +445,6 @@ def log_application_errors(route_function):
         try:
             return route_function(*args, **kwargs)
         except Exception as e:
-            # save the details of the original exception
-            t, v, tb = sys.exc_info()
             # not all exceptions have a 'code' attribute
             error_code = getattr(e, 'code', 500)
 
@@ -456,7 +453,7 @@ def log_application_errors(route_function):
             else:
                 Logger.error(e, exc_info=True, extra={'request': request})
 
-            raise t, v, tb
+            raise
 
     return decorated_function
 
