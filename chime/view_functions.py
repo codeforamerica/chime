@@ -736,9 +736,7 @@ def sorted_paths(repo, branch_name, path=None, showallfiles=False):
     if showallfiles:
         file_names = all_sorted_files_dirs
 
-    view_paths = [join('/tree/%s/view' % branch_name2path(branch_name), join(path or '', fn))
-                  for fn in file_names]
-
+    view_paths = [join('/tree/{}/view'.format(branch_name2path(branch_name)), join(path or '', fn)) for fn in file_names]
     full_paths = [join(full_path, name) for name in file_names]
     path_pairs = zip(full_paths, view_paths)
 
@@ -749,6 +747,7 @@ def sorted_paths(repo, branch_name, path=None, showallfiles=False):
             info = {}
             info['name'] = basename(edit_path)
             info['display_type'] = path_display_type(edit_path)
+            info['link_name'] = u'{}/'.format(info['name']) if info['display_type'] in (FOLDER_FILE_TYPE, CATEGORY_LAYOUT, ARTICLE_LAYOUT) else info['name']
             file_title = get_value_from_front_matter('title', join(edit_path, u'index.{}'.format(CONTENT_FILE_EXTENSION)))
             if not file_title:
                 if info['display_type'] in (FOLDER_FILE_TYPE, IMAGE_FILE_TYPE, FILE_FILE_TYPE):
@@ -794,15 +793,15 @@ def make_directory_columns(clone, branch_name, repo_path=None, showallfiles=Fals
                 {'base_path': '',
                  'files':
                     [
-                        {'name': 'hello', 'title': 'Hello', 'base_path': '', 'file_path': 'hello', 'edit_path': '/tree/8bf27f6/edit/hello', 'view_path': '/tree/dfffcd8/view/hello', 'display_type': 'category', 'is_editable': False, 'modified_date': '75 minutes ago', 'selected': True},
-                        {'name': 'goodbye', 'title': 'Goodbye', 'base_path': '', 'file_path': 'goodbye', 'edit_path': '/tree/8bf27f6/edit/goodbye', 'view_path': '/tree/dfffcd8/view/goodbye', 'display_type': 'category', 'is_editable': False, 'modified_date': '2 days ago', 'selected': False}
+                        {'name': 'hello', 'title': 'Hello', 'base_path': '', 'file_path': 'hello', 'edit_path': '/tree/8bf27f6/edit/hello/', 'view_path': '/tree/dfffcd8/view/hello', 'display_type': 'category', 'is_editable': False, 'modified_date': '75 minutes ago', 'selected': True},
+                        {'name': 'goodbye', 'title': 'Goodbye', 'base_path': '', 'file_path': 'goodbye', 'edit_path': '/tree/8bf27f6/edit/goodbye/', 'view_path': '/tree/dfffcd8/view/goodbye', 'display_type': 'category', 'is_editable': False, 'modified_date': '2 days ago', 'selected': False}
                     ]
                 },
                 {'base_path': 'hello',
                  'files':
                     [
-                        {'name': 'world', 'title': 'World', 'base_path': 'hello', 'file_path': 'hello/world', 'edit_path': '/tree/8bf27f6/edit/hello/world', 'view_path': '/tree/dfffcd8/view/hello/world', 'display_type': 'category', 'is_editable': False, 'modified_date': '75 minutes ago', 'selected': True},
-                        {'name': 'moon', 'title': 'Moon', 'base_path': 'hello', 'file_path': 'hello/moon', 'edit_path': '/tree/8bf27f6/edit/hello/moon', 'view_path': '/tree/dfffcd8/view/hello/moon', 'display_type': 'category', 'is_editable': False, 'modified_date': '4 days ago', 'selected': False}
+                        {'name': 'world', 'title': 'World', 'base_path': 'hello', 'file_path': 'hello/world', 'edit_path': '/tree/8bf27f6/edit/hello/world/', 'view_path': '/tree/dfffcd8/view/hello/world', 'display_type': 'category', 'is_editable': False, 'modified_date': '75 minutes ago', 'selected': True},
+                        {'name': 'moon', 'title': 'Moon', 'base_path': 'hello', 'file_path': 'hello/moon', 'edit_path': '/tree/8bf27f6/edit/hello/moon/', 'view_path': '/tree/dfffcd8/view/hello/moon', 'display_type': 'category', 'is_editable': False, 'modified_date': '4 days ago', 'selected': False}
                     ]
                 }
             ]
@@ -828,7 +827,7 @@ def make_directory_columns(clone, branch_name, repo_path=None, showallfiles=Fals
         current_modify_path = join(modify_path_root, base_path)
         files = sorted_paths(clone, branch_name, base_path, showallfiles)
         # name, title, base_path, file_path, edit_path, view_path, display_type, is_editable, modified_date, selected
-        listing = [{'name': item['name'], 'title': item['title'], 'base_path': base_path, 'file_path': join(base_path, item['name']), 'edit_path': join(current_edit_path, item['name']), 'modify_path': join(current_modify_path, item['name']), 'view_path': item['view_path'], 'display_type': item['display_type'], 'is_editable': item['is_editable'], 'modified_date': item['modified_date'], 'selected': (current_dir == item['name'])} for item in files]
+        listing = [{'name': item['name'], 'title': item['title'], 'base_path': base_path, 'file_path': join(base_path, item['link_name']), 'edit_path': join(current_edit_path, item['link_name']), 'modify_path': join(current_modify_path, item['link_name']), 'view_path': item['view_path'], 'display_type': item['display_type'], 'is_editable': item['is_editable'], 'modified_date': item['modified_date'], 'selected': (current_dir == item['name'])} for item in files]
         dir_listings.append({'base_path': base_path, 'files': listing})
 
     return dir_listings
