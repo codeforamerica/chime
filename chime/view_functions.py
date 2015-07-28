@@ -552,15 +552,22 @@ def synched_checkout_required(route_function):
         master_name = current_app.config['default_branch']
         branch = get_existing_branch(checkout, master_name, branch_name)
 
-        if not branch:
-            # redirect and flash an error
-            Logger.debug('  branch {} does not exist, redirecting'.format(branch_name_raw))
-            flash(u'There is no {} branch!'.format(branch_name_raw), u'warning')
-            return redirect('/')
+        # are we in a published or deleted activity?
+        ls_remote_output = checkout.git.ls_remote("origin", branch_name)
+        if 'refs/heads/{}'.format(branch_name) not in ls_remote_output and 'refs/tags/{}'.format(branch_name) in ls_remote_output:
+            tag_ref = checkout.tag('refs/tags/{}'.format(branch_name))
+            commit = tag_ref.commit
+            published_date = checkout.git.show('--format=%ad', '--date=relative', commit.hexsha).strip()
+            published_by = commit.committer.email
+            flash(u'This activity was published {} by {}! You won\'t be able to save any changes you make here.'.format(published_date, published_by), u'warning')
 
-        branch.checkout()
+        elif ('refs/heads/{}'.format(branch_name) not in ls_remote_output and 'refs/tags/{}'.format(branch_name) not in ls_remote_output) or not branch:
+            flash(u'This activity has been deleted! You won\'t be able to save any changes you make here.', u'warning')
 
-        Logger.debug('  checked out to {}'.format(branch))
+        if branch:
+            branch.checkout()
+            Logger.debug('  checked out to {}'.format(branch))
+
         response = route_function(*args, **kwargs)
 
         # Push upstream only if the request method indicates a change.
