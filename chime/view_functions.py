@@ -32,9 +32,9 @@ from .repo_functions import (
     get_existing_branch, ignore_task_metadata_on_merge, get_message_classification, ChimeRepo,
     get_task_metadata_for_branch, complete_branch, abandon_branch, clobber_default_branch,
     get_review_state_and_authorized, save_working_file, update_review_state, provide_feedback,
-    move_existing_file, get_last_edited_email, mark_upstream_push_needed, MergeConflict,
+    move_existing_file, get_last_edited_email, mark_upstream_push_needed, MergeConflict, get_activity_state,
     ACTIVITY_CREATED_MESSAGE, TASK_METADATA_FILENAME, REVIEW_STATE_EDITED, REVIEW_STATE_FEEDBACK,
-    REVIEW_STATE_ENDORSED, MESSAGE_CATEGORY_EDIT
+    REVIEW_STATE_ENDORSED, MESSAGE_CATEGORY_EDIT, ACTIVITY_STATE_PUBLISHED, ACTIVITY_STATE_DELETED
 )
 
 from .href import needs_redirect, get_redirect
@@ -68,6 +68,9 @@ LAYOUT_PLURAL_LOOKUP = {
     FILE_FILE_TYPE: 'files',
     IMAGE_FILE_TYPE: 'images'
 }
+
+# error messages
+MESSAGE_ACTIVITY_DELETED = u'This activity has been deleted or never existed! Please start a new activity to make changes.'
 
 # files that match these regex patterns will not be shown in the file explorer
 FILE_FILTERS = [
@@ -258,6 +261,7 @@ def is_editable(file_path, layout=None):
 def describe_directory_contents(clone, file_path):
     ''' Return a description of the contents of the passed path
     '''
+    file_path = file_path.rstrip('/')
     full_path = join(clone.working_dir, file_path)
     described_files = []
     for (dir_path, dir_names, file_names) in walk(full_path):
@@ -553,16 +557,16 @@ def synched_checkout_required(route_function):
         branch = get_existing_branch(checkout, master_name, branch_name)
 
         # are we in a published or deleted activity?
-        ls_remote_output = checkout.git.ls_remote("origin", branch_name)
-        if 'refs/heads/{}'.format(branch_name) not in ls_remote_output and 'refs/tags/{}'.format(branch_name) in ls_remote_output:
+        activity_state = get_activity_state(checkout, branch_name)
+        if activity_state == ACTIVITY_STATE_PUBLISHED:
             tag_ref = checkout.tag('refs/tags/{}'.format(branch_name))
             commit = tag_ref.commit
             published_date = checkout.git.show('--format=%ad', '--date=relative', commit.hexsha).strip()
             published_by = commit.committer.email
-            flash(u'This activity was published {} by {}! You won\'t be able to save any changes you make here.'.format(published_date, published_by), u'warning')
+            flash_only(u'This activity was published {} by {}! Please start a new activity to make changes.'.format(published_date, published_by), u'warning')
 
-        elif ('refs/heads/{}'.format(branch_name) not in ls_remote_output and 'refs/tags/{}'.format(branch_name) not in ls_remote_output) or not branch:
-            flash(u'This activity has been deleted! You won\'t be able to save any changes you make here.', u'warning')
+        elif activity_state == ACTIVITY_STATE_DELETED or not branch:
+            flash_only(MESSAGE_ACTIVITY_DELETED, u'warning')
 
         if branch:
             branch.checkout()
@@ -1262,7 +1266,7 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
     existing_branch = get_existing_branch(repo, default_branch_name, working_branch_name)
 
     if not existing_branch:
-        flash(u'There is no {} branch!'.format(working_branch_name), u'warning')
+        flash_only(MESSAGE_ACTIVITY_DELETED, u'warning')
         return file_path, False
 
     commit = existing_branch.commit
