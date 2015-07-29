@@ -47,6 +47,11 @@ REVIEW_STATE_ENDORSED = u'edits endorsed'
 # the site has been published
 REVIEW_STATE_PUBLISHED = u'changes published'
 
+# the state of the activity
+ACTIVITY_STATE_ACTIVE = u'active'
+ACTIVITY_STATE_PUBLISHED = u'published'
+ACTIVITY_STATE_DELETED = u'deleted'
+
 # Name of file in running state dir that signals a need to push upstream.
 NEEDS_PUSH_FILE = 'needs-push'
 
@@ -123,6 +128,18 @@ def _origin(branch_name):
     ''' Format the branch name into a origin path and return it.
     '''
     return 'origin/' + branch_name
+
+def get_activity_state(repo, branch_name):
+    ''' Get whether the activity is active, published, or deleted.
+    '''
+    ls_remote_output = repo.git.ls_remote("origin", branch_name)
+    if 'refs/heads/{}'.format(branch_name) not in ls_remote_output and 'refs/tags/{}'.format(branch_name) in ls_remote_output:
+        return ACTIVITY_STATE_PUBLISHED
+
+    if 'refs/heads/{}'.format(branch_name) not in ls_remote_output and 'refs/tags/{}'.format(branch_name) not in ls_remote_output:
+        return ACTIVITY_STATE_DELETED
+
+    return ACTIVITY_STATE_ACTIVE
 
 def get_branch_start_point(clone, default_branch_name, new_branch_name):
     ''' Return the last commit on the branch
