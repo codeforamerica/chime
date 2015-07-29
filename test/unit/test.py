@@ -128,10 +128,10 @@ class TestViewFunctions (TestCase):
         sorted_list = view_functions.sorted_paths(self.clone, 'master')
 
         expected_list = [
-            {'modified_date': view_functions.get_relative_date(self.clone, 'index.md'), 'name': 'index.md', 'title': 'index.md', 'view_path': '/tree/master/view/index.md', 'is_editable': True, 'display_type': view_functions.FILE_FILE_TYPE},
-            {'modified_date': view_functions.get_relative_date(self.clone, 'other'), 'name': 'other', 'title': 'other', 'view_path': '/tree/master/view/other', 'is_editable': False, 'display_type': view_functions.FOLDER_FILE_TYPE},
-            {'modified_date': view_functions.get_relative_date(self.clone, 'other.md'), 'name': 'other.md', 'title': 'other.md', 'view_path': '/tree/master/view/other.md', 'is_editable': True, 'display_type': view_functions.FILE_FILE_TYPE},
-            {'modified_date': view_functions.get_relative_date(self.clone, 'sub'), 'name': 'sub', 'title': 'sub', 'view_path': '/tree/master/view/sub', 'is_editable': False, 'display_type': view_functions.FOLDER_FILE_TYPE}]
+            {'modified_date': view_functions.get_relative_date(self.clone, 'index.md'), 'name': 'index.md', 'title': 'index.md', 'view_path': '/tree/master/view/index.md', 'is_editable': True, 'link_name': 'index.md', 'display_type': view_functions.FILE_FILE_TYPE},
+            {'modified_date': view_functions.get_relative_date(self.clone, 'other'), 'name': 'other', 'title': 'other', 'view_path': '/tree/master/view/other', 'is_editable': False, 'link_name': u'other/', 'display_type': view_functions.FOLDER_FILE_TYPE},
+            {'modified_date': view_functions.get_relative_date(self.clone, 'other.md'), 'name': 'other.md', 'title': 'other.md', 'view_path': '/tree/master/view/other.md', 'is_editable': True, 'link_name': 'other.md', 'display_type': view_functions.FILE_FILE_TYPE},
+            {'modified_date': view_functions.get_relative_date(self.clone, 'sub'), 'name': 'sub', 'title': 'sub', 'view_path': '/tree/master/view/sub', 'is_editable': False, 'link_name': u'sub/', 'display_type': view_functions.FOLDER_FILE_TYPE}]
 
         self.assertEqual(sorted_list, expected_list)
 
@@ -2013,7 +2013,7 @@ class TestProcess (TestCase):
             branch_name = erica.get_branch_name()
             
             # Look for an "other" link that we know about - is it a category?
-            erica.follow_link('/tree/{}/edit/other'.format(branch_name))
+            erica.follow_link('/tree/{}/edit/other/'.format(branch_name))
 
             # Create a new category "Ninjas", subcategory "Flipping Out", and article "So Awesome".
             erica.add_category('Ninjas')
@@ -2060,7 +2060,7 @@ class TestProcess (TestCase):
             branch_name = erica.get_branch_name()
 
             # Look for an "other" link that we know about - is it a category?
-            erica.follow_link(href='/tree/{}/edit/other'.format(branch_name))
+            erica.follow_link(href='/tree/{}/edit/other/'.format(branch_name))
 
             # Create a new category "Ninjas", subcategory "Flipping Out", and article "So Awesome".
             erica.add_category(category_name='Ninjas')
@@ -2119,7 +2119,7 @@ class TestProcess (TestCase):
             erica_branch_name = erica.get_branch_name()
 
             # Look for an "other" link that we know about - is it a category?
-            erica.follow_link(href='/tree/{}/edit/other'.format(erica_branch_name))
+            erica.follow_link(href='/tree/{}/edit/other/'.format(erica_branch_name))
 
             # Create a new category, subcategory, and article
             erica.add_category(category_name=u'Forage')
@@ -2141,7 +2141,7 @@ class TestProcess (TestCase):
             frances_branch_name = frances.get_branch_name()
 
             # Look for an "other" link that we know about - is it a category?
-            frances.follow_link(href='/tree/{}/edit/other'.format(frances_branch_name))
+            frances.follow_link(href='/tree/{}/edit/other/'.format(frances_branch_name))
 
             # Create a duplicate new category, subcategory, and article
             frances.add_category(category_name=u'Forage')
@@ -2816,7 +2816,8 @@ class TestApp (TestCase):
             # edit
             #
             response = self.test_client.get('/tree/{}/edit/'.format(fake_branch_name), follow_redirects=True)
-            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.status_code, 500)
+            self.assertTrue(view_functions.MESSAGE_ACTIVITY_DELETED in response.data)
             # the branch path should not be in the returned HTML
             self.assertFalse(PATTERN_BRANCH_COMMENT.format(fake_branch_name) in response.data)
             # the branch name should not be in the origin's branches list
@@ -2826,7 +2827,8 @@ class TestApp (TestCase):
             # history
             #
             response = self.test_client.get('/tree/{}/history/'.format(fake_branch_name), follow_redirects=True)
-            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.status_code, 500)
+            self.assertTrue(view_functions.MESSAGE_ACTIVITY_DELETED in response.data)
             # the branch path should not be in the returned HTML
             self.assertFalse(PATTERN_BRANCH_COMMENT.format(fake_branch_name) in response.data)
             # the branch name should not be in the origin's branches list
@@ -2836,7 +2838,8 @@ class TestApp (TestCase):
             # view
             #
             response = self.test_client.get('/tree/{}/view/'.format(fake_branch_name), follow_redirects=True)
-            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.status_code, 500)
+            self.assertTrue(view_functions.MESSAGE_ACTIVITY_DELETED in response.data)
             # the branch path should not be in the returned HTML
             self.assertFalse(PATTERN_BRANCH_COMMENT.format(fake_branch_name) in response.data)
             # the branch name should not be in the origin's branches list
@@ -2860,9 +2863,8 @@ class TestApp (TestCase):
             fake_task_beneficiary = u'Nobody'
             fake_branch_name = repo_functions.make_branch_name()
             response = self.test_client.post('/tree/{}/edit/'.format(fake_branch_name), data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': fake_page_slug}, follow_redirects=True)
-            self.assertEqual(response.status_code, 200)
-            # the branch name should not be in the returned HTML
-            # :TODO: need an assertion for this
+            self.assertEqual(response.status_code, 500)
+            self.assertTrue(view_functions.MESSAGE_ACTIVITY_DELETED in response.data)
             # the branch name should not be in the origin's branches list
             self.assertFalse(fake_branch_name in self.origin.branches)
 
@@ -2905,7 +2907,8 @@ class TestApp (TestCase):
             self.assertFalse(generated_branch_name in response.data)
 
             response = self.test_client.post('/tree/{}/save/{}'.format(generated_branch_name, fake_page_path), data={'layout': view_functions.ARTICLE_LAYOUT, 'hexsha': hexsha, 'en-title': 'Greetings', 'en-body': 'Hello world.\n', 'fr-title': '', 'fr-body': '', 'url-slug': 'hello'}, follow_redirects=True)
-            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.status_code, 500)
+            self.assertTrue(view_functions.MESSAGE_ACTIVITY_DELETED in response.data)
             # the task name should not be in the returned HTML
             self.assertFalse(PATTERN_BRANCH_COMMENT.format(fake_task_description) in response.data)
             # 'content tips', which is in the tree-branch-edit template, shouldn't be in the returned HTML either
@@ -3185,7 +3188,7 @@ class TestApp (TestCase):
 
             # Enter the "other" folder
             other_slug = u'other'
-            erica.follow_link(href='/tree/{}/edit/{}'.format(branch_name, other_slug))
+            erica.follow_link(href='/tree/{}/edit/{}/'.format(branch_name, other_slug))
 
             # Create a category that has a period in its name
             category_name = u'Mt. Splashmore'
@@ -3219,7 +3222,7 @@ class TestApp (TestCase):
 
             # Enter the "other" folder
             other_slug = u'other'
-            erica.follow_link(href='/tree/{}/edit/{}'.format(branch_name, other_slug))
+            erica.follow_link(href='/tree/{}/edit/{}/'.format(branch_name, other_slug))
 
             # Try to create a category with no name
             category_name = u''
@@ -3396,7 +3399,7 @@ class TestApp (TestCase):
             branch_name = user.get_branch_name()
 
             # Enter the "other" folder
-            user.follow_link(href='/tree/{}/edit/other'.format(branch_name))
+            user.follow_link(href='/tree/{}/edit/other/'.format(branch_name))
 
             # Create a category and fill it with some subcategories and articles
             category_names = [u'Indigestible Cellulose']
@@ -4516,7 +4519,7 @@ class TestApp (TestCase):
             # open the top level directory
             erica.open_link(url='/tree/{}/edit/'.format(branch_name))
             # enter the 'testing' directory
-            erica.follow_link(href='/tree/{}/edit/{}'.format(branch_name, testing_slug))
+            erica.follow_link(href='/tree/{}/edit/{}/'.format(branch_name, testing_slug))
             # we should've automatically been redirected into the 'categories' directory
             self.assertEqual(erica.path, '/tree/{}/edit/{}/'.format(branch_name, join(testing_slug, categories_slug)))
 
