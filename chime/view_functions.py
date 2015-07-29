@@ -578,6 +578,29 @@ def synched_checkout_required(route_function):
 
     return decorated_function
 
+def flash_unique(message, category):
+    ''' Add the passed message to flash messages if it's not an exact dupe of
+        an existing message.
+    '''
+    session_flashes = session.get('_flashes', [])
+    if (category, message) not in session_flashes:
+        flash(message, category)
+
+def flash_only(message, category, by_category=False):
+    ''' Add the passed message to flash messages if there's not already a
+        message in the queue. Pass by_category=True and the passed message
+        will be flashed if it's the only one of its type.
+    '''
+    session_flashes = session.get('_flashes', [])
+    if not by_category:
+        if not len(session_flashes):
+            flash(message, category)
+
+    else:
+        # category is in the first position in the flash tuples
+        if category not in [item[0] for item in session_flashes]:
+            flash(message, category)
+
 def get_relative_date(repo, file_path):
     ''' Return the relative modified date for the passed path in the passed repo
     '''
