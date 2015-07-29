@@ -58,6 +58,7 @@ class ChimeTestClient:
         # Look for the link
         link = self.soup.find(lambda tag: bool(tag.name == 'a' and tag['href'] == href))
         response = self.client.get(link['href'])
+        redirect = href
         redirect_count = 0
         while response.status_code in (301, 302) and redirect_count < 3:
             redirect = urlparse(response.headers['Location']).path
