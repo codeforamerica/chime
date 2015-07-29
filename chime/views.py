@@ -22,8 +22,8 @@ from .view_functions import (
     is_allowed_email, common_template_args, log_application_errors, is_article_dir, is_category_dir,
     make_activity_history, summarize_activity_history, render_edit_view, render_modify_dir, render_list_dir,
     add_article_or_category, strip_index_file, delete_page, save_page, render_activities_list, sorted_paths,
-    update_activity_state, file_display_name, CONTENT_FILE_EXTENSION, FOLDER_FILE_TYPE, ARTICLE_LAYOUT,
-    CATEGORY_LAYOUT
+    update_activity_state, flash_only, file_display_name, CONTENT_FILE_EXTENSION, FOLDER_FILE_TYPE, ARTICLE_LAYOUT,
+    CATEGORY_LAYOUT, MESSAGE_ACTIVITY_DELETED
 )
 
 from .google_api_functions import (
@@ -259,7 +259,8 @@ def branch_view(branch_name, path=None):
     local_paths = glob(local_base + '.*')
 
     if not local_paths:
-        return '404: ' + local_base
+        flash_only(MESSAGE_ACTIVITY_DELETED, u'warning')
+        abort(500)
 
     local_path = local_paths[0]
     mime_type, _ = guess_type(local_path)
