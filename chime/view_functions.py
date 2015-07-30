@@ -546,7 +546,7 @@ def synched_checkout_required(route_function):
     '''
     @wraps(route_function)
     def decorated_function(*args, **kwargs):
-        checkout = get_repo(flask_app=current_app)
+        repo = get_repo(flask_app=current_app)
         # get the branch name from request.form if it's not in kwargs
         branch_name_raw = kwargs['branch_name'] if 'branch_name' in kwargs else None
         if not branch_name_raw:
@@ -554,14 +554,14 @@ def synched_checkout_required(route_function):
 
         branch_name = branch_var2name(branch_name_raw)
         master_name = current_app.config['default_branch']
-        branch = get_existing_branch(checkout, master_name, branch_name)
+        branch = get_existing_branch(repo, master_name, branch_name)
 
         # are we in a published or deleted activity?
-        activity_state = get_activity_state(checkout, branch_name)
+        activity_state = get_activity_state(repo, branch_name)
         if activity_state == ACTIVITY_STATE_PUBLISHED:
-            tag_ref = checkout.tag('refs/tags/{}'.format(branch_name))
+            tag_ref = repo.tag('refs/tags/{}'.format(branch_name))
             commit = tag_ref.commit
-            published_date = checkout.git.show('--format=%ad', '--date=relative', commit.hexsha).strip()
+            published_date = repo.git.show('--format=%ad', '--date=relative', commit.hexsha).strip()
             published_by = commit.committer.email
             flash_only(u'This activity was published {} by {}! Please start a new activity to make changes.'.format(published_date, published_by), u'warning')
 
