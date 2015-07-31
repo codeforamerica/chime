@@ -15,13 +15,13 @@
 {% set icon_class_lookup = {'folder': 'fa fa-folder-o', 'file': 'fa fa-file-text-o', 'category': 'fa fa-folder', 'article': 'fa fa-file-text'} %}
 <div class="articles-list__header row row--main">
     <ul class="nav-page-type toolbar toolbar--left row__left">
-      <li class="nav-page-type__link toolbar__item">Homepage</li>
+<!--       <li class="nav-page-type__link toolbar__item">Homepage</li> -->
       <li class="nav-page-type__link toolbar__item is-selected">Articles</li>
-      <li class="nav-page-type__link toolbar__item">Project Pages</li>
+<!--       <li class="nav-page-type__link toolbar__item">Project Pages</li>
       <li class="nav-page-type__link toolbar__item">Department Pages</li>
       <li class="nav-page-type__link toolbar__item">Press Releases</li>
       <li class="nav-page-type__link toolbar__item">Job Postings</li>
-      <li class="nav-page-type__link toolbar__item">Events</li>
+      <li class="nav-page-type__link toolbar__item">Events</li> -->
     </ul>
 </div>
 <div class="articles-list__main grid col__flex">
@@ -30,22 +30,22 @@
     {% if column_depth != 1 or (column_depth == 1 and dir_columns|length == 1) %}
     <div class="dir grid__item {% if column_depth == 4 %}width-one-half end-row{% else %}width-one-fourth{% endif %}">
       {% if column_depth == 2 %}
-      <h2>Categories</h2>
-      <p class="dir__description">These are displayed on the homepage.</p>
+      <h2>Topics</h2>
+      <p class="dir__description">Topics are displayed on the homepage.</p>
       <div class="selection-box box-add-file-folder">
         <form action="." method="POST" class="form-one-line">
-            <input class="form-one-line__input" name="request_path" placeholder="Add Category" id="create-category-name" type="text" />
+            <input class="form-one-line__input" name="request_path" placeholder="Add topic" id="create-category-name" type="text" />
             <input name="create_what" value="category" type="hidden" />
             <input name="create_path" value="{{column['base_path']}}" type="hidden" />
             <input class="form-one-line__submit button" name="action" type="submit" id="create-category-button" value="Create" />
         </form>
       </div>
       {% elif column_depth == 3 %}
-      <h2>Subcategories</h2>
-      <p class="dir__description">Articles must exist within a subcategory.</p>
+      <h2>Subtopics</h2>
+      <p class="dir__description">Subtopics help group user needs together.</p>
       <div class="selection-box box-add-file-folder">
         <form action="." method="POST" class="form-one-line">
-            <input class="form-one-line__input" name="request_path" placeholder="Add Subcategory" id="create-subcategory-name" type="text" />
+            <input class="form-one-line__input" name="request_path" placeholder="Add subtopic" id="create-subcategory-name" type="text" />
             <input name="create_what" value="category" type="hidden" />
             <input name="create_path" value="{{column['base_path']}}" type="hidden" />
             <input class="form-one-line__submit button" name="action" type="submit" id="create-subcategory-button" value="Create" />
@@ -53,10 +53,10 @@
       </div>
       {% elif column_depth == 4 %}
       <h2>Articles</h2>
-      <p class="dir__description">All the articles within the given category and subcategory</p>
+      <p class="dir__description">Each article is a user need.</p>
       <div class="selection-box box-add-file-folder">
         <form action="." method="POST" class="form-one-line">
-            <input class="form-one-line__input" name="request_path" placeholder="Add Article" id="create-article-name" type="text" />
+            <input class="form-one-line__input" name="request_path" placeholder="Add article" id="create-article-name" type="text" />
             <input name="create_what" value="article" type="hidden" />
             <input name="create_path" value="{{column['base_path']}}" type="hidden" />
             <input class="form-one-line__submit button" name="action" type="submit" id="create-article-button" value="Create" />
