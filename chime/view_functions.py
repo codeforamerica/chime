@@ -556,7 +556,7 @@ def synched_checkout_required(route_function):
         master_name = current_app.config['default_branch']
         branch = get_existing_branch(repo, master_name, branch_name)
 
-        # are we in a published or deleted activity?
+        # are we in a remotely published or deleted activity?
         working_state = get_activity_working_state(repo, branch_name)
         if working_state == WORKING_STATE_PUBLISHED:
             tag_ref = repo.tag('refs/tags/{}'.format(branch_name))

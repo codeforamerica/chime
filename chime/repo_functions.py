@@ -287,6 +287,22 @@ def get_task_metadata_for_branch(clone, working_branch_name=None):
         task_metadata = yaml.safe_load(task_file_contents)
         if type(task_metadata) is not dict:
             raise ValueError(u'Unable to load metadata for an activity.')
+    else:
+        # try getting the info from a tag with the same name as the branch
+        task_metadata = get_task_metadata_from_tag(clone, working_branch_name)
+
+    return task_metadata
+
+def get_task_metadata_from_tag(clone, working_branch_name=None):
+    ''' Retrieve task metadata from a tag's message
+    '''
+    task_metadata = {}
+    # check locally first
+    if working_branch_name in clone.tags:
+        try:
+            task_metadata = json.loads(clone.tags[working_branch_name].tag.message)
+        except ValueError:
+            pass
 
     return task_metadata
 
