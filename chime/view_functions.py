@@ -909,9 +909,9 @@ def update_activity_review_state(safe_branch, comment_text, action_list, redirec
             # handle a review action
             if action != 'comment':
                 if action == 'request_feedback':
-                    update_review_state(clone=repo, new_state=REVIEW_STATE_FEEDBACK, push=True)
+                    update_review_state(clone=repo, new_review_state=REVIEW_STATE_FEEDBACK, push=True)
                 elif action == 'endorse_edits':
-                    update_review_state(clone=repo, new_state=REVIEW_STATE_ENDORSED, push=True)
+                    update_review_state(clone=repo, new_review_state=REVIEW_STATE_ENDORSED, push=True)
             elif not comment_text:
                 flash(u'You can\'t leave an empty comment!', u'warning')
 
