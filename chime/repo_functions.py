@@ -47,10 +47,10 @@ REVIEW_STATE_ENDORSED = u'edits endorsed'
 # the site has been published
 REVIEW_STATE_PUBLISHED = u'changes published'
 
-# the state of the activity
-ACTIVITY_STATE_ACTIVE = u'active'
-ACTIVITY_STATE_PUBLISHED = u'published'
-ACTIVITY_STATE_DELETED = u'deleted'
+# the working state of the activity
+WORKING_STATE_ACTIVE = u'active'
+WORKING_STATE_PUBLISHED = u'published'
+WORKING_STATE_DELETED = u'deleted'
 
 # Name of file in running state dir that signals a need to push upstream.
 NEEDS_PUSH_FILE = 'needs-push'
@@ -129,17 +129,17 @@ def _origin(branch_name):
     '''
     return 'origin/' + branch_name
 
-def get_activity_state(repo, branch_name):
+def get_activity_working_state(repo, branch_name):
     ''' Get whether the activity is active, published, or deleted.
     '''
     ls_remote_output = repo.git.ls_remote("origin", branch_name)
     if 'refs/heads/{}'.format(branch_name) not in ls_remote_output and 'refs/tags/{}'.format(branch_name) in ls_remote_output:
-        return ACTIVITY_STATE_PUBLISHED
+        return WORKING_STATE_PUBLISHED
 
     if 'refs/heads/{}'.format(branch_name) not in ls_remote_output and 'refs/tags/{}'.format(branch_name) not in ls_remote_output:
-        return ACTIVITY_STATE_DELETED
+        return WORKING_STATE_DELETED
 
-    return ACTIVITY_STATE_ACTIVE
+    return WORKING_STATE_ACTIVE
 
 def get_branch_start_point(clone, default_branch_name, new_branch_name):
     ''' Return the last commit on the branch
@@ -731,16 +731,16 @@ def add_empty_commit(clone, subject, body, push=True):
 
     return clone.active_branch.commit
 
-def update_review_state(clone, new_state, push=True):
+def update_review_state(clone, new_review_state, push=True):
     ''' Adds a new empty commit changing the review state
     '''
-    if new_state not in (REVIEW_STATE_FEEDBACK, REVIEW_STATE_ENDORSED):
-        raise Exception(u'The review state can\'t be set to {} here.'.format(new_state))
+    if new_review_state not in (REVIEW_STATE_FEEDBACK, REVIEW_STATE_ENDORSED):
+        raise Exception(u'The review state can\'t be set to {} here.'.format(new_review_state))
 
     message_text = u''
-    if new_state == REVIEW_STATE_FEEDBACK:
+    if new_review_state == REVIEW_STATE_FEEDBACK:
         message_text = ACTIVITY_FEEDBACK_MESSAGE
-    elif new_state == REVIEW_STATE_ENDORSED:
+    elif new_review_state == REVIEW_STATE_ENDORSED:
         message_text = ACTIVITY_ENDORSED_MESSAGE
 
     return add_empty_commit(clone=clone, subject=REVIEW_STATE_COMMIT_PREFIX, body=message_text, push=push)

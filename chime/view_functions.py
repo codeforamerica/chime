@@ -32,9 +32,9 @@ from .repo_functions import (
     get_existing_branch, ignore_task_metadata_on_merge, get_message_classification, ChimeRepo,
     get_task_metadata_for_branch, complete_branch, abandon_branch, clobber_default_branch,
     get_review_state_and_authorized, save_working_file, update_review_state, provide_feedback,
-    move_existing_file, get_last_edited_email, mark_upstream_push_needed, MergeConflict, get_activity_state,
+    move_existing_file, get_last_edited_email, mark_upstream_push_needed, MergeConflict, get_activity_working_state,
     ACTIVITY_CREATED_MESSAGE, TASK_METADATA_FILENAME, REVIEW_STATE_EDITED, REVIEW_STATE_FEEDBACK,
-    REVIEW_STATE_ENDORSED, MESSAGE_CATEGORY_EDIT, ACTIVITY_STATE_PUBLISHED, ACTIVITY_STATE_DELETED
+    REVIEW_STATE_ENDORSED, MESSAGE_CATEGORY_EDIT, WORKING_STATE_PUBLISHED, WORKING_STATE_DELETED
 )
 
 from .href import needs_redirect, get_redirect
@@ -557,15 +557,15 @@ def synched_checkout_required(route_function):
         branch = get_existing_branch(repo, master_name, branch_name)
 
         # are we in a published or deleted activity?
-        activity_state = get_activity_state(repo, branch_name)
-        if activity_state == ACTIVITY_STATE_PUBLISHED:
+        working_state = get_activity_working_state(repo, branch_name)
+        if working_state == WORKING_STATE_PUBLISHED:
             tag_ref = repo.tag('refs/tags/{}'.format(branch_name))
             commit = tag_ref.commit
             published_date = repo.git.show('--format=%ad', '--date=relative', commit.hexsha).strip()
             published_by = commit.committer.email
             flash_only(u'This activity was published {} by {}! Please start a new activity to make changes.'.format(published_date, published_by), u'warning')
 
-        elif activity_state == ACTIVITY_STATE_DELETED or not branch:
+        elif working_state == WORKING_STATE_DELETED or not branch:
             flash_only(MESSAGE_ACTIVITY_DELETED, u'warning')
 
         if branch:
@@ -889,7 +889,7 @@ def publish_commit(repo, publish_path):
         else:
             del environ['GIT_WORK_TREE']
 
-def update_activity_state(safe_branch, comment_text, action_list, redirect_path):
+def update_activity_review_state(safe_branch, comment_text, action_list, redirect_path):
     ''' Update the activity review state, which may include merging, abandoning, or clobbering
         the associated branch.
     '''
