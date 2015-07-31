@@ -636,7 +636,7 @@ def summarize_activity_history(repo=None, history=None, branch_name=u''):
                 {'edit_path': u'', 'display_type': u'Article', 'actions': u'Created, Edited, Deleted', 'title': u'How to Find Us'},
                 {'edit_path': u'/tree/34246e3/edit/contact/hours-of-operation/', 'display_type': u'Article', 'actions': u'Created, Edited', 'title': u'Hours of Operation'},
                 {'edit_path': u'/tree/34246e3/edit/contact/driving-directions/', 'display_type': u'Article', 'actions': u'Created, Edited', 'title': u'Driving Directions'},
-                {'edit_path': u'/tree/34246e3/edit/contact/', 'display_type': u'Category', 'actions': u'Created', 'title': u'Contact'}
+                {'edit_path': u'/tree/34246e3/edit/contact/', 'display_type': u'Topic', 'actions': u'Created', 'title': u'Contact'}
             ]
         }
     '''

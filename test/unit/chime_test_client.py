@@ -109,7 +109,7 @@ class ChimeTestClient:
     def add_category(self, category_name):
         ''' Look for form to add a category, submit it.
         '''
-        input = self.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add Category'))
+        input = self.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add topic'))
         form = input.find_parent('form')
         self.test.assertEqual(form['method'].upper(), 'POST')
 
@@ -125,7 +125,7 @@ class ChimeTestClient:
     def add_subcategory(self, subcategory_name):
         ''' Look for form to add a subcategory, submit it..
         '''
-        input = self.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add Subcategory'))
+        input = self.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add subtopic'))
         form = input.find_parent('form')
         self.test.assertEqual(form['method'].upper(), 'POST')
 
@@ -143,7 +143,7 @@ class ChimeTestClient:
         '''
         # Create a new article.
 
-        input = self.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add Article'))
+        input = self.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add article'))
         form = input.find_parent('form')
         self.test.assertEqual(form['method'].upper(), 'POST')
 

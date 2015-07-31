@@ -47,7 +47,7 @@ def summarize_conflict_details(error):
             {'edit_path': u'', 'display_type': u'Article', 'actions': u'Deleted', 'title': u'How to Find Us'},
             {'edit_path': u'/tree/34246e3/edit/contact/hours-of-operation/', 'display_type': u'Article', 'actions': u'Edited', 'title': u'Hours of Operation'},
             {'edit_path': u'/tree/34246e3/edit/contact/driving-directions/', 'display_type': u'Article', 'actions': u'Edited', 'title': u'Driving Directions'},
-            {'edit_path': u'/tree/34246e3/edit/contact/', 'display_type': u'Category', 'actions': u'Created', 'title': u'Contact'}
+            {'edit_path': u'/tree/34246e3/edit/contact/', 'display_type': u'Topic', 'actions': u'Created', 'title': u'Contact'}
         ]
     '''
     repo = get_repo(flask_app=current_app)
