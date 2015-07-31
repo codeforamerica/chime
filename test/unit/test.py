@@ -3599,10 +3599,10 @@ class TestApp (TestCase):
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # check the returned HTML for the description and title values (format will change as pages are designed)
-
-            self.assertTrue(PATTERN_FLASH_SAVED_CHANGES.format(title=new_cat_title) in response.data)
-            self.assertTrue(PATTERN_FORM_CATEGORY_DESCRIPTION.format(description=cat_description) in response.data)
-            self.assertTrue(PATTERN_FORM_CATEGORY_TITLE.format(title=new_cat_title) in response.data)
+            response_data = sub('&#39;', '\'', response.data.decode('utf-8'))
+            self.assertTrue(PATTERN_FLASH_SAVED_CHANGES.format(title=new_cat_title) in response_data)
+            self.assertTrue(PATTERN_FORM_CATEGORY_DESCRIPTION.format(description=cat_description) in response_data)
+            self.assertTrue(PATTERN_FORM_CATEGORY_TITLE.format(title=new_cat_title) in response_data)
 
             # pull the changes
             self.clone1.git.pull('origin', working_branch_name)
