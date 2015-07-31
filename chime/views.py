@@ -396,7 +396,7 @@ def branch_modify_category(branch_name, path=u''):
             if not did_save:
                 flash(u'Unable to save changes to the file {}!'.format(front_matter['title']), u'error')
             else:
-                flash(u'Saved changes to the file {}!'.format(front_matter['en-title']), u'notice')
+                flash(u'Saved changes to the file {}! Remember to submit this change for feedback when you\'re ready to go live.'.format(front_matter['en-title']), u'notice')
 
         return redirect('/tree/{}/modify/{}'.format(safe_branch, strip_index_file(new_path)), code=303)
 
