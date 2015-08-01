@@ -567,6 +567,7 @@ th {
   -moz-flex: 1;
   -ms-flex: 1;
   flex: 1;
+  min-height: 0;
 }
 
 /* line 1, ../sass/core/_grid.scss */

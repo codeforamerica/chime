@@ -567,6 +567,7 @@ th {
   -moz-flex: 1;
   -ms-flex: 1;
   flex: 1;
+  min-height: 0;
 }
 
 /* line 1, ../sass/core/_grid.scss */
@@ -1976,6 +1977,55 @@ input[type="submit"]:disabled:hover {
 }
 
 /* line 1, ../sass/templates/_articles-list.scss */
+.articles-list__header {
+  background-color: #fff;
+  border-bottom: 1px solid #e0e0e0;
+  padding-top: 0em;
+  padding-bottom: 0em;
+}
+
+/* line 10, ../sass/templates/_articles-list.scss */
+.articles-list__description {
+  margin-bottom: 0;
+}
+
+/* line 14, ../sass/templates/_articles-list.scss */
+.nav-page-type {
+  margin-top: .5em;
+  margin-bottom: -1px;
+}
+/* line 7, ../sass/core/_utilities.scss */
+.nav-page-type:before, .nav-page-type:after {
+  content: " ";
+  display: table;
+}
+/* line 11, ../sass/core/_utilities.scss */
+.nav-page-type:after {
+  clear: both;
+}
+
+/* line 20, ../sass/templates/_articles-list.scss */
+.nav-page-type__link {
+  font-size: 16px;
+  padding: .5em .7em .7em .7em;
+  margin: 0;
+}
+/* line 24, ../sass/templates/_articles-list.scss */
+.nav-page-type__link.is-selected {
+  font-weight: bold;
+  border: 1px solid #e0e0e0;
+  background-color: #fafafa;
+  border-bottom: 0;
+}
+/* line 30, ../sass/templates/_articles-list.scss */
+.nav-page-type__link:hover {
+  color: #004b6a;
+  cursor: pointer;
+  background-color: #fff;
+  border-bottom: 0;
+}
+
+/* line 38, ../sass/templates/_articles-list.scss */
 .articles-list__main {
   display: -webkit-box;
   display: -moz-box;
@@ -2008,13 +2058,25 @@ input[type="submit"]:disabled:hover {
   clear: both;
 }
 
-/* line 6, ../sass/templates/_articles-list.scss */
+/* line 43, ../sass/templates/_articles-list.scss */
 .dir.grid__item {
   border-right: 1px solid #e0e0e0;
   padding: 1em 40px;
 }
 
-/* line 12, ../sass/templates/_articles-list.scss */
+/* line 48, ../sass/templates/_articles-list.scss */
+.dir__description {
+  font-size: 14px;
+}
+
+/* line 52, ../sass/templates/_articles-list.scss */
+.dir__placeholder-text {
+  margin-top: 4em;
+  color: #9e9e9e;
+  font-size: 18px;
+}
+
+/* line 59, ../sass/templates/_articles-list.scss */
 .box-add-file-folder {
   padding-bottom: 2em;
   border-bottom: 4px solid #e0e0e0;
@@ -2023,14 +2085,7 @@ input[type="submit"]:disabled:hover {
   margin-right: -.5em;
 }
 
-/* line 22, ../sass/templates/_articles-list.scss */
-.articles-list__header {
-  padding-bottom: 1em;
-  border-bottom: 4px solid #e0e0e0;
-  margin-bottom: 2em;
-}
-
-/* line 29, ../sass/templates/_articles-list.scss */
+/* line 70, ../sass/templates/_articles-list.scss */
 .dir-item {
   position: relative;
   padding: 1em;
@@ -2038,34 +2093,34 @@ input[type="submit"]:disabled:hover {
   margin-left: -.5em;
   margin-right: -.5em;
 }
-/* line 37, ../sass/templates/_articles-list.scss */
+/* line 78, ../sass/templates/_articles-list.scss */
 .dir-item:not(:last-child) {
   border-bottom: 1px solid #e0e0e0;
 }
-/* line 42, ../sass/templates/_articles-list.scss */
+/* line 83, ../sass/templates/_articles-list.scss */
 .dir-item:hover {
   background-color: #eeeeee;
 }
-/* line 44, ../sass/templates/_articles-list.scss */
+/* line 85, ../sass/templates/_articles-list.scss */
 .dir-item:hover .dir-item__actions {
   opacity: 1;
 }
-/* line 50, ../sass/templates/_articles-list.scss */
+/* line 91, ../sass/templates/_articles-list.scss */
 .dir-item.is-selected {
   background-color: #eeeeee;
 }
-/* line 52, ../sass/templates/_articles-list.scss */
+/* line 93, ../sass/templates/_articles-list.scss */
 .dir-item.is-selected .dir-item__name {
   font-weight: 600;
   color: #000;
 }
 
-/* line 59, ../sass/templates/_articles-list.scss */
+/* line 100, ../sass/templates/_articles-list.scss */
 .dir-item__display-type {
   margin-right: .75em;
 }
 
-/* line 63, ../sass/templates/_articles-list.scss */
+/* line 104, ../sass/templates/_articles-list.scss */
 .dir-item__name {
   color: #616161;
   font-weight: 400;
@@ -2076,13 +2131,13 @@ input[type="submit"]:disabled:hover {
   width: auto;
   margin-right: 3em;
 }
-/* line 72, ../sass/templates/_articles-list.scss */
+/* line 113, ../sass/templates/_articles-list.scss */
 .lt-ie10 .dir-item__name {
   text-overflow: clip;
   -ms-text-overflow: clip;
 }
 
-/* line 78, ../sass/templates/_articles-list.scss */
+/* line 119, ../sass/templates/_articles-list.scss */
 .dir-item__actions {
   opacity: 0;
   position: absolute;
@@ -2091,16 +2146,16 @@ input[type="submit"]:disabled:hover {
   margin-top: -.75em;
 }
 
-/* line 90, ../sass/templates/_articles-list.scss */
+/* line 131, ../sass/templates/_articles-list.scss */
 .dir-item__action--delete {
   color: #bb4961;
 }
-/* line 92, ../sass/templates/_articles-list.scss */
+/* line 133, ../sass/templates/_articles-list.scss */
 .dir-item__action--delete:hover {
   color: #88162e;
 }
 
-/* line 97, ../sass/templates/_articles-list.scss */
+/* line 138, ../sass/templates/_articles-list.scss */
 .articles {
   padding: 1em 40px;
 }
@@ -2223,13 +2278,6 @@ input[type="submit"]:disabled:hover {
 
 /* line 31, ../sass/templates/_article-edit.scss */
 .markdown-textarea {
-  -webkit-box-flex: 1;
-  -moz-box-flex: 1;
-  box-flex: 1;
-  -webkit-flex: 1;
-  -moz-flex: 1;
-  -ms-flex: 1;
-  flex: 1;
   margin: 0;
   font-family: "Source Code Pro", "Monaco", "Courier New", mono;
   font-weight: 400;
@@ -2245,26 +2293,26 @@ input[type="submit"]:disabled:hover {
   overflow: auto;
   padding: 2em;
 }
-/* line 48, ../sass/templates/_article-edit.scss */
+/* line 47, ../sass/templates/_article-edit.scss */
 .markdown-textarea:focus {
   background-color: transparent;
 }
-/* line 52, ../sass/templates/_article-edit.scss */
+/* line 51, ../sass/templates/_article-edit.scss */
 .lt-ie10 .markdown-textarea {
   min-height: 300px;
   max-height: 700px;
 }
 
-/* line 58, ../sass/templates/_article-edit.scss */
+/* line 57, ../sass/templates/_article-edit.scss */
 .edit-article__previewer {
   width: 50%;
   background-color: #f5f5f5;
 }
 
-/* line 63, ../sass/templates/_article-edit.scss */
+/* line 62, ../sass/templates/_article-edit.scss */
 .previewer__content {
   overflow: auto;
-  padding: 40px;
+  padding: 20px;
 }
 /* line 67, ../sass/templates/_article-edit.scss */
 .lt-ie10 .previewer__content {

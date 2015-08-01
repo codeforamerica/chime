@@ -14,6 +14,8 @@
 <!--[if !IE]><!-->
 <script src="/static/javascript/undo.js"></script>
 <script src="/static/javascript/markdown-bar.js"></script>
+<script src="/static/javascript/markdown.min.js"></script>
+<script src="/static/javascript/markdown-previewer.js"></script>
 <!--<![endif]-->
 
 {% endblock %}
@@ -67,7 +69,11 @@
                     <a href="#" class="button " id="toggle-hints">Formatting Hints</a>
                 </div>
             </div>
-
+            <div class="col__flex previewer__content">
+                <div class="previewer__iframe-container">
+                    <iframe src="/static/markdown-previewer/markdown-preview.html" class="markdown-previewer"></iframe>
+                </div>
+            </div>
             <div class="col__flex previewer__hints">
                 <table class="hint-table">
                     <thead>
