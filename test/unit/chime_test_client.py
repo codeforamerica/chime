@@ -211,6 +211,27 @@ class ChimeTestClient:
         # View the updated article.
         self.follow_redirect(response, 303)
 
+    def preview_article(self, title_str, body_str):
+        ''' Look for form to edit an article, preview it.
+        '''
+        body = self.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'en-body'))
+        form = body.find_parent('form')
+        title = form.find(lambda tag: bool(tag.name == 'input' and tag.get('name') == 'en-title'))
+        self.test.assertEqual(form['method'].upper(), 'POST')
+
+        data = {i['name']: i.get('value', u'')
+                for i in form.find_all(['input', 'button', 'textarea'])
+                if i.get('type') != 'submit' or i.get('value') == 'Preview'}
+
+        data[title['name']] = title_str
+        data[body['name']] = body_str
+
+        edit_article_path = urlparse(urljoin(self.path, form['action'])).path
+        response = self.client.post(edit_article_path, data=data)
+
+        # View the updated article.
+        self.follow_redirect(response, 303)
+
     def edit_published_article(self, title_str, body_str):
         ''' Look for form to edit an article we know to be published, submit it and assert that the sumbission fails.
         '''

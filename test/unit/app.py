@@ -2464,6 +2464,39 @@ class TestApp (TestCase):
             # we should've automatically been redirected into the 'categories' directory
             self.assertEqual(erica.path, '/tree/{}/edit/{}/'.format(branch_name, join(testing_slug, categories_slug)))
 
+    # in TestApp
+    def test_article_preview(self):
+        ''' Check edit process with a user previewing their article.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in('frances@example.com')
+            
+            # Start a new task, "Diving for Dollars".
+            frances.start_task('Diving', 'Dollars')
+            branch_name = frances.get_branch_name()
+            
+            # Look for an "other" link that we know about - is it a category?
+            frances.follow_link('/tree/{}/edit/other'.format(branch_name))
+
+            # Create a new category "Ninjas", subcategory "Flipping Out", and article "So Awesome".
+            frances.add_category('Ninjas')
+            frances.add_subcategory('Flipping Out')
+            frances.add_article('So Awesome')
+            edit_path = frances.path
+            
+            # Preview the new article.
+            frances.preview_article('So, So Awesome', 'It was the best of times.')
+
+            expected_path = '/tree/{}/view/other/ninjas/flipping-out/so-awesome'.format(branch_name)
+            self.assertTrue(frances.path.startswith(expected_path), 'Should be on a preview path')
+            self.assertTrue('best of times' in str(frances.soup), 'Should see current content there')
+
+            # Look back at the edit form.
+            frances.open_link(edit_path)
+            self.assertTrue('best of times' in str(frances.soup), 'Should see current content there, too')
+
 class TestPublishApp (TestCase):
 
     def setUp(self):
