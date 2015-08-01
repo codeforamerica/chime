@@ -602,7 +602,10 @@ def branch_save(branch_name, path):
     if did_save:
         flash(u'Saved changes to the {} article! Remember to submit this change for feedback when you\'re ready to go live.'.format(request.form['en-title']), u'notice')
 
-    return redirect('/tree/{}/edit/{}'.format(safe_branch, new_path), code=303)
+    if request.form.get('action', '').lower() == 'preview':
+        return redirect('/tree/{}/view/{}'.format(safe_branch, new_path), code=303)
+    else:
+        return redirect('/tree/{}/edit/{}'.format(safe_branch, new_path), code=303)
 
 @app.route('/.well-known/deploy-key.txt')
 @log_application_errors

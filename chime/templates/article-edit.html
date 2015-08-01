@@ -52,7 +52,7 @@
         </div>
         <div class="row__right toolbar--right">
             <a href="{{ history_path }}" class="button  toolbar__item">History</a>
-            <input type="submit" class="button button--green toolbar__item" value="Preview" onclick="this.form.target='_blank'; return true;"/>
+            <input type="submit" class="button button--green toolbar__item" name="action" value="Preview"/>
             {% if activity.working_state == config.WORKING_STATE_ACTIVE %}
             <input type="submit" class="button button--green toolbar__item" value="Save"/>
             {% endif %}
