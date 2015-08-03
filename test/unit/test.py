@@ -2039,7 +2039,7 @@ class TestProcess (TestCase):
             self.assertTrue(author is not None)
 
     # in TestProcess
-    def test_editing_process_with_two_branches(self):
+    def test_editing_process_with_two_categories(self):
         ''' Check edit process with a user looking at activity from another user.
         '''
         with HTTMock(self.auth_csv_example_allowed):
@@ -2051,13 +2051,40 @@ class TestProcess (TestCase):
                 frances = ChimeTestClient(self.app.test_client(), self)
                 frances.sign_in('frances@example.com')
             
-            # Start a new task, "Diving for Dollars".
+            # Erica starts a new task, "Diving for Dollars".
             erica.start_task('Diving', 'Dollars')
-            branch_name = erica.get_branch_name()
+            erica_branchname = erica.get_branch_name()
             
-            # Check that Frances has the same task.
-            frances.open_link('/')
-            self.assertIsNotNone(frances.soup.find(text='Diving for Dollars'))
+            # Erica creates a new category and asks for feedback.
+            erica.follow_link('/tree/{}/edit/other'.format(erica_branchname))
+            erica.add_category('Dollars')
+            erica.follow_link('/tree/{}'.format(erica_branchname))
+            erica.request_feedback('Is this okay?')
+            
+            # Frances starts a new task, "Bobbing for Apples".
+            frances.start_task('Bobbing', 'Apples')
+            frances_branchname = frances.get_branch_name()
+            
+            # Frances creates a new category.
+            frances.follow_link('/tree/{}/edit/other'.format(frances_branchname))
+            frances.add_category('Apples')
+            
+            # Frances approves Erica's new work and publishes it.
+            frances.open_link(erica.path)
+            frances.leave_feedback('It is super-great.')
+            frances.approve_activity()
+            frances.publish_activity()
+            
+            # Erica should now expect to see her own new category.
+            erica.start_task('Canticle', 'Leibowitz')
+            erica_branchname2 = erica.get_branch_name()
+            erica.follow_link('/tree/{}/edit/other'.format(erica_branchname2))
+            self.assertIsNotNone(erica.soup.find(text='Dollars'), 'Should see first published category')
+            
+            # Frances should now also expect to see Erica's published category.
+            frances.open_link('/tree/{}/edit/'.format(frances_branchname))
+            frances.follow_link('/tree/{}/edit/other'.format(frances_branchname))
+            self.assertIsNotNone(frances.soup.find(text='Dollars'), 'Should also see first published category')
 
     # in TestProcess
     def test_editing_process_with_conflicting_publish(self):
