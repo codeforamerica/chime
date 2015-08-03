@@ -8,7 +8,11 @@ function Editor(title, content, preview) {
 
   this.updateContent = function() {
     $(preview).contents().find('article').html(marked($(content).val()));
-    self.updatePreviewHeight();
+    // Give page a little bit of time to finish rendering
+    setTimeout(function() {
+      self.updatePreviewHeight();
+    }, 100);
+   
   };
 
   this.updateTitle = function() {
