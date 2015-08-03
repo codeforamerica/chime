@@ -29,7 +29,6 @@
 }
 
 .markdown-textarea {
-	@include flex(1);
 	margin: 0;
 	font-family: $font-mono;
 	font-weight: 400;
@@ -61,8 +60,9 @@
 }
 
 .previewer__content {
+
 	overflow: auto;
-	padding: $site-margins;
+	padding: $site-margins/2;
 
 	.lt-ie10 & {
 		min-height: 300px;

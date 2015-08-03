@@ -572,6 +572,7 @@ th {
   -moz-flex: 1;
   -ms-flex: 1;
   flex: 1;
+  min-height: 0;
 }
 
 /* line 1, ../sass/core/_grid.scss */
@@ -2283,13 +2284,6 @@ input[type="submit"]:disabled:hover {
 
 /* line 31, ../sass/templates/_article-edit.scss */
 .markdown-textarea {
-  -webkit-box-flex: 1;
-  -moz-box-flex: 1;
-  box-flex: 1;
-  -webkit-flex: 1;
-  -moz-flex: 1;
-  -ms-flex: 1;
-  flex: 1;
   margin: 0;
   font-family: "Source Code Pro", "Monaco", "Courier New", mono;
   font-weight: 400;
@@ -2305,26 +2299,26 @@ input[type="submit"]:disabled:hover {
   overflow: auto;
   padding: 2em;
 }
-/* line 48, ../sass/templates/_article-edit.scss */
+/* line 47, ../sass/templates/_article-edit.scss */
 .markdown-textarea:focus {
   background-color: transparent;
 }
-/* line 52, ../sass/templates/_article-edit.scss */
+/* line 51, ../sass/templates/_article-edit.scss */
 .lt-ie10 .markdown-textarea {
   min-height: 300px;
   max-height: 700px;
 }
 
-/* line 58, ../sass/templates/_article-edit.scss */
+/* line 57, ../sass/templates/_article-edit.scss */
 .edit-article__previewer {
   width: 50%;
   background-color: #f5f5f5;
 }
 
-/* line 63, ../sass/templates/_article-edit.scss */
+/* line 62, ../sass/templates/_article-edit.scss */
 .previewer__content {
   overflow: auto;
-  padding: 40px;
+  padding: 20px;
 }
 /* line 67, ../sass/templates/_article-edit.scss */
 .lt-ie10 .previewer__content {
