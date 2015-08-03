@@ -132,7 +132,7 @@ def _origin(branch_name):
 def get_activity_working_state(repo, branch_name):
     ''' Get whether the activity is active, published, or deleted.
     '''
-    ls_remote_output = repo.git.ls_remote("origin", branch_name)
+    ls_remote_output = repo.git.ls_remote("origin", branch_name).split()
     if 'refs/heads/{}'.format(branch_name) not in ls_remote_output and 'refs/tags/{}'.format(branch_name) in ls_remote_output:
         return WORKING_STATE_PUBLISHED
 
