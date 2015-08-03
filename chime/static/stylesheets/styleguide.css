@@ -464,6 +464,11 @@ th {
   color: #00a175 !important;
 }
 
+/* line 54, ../sass/core/_utilities.scss */
+.text-detail {
+  font-size: 14px;
+}
+
 /* line 21, ../sass/core/_layout.scss */
 .row--main {
   padding-top: 1em;
@@ -600,7 +605,7 @@ th {
 .grid .width-one-whole {
   float: left;
   display: block;
-  margin-right: 1.9356%;
+  margin-right: 0%;
   width: 100%;
 }
 /* line 89, ../sass/neat/grid/_span-columns.scss */
@@ -611,8 +616,8 @@ th {
 .grid .width-one-half {
   float: left;
   display: block;
-  margin-right: 1.9356%;
-  width: 49.0322%;
+  margin-right: 0%;
+  width: 50%;
 }
 /* line 89, ../sass/neat/grid/_span-columns.scss */
 .grid .width-one-half:last-child {
@@ -622,8 +627,8 @@ th {
 .grid .width-one-third {
   float: left;
   display: block;
-  margin-right: 1.9356%;
-  width: 32.04294%;
+  margin-right: 0%;
+  width: 33.33333%;
 }
 /* line 89, ../sass/neat/grid/_span-columns.scss */
 .grid .width-one-third:last-child {
@@ -633,8 +638,8 @@ th {
 .grid .width-two-thirds {
   float: left;
   display: block;
-  margin-right: 1.9356%;
-  width: 66.02147%;
+  margin-right: 0%;
+  width: 66.66667%;
 }
 /* line 89, ../sass/neat/grid/_span-columns.scss */
 .grid .width-two-thirds:last-child {
@@ -644,8 +649,8 @@ th {
 .grid .width-one-fourth {
   float: left;
   display: block;
-  margin-right: 1.9356%;
-  width: 23.5483%;
+  margin-right: 0%;
+  width: 25%;
 }
 /* line 89, ../sass/neat/grid/_span-columns.scss */
 .grid .width-one-fourth:last-child {
@@ -655,8 +660,8 @@ th {
 .grid .width-three-fourths {
   float: left;
   display: block;
-  margin-right: 1.9356%;
-  width: 74.5161%;
+  margin-right: 0%;
+  width: 75.0%;
 }
 /* line 89, ../sass/neat/grid/_span-columns.scss */
 .grid .width-three-fourths:last-child {
@@ -666,8 +671,8 @@ th {
 .grid .width-one-sixth {
   float: left;
   display: block;
-  margin-right: 1.9356%;
-  width: 15.05367%;
+  margin-right: 0%;
+  width: 16.66667%;
 }
 /* line 89, ../sass/neat/grid/_span-columns.scss */
 .grid .width-one-sixth:last-child {
@@ -677,8 +682,8 @@ th {
 .grid .width-five-sixths {
   float: left;
   display: block;
-  margin-right: 1.9356%;
-  width: 83.01073%;
+  margin-right: 0%;
+  width: 83.33333%;
 }
 /* line 89, ../sass/neat/grid/_span-columns.scss */
 .grid .width-five-sixths:last-child {
