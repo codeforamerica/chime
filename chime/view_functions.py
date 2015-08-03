@@ -29,12 +29,14 @@ from .edit_functions import create_new_page, delete_file, update_page
 from .jekyll_functions import load_jekyll_doc, load_languages, build_jekyll_site
 from .google_api_functions import read_ga_config, fetch_google_analytics_for_page
 from .repo_functions import (
-    get_existing_branch, ignore_task_metadata_on_merge, get_message_classification, ChimeRepo,
-    get_task_metadata_for_branch, complete_branch, abandon_branch, clobber_default_branch,
-    get_review_state_and_authorized, save_working_file, update_review_state, provide_feedback,
-    move_existing_file, get_last_edited_email, mark_upstream_push_needed, MergeConflict, get_activity_working_state,
-    ACTIVITY_CREATED_MESSAGE, TASK_METADATA_FILENAME, REVIEW_STATE_EDITED, REVIEW_STATE_FEEDBACK,
-    REVIEW_STATE_ENDORSED, MESSAGE_CATEGORY_EDIT, WORKING_STATE_PUBLISHED, WORKING_STATE_DELETED
+    get_existing_branch, get_branch_if_exists_at_origin, ignore_task_metadata_on_merge,
+    get_message_classification, ChimeRepo, get_task_metadata_for_branch, complete_branch,
+    abandon_branch, clobber_default_branch, get_review_state_and_authorized,
+    save_working_file, update_review_state, provide_feedback, move_existing_file,
+    get_last_edited_email, mark_upstream_push_needed, MergeConflict,
+    get_activity_working_state, ACTIVITY_CREATED_MESSAGE, TASK_METADATA_FILENAME,
+    REVIEW_STATE_EDITED, REVIEW_STATE_FEEDBACK, REVIEW_STATE_ENDORSED, MESSAGE_CATEGORY_EDIT,
+    WORKING_STATE_PUBLISHED, WORKING_STATE_DELETED, WORKING_STATE_ACTIVE
 )
 
 from .href import needs_redirect, get_redirect
@@ -554,10 +556,12 @@ def synched_checkout_required(route_function):
 
         branch_name = branch_var2name(branch_name_raw)
         master_name = current_app.config['default_branch']
-        branch = get_existing_branch(repo, master_name, branch_name)
+
+        # fetch
+        repo.git.fetch('origin')
 
         # are we in a remotely published or deleted activity?
-        working_state = get_activity_working_state(repo, branch_name)
+        working_state = get_activity_working_state(repo, master_name, branch_name)
         if working_state == WORKING_STATE_PUBLISHED:
             tag_ref = repo.tag('refs/tags/{}'.format(branch_name))
             commit = tag_ref.commit
@@ -565,20 +569,19 @@ def synched_checkout_required(route_function):
             published_by = commit.committer.email
             flash_only(u'This activity was published {} by {}! Please start a new activity to make changes.'.format(published_date, published_by), u'warning')
 
-        elif working_state == WORKING_STATE_DELETED or not branch:
+        elif working_state == WORKING_STATE_DELETED:
             flash_only(MESSAGE_ACTIVITY_DELETED, u'warning')
 
-        if branch:
+        else:
+            branch = get_existing_branch(repo, master_name, branch_name)
             branch.checkout()
             Logger.debug('  checked out to {}'.format(branch))
 
-        response = route_function(*args, **kwargs)
+            # Push upstream only if the request method indicates a change.
+            if request.method in ('PUT', 'POST', 'DELETE'):
+                mark_upstream_push_needed(current_app.config['RUNNING_STATE_DIR'])
 
-        # Push upstream only if the request method indicates a change.
-        if request.method in ('PUT', 'POST', 'DELETE'):
-            mark_upstream_push_needed(current_app.config['RUNNING_STATE_DIR'])
-
-        return response
+        return route_function(*args, **kwargs)
 
     return decorated_function
 

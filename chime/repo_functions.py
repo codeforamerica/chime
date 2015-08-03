@@ -129,14 +129,13 @@ def _origin(branch_name):
     '''
     return 'origin/' + branch_name
 
-def get_activity_working_state(repo, branch_name):
+def get_activity_working_state(repo, default_branch_name, branch_name):
     ''' Get whether the activity is active, published, or deleted.
     '''
-    ls_remote_output = repo.git.ls_remote("origin", branch_name).split()
-    if 'refs/heads/{}'.format(branch_name) not in ls_remote_output and 'refs/tags/{}'.format(branch_name) in ls_remote_output:
+    if branch_name in repo.tags:
         return WORKING_STATE_PUBLISHED
 
-    if 'refs/heads/{}'.format(branch_name) not in ls_remote_output and 'refs/tags/{}'.format(branch_name) not in ls_remote_output:
+    if not get_branch_if_exists_at_origin(repo, default_branch_name, branch_name):
         return WORKING_STATE_DELETED
 
     return WORKING_STATE_ACTIVE
@@ -153,12 +152,11 @@ def get_branch_start_point(clone, default_branch_name, new_branch_name):
     return clone.branches[default_branch_name].commit
 
 def get_existing_branch(clone, default_branch_name, new_branch_name):
-    ''' Return an existing branch with the passed name, if it exists.
+    ''' Return an existing branch with the passed name, if it exists, otherwise return None.
     '''
     clone.git.fetch('origin')
 
     start_point = get_branch_start_point(clone, default_branch_name, new_branch_name)
-
     logging.debug('get_existing_branch() start_point is %s' % repr(start_point))
 
     # See if it already matches start_point
@@ -167,6 +165,13 @@ def get_existing_branch(clone, default_branch_name, new_branch_name):
             return clone.branches[new_branch_name]
 
     # See if the branch exists at the origin
+    return get_branch_if_exists_at_origin(clone, default_branch_name, new_branch_name)
+
+def get_branch_if_exists_at_origin(clone, default_branch_name, new_branch_name):
+    ''' Get and return a branch if it exists at the origin, otherwise return None
+    '''
+    clone.git.fetch('origin')
+
     try:
         # pull the branch but keep the active branch checked out
         active_branch_name = clone.active_branch.name
@@ -177,8 +182,6 @@ def get_existing_branch(clone, default_branch_name, new_branch_name):
 
     except GitCommandError:
         return None
-
-    return None
 
 def get_start_branch(clone, default_branch_name, task_description, task_beneficiary, author_email):
     ''' Start a new repository branch, push it to origin and return it.
