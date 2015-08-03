@@ -61,5 +61,5 @@
 
 .col__flex {
 	@include flex(1);
-	min-height: 0;
+	min-height: 0; // FIX: allows flex-shrink/overflow:auto to work properly in nested flexboxes
 }
