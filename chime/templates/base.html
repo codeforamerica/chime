@@ -39,7 +39,7 @@
 
     {% block global_header %}
       {% from 'macros/macros.html' import globalHeader as globalHeader %}
-      {{ globalHeader(breadcrumb_items = breadcrumb_items, email=email, branch=branch, activity=activity) }}
+      {{ globalHeader(breadcrumb_items = breadcrumb_items, email=email, branch=branch, activity=activity, live_site_url=live_site_url) }}
     {% endblock %}
 
     {% include 'includes/flashes.html' %}
