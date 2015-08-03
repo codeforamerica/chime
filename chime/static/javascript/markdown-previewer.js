@@ -7,7 +7,7 @@ function Editor(title, content, preview) {
 	}
 
   this.updateContent = function() {
-    $(preview).contents().find('article').html(markdown.toHTML($(content).val()));
+    $(preview).contents().find('article').html(marked($(content).val()));
     self.updatePreviewHeight();
   };
 
