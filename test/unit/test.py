@@ -2365,6 +2365,7 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             response = self.test_client.get('/')
             self.assertTrue('Start' in response.data)
+            self.assertTrue('http://example.org' in response.data, 'Should see LIVE_SITE_URL in response')
 
             response = self.test_client.post('/sign-out')
             self.assertEqual(response.status_code, 200)
