@@ -280,8 +280,8 @@ class ChimeTestClient:
     def approve_activity(self):
         ''' Look for form to approve activity, submit it.
         '''
-        body = self.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'comment_text'))
-        form = body.find_parent('form')
+        input = self.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('value') == 'Looks Good!'))
+        form = input.find_parent('form')
         self.test.assertEqual(form['method'].upper(), 'POST')
 
         data = {i['name']: i.get('value', u'')
@@ -297,8 +297,8 @@ class ChimeTestClient:
     def publish_activity(self, expected_code=303):
         ''' Look for form to publish activity, submit it.
         '''
-        body = self.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'comment_text'))
-        form = body.find_parent('form')
+        input = self.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('value') == 'Publish'))
+        form = input.find_parent('form')
         self.test.assertEqual(form['method'].upper(), 'POST')
 
         data = {i['name']: i.get('value', u'')
