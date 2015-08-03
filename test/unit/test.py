@@ -2039,6 +2039,27 @@ class TestProcess (TestCase):
             self.assertTrue(author is not None)
 
     # in TestProcess
+    def test_editing_process_with_two_branches(self):
+        ''' Check edit process with a user looking at activity from another user.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
+            
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in('frances@example.com')
+            
+            # Start a new task, "Diving for Dollars".
+            erica.start_task('Diving', 'Dollars')
+            branch_name = erica.get_branch_name()
+            
+            # Check that Frances has the same task.
+            frances.open_link('/')
+            self.assertIsNotNone(frances.soup.find(text='Diving for Dollars'))
+
+    # in TestProcess
     def test_editing_process_with_conflicting_publish(self):
         ''' Check edit process with a user attempting to change an activity that's been published.
         '''
