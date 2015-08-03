@@ -508,12 +508,14 @@ def show_activity_overview(branch_name):
     date_created = repo.git.log('--format=%ad', '--date=relative', '--', repo_functions.TASK_METADATA_FILENAME).split('\n')[-1]
     date_updated = repo.git.log('--format=%ad', '--date=relative').split('\n')[0]
 
+    working_state = repo_functions.get_activity_working_state(repo, current_app.config['default_branch'], branch_name)
+
     activity.update(date_created=date_created, date_updated=date_updated,
                     edit_path=u'/tree/{}/edit/'.format(safe_branch),
                     overview_path=u'/tree/{}/'.format(safe_branch), safe_branch=safe_branch,
                     branch=safe_branch, history=history, history_summary=history_summary,
                     review_state=review_state, review_authorized=review_authorized,
-                    last_edited_email=last_edited_email)
+                    last_edited_email=last_edited_email, working_state=working_state)
 
     kwargs.update(activity=activity, app_authorized=app_authorized, languages=languages)
 

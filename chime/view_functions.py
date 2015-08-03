@@ -1055,10 +1055,13 @@ def make_kwargs_for_activity_files_page(repo, branch_name, path):
         working_branch_name=branch_name, actor_email=session.get('email', None)
     )
 
+    working_state = get_activity_working_state(repo, current_app.config['default_branch'], branch_name)
+
     activity.update(date_created=date_created, date_updated=date_updated,
                     edit_path=u'/tree/{}/edit/'.format(branch_name2path(branch_name)),
                     overview_path=u'/tree/{}/'.format(branch_name2path(branch_name)),
-                    review_state=review_state, review_authorized=review_authorized)
+                    review_state=review_state, review_authorized=review_authorized,
+                    working_state=working_state)
 
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(branch=branch_name, safe_branch=branch_name2path(branch_name),
@@ -1131,9 +1134,12 @@ def render_edit_view(repo, branch_name, path, file):
         working_branch_name=branch_name, actor_email=session.get('email', None)
     )
 
+    working_state = get_activity_working_state(repo, current_app.config['default_branch'], branch_name)
+
     activity.update(edit_path=u'/tree/{}/edit/'.format(branch_name2path(branch_name)),
                     overview_path=u'/tree/{}/'.format(branch_name2path(branch_name)),
-                    review_state=review_state, review_authorized=review_authorized)
+                    review_state=review_state, review_authorized=review_authorized,
+                    working_state=working_state)
 
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(branch=branch_name, safe_branch=branch_name2path(branch_name),
