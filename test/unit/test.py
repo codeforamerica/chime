@@ -2726,10 +2726,9 @@ class TestApp (TestCase):
             erica.start_task(description=u'Lick Water Droplets From Leaves', beneficiary=u'Leopard Geckos')
             # Get the branch name
             branch_name = erica.get_branch_name()
-
             # Enter the "other" folder
             other_slug = u'other'
-            erica.follow_link(href='/tree/{}/edit/{}'.format(branch_name, other_slug))
+            erica.follow_link(href='/tree/{}/edit/{}/'.format(branch_name, other_slug))
 
             # Create a category
             category_name = u'Rubber Plants'
@@ -2757,7 +2756,7 @@ class TestApp (TestCase):
 
             # Enter the "other" folder
             other_slug = u'other'
-            erica.follow_link(href='/tree/{}/edit/{}'.format(branch_name, other_slug))
+            erica.follow_link(href='/tree/{}/edit/{}/'.format(branch_name, other_slug))
 
             # Create a category and sub-category
             category_name = u'Rubber Plants'
