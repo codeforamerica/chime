@@ -53,6 +53,7 @@ PATTERN_OVERVIEW_ITEM_CREATED = u'<p>The "{created_name}" {created_type} was cre
 PATTERN_OVERVIEW_ACTIVITY_STARTED = u'<p>The "{activity_name}" activity was started by {author_email}.</p>'
 PATTERN_OVERVIEW_COMMENT_BODY = u'<div class="comment__body">{comment_body}</div>'
 PATTERN_OVERVIEW_ITEM_DELETED = u'<p>The "{deleted_name}" {deleted_type} {deleted_also}was deleted by {author_email}.</p>'
+PATTERN_FLASH_TASK_DELETED = u'You deleted the "{description}" activity for {beneficiary}!'
 
 PATTERN_FLASH_SAVED_CATEGORY = u'<li class="flash flash--notice">Saved changes to the {title} topic! Remember to submit this change for feedback when you\'re ready to go live.</li>'
 PATTERN_FLASH_CREATED_CATEGORY = u'Created a new topic named {title}! Remember to submit this change for feedback when you\'re ready to go live.'
@@ -2224,6 +2225,44 @@ class TestProcess (TestCase):
             erica.open_link(url='/tree/{}/edit/other/{}/'.format(erica_branch_name, category_slug))
             # a warning is flashed about working in a published branch
             self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and u'This activity was published' in tag.text))
+
+    # in TestProcess
+    def test_notified_when_working_in_deleted_task(self):
+        ''' When someone else deletes a task you're working in, you're notified.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
+
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in('frances@example.com')
+
+            # Start a new task
+            task_description = u'Eating Carrion'
+            task_beneficiary = u'Vultures'
+            erica.start_task(description=task_description, beneficiary=task_beneficiary)
+            erica_branch_name = erica.get_branch_name()
+
+            # Enter the "other" folder
+            erica.follow_link(href='/tree/{}/edit/other/'.format(erica_branch_name))
+
+            #
+            # Switch users
+            #
+            # delete erica's task ;;;
+            frances.open_link(url='/')
+            frances.delete_task(branch_name=erica_branch_name)
+            self.assertEqual(PATTERN_FLASH_TASK_DELETED.format(description=task_description, beneficiary=task_beneficiary), frances.soup.find('li', class_='flash').text)
+
+            #
+            # Switch users
+            #
+            # load an edit page
+            erica.open_link(url='/tree/{}/edit/other/'.format(erica_branch_name))
+            # a warning is flashed about working in a deleted branch
+            self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and tag.text == u'This activity has been deleted or never existed! Please start a new activity to make changes.'))
 
 class TestApp (TestCase):
 
