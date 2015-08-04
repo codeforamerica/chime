@@ -2251,7 +2251,7 @@ class TestProcess (TestCase):
             #
             # Switch users
             #
-            # delete erica's task ;;;
+            # delete erica's task
             frances.open_link(url='/')
             frances.delete_task(branch_name=erica_branch_name)
             self.assertEqual(PATTERN_FLASH_TASK_DELETED.format(description=task_description, beneficiary=task_beneficiary), frances.soup.find('li', class_='flash').text)
@@ -2263,6 +2263,165 @@ class TestProcess (TestCase):
             erica.open_link(url='/tree/{}/edit/other/'.format(erica_branch_name))
             # a warning is flashed about working in a deleted branch
             self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and tag.text == u'This activity has been deleted or never existed! Please start a new activity to make changes.'))
+
+    # in TestProcess
+    def test_forms_for_changes_in_active_task(self):
+        ''' When working in an active (not published or deleted) task, forms or form buttons that allow
+            you to make changes are visible.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
+
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in('frances@example.com')
+
+            # Start a new task
+            task_description = u'Eating Carrion'
+            task_beneficiary = u'Vultures'
+            erica.start_task(description=task_description, beneficiary=task_beneficiary)
+            erica_branch_name = erica.get_branch_name()
+
+            # Enter the "other" folder
+            erica.follow_link(href='/tree/{}/edit/other/'.format(erica_branch_name))
+
+            # Create a category, sub-category, article
+            category_name = u'Antennae Segments'
+            category_slug = slugify(category_name)
+            subcategory_name = u'Short Ovipositors'
+            article_name = u'Inject Eggs Directly Into a Host Body'
+            erica.add_category(category_name=category_name)
+            erica.add_subcategory(subcategory_name=subcategory_name)
+            subcategory_path = erica.path
+            erica.add_article(article_name=article_name)
+            article_path = erica.path
+
+            #
+            # All the edit forms and buttons are there as expected
+            #
+
+            # load an edit page
+            erica.open_link(url=subcategory_path)
+
+            # the drop-down comment form is there
+            dropdown_form = erica.soup.find(lambda tag: bool(tag.name == 'div' and 'dropdown__popup' in tag.get('class'))).find('form')
+            self.assertIsNotNone(dropdown_form)
+
+            # the add new topic, subtopic, and article fields is there
+            self.assertIsNotNone(erica.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add topic')))
+            self.assertIsNotNone(erica.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add subtopic')))
+            self.assertIsNotNone(erica.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add article')))
+
+            # there's an edit (pencil) button on the category or subcategory, and a delete (trashcan) button on the article
+            topic_li = erica.soup.find(lambda tag: bool(tag.name == 'a' and tag.text == category_name)).find_parent('li')
+            self.assertIsNotNone(topic_li.find(lambda tag: bool(tag.name == 'span' and 'fa-pencil' in tag.get('class'))))
+            subtopic_li = erica.soup.find(lambda tag: bool(tag.name == 'a' and tag.text == subcategory_name)).find_parent('li')
+            self.assertIsNotNone(subtopic_li.find(lambda tag: bool(tag.name == 'span' and 'fa-pencil' in tag.get('class'))))
+            article_li = erica.soup.find(lambda tag: bool(tag.name == 'a' and tag.text == article_name)).find_parent('li')
+            self.assertIsNotNone(article_li.find(lambda tag: bool(tag.name == 'span' and 'fa-trash' in tag.get('class'))))
+
+            # load a modify page
+            erica.open_link(url='/tree/{}/modify/other/{}/'.format(erica_branch_name, category_slug))
+
+            # there's a save and delete button on the modify category form
+            modify_form = erica.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'en-description')).find_parent('form')
+            delete_button = modify_form.find('button', attrs={'name': 'delete'})
+            save_button = modify_form.find('button', attrs={'name': 'save'})
+            self.assertIsNotNone(delete_button)
+            self.assertIsNotNone(save_button)
+
+            # load an article edit page
+            erica.open_link(url=article_path)
+
+            # there's a save button on the edit form
+            edit_form = erica.soup.find(lambda tag: bool(tag.name == 'form' and u'/tree/{}/save/'.format(erica_branch_name) in tag.get('action')))
+            save_button = edit_form.find('input', value='Save')
+            self.assertIsNotNone(save_button)
+
+    # in TestProcess
+    def test_no_forms_for_changes_in_inactive_task(self):
+        ''' When working in an inactive (published or deleted) task, forms or form buttons that would
+            allow you to make changes are hidden.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
+
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in('frances@example.com')
+
+            # Start a new task
+            task_description = u'Eating Carrion'
+            task_beneficiary = u'Vultures'
+            erica.start_task(description=task_description, beneficiary=task_beneficiary)
+            erica_branch_name = erica.get_branch_name()
+
+            # Enter the "other" folder
+            erica.follow_link(href='/tree/{}/edit/other/'.format(erica_branch_name))
+
+            # Create a category, sub-category, article
+            category_name = u'Antennae Segments'
+            category_slug = slugify(category_name)
+            subcategory_name = u'Short Ovipositors'
+            article_name = u'Inject Eggs Directly Into a Host Body'
+            erica.add_category(category_name=category_name)
+            erica.add_subcategory(subcategory_name=subcategory_name)
+            subcategory_path = erica.path
+            erica.add_article(article_name=article_name)
+            article_path = erica.path
+
+            #
+            # Switch users
+            #
+            # delete erica's task
+            frances.open_link(url='/')
+            frances.delete_task(branch_name=erica_branch_name)
+            self.assertEqual(PATTERN_FLASH_TASK_DELETED.format(description=task_description, beneficiary=task_beneficiary), frances.soup.find('li', class_='flash').text)
+
+            #
+            # Switch users
+            #
+            # load an edit page
+            erica.open_link(url=subcategory_path)
+
+            # the drop-down comment form isn't there
+            dropdown_form = erica.soup.find(lambda tag: bool(tag.name == 'div' and 'dropdown__popup' in tag.get('class'))).find('form')
+            self.assertIsNone(dropdown_form)
+
+            # the add new topic, subtopic, and article fields aren't there
+            self.assertIsNone(erica.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add topic')))
+            self.assertIsNone(erica.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add subtopic')))
+            self.assertIsNone(erica.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add article')))
+
+            # there's no edit (pencil) button on the category or subcategory, and no delete (trashcan) button on the article
+            topic_li = erica.soup.find(lambda tag: bool(tag.name == 'a' and tag.text == category_name)).find_parent('li')
+            self.assertIsNone(topic_li.find(lambda tag: bool(tag.name == 'span' and 'fa-pencil' in tag.get('class'))))
+            subtopic_li = erica.soup.find(lambda tag: bool(tag.name == 'a' and tag.text == subcategory_name)).find_parent('li')
+            self.assertIsNone(subtopic_li.find(lambda tag: bool(tag.name == 'span' and 'fa-pencil' in tag.get('class'))))
+            article_li = erica.soup.find(lambda tag: bool(tag.name == 'a' and tag.text == article_name)).find_parent('li')
+            self.assertIsNone(article_li.find(lambda tag: bool(tag.name == 'span' and 'fa-trash' in tag.get('class'))))
+
+            # load a modify page
+            erica.open_link(url='/tree/{}/modify/other/{}/'.format(erica_branch_name, category_slug))
+
+            # there's no save or delete button on the modify category form
+            modify_form = erica.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'en-description')).find_parent('form')
+            delete_button = modify_form.find('button', attrs={'name': 'delete'})
+            save_button = modify_form.find('button', attrs={'name': 'save'})
+            self.assertIsNone(delete_button)
+            self.assertIsNone(save_button)
+
+            # load an article edit page
+            erica.open_link(url=article_path)
+
+            # there's no save button on the edit form
+            edit_form = erica.soup.find(lambda tag: bool(tag.name == 'form' and u'/tree/{}/save/'.format(erica_branch_name) in tag.get('action')))
+            save_button = edit_form.find('input', value='Save')
+            self.assertIsNone(save_button)
 
 class TestApp (TestCase):
 
