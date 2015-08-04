@@ -54,10 +54,11 @@ PATTERN_OVERVIEW_ACTIVITY_STARTED = u'<p>The "{activity_name}" activity was star
 PATTERN_OVERVIEW_COMMENT_BODY = u'<div class="comment__body">{comment_body}</div>'
 PATTERN_OVERVIEW_ITEM_DELETED = u'<p>The "{deleted_name}" {deleted_type} {deleted_also}was deleted by {author_email}.</p>'
 
-PATTERN_FLASH_SAVED_CATEGORY = u'<li class="flash flash--notice">Saved changes to the {title} category! Remember to submit this change for feedback when you\'re ready to go live.</li>'
-PATTERN_FLASH_CREATED_CATEGORY = u'Created a new category named {title}! Remember to submit this change for feedback when you\'re ready to go live.'
+PATTERN_FLASH_SAVED_CATEGORY = u'<li class="flash flash--notice">Saved changes to the {title} topic! Remember to submit this change for feedback when you\'re ready to go live.</li>'
+PATTERN_FLASH_CREATED_CATEGORY = u'Created a new topic named {title}! Remember to submit this change for feedback when you\'re ready to go live.'
 PATTERN_FLASH_CREATED_ARTICLE = u'Created a new article named {title}! Remember to submit this change for feedback when you\'re ready to go live.'
 PATTERN_FLASH_SAVED_ARTICLE = u'Saved changes to the {title} article! Remember to submit this change for feedback when you\'re ready to go live.'
+PATTERN_FLASH_DELETED_ARTICLE = u'The "{title}" article was deleted! Remember to submit this change for feedback when you\'re ready to go live.'
 PATTERN_FORM_CATEGORY_TITLE = u'<input name="en-title" type="text" value="{title}" class="directory-modify__name">'
 PATTERN_FORM_CATEGORY_DESCRIPTION = u'<textarea name="en-description" class="directory-modify__description">{description}</textarea>'
 
@@ -2497,7 +2498,7 @@ class TestApp (TestCase):
             self.assertEqual(PATTERN_FLASH_CREATED_CATEGORY.format(title=category_name), erica.soup.find('li', class_='flash').text)
 
     # in TestApp
-    def test_notifications_on_create_and_edit_article(self):
+    def test_notifications_on_create_edit_and_delete_article(self):
         ''' You get a flash notification when you create an article
         '''
         with HTTMock(self.auth_csv_example_allowed):
@@ -2519,6 +2520,7 @@ class TestApp (TestCase):
             subcategory_name = u'Leaves'
             erica.add_category(category_name=category_name)
             erica.add_subcategory(subcategory_name=subcategory_name)
+            subcategory_path = erica.path
 
             # Create an article
             article_name = u'Water Droplets'
@@ -2527,9 +2529,15 @@ class TestApp (TestCase):
             self.assertEqual(PATTERN_FLASH_CREATED_ARTICLE.format(title=article_name), erica.soup.find('li', class_='flash').text)
 
             # edit the article
-            erica.edit_article(title_str=u'Water Droplets', body_str=u'Watch out for poisonous insects.')
+            erica.edit_article(title_str=article_name, body_str=u'Watch out for poisonous insects.')
             # a flash message appeared
             self.assertEqual(PATTERN_FLASH_SAVED_ARTICLE.format(title=article_name), erica.soup.find('li', class_='flash').text)
+
+            # delete the article
+            erica.open_link(subcategory_path)
+            erica.delete_article(article_name)
+            # a flash message appeared
+            self.assertEqual(PATTERN_FLASH_DELETED_ARTICLE.format(title=article_name), erica.soup.find('li', class_='flash').text)
 
     # in TestApp
     def test_branches(self):
@@ -3740,7 +3748,7 @@ class TestApp (TestCase):
             self.assertEqual(response.status_code, 200)
             # check the returned HTML for the description and title values (format will change as pages are designed)
             response_data = sub('&#34;', '"', response.data.decode('utf-8'))
-            self.assertTrue(u'<li class="flash flash--notice">The "{}" category was deleted</li>'.format(cat_title) in response_data)
+            self.assertTrue(u'<li class="flash flash--notice">The "{}" topic was deleted</li>'.format(cat_title) in response_data)
 
             # pull the changes
             self.clone1.git.pull('origin', working_branch_name)

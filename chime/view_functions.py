@@ -1141,8 +1141,6 @@ def add_article_or_category(repo, dir_path, request_path, create_what):
     action_descriptions = [{'action': u'create', 'title': display_name, 'display_type': create_what, 'file_path': file_path}]
     commit_message = u'The "{}" {} was created\n\n{}'.format(display_name, create_what, json.dumps(action_descriptions, ensure_ascii=False))
 
-    flash(u'Created a new {} named {}! Remember to submit this change for feedback when you\'re ready to go live.'.format(create_what, display_name), u'notice')
-
     return commit_message, file_path, redirect_path, True
 
 def strip_index_file(file_path):
