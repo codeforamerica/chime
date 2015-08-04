@@ -55,6 +55,9 @@ PATTERN_OVERVIEW_COMMENT_BODY = u'<div class="comment__body">{comment_body}</div
 PATTERN_OVERVIEW_ITEM_DELETED = u'<p>The "{deleted_name}" {deleted_type} {deleted_also}was deleted by {author_email}.</p>'
 
 PATTERN_FLASH_SAVED_CATEGORY = u'<li class="flash flash--notice">Saved changes to the {title} category! Remember to submit this change for feedback when you\'re ready to go live.</li>'
+PATTERN_FLASH_CREATED_CATEGORY = u'Created a new category named {title}! Remember to submit this change for feedback when you\'re ready to go live.'
+PATTERN_FLASH_CREATED_ARTICLE = u'Created a new article named {title}! Remember to submit this change for feedback when you\'re ready to go live.'
+PATTERN_FLASH_SAVED_ARTICLE = u'Saved changes to the {title} article! Remember to submit this change for feedback when you\'re ready to go live.'
 PATTERN_FORM_CATEGORY_TITLE = u'<input name="en-title" type="text" value="{title}" class="directory-modify__name">'
 PATTERN_FORM_CATEGORY_DESCRIPTION = u'<textarea name="en-description" class="directory-modify__description">{description}</textarea>'
 
@@ -2464,6 +2467,69 @@ class TestApp (TestCase):
             self.assertEqual(flash_message_text, erica.soup.find('li', class_='flash').text)
             # verify that the entered beneficiary text has been pre-filled in the form
             self.assertEqual(fake_task_beneficiary, erica.soup.find('input', attrs={'name': u'task_beneficiary'}).attrs['value'])
+
+    # in TestApp
+    def test_notification_on_create_category(self):
+        ''' You get a flash notification when you create a category
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
+
+            # Start a new task
+            erica.start_task(description=u'Lick Water Droplets From Leaves', beneficiary=u'Leopard Geckos')
+            # Get the branch name
+            branch_name = erica.get_branch_name()
+
+            # Enter the "other" folder
+            other_slug = u'other'
+            erica.follow_link(href='/tree/{}/edit/{}'.format(branch_name, other_slug))
+
+            # Create a category
+            category_name = u'Rubber Plants'
+            category_slug = slugify(category_name)
+            erica.add_category(category_name=category_name)
+            # the category is correctly represented on the page
+            self.assertIsNotNone(erica.soup.find(lambda tag: bool(tag.name == 'a' and category_name in tag.text)))
+            self.assertIsNotNone(erica.soup.find(lambda tag: bool(tag.name == 'a' and category_slug in tag['href'])))
+            # a flash message appeared
+            self.assertEqual(PATTERN_FLASH_CREATED_CATEGORY.format(title=category_name), erica.soup.find('li', class_='flash').text)
+
+    # in TestApp
+    def test_notifications_on_create_and_edit_article(self):
+        ''' You get a flash notification when you create an article
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
+
+            # Start a new task
+            erica.start_task(description=u'Lick Water Droplets From Leaves', beneficiary=u'Leopard Geckos')
+            # Get the branch name
+            branch_name = erica.get_branch_name()
+
+            # Enter the "other" folder
+            other_slug = u'other'
+            erica.follow_link(href='/tree/{}/edit/{}'.format(branch_name, other_slug))
+
+            # Create a category and sub-category
+            category_name = u'Rubber Plants'
+            subcategory_name = u'Leaves'
+            erica.add_category(category_name=category_name)
+            erica.add_subcategory(subcategory_name=subcategory_name)
+
+            # Create an article
+            article_name = u'Water Droplets'
+            erica.add_article(article_name=article_name)
+            # a flash message appeared
+            self.assertEqual(PATTERN_FLASH_CREATED_ARTICLE.format(title=article_name), erica.soup.find('li', class_='flash').text)
+
+            # edit the article
+            erica.edit_article(title_str=u'Water Droplets', body_str=u'Watch out for poisonous insects.')
+            # a flash message appeared
+            self.assertEqual(PATTERN_FLASH_SAVED_ARTICLE.format(title=article_name), erica.soup.find('li', class_='flash').text)
 
     # in TestApp
     def test_branches(self):
