@@ -2179,6 +2179,52 @@ class TestProcess (TestCase):
             # verify that the publish button is still available
             self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'input' and tag['value'] == u'Publish'))
 
+    # in TestProcess
+    def test_notified_when_working_in_published_task(self):
+        ''' When someone else publishes a task you're working in, you're notified.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
+
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in('frances@example.com')
+
+            # Start a new task
+            erica.start_task(description='Eating Carrion', beneficiary='Vultures')
+            erica_branch_name = erica.get_branch_name()
+
+            # Enter the "other" folder
+            erica.follow_link(href='/tree/{}/edit/other/'.format(erica_branch_name))
+
+            # Create a new category
+            category_name = u'Forage'
+            category_slug = slugify(category_name)
+            erica.add_category(category_name=category_name)
+
+            # Ask for feedback
+            erica.follow_link(href='/tree/{}'.format(erica_branch_name))
+            erica.request_feedback(feedback_str='Is this okay?')
+
+            #
+            # Switch users
+            #
+            # approve and publish erica's changes
+            frances.open_link(url=erica.path)
+            frances.leave_feedback(feedback_str='It is perfect.')
+            frances.approve_activity()
+            frances.publish_activity()
+
+            #
+            # Switch users
+            #
+            # load an edit page
+            erica.open_link(url='/tree/{}/edit/other/{}/'.format(erica_branch_name, category_slug))
+            # a warning is flashed about working in a published branch
+            self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and u'This activity was published' in tag.text))
+
 class TestApp (TestCase):
 
     def setUp(self):
