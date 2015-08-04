@@ -965,7 +965,7 @@ def publish_or_destroy_activity(branch_name, action, comment_text=None):
         raise conflict
 
     else:
-        activity_blurb = u'the "{task_description}" activity for {task_beneficiary}'.format(task_description=activity['task_description'], task_beneficiary=activity['task_beneficiary'])
+        activity_blurb = u'"{task_description}" activity for {task_beneficiary}'.format(task_description=activity['task_description'], task_beneficiary=activity['task_beneficiary'])
         if action == 'merge':
             flash(u'You published the {activity_blurb}!'.format(activity_blurb=activity_blurb), u'notice')
         elif action == 'abandon':
