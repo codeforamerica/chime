@@ -55,8 +55,15 @@ ARTICLE_LAYOUT = 'article'
 FOLDER_FILE_TYPE = 'folder'
 FILE_FILE_TYPE = 'file'
 IMAGE_FILE_TYPE = 'image'
+LAYOUT_DISPLAY_LOOKUP = {
+    CATEGORY_LAYOUT: 'topic',
+    ARTICLE_LAYOUT: 'article',
+    FOLDER_FILE_TYPE: 'folder',
+    FILE_FILE_TYPE: 'file',
+    IMAGE_FILE_TYPE: 'image'
+}
 LAYOUT_PLURAL_LOOKUP = {
-    CATEGORY_LAYOUT: 'categories',
+    CATEGORY_LAYOUT: 'topics',
     ARTICLE_LAYOUT: 'articles',
     FOLDER_FILE_TYPE: 'folders',
     FILE_FILE_TYPE: 'files',
@@ -191,6 +198,14 @@ def index_path_display_type_and_title(file_path):
         return path_type, get_value_from_front_matter('title', join(file_path, index_filename))
 
     return path_type, u''
+
+def file_display_name(file_type):
+    ''' Get the display name of the passed file type
+    '''
+    if file_type in LAYOUT_DISPLAY_LOOKUP:
+        return LAYOUT_DISPLAY_LOOKUP[file_type]
+
+    return file_type
 
 def file_type_plural(file_type):
     ''' Get the plural of the passed file type
@@ -579,12 +594,12 @@ def make_delete_display_commit_message(repo, request_path):
             display_type = file_details['display_type']
             if display_type not in message_details:
                 message_details[display_type] = {}
-                message_details[display_type]['noun'] = display_type
+                message_details[display_type]['noun'] = file_display_name(display_type)
                 message_details[display_type]['files'] = []
             else:
                 message_details[display_type]['noun'] = file_type_plural(display_type)
             message_details[display_type]['files'].append(file_details)
-    commit_message = u'The "{}" {}'.format(root_file['title'], root_file['display_type'])
+    commit_message = u'The "{}" {}'.format(root_file['title'], file_display_name(root_file['display_type']))
     if len(targeted_files) > 1:
         message_counts = []
         for detail_key in message_details:
@@ -1134,12 +1149,13 @@ def add_article_or_category(repo, dir_path, request_path, create_what):
         redirect_path = strip_index_file(file_path)
         create_front = dict(title=u'', description=u'', order=0, layout=CATEGORY_LAYOUT)
 
+    display_what = file_display_name(create_what)
     if repo.exists(file_path):
-        return '{} "{}" already exists'.format(create_what.title(), request_path), file_path, redirect_path, False
+        return '{} "{}" already exists'.format(display_what.title(), request_path), file_path, redirect_path, False
 
     file_path = create_new_page(clone=repo, dir_path=dir_path, request_path=name, front=create_front, body=u'')
     action_descriptions = [{'action': u'create', 'title': display_name, 'display_type': create_what, 'file_path': file_path}]
-    commit_message = u'The "{}" {} was created\n\n{}'.format(display_name, create_what, json.dumps(action_descriptions, ensure_ascii=False))
+    commit_message = u'The "{}" {} was created\n\n{}'.format(display_name, display_what, json.dumps(action_descriptions, ensure_ascii=False))
 
     return commit_message, file_path, redirect_path, True
 
