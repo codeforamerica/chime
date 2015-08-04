@@ -54,7 +54,7 @@ PATTERN_OVERVIEW_ACTIVITY_STARTED = u'<p>The "{activity_name}" activity was star
 PATTERN_OVERVIEW_COMMENT_BODY = u'<div class="comment__body">{comment_body}</div>'
 PATTERN_OVERVIEW_ITEM_DELETED = u'<p>The "{deleted_name}" {deleted_type} {deleted_also}was deleted by {author_email}.</p>'
 
-PATTERN_FLASH_SAVED_CHANGES = u'<li class="flash flash--notice">Saved changes to the file {title}! Remember to submit this change for feedback when you\'re ready to go live.</li>'
+PATTERN_FLASH_SAVED_CATEGORY = u'<li class="flash flash--notice">Saved changes to the {title} category! Remember to submit this change for feedback when you\'re ready to go live.</li>'
 PATTERN_FORM_CATEGORY_TITLE = u'<input name="en-title" type="text" value="{title}" class="directory-modify__name">'
 PATTERN_FORM_CATEGORY_DESCRIPTION = u'<textarea name="en-description" class="directory-modify__description">{description}</textarea>'
 
@@ -3601,7 +3601,7 @@ class TestApp (TestCase):
             self.assertEqual(response.status_code, 200)
             # check the returned HTML for the description and title values (format will change as pages are designed)
             response_data = sub('&#39;', '\'', response.data.decode('utf-8'))
-            self.assertTrue(PATTERN_FLASH_SAVED_CHANGES.format(title=new_cat_title) in response_data)
+            self.assertTrue(PATTERN_FLASH_SAVED_CATEGORY.format(title=new_cat_title) in response_data)
             self.assertTrue(PATTERN_FORM_CATEGORY_DESCRIPTION.format(description=cat_description) in response_data)
             self.assertTrue(PATTERN_FORM_CATEGORY_TITLE.format(title=new_cat_title) in response_data)
 
