@@ -22,7 +22,8 @@ from .view_functions import (
     is_allowed_email, common_template_args, log_application_errors, is_article_dir, is_category_dir,
     make_activity_history, summarize_activity_history, render_edit_view, render_modify_dir, render_list_dir,
     add_article_or_category, strip_index_file, delete_page, save_page, render_activities_list, sorted_paths,
-    update_activity_state, CONTENT_FILE_EXTENSION, FOLDER_FILE_TYPE
+    update_activity_state, file_display_name, CONTENT_FILE_EXTENSION, FOLDER_FILE_TYPE, ARTICLE_LAYOUT,
+    CATEGORY_LAYOUT
 )
 
 from .google_api_functions import (
@@ -356,8 +357,7 @@ def branch_modify_category(branch_name, path=u''):
             Logger.debug('save')
             repo_functions.save_working_file(clone=repo, path=path, message=commit_message, base_sha=repo.commit().hexsha, default_branch_name=master_name)
             # flash the human-readable part of the commit message
-            flash_message = sub(u'category', u'topic', commit_message.split('\n')[0])
-            flash_message = sub(u'categories', u'topics', flash_message)
+            flash_message = commit_message.split('\n')[0]
             flash(flash_message, u'notice')
 
         safe_branch = branch_name2path(branch_var2name(branch_name))
@@ -428,14 +428,15 @@ def branch_edit_file(branch_name, path=None):
         redirect_path = path
         commit_message = u'Uploaded file "{}"'.format(file_path)
 
-    elif action == 'create' and (create_what == 'article' or create_what == 'category') and create_path is not None:
+    elif action == 'create' and (create_what == ARTICLE_LAYOUT or create_what == CATEGORY_LAYOUT) and create_path is not None:
         # don't allow empty names for categories or articles
         request_path = request.form['request_path'].strip()
         if len(request_path) == 0 or len(slugify(request_path)) == 0:
             if len(request_path) != 0:
-                flash(u'{} is not an acceptable {} name!'.format(request_path, create_what), u'warning')
+                display_what = file_display_name(create_what)
+                flash(u'{} is not an acceptable {} name!'.format(request_path, display_what), u'warning')
             else:
-                describe_what = u'an article' if create_what == 'article' else u'a category'
+                describe_what = u'an article' if create_what == 'article' else u'a topic'
                 flash(u'Please enter a name to create {}!'.format(describe_what), u'warning')
             return redirect('/tree/{}/edit/{}'.format(safe_branch, file_path), code=303)
 
@@ -443,7 +444,7 @@ def branch_edit_file(branch_name, path=None):
         if do_save:
             commit = repo.commit()
             commit_message = add_message
-            describe_what = u'topic' if create_what == u'category' else create_what
+            describe_what = file_display_name(create_what)
             flash(u'Created a new {} named {}! Remember to submit this change for feedback when you\'re ready to go live.'.format(describe_what, request.form['request_path']), u'notice')
         else:
             flash(add_message, u'notice')

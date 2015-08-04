@@ -414,12 +414,12 @@ class TestRepo (TestCase):
         ''' We can't create a category that exists already.
         '''
         first_result = view_functions.add_article_or_category(self.clone1, 'categories', 'My New Category', view_functions.CATEGORY_LAYOUT)
-        self.assertEqual(u'The "My New Category" category was created\n\n[{"action": "create", "file_path": "categories/my-new-category/index.markdown", "display_type": "category", "title": "My New Category"}]', first_result[0])
+        self.assertEqual(u'The "My New Category" topic was created\n\n[{"action": "create", "file_path": "categories/my-new-category/index.markdown", "display_type": "category", "title": "My New Category"}]', first_result[0])
         self.assertEqual(u'categories/my-new-category/index.markdown', first_result[1])
         self.assertEqual(u'categories/my-new-category/', first_result[2])
         self.assertEqual(True, first_result[3])
         second_result = view_functions.add_article_or_category(self.clone1, 'categories', 'My New Category', view_functions.CATEGORY_LAYOUT)
-        self.assertEqual('Category "My New Category" already exists', second_result[0])
+        self.assertEqual('Topic "My New Category" already exists', second_result[0])
         self.assertEqual(u'categories/my-new-category/index.markdown', second_result[1])
         self.assertEqual(u'categories/my-new-category/', second_result[2])
         self.assertEqual(False, second_result[3])
@@ -1107,7 +1107,7 @@ class TestRepo (TestCase):
         cat_slug = slugify(cat_title)
         add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, u'', cat_title, view_functions.CATEGORY_LAYOUT)
         self.assertEqual(u'{}/index.{}'.format(cat_slug, view_functions.CONTENT_FILE_EXTENSION), file_path)
-        self.assertEqual(u'The "{cat_title}" category was created\n\n[{{"action": "create", "file_path": "{file_path}", "display_type": "category", "title": "{cat_title}"}}]'.format(cat_title=cat_title, file_path=file_path), add_message)
+        self.assertEqual(u'The "{cat_title}" topic was created\n\n[{{"action": "create", "file_path": "{file_path}", "display_type": "category", "title": "{cat_title}"}}]'.format(cat_title=cat_title, file_path=file_path), add_message)
         self.assertEqual(u'{}/'.format(cat_slug), redirect_path)
         self.assertEqual(True, do_save)
         # commit the category
@@ -1169,7 +1169,7 @@ class TestRepo (TestCase):
         cat_slug = slugify(cat_title)
         add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, u'', cat_title, view_functions.CATEGORY_LAYOUT)
         self.assertEqual(u'{}/index.{}'.format(cat_slug, view_functions.CONTENT_FILE_EXTENSION), file_path)
-        self.assertEqual(u'The "{cat_title}" category was created\n\n[{{"action": "create", "file_path": "{file_path}", "display_type": "category", "title": "{cat_title}"}}]'.format(cat_title=cat_title, file_path=file_path), add_message)
+        self.assertEqual(u'The "{cat_title}" topic was created\n\n[{{"action": "create", "file_path": "{file_path}", "display_type": "category", "title": "{cat_title}"}}]'.format(cat_title=cat_title, file_path=file_path), add_message)
         self.assertEqual(u'{}/'.format(cat_slug), redirect_path)
         self.assertEqual(True, do_save)
         # commit the category
@@ -1185,7 +1185,7 @@ class TestRepo (TestCase):
         cat2_slug = slugify(cat2_title)
         add_message, cat2_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, cat_slug, cat2_title, view_functions.CATEGORY_LAYOUT)
         self.assertEqual(u'{}/{}/index.{}'.format(cat_slug, cat2_slug, view_functions.CONTENT_FILE_EXTENSION), cat2_path)
-        self.assertEqual(u'The "{cat_title}" category was created\n\n[{{"action": "create", "file_path": "{file_path}", "display_type": "category", "title": "{cat_title}"}}]'.format(cat_title=cat2_title, file_path=cat2_path), add_message)
+        self.assertEqual(u'The "{cat_title}" topic was created\n\n[{{"action": "create", "file_path": "{file_path}", "display_type": "category", "title": "{cat_title}"}}]'.format(cat_title=cat2_title, file_path=cat2_path), add_message)
         self.assertEqual(u'{}/{}/'.format(cat_slug, cat2_slug), redirect_path)
         self.assertEqual(True, do_save)
         # commit the category
@@ -1218,7 +1218,7 @@ class TestRepo (TestCase):
         redirect_path, do_save, commit_message = view_functions.delete_page(repo=new_clone, browse_path=browse_path, target_path=dir_path)
         self.assertEqual(cat_slug.rstrip('/'), redirect_path.rstrip('/'))
         self.assertEqual(True, do_save)
-        self.assertEqual(u'The "{cat2_title}" category (containing 1 article) was deleted\n\n[{{"action": "delete", "file_path": "{cat2_path}", "display_type": "category", "title": "{cat2_title}"}}, {{"action": "delete", "file_path": "{art_path}", "display_type": "article", "title": "{art_title}"}}]'.format(cat2_title=cat2_title, cat2_path=cat2_path, art_path=art_path, art_title=art_title), commit_message)
+        self.assertEqual(u'The "{cat2_title}" topic (containing 1 article) was deleted\n\n[{{"action": "delete", "file_path": "{cat2_path}", "display_type": "category", "title": "{cat2_title}"}}, {{"action": "delete", "file_path": "{art_path}", "display_type": "article", "title": "{art_title}"}}]'.format(cat2_title=cat2_title, cat2_path=cat2_path, art_path=art_path, art_title=art_title), commit_message)
 
         repo_functions.save_working_file(clone=new_clone, path=dir_path, message=commit_message, base_sha=new_clone.commit().hexsha, default_branch_name='master')
 
@@ -1301,7 +1301,7 @@ class TestRepo (TestCase):
 
         # check the delete
         check_item = activity_history.pop(0)
-        self.assertEqual(u'The "{}" category (containing 1 category and 1 article) was deleted'.format(updated_details[0][1]), check_item['commit_subject'])
+        self.assertEqual(u'The "{}" topic (containing 1 topic and 1 article) was deleted'.format(updated_details[0][1]), check_item['commit_subject'])
         self.assertEqual(u'[{{"action": "delete", "file_path": "{cat1_path}", "display_type": "category", "title": "{cat1_title}"}}, {{"action": "delete", "file_path": "{cat2_path}", "display_type": "category", "title": "{cat2_title}"}}, {{"action": "delete", "file_path": "{art1_path}", "display_type": "article", "title": "{art1_title}"}}]'.format(cat1_path=updated_details[0][3], cat1_title=updated_details[0][1], cat2_path=updated_details[1][3], cat2_title=updated_details[1][1], art1_path=updated_details[2][3], art1_title=updated_details[2][1]), check_item['commit_body'])
         self.assertEqual(repo_functions.MESSAGE_TYPE_EDIT, check_item['commit_type'])
 
@@ -1319,7 +1319,7 @@ class TestRepo (TestCase):
         # check the category & article creations
         for pos, check_item in list(enumerate(activity_history)):
             check_detail = updated_details[len(updated_details) - (pos + 1)]
-            self.assertEqual(u'The "{}" {} was created'.format(check_detail[1], check_detail[2]), check_item['commit_subject'])
+            self.assertEqual(u'The "{}" {} was created'.format(check_detail[1], view_functions.file_display_name(check_detail[2])), check_item['commit_subject'])
             self.assertEqual(u'[{{"action": "create", "file_path": "{file_path}", "display_type": "{display_type}", "title": "{title}"}}]'.format(file_path=check_detail[3], display_type=check_detail[2], title=check_detail[1]), check_item['commit_body'])
             self.assertEqual(repo_functions.MESSAGE_TYPE_EDIT, check_item['commit_type'])
 
@@ -3228,7 +3228,7 @@ class TestApp (TestCase):
             comments = erica.soup.findAll(text=lambda text: isinstance(text, Comment))
             self.assertTrue(pattern_template_comment_stripped.format(u'articles-list') in comments)
             # verify that there's a flash message warning about submitting an empty description
-            self.assertEqual(u'Please enter a name to create a category!', erica.soup.find('li', class_='flash').text)
+            self.assertEqual(u'Please enter a name to create a topic!', erica.soup.find('li', class_='flash').text)
 
             # Try to create a category with a name that slufigies to an empty string
             category_name = u'(╯□）╯︵ ┻━┻'
@@ -3238,7 +3238,7 @@ class TestApp (TestCase):
             comments = erica.soup.findAll(text=lambda text: isinstance(text, Comment))
             self.assertTrue(pattern_template_comment_stripped.format(u'articles-list') in comments)
             # verify that there's a flash message warning about submitting an empty description
-            self.assertEqual(u'{} is not an acceptable category name!'.format(category_name), erica.soup.find('li', class_='flash').text)
+            self.assertEqual(u'{} is not an acceptable topic name!'.format(category_name), erica.soup.find('li', class_='flash').text)
 
             # Create a category and sub-category
             category_name = u'Mammals'
@@ -3293,7 +3293,7 @@ class TestApp (TestCase):
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             response_data = sub('&#34;', '"', response.data.decode('utf-8'))
-            self.assertTrue(u'Category "hello" already exists' in response_data)
+            self.assertTrue(u'Topic "hello" already exists' in response_data)
 
             # pull the changes
             self.clone1.git.pull('origin', working_branch.name)
@@ -4032,7 +4032,7 @@ class TestApp (TestCase):
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('activity-overview') in response_data)
             self.assertTrue(PATTERN_OVERVIEW_ACTIVITY_STARTED.format(**{"activity_name": task_description, "author_email": fake_author_email}) in response_data)
             self.assertTrue(PATTERN_OVERVIEW_COMMENT_BODY.format(**{"comment_body": comment_text}) in response_data)
-            self.assertTrue(PATTERN_OVERVIEW_ITEM_DELETED.format(**{"deleted_name": title_fig_zh, "deleted_type": view_functions.CATEGORY_LAYOUT, "deleted_also": u'(containing 1 category and 1 article) ', "author_email": fake_author_email}) in response_data)
+            self.assertTrue(PATTERN_OVERVIEW_ITEM_DELETED.format(**{"deleted_name": title_fig_zh, "deleted_type": view_functions.file_display_name(view_functions.CATEGORY_LAYOUT), "deleted_also": u'(containing 1 topic and 1 article) ', "author_email": fake_author_email}) in response_data)
             for detail in create_details:
                 self.assertTrue(PATTERN_OVERVIEW_ITEM_CREATED.format(**{"created_name": detail[1], "created_type": detail[2], "author_email": fake_author_email}), response_data)
 
@@ -4082,7 +4082,7 @@ class TestApp (TestCase):
             summary_div = erica.soup.find("div", class_="activity-summary")
             self.assertIsNotNone(summary_div)
             # it's right about what's changed
-            self.assertIsNotNone(summary_div.find(lambda tag: bool(tag.name == 'a' and '2 articles and 2 categories' in tag.text)))
+            self.assertIsNotNone(summary_div.find(lambda tag: bool(tag.name == 'a' and '2 articles and 2 topics' in tag.text)))
             # grab all the table rows
             check_rows = summary_div.find_all('tr')
 
