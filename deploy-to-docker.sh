@@ -1,5 +1,11 @@
 #!/bin/sh
 
+# the necessary token can be found/reset here:
+#   https://hub-beta.docker.com/r/chimecms/chime/~/settings/automated-builds/
+#
+# the token is typically set here:
+#   https://travis-ci.org/chimecms/chime/settings
+
 if [ $# -eq 0 ]; then
   echo "Usage: $0 TOKEN"
   exit 0
