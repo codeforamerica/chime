@@ -155,6 +155,23 @@ class ChimeTestClient:
 
         # View the new article.
         self.follow_redirect(response, 303)
+    
+    def add_branch_cat_subcat_article(self, desc, benef, cat, subcat, title):
+        '''
+        '''
+        # Start a new task, "Diving for Dollars".
+        self.start_task(description=desc, beneficiary=benef)
+        branch_name = self.get_branch_name()
+
+        # Look for an "other" link that we know about - is it a category?
+        self.follow_link(href='/tree/{}/edit/other'.format(branch_name))
+
+        # Create a new category, subcategory, and article.
+        self.add_category(category_name=cat)
+        self.add_subcategory(subcategory_name=subcat)
+        self.add_article(article_name=title)
+        
+        return branch_name
 
     def edit_article(self, title_str, body_str):
         ''' Look for form to edit an article, submit it.

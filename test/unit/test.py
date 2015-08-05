@@ -2004,17 +2004,10 @@ class TestProcess (TestCase):
                 frances = ChimeTestClient(self.app.test_client(), self)
                 frances.sign_in('frances@example.com')
             
-            # Start a new task, "Diving for Dollars".
-            erica.start_task('Diving', 'Dollars')
-            branch_name = erica.get_branch_name()
-            
-            # Look for an "other" link that we know about - is it a category?
-            erica.follow_link('/tree/{}/edit/other'.format(branch_name))
-
-            # Create a new category "Ninjas", subcategory "Flipping Out", and article "So Awesome".
-            erica.add_category('Ninjas')
-            erica.add_subcategory('Flipping Out')
-            erica.add_article('So Awesome')
+            # Start a new task, "Diving for Dollars", create a new category
+            # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
+            args = 'Diving', 'Dollars', 'Ninjas', 'Flipping Out', 'So Awesome'
+            branch_name = erica.add_branch_cat_subcat_article(*args)
             
             # Edit the new article.
             erica.edit_article('So, So Awesome', 'It was the best of times.')
@@ -2099,17 +2092,50 @@ class TestProcess (TestCase):
                 frances = ChimeTestClient(self.app.test_client(), self)
                 frances.sign_in('frances@example.com')
 
-            # Start a new task, "Diving for Dollars".
-            erica.start_task(description='Diving', beneficiary='Dollars')
-            branch_name = erica.get_branch_name()
+            # Start a new task, "Diving for Dollars", create a new category
+            # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
+            args = 'Diving', 'Dollars', 'Ninjas', 'Flipping Out', 'So Awesome'
+            branch_name = erica.add_branch_cat_subcat_article(*args)
 
-            # Look for an "other" link that we know about - is it a category?
-            erica.follow_link(href='/tree/{}/edit/other'.format(branch_name))
+            # Edit the new article.
+            erica.edit_article(title_str='So, So Awesome', body_str='It was the best of times.')
+            article_path = erica.path
 
-            # Create a new category "Ninjas", subcategory "Flipping Out", and article "So Awesome".
-            erica.add_category(category_name='Ninjas')
-            erica.add_subcategory(subcategory_name='Flipping Out')
-            erica.add_article(article_name='So Awesome')
+            # Ask for feedback
+            erica.follow_link(href='/tree/{}'.format(branch_name))
+            erica.request_feedback(feedback_str='Is this okay?')
+
+            #
+            # Switch users and publish the article.
+            #
+            frances.open_link(url=erica.path)
+            frances.leave_feedback(feedback_str='It is super-great.')
+            frances.approve_activity()
+            frances.publish_activity()
+            
+            #
+            # Switch back and try to make another edit, but watch it fail.
+            #
+            erica.open_link(article_path)
+            erica.edit_outdated_article(title_str='Just Awful', body_str='It was the worst of times.')
+
+    # in TestProcess
+    def test_editing_process_with_conflicting_edit(self):
+        ''' Check edit process with a user attempting to change an activity with a conflict.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
+            
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in('frances@example.com')
+
+            # Start a new task, "Diving for Dollars", create a new category
+            # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
+            args = 'Diving', 'Dollars', 'Ninjas', 'Flipping Out', 'So Awesome'
+            branch_name = erica.add_branch_cat_subcat_article(*args)
 
             # Edit the new article.
             erica.edit_article(title_str='So, So Awesome', body_str='It was the best of times.')
