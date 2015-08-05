@@ -2087,7 +2087,7 @@ class TestProcess (TestCase):
             self.assertIsNone(frances.soup.find(text='Dollars'), 'Should not see first published category')
 
     # in TestProcess
-    def test_editing_process_with_conflicting_publish(self):
+    def test_editing_process_with_outdated_publish(self):
         ''' Check edit process with a user attempting to change an activity that's been published.
         '''
         with HTTMock(self.auth_csv_example_allowed):
@@ -2127,18 +2127,6 @@ class TestProcess (TestCase):
             frances.approve_activity()
             frances.publish_activity()
             
-            #
-            # Check with upstream repository.
-            #
-            origin_commit = self.origin.refs.master.commit.hexsha
-            upstream_commit = self.upstream.refs.master.commit.hexsha
-            self.assertNotEqual(origin_commit, upstream_commit, 'Origin and upstream should not match before explicit synch')
-
-            running_state_dir = self.app.config['RUNNING_STATE_DIR']
-            repo_functions.push_upstream_if_needed(self.origin, running_state_dir)
-            upstream_commit = self.upstream.refs.master.commit.hexsha
-            self.assertEqual(origin_commit, upstream_commit, 'Origin and upstream should match after explicit synch')
-
             #
             # Switch back and try to make another edit, but watch it fail.
             #
