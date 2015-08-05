@@ -21,6 +21,11 @@ function Editor(title, content, preview) {
   }
 
   this.init = function() {
+    // makes markdown output closer to jekyll markdown output
+    marked.setOptions({
+      gfm: false
+    })
+
   	$('.markdown-previewer').load(function() {
 	  	$(content).bind('keyup change', function(e) {
 	  		self.updateContent();
