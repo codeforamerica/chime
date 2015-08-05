@@ -35,3 +35,9 @@ env:
     - secure: dVA5sQPJ2jE7wSENMEgqLuoyvFae2ghxBHPru52XOKSRtSgqXoqgf/jbKbpEwCDxCqlIFpdIEv33RtmmNvBMxYhmP5uToOBcyOzyc5/HbMn/+53nclLN6yTWGPtH3JT+5kqds/YL/HWdP3DWuel5gBn175SzTSFuszRPAbCyrMs=
     - secure: I/6KqYx2i0xwCtfOW3VIORP0bMjYuD9gHpdQx1iVeKYYoVTHMnUP2RQbmu8uA31VPSZlKBofod7FX1VO41FR8M+NI4r+IrImOq/J9aWC9Upq+dBB1rPnEPfJFxPmGg+sVoNCK2utZXE1z/8WkopYAeZ9wdE4DM6235a12dIyxIY=
     - secure: fW/O/iFDOwI/sINW2vYCDf+H4QahaaI0YNpEcJ7QXl0Nzm4UcCWLu39gYSCeaIwjfUwPFvQ/e09HH8ba2FtsdeeX+8pPECE4Ilqj0m4sZOItbSfYTdfU25okgmcsy9T652CNhUfqnkbire1Fq5nwL31CKc4BDKP0iQqSd9m3d2k=
+deploy:
+  provider: script
+  script: curl -H "Content-Type: application/json" --data '&#123;"build": true&#125;' -X POST https://registry.hub.docker.com/u/chimecms/chime/trigger/${DOCKER_TRIGGER_TOKEN}/
+
+  on:
+  	branch: master
