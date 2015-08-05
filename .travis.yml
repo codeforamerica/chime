@@ -37,7 +37,7 @@ env:
     - secure: fW/O/iFDOwI/sINW2vYCDf+H4QahaaI0YNpEcJ7QXl0Nzm4UcCWLu39gYSCeaIwjfUwPFvQ/e09HH8ba2FtsdeeX+8pPECE4Ilqj0m4sZOItbSfYTdfU25okgmcsy9T652CNhUfqnkbire1Fq5nwL31CKc4BDKP0iQqSd9m3d2k=
 deploy:
   provider: script
-  script: curl -H "Content-Type: application/json" --data '&#123;"build": true&#125;' -X POST https://registry.hub.docker.com/u/chimecms/chime/trigger/${DOCKER_TRIGGER_TOKEN}/
+  script: ./deploy-to-docker.sh ${DOCKER_TRIGGER_TOKEN}
 
   on:
   	branch: master
