@@ -56,6 +56,7 @@ ARTICLE_LAYOUT = 'article'
 FOLDER_FILE_TYPE = 'folder'
 FILE_FILE_TYPE = 'file'
 IMAGE_FILE_TYPE = 'image'
+# how we describe items based on their layout
 LAYOUT_DISPLAY_LOOKUP = {
     CATEGORY_LAYOUT: 'topic',
     ARTICLE_LAYOUT: 'article',
