@@ -53,6 +53,7 @@ PATTERN_OVERVIEW_ITEM_CREATED = u'<p>The "{created_name}" {created_type} was cre
 PATTERN_OVERVIEW_ACTIVITY_STARTED = u'<p>The "{activity_name}" activity was started by {author_email}.</p>'
 PATTERN_OVERVIEW_COMMENT_BODY = u'<div class="comment__body">{comment_body}</div>'
 PATTERN_OVERVIEW_ITEM_DELETED = u'<p>The "{deleted_name}" {deleted_type} {deleted_also}was deleted by {author_email}.</p>'
+PATTERN_FLASH_TASK_DELETED = u'You deleted the "{description}" activity for {beneficiary}!'
 
 PATTERN_FLASH_SAVED_CATEGORY = u'<li class="flash flash--notice">Saved changes to the {title} topic! Remember to submit this change for feedback when you\'re ready to go live.</li>'
 PATTERN_FLASH_CREATED_CATEGORY = u'Created a new topic named {title}! Remember to submit this change for feedback when you\'re ready to go live.'
@@ -128,10 +129,10 @@ class TestViewFunctions (TestCase):
         sorted_list = view_functions.sorted_paths(self.clone, 'master')
 
         expected_list = [
-            {'modified_date': view_functions.get_relative_date(self.clone, 'index.md'), 'name': 'index.md', 'title': 'index.md', 'view_path': '/tree/master/view/index.md', 'is_editable': True, 'display_type': view_functions.FILE_FILE_TYPE},
-            {'modified_date': view_functions.get_relative_date(self.clone, 'other'), 'name': 'other', 'title': 'other', 'view_path': '/tree/master/view/other', 'is_editable': False, 'display_type': view_functions.FOLDER_FILE_TYPE},
-            {'modified_date': view_functions.get_relative_date(self.clone, 'other.md'), 'name': 'other.md', 'title': 'other.md', 'view_path': '/tree/master/view/other.md', 'is_editable': True, 'display_type': view_functions.FILE_FILE_TYPE},
-            {'modified_date': view_functions.get_relative_date(self.clone, 'sub'), 'name': 'sub', 'title': 'sub', 'view_path': '/tree/master/view/sub', 'is_editable': False, 'display_type': view_functions.FOLDER_FILE_TYPE}]
+            {'modified_date': view_functions.get_relative_date(self.clone, 'index.md'), 'name': 'index.md', 'title': 'index.md', 'view_path': '/tree/master/view/index.md', 'is_editable': True, 'link_name': 'index.md', 'display_type': view_functions.FILE_FILE_TYPE},
+            {'modified_date': view_functions.get_relative_date(self.clone, 'other'), 'name': 'other', 'title': 'other', 'view_path': '/tree/master/view/other', 'is_editable': False, 'link_name': u'other/', 'display_type': view_functions.FOLDER_FILE_TYPE},
+            {'modified_date': view_functions.get_relative_date(self.clone, 'other.md'), 'name': 'other.md', 'title': 'other.md', 'view_path': '/tree/master/view/other.md', 'is_editable': True, 'link_name': 'other.md', 'display_type': view_functions.FILE_FILE_TYPE},
+            {'modified_date': view_functions.get_relative_date(self.clone, 'sub'), 'name': 'sub', 'title': 'sub', 'view_path': '/tree/master/view/sub', 'is_editable': False, 'link_name': u'sub/', 'display_type': view_functions.FOLDER_FILE_TYPE}]
 
         self.assertEqual(sorted_list, expected_list)
 
@@ -2013,7 +2014,7 @@ class TestProcess (TestCase):
             branch_name = erica.get_branch_name()
             
             # Look for an "other" link that we know about - is it a category?
-            erica.follow_link('/tree/{}/edit/other'.format(branch_name))
+            erica.follow_link('/tree/{}/edit/other/'.format(branch_name))
 
             # Create a new category "Ninjas", subcategory "Flipping Out", and article "So Awesome".
             erica.add_category('Ninjas')
@@ -2060,7 +2061,7 @@ class TestProcess (TestCase):
             branch_name = erica.get_branch_name()
 
             # Look for an "other" link that we know about - is it a category?
-            erica.follow_link(href='/tree/{}/edit/other'.format(branch_name))
+            erica.follow_link(href='/tree/{}/edit/other/'.format(branch_name))
 
             # Create a new category "Ninjas", subcategory "Flipping Out", and article "So Awesome".
             erica.add_category(category_name='Ninjas')
@@ -2119,7 +2120,7 @@ class TestProcess (TestCase):
             erica_branch_name = erica.get_branch_name()
 
             # Look for an "other" link that we know about - is it a category?
-            erica.follow_link(href='/tree/{}/edit/other'.format(erica_branch_name))
+            erica.follow_link(href='/tree/{}/edit/other/'.format(erica_branch_name))
 
             # Create a new category, subcategory, and article
             erica.add_category(category_name=u'Forage')
@@ -2141,7 +2142,7 @@ class TestProcess (TestCase):
             frances_branch_name = frances.get_branch_name()
 
             # Look for an "other" link that we know about - is it a category?
-            frances.follow_link(href='/tree/{}/edit/other'.format(frances_branch_name))
+            frances.follow_link(href='/tree/{}/edit/other/'.format(frances_branch_name))
 
             # Create a duplicate new category, subcategory, and article
             frances.add_category(category_name=u'Forage')
@@ -2178,6 +2179,249 @@ class TestProcess (TestCase):
             erica.open_link(url=frances_overview_path)
             # verify that the publish button is still available
             self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'input' and tag['value'] == u'Publish'))
+
+    # in TestProcess
+    def test_notified_when_working_in_published_task(self):
+        ''' When someone else publishes a task you're working in, you're notified.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
+
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in('frances@example.com')
+
+            # Start a new task
+            erica.start_task(description='Eating Carrion', beneficiary='Vultures')
+            erica_branch_name = erica.get_branch_name()
+
+            # Enter the "other" folder
+            erica.follow_link(href='/tree/{}/edit/other/'.format(erica_branch_name))
+
+            # Create a new category
+            category_name = u'Forage'
+            category_slug = slugify(category_name)
+            erica.add_category(category_name=category_name)
+
+            # Ask for feedback
+            erica.follow_link(href='/tree/{}'.format(erica_branch_name))
+            erica.request_feedback(feedback_str='Is this okay?')
+
+            #
+            # Switch users
+            #
+            # approve and publish erica's changes
+            frances.open_link(url=erica.path)
+            frances.leave_feedback(feedback_str='It is perfect.')
+            frances.approve_activity()
+            frances.publish_activity()
+
+            #
+            # Switch users
+            #
+            # load an edit page
+            erica.open_link(url='/tree/{}/edit/other/{}/'.format(erica_branch_name, category_slug))
+            # a warning is flashed about working in a published branch
+            self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and u'This activity was published' in tag.text))
+
+    # in TestProcess
+    def test_notified_when_working_in_deleted_task(self):
+        ''' When someone else deletes a task you're working in, you're notified.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
+
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in('frances@example.com')
+
+            # Start a new task
+            task_description = u'Eating Carrion'
+            task_beneficiary = u'Vultures'
+            erica.start_task(description=task_description, beneficiary=task_beneficiary)
+            erica_branch_name = erica.get_branch_name()
+
+            # Enter the "other" folder
+            erica.follow_link(href='/tree/{}/edit/other/'.format(erica_branch_name))
+
+            #
+            # Switch users
+            #
+            # delete erica's task
+            frances.open_link(url='/')
+            frances.delete_task(branch_name=erica_branch_name)
+            self.assertEqual(PATTERN_FLASH_TASK_DELETED.format(description=task_description, beneficiary=task_beneficiary), frances.soup.find('li', class_='flash').text)
+
+            #
+            # Switch users
+            #
+            # load an edit page
+            erica.open_link(url='/tree/{}/edit/other/'.format(erica_branch_name))
+            # a warning is flashed about working in a deleted branch
+            self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and tag.text == u'This activity has been deleted or never existed! Please start a new activity to make changes.'))
+
+    # in TestProcess
+    def test_forms_for_changes_in_active_task(self):
+        ''' When working in an active (not published or deleted) task, forms or form buttons that allow
+            you to make changes are visible.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
+
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in('frances@example.com')
+
+            # Start a new task
+            task_description = u'Eating Carrion'
+            task_beneficiary = u'Vultures'
+            erica.start_task(description=task_description, beneficiary=task_beneficiary)
+            erica_branch_name = erica.get_branch_name()
+
+            # Enter the "other" folder
+            erica.follow_link(href='/tree/{}/edit/other/'.format(erica_branch_name))
+
+            # Create a category, sub-category, article
+            category_name = u'Antennae Segments'
+            category_slug = slugify(category_name)
+            subcategory_name = u'Short Ovipositors'
+            article_name = u'Inject Eggs Directly Into a Host Body'
+            erica.add_category(category_name=category_name)
+            erica.add_subcategory(subcategory_name=subcategory_name)
+            subcategory_path = erica.path
+            erica.add_article(article_name=article_name)
+            article_path = erica.path
+
+            #
+            # All the edit forms and buttons are there as expected
+            #
+
+            # load an edit page
+            erica.open_link(url=subcategory_path)
+
+            # the drop-down comment form is there
+            dropdown_form = erica.soup.find(lambda tag: bool(tag.name == 'div' and 'dropdown__popup' in tag.get('class'))).find('form')
+            self.assertIsNotNone(dropdown_form)
+
+            # the add new topic, subtopic, and article fields is there
+            self.assertIsNotNone(erica.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add topic')))
+            self.assertIsNotNone(erica.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add subtopic')))
+            self.assertIsNotNone(erica.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add article')))
+
+            # there's an edit (pencil) button on the category or subcategory, and a delete (trashcan) button on the article
+            topic_li = erica.soup.find(lambda tag: bool(tag.name == 'a' and tag.text == category_name)).find_parent('li')
+            self.assertIsNotNone(topic_li.find(lambda tag: bool(tag.name == 'span' and 'fa-pencil' in tag.get('class'))))
+            subtopic_li = erica.soup.find(lambda tag: bool(tag.name == 'a' and tag.text == subcategory_name)).find_parent('li')
+            self.assertIsNotNone(subtopic_li.find(lambda tag: bool(tag.name == 'span' and 'fa-pencil' in tag.get('class'))))
+            article_li = erica.soup.find(lambda tag: bool(tag.name == 'a' and tag.text == article_name)).find_parent('li')
+            self.assertIsNotNone(article_li.find(lambda tag: bool(tag.name == 'span' and 'fa-trash' in tag.get('class'))))
+
+            # load a modify page
+            erica.open_link(url='/tree/{}/modify/other/{}/'.format(erica_branch_name, category_slug))
+
+            # there's a save and delete button on the modify category form
+            modify_form = erica.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'en-description')).find_parent('form')
+            delete_button = modify_form.find('button', attrs={'name': 'delete'})
+            save_button = modify_form.find('button', attrs={'name': 'save'})
+            self.assertIsNotNone(delete_button)
+            self.assertIsNotNone(save_button)
+
+            # load an article edit page
+            erica.open_link(url=article_path)
+
+            # there's a save button on the edit form
+            edit_form = erica.soup.find(lambda tag: bool(tag.name == 'form' and u'/tree/{}/save/'.format(erica_branch_name) in tag.get('action')))
+            save_button = edit_form.find('input', value='Save')
+            self.assertIsNotNone(save_button)
+
+    # in TestProcess
+    def test_no_forms_for_changes_in_inactive_task(self):
+        ''' When working in an inactive (published or deleted) task, forms or form buttons that would
+            allow you to make changes are hidden.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
+
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in('frances@example.com')
+
+            # Start a new task
+            task_description = u'Eating Carrion'
+            task_beneficiary = u'Vultures'
+            erica.start_task(description=task_description, beneficiary=task_beneficiary)
+            erica_branch_name = erica.get_branch_name()
+
+            # Enter the "other" folder
+            erica.follow_link(href='/tree/{}/edit/other/'.format(erica_branch_name))
+
+            # Create a category, sub-category, article
+            category_name = u'Antennae Segments'
+            category_slug = slugify(category_name)
+            subcategory_name = u'Short Ovipositors'
+            article_name = u'Inject Eggs Directly Into a Host Body'
+            erica.add_category(category_name=category_name)
+            erica.add_subcategory(subcategory_name=subcategory_name)
+            subcategory_path = erica.path
+            erica.add_article(article_name=article_name)
+            article_path = erica.path
+
+            #
+            # Switch users
+            #
+            # delete erica's task
+            frances.open_link(url='/')
+            frances.delete_task(branch_name=erica_branch_name)
+            self.assertEqual(PATTERN_FLASH_TASK_DELETED.format(description=task_description, beneficiary=task_beneficiary), frances.soup.find('li', class_='flash').text)
+
+            #
+            # Switch users
+            #
+            # load an edit page
+            erica.open_link(url=subcategory_path)
+
+            # the drop-down comment form isn't there
+            dropdown_form = erica.soup.find(lambda tag: bool(tag.name == 'div' and 'dropdown__popup' in tag.get('class'))).find('form')
+            self.assertIsNone(dropdown_form)
+
+            # the add new topic, subtopic, and article fields aren't there
+            self.assertIsNone(erica.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add topic')))
+            self.assertIsNone(erica.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add subtopic')))
+            self.assertIsNone(erica.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add article')))
+
+            # there's no edit (pencil) button on the category or subcategory, and no delete (trashcan) button on the article
+            topic_li = erica.soup.find(lambda tag: bool(tag.name == 'a' and tag.text == category_name)).find_parent('li')
+            self.assertIsNone(topic_li.find(lambda tag: bool(tag.name == 'span' and 'fa-pencil' in tag.get('class'))))
+            subtopic_li = erica.soup.find(lambda tag: bool(tag.name == 'a' and tag.text == subcategory_name)).find_parent('li')
+            self.assertIsNone(subtopic_li.find(lambda tag: bool(tag.name == 'span' and 'fa-pencil' in tag.get('class'))))
+            article_li = erica.soup.find(lambda tag: bool(tag.name == 'a' and tag.text == article_name)).find_parent('li')
+            self.assertIsNone(article_li.find(lambda tag: bool(tag.name == 'span' and 'fa-trash' in tag.get('class'))))
+
+            # load a modify page
+            erica.open_link(url='/tree/{}/modify/other/{}/'.format(erica_branch_name, category_slug))
+
+            # there's no save or delete button on the modify category form
+            modify_form = erica.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'en-description')).find_parent('form')
+            delete_button = modify_form.find('button', attrs={'name': 'delete'})
+            save_button = modify_form.find('button', attrs={'name': 'save'})
+            self.assertIsNone(delete_button)
+            self.assertIsNone(save_button)
+
+            # load an article edit page
+            erica.open_link(url=article_path)
+
+            # there's no save button on the edit form
+            edit_form = erica.soup.find(lambda tag: bool(tag.name == 'form' and u'/tree/{}/save/'.format(erica_branch_name) in tag.get('action')))
+            save_button = edit_form.find('input', value='Save')
+            self.assertIsNone(save_button)
 
 class TestApp (TestCase):
 
@@ -2482,10 +2726,9 @@ class TestApp (TestCase):
             erica.start_task(description=u'Lick Water Droplets From Leaves', beneficiary=u'Leopard Geckos')
             # Get the branch name
             branch_name = erica.get_branch_name()
-
             # Enter the "other" folder
             other_slug = u'other'
-            erica.follow_link(href='/tree/{}/edit/{}'.format(branch_name, other_slug))
+            erica.follow_link(href='/tree/{}/edit/{}/'.format(branch_name, other_slug))
 
             # Create a category
             category_name = u'Rubber Plants'
@@ -2513,7 +2756,7 @@ class TestApp (TestCase):
 
             # Enter the "other" folder
             other_slug = u'other'
-            erica.follow_link(href='/tree/{}/edit/{}'.format(branch_name, other_slug))
+            erica.follow_link(href='/tree/{}/edit/{}/'.format(branch_name, other_slug))
 
             # Create a category and sub-category
             category_name = u'Rubber Plants'
@@ -2816,7 +3059,8 @@ class TestApp (TestCase):
             # edit
             #
             response = self.test_client.get('/tree/{}/edit/'.format(fake_branch_name), follow_redirects=True)
-            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.status_code, 500)
+            self.assertTrue(view_functions.MESSAGE_ACTIVITY_DELETED in response.data)
             # the branch path should not be in the returned HTML
             self.assertFalse(PATTERN_BRANCH_COMMENT.format(fake_branch_name) in response.data)
             # the branch name should not be in the origin's branches list
@@ -2826,7 +3070,8 @@ class TestApp (TestCase):
             # history
             #
             response = self.test_client.get('/tree/{}/history/'.format(fake_branch_name), follow_redirects=True)
-            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.status_code, 500)
+            self.assertTrue(view_functions.MESSAGE_ACTIVITY_DELETED in response.data)
             # the branch path should not be in the returned HTML
             self.assertFalse(PATTERN_BRANCH_COMMENT.format(fake_branch_name) in response.data)
             # the branch name should not be in the origin's branches list
@@ -2836,7 +3081,8 @@ class TestApp (TestCase):
             # view
             #
             response = self.test_client.get('/tree/{}/view/'.format(fake_branch_name), follow_redirects=True)
-            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.status_code, 500)
+            self.assertTrue(view_functions.MESSAGE_ACTIVITY_DELETED in response.data)
             # the branch path should not be in the returned HTML
             self.assertFalse(PATTERN_BRANCH_COMMENT.format(fake_branch_name) in response.data)
             # the branch name should not be in the origin's branches list
@@ -2860,9 +3106,8 @@ class TestApp (TestCase):
             fake_task_beneficiary = u'Nobody'
             fake_branch_name = repo_functions.make_branch_name()
             response = self.test_client.post('/tree/{}/edit/'.format(fake_branch_name), data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': fake_page_slug}, follow_redirects=True)
-            self.assertEqual(response.status_code, 200)
-            # the branch name should not be in the returned HTML
-            # :TODO: need an assertion for this
+            self.assertEqual(response.status_code, 500)
+            self.assertTrue(view_functions.MESSAGE_ACTIVITY_DELETED in response.data)
             # the branch name should not be in the origin's branches list
             self.assertFalse(fake_branch_name in self.origin.branches)
 
@@ -2905,7 +3150,8 @@ class TestApp (TestCase):
             self.assertFalse(generated_branch_name in response.data)
 
             response = self.test_client.post('/tree/{}/save/{}'.format(generated_branch_name, fake_page_path), data={'layout': view_functions.ARTICLE_LAYOUT, 'hexsha': hexsha, 'en-title': 'Greetings', 'en-body': 'Hello world.\n', 'fr-title': '', 'fr-body': '', 'url-slug': 'hello'}, follow_redirects=True)
-            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.status_code, 500)
+            self.assertTrue(view_functions.MESSAGE_ACTIVITY_DELETED in response.data)
             # the task name should not be in the returned HTML
             self.assertFalse(PATTERN_BRANCH_COMMENT.format(fake_task_description) in response.data)
             # 'content tips', which is in the tree-branch-edit template, shouldn't be in the returned HTML either
@@ -3185,7 +3431,7 @@ class TestApp (TestCase):
 
             # Enter the "other" folder
             other_slug = u'other'
-            erica.follow_link(href='/tree/{}/edit/{}'.format(branch_name, other_slug))
+            erica.follow_link(href='/tree/{}/edit/{}/'.format(branch_name, other_slug))
 
             # Create a category that has a period in its name
             category_name = u'Mt. Splashmore'
@@ -3219,7 +3465,7 @@ class TestApp (TestCase):
 
             # Enter the "other" folder
             other_slug = u'other'
-            erica.follow_link(href='/tree/{}/edit/{}'.format(branch_name, other_slug))
+            erica.follow_link(href='/tree/{}/edit/{}/'.format(branch_name, other_slug))
 
             # Try to create a category with no name
             category_name = u''
@@ -3396,7 +3642,7 @@ class TestApp (TestCase):
             branch_name = user.get_branch_name()
 
             # Enter the "other" folder
-            user.follow_link(href='/tree/{}/edit/other'.format(branch_name))
+            user.follow_link(href='/tree/{}/edit/other/'.format(branch_name))
 
             # Create a category and fill it with some subcategories and articles
             category_names = [u'Indigestible Cellulose']
@@ -4516,7 +4762,7 @@ class TestApp (TestCase):
             # open the top level directory
             erica.open_link(url='/tree/{}/edit/'.format(branch_name))
             # enter the 'testing' directory
-            erica.follow_link(href='/tree/{}/edit/{}'.format(branch_name, testing_slug))
+            erica.follow_link(href='/tree/{}/edit/{}/'.format(branch_name, testing_slug))
             # we should've automatically been redirected into the 'categories' directory
             self.assertEqual(erica.path, '/tree/{}/edit/{}/'.format(branch_name, join(testing_slug, categories_slug)))
 

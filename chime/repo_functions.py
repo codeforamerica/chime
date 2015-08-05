@@ -47,6 +47,11 @@ REVIEW_STATE_ENDORSED = u'edits endorsed'
 # the site has been published
 REVIEW_STATE_PUBLISHED = u'changes published'
 
+# the working state of the activity
+WORKING_STATE_ACTIVE = u'active'
+WORKING_STATE_PUBLISHED = u'published'
+WORKING_STATE_DELETED = u'deleted'
+
 # Name of file in running state dir that signals a need to push upstream.
 NEEDS_PUSH_FILE = 'needs-push'
 
@@ -124,6 +129,17 @@ def _origin(branch_name):
     '''
     return 'origin/' + branch_name
 
+def get_activity_working_state(repo, default_branch_name, branch_name):
+    ''' Get whether the activity is active, published, or deleted.
+    '''
+    if branch_name in repo.tags:
+        return WORKING_STATE_PUBLISHED
+
+    if not get_branch_if_exists_at_origin(repo, default_branch_name, branch_name):
+        return WORKING_STATE_DELETED
+
+    return WORKING_STATE_ACTIVE
+
 def get_branch_start_point(clone, default_branch_name, new_branch_name):
     ''' Return the last commit on the branch
     '''
@@ -136,12 +152,11 @@ def get_branch_start_point(clone, default_branch_name, new_branch_name):
     return clone.branches[default_branch_name].commit
 
 def get_existing_branch(clone, default_branch_name, new_branch_name):
-    ''' Return an existing branch with the passed name, if it exists.
+    ''' Return an existing branch with the passed name, if it exists, otherwise return None.
     '''
     clone.git.fetch('origin')
 
     start_point = get_branch_start_point(clone, default_branch_name, new_branch_name)
-
     logging.debug('get_existing_branch() start_point is %s' % repr(start_point))
 
     # See if it already matches start_point
@@ -150,6 +165,13 @@ def get_existing_branch(clone, default_branch_name, new_branch_name):
             return clone.branches[new_branch_name]
 
     # See if the branch exists at the origin
+    return get_branch_if_exists_at_origin(clone, default_branch_name, new_branch_name)
+
+def get_branch_if_exists_at_origin(clone, default_branch_name, new_branch_name):
+    ''' Get and return a branch if it exists at the origin, otherwise return None
+    '''
+    clone.git.fetch('origin')
+
     try:
         # pull the branch but keep the active branch checked out
         active_branch_name = clone.active_branch.name
@@ -160,8 +182,6 @@ def get_existing_branch(clone, default_branch_name, new_branch_name):
 
     except GitCommandError:
         return None
-
-    return None
 
 def get_start_branch(clone, default_branch_name, task_description, task_beneficiary, author_email):
     ''' Start a new repository branch, push it to origin and return it.
@@ -270,6 +290,22 @@ def get_task_metadata_for_branch(clone, working_branch_name=None):
         task_metadata = yaml.safe_load(task_file_contents)
         if type(task_metadata) is not dict:
             raise ValueError(u'Unable to load metadata for an activity.')
+    else:
+        # try getting the info from a tag with the same name as the branch
+        task_metadata = get_task_metadata_from_tag(clone, working_branch_name)
+
+    return task_metadata
+
+def get_task_metadata_from_tag(clone, working_branch_name=None):
+    ''' Retrieve task metadata from a tag's message
+    '''
+    task_metadata = {}
+    # check locally first
+    if working_branch_name in clone.tags:
+        try:
+            task_metadata = json.loads(clone.tags[working_branch_name].tag.message)
+        except ValueError:
+            pass
 
     return task_metadata
 
@@ -404,38 +440,6 @@ def complete_branch(clone, default_branch_name, working_branch_name, comment_tex
     clone.git.push('--tags')
 
     return clone.commit()
-
-    # #
-    # # First, merge the default branch to the working branch.
-    # #
-    # try:
-    #     # sync: pull --rebase followed by push.
-    #     clone.git.pull('origin', default_branch_name, rebase=True)
-    #
-    # except:
-    #     # raise the two commits in conflict.
-    #     clone.git.fetch('origin')
-    #     remote_commit = clone.refs[_origin(default_branch_name)].commit
-    #
-    #     clone.git.rebase(abort=True)
-    #     clone.git.reset(hard=True)
-    #     raise MergeConflict(remote_commit, clone.commit())
-    #
-    # else:
-    #     clone.git.push('origin', working_branch_name)
-    #
-    # #
-    # # Merge the working branch back to the default branch.
-    # #
-    # clone.git.checkout(default_branch_name)
-    # clone.git.merge(working_branch_name)
-    # clone.git.push('origin', default_branch_name)
-    #
-    # #
-    # # Delete the working branch.
-    # #
-    # clone.remotes.origin.push(':' + working_branch_name)
-    # clone.delete_head([working_branch_name])
 
 def abandon_branch(clone, default_branch_name, working_branch_name, comment_text=None):
     ''' Complete work on a branch by abandoning and deleting it.
@@ -714,16 +718,16 @@ def add_empty_commit(clone, subject, body, push=True):
 
     return clone.active_branch.commit
 
-def update_review_state(clone, new_state, push=True):
+def update_review_state(clone, new_review_state, push=True):
     ''' Adds a new empty commit changing the review state
     '''
-    if new_state not in (REVIEW_STATE_FEEDBACK, REVIEW_STATE_ENDORSED):
-        raise Exception(u'The review state can\'t be set to {} here.'.format(new_state))
+    if new_review_state not in (REVIEW_STATE_FEEDBACK, REVIEW_STATE_ENDORSED):
+        raise Exception(u'The review state can\'t be set to {} here.'.format(new_review_state))
 
     message_text = u''
-    if new_state == REVIEW_STATE_FEEDBACK:
+    if new_review_state == REVIEW_STATE_FEEDBACK:
         message_text = ACTIVITY_FEEDBACK_MESSAGE
-    elif new_state == REVIEW_STATE_ENDORSED:
+    elif new_review_state == REVIEW_STATE_ENDORSED:
         message_text = ACTIVITY_ENDORSED_MESSAGE
 
     return add_empty_commit(clone=clone, subject=REVIEW_STATE_COMMIT_PREFIX, body=message_text, push=push)

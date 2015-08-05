@@ -19,7 +19,6 @@ import csv
 import re
 import json
 import time
-import sys
 
 from dateutil import parser, tz
 from dateutil.relativedelta import relativedelta
@@ -30,12 +29,14 @@ from .edit_functions import create_new_page, delete_file, update_page
 from .jekyll_functions import load_jekyll_doc, load_languages, build_jekyll_site
 from .google_api_functions import read_ga_config, fetch_google_analytics_for_page
 from .repo_functions import (
-    get_existing_branch, ignore_task_metadata_on_merge, get_message_classification, ChimeRepo,
-    ACTIVITY_CREATED_MESSAGE, get_task_metadata_for_branch, complete_branch, abandon_branch,
-    clobber_default_branch, MergeConflict, get_review_state_and_authorized, save_working_file,
-    update_review_state, provide_feedback, move_existing_file, get_last_edited_email, TASK_METADATA_FILENAME,
-    REVIEW_STATE_EDITED, REVIEW_STATE_FEEDBACK, REVIEW_STATE_ENDORSED, REVIEW_STATE_PUBLISHED,
-    MESSAGE_CATEGORY_EDIT, mark_upstream_push_needed
+    get_existing_branch, get_branch_if_exists_at_origin, ignore_task_metadata_on_merge,
+    get_message_classification, ChimeRepo, get_task_metadata_for_branch, complete_branch,
+    abandon_branch, clobber_default_branch, get_review_state_and_authorized,
+    save_working_file, update_review_state, provide_feedback, move_existing_file,
+    get_last_edited_email, mark_upstream_push_needed, MergeConflict,
+    get_activity_working_state, ACTIVITY_CREATED_MESSAGE, TASK_METADATA_FILENAME,
+    REVIEW_STATE_EDITED, REVIEW_STATE_FEEDBACK, REVIEW_STATE_ENDORSED, MESSAGE_CATEGORY_EDIT,
+    WORKING_STATE_PUBLISHED, WORKING_STATE_DELETED, WORKING_STATE_ACTIVE
 )
 
 from .href import needs_redirect, get_redirect
@@ -69,6 +70,9 @@ LAYOUT_PLURAL_LOOKUP = {
     FILE_FILE_TYPE: 'files',
     IMAGE_FILE_TYPE: 'images'
 }
+
+# error messages
+MESSAGE_ACTIVITY_DELETED = u'This activity has been deleted or never existed! Please start a new activity to make changes.'
 
 # files that match these regex patterns will not be shown in the file explorer
 FILE_FILTERS = [
@@ -259,6 +263,7 @@ def is_editable(file_path, layout=None):
 def describe_directory_contents(clone, file_path):
     ''' Return a description of the contents of the passed path
     '''
+    file_path = file_path.rstrip('/')
     full_path = join(clone.working_dir, file_path)
     described_files = []
     for (dir_path, dir_names, file_names) in walk(full_path):
@@ -446,8 +451,6 @@ def log_application_errors(route_function):
         try:
             return route_function(*args, **kwargs)
         except Exception as e:
-            # save the details of the original exception
-            t, v, tb = sys.exc_info()
             # not all exceptions have a 'code' attribute
             error_code = getattr(e, 'code', 500)
 
@@ -456,7 +459,7 @@ def log_application_errors(route_function):
             else:
                 Logger.error(e, exc_info=True, extra={'request': request})
 
-            raise t, v, tb
+            raise
 
     return decorated_function
 
@@ -545,7 +548,7 @@ def synched_checkout_required(route_function):
     '''
     @wraps(route_function)
     def decorated_function(*args, **kwargs):
-        checkout = get_repo(flask_app=current_app)
+        repo = get_repo(flask_app=current_app)
         # get the branch name from request.form if it's not in kwargs
         branch_name_raw = kwargs['branch_name'] if 'branch_name' in kwargs else None
         if not branch_name_raw:
@@ -553,26 +556,57 @@ def synched_checkout_required(route_function):
 
         branch_name = branch_var2name(branch_name_raw)
         master_name = current_app.config['default_branch']
-        branch = get_existing_branch(checkout, master_name, branch_name)
 
-        if not branch:
-            # redirect and flash an error
-            Logger.debug('  branch {} does not exist, redirecting'.format(branch_name_raw))
-            flash(u'There is no {} branch!'.format(branch_name_raw), u'warning')
-            return redirect('/')
+        # fetch
+        repo.git.fetch('origin')
 
-        branch.checkout()
+        # are we in a remotely published or deleted activity?
+        working_state = get_activity_working_state(repo, master_name, branch_name)
+        if working_state == WORKING_STATE_PUBLISHED:
+            tag_ref = repo.tag('refs/tags/{}'.format(branch_name))
+            commit = tag_ref.commit
+            published_date = repo.git.show('--format=%ad', '--date=relative', commit.hexsha).strip()
+            published_by = commit.committer.email
+            flash_only(u'This activity was published {} by {}! Please start a new activity to make changes.'.format(published_date, published_by), u'warning')
 
-        Logger.debug('  checked out to {}'.format(branch))
-        response = route_function(*args, **kwargs)
+        elif working_state == WORKING_STATE_DELETED:
+            flash_only(MESSAGE_ACTIVITY_DELETED, u'warning')
 
-        # Push upstream only if the request method indicates a change.
-        if request.method in ('PUT', 'POST', 'DELETE'):
-            mark_upstream_push_needed(current_app.config['RUNNING_STATE_DIR'])
+        else:
+            branch = get_existing_branch(repo, master_name, branch_name)
+            branch.checkout()
+            Logger.debug('  checked out to {}'.format(branch))
 
-        return response
+            # Push upstream only if the request method indicates a change.
+            if request.method in ('PUT', 'POST', 'DELETE'):
+                mark_upstream_push_needed(current_app.config['RUNNING_STATE_DIR'])
+
+        return route_function(*args, **kwargs)
 
     return decorated_function
+
+def flash_unique(message, category):
+    ''' Add the passed message to flash messages if it's not an exact dupe of
+        an existing message.
+    '''
+    session_flashes = session.get('_flashes', [])
+    if (category, message) not in session_flashes:
+        flash(message, category)
+
+def flash_only(message, category, by_category=False):
+    ''' Add the passed message to flash messages if there's not already a
+        message in the queue. Pass by_category=True and the passed message
+        will be flashed if it's the only one of its type.
+    '''
+    session_flashes = session.get('_flashes', [])
+    if not by_category:
+        if not len(session_flashes):
+            flash(message, category)
+
+    else:
+        # category is in the first position in the flash tuples
+        if category not in [item[0] for item in session_flashes]:
+            flash(message, category)
 
 def get_relative_date(repo, file_path):
     ''' Return the relative modified date for the passed path in the passed repo
@@ -739,9 +773,7 @@ def sorted_paths(repo, branch_name, path=None, showallfiles=False):
     if showallfiles:
         file_names = all_sorted_files_dirs
 
-    view_paths = [join('/tree/%s/view' % branch_name2path(branch_name), join(path or '', fn))
-                  for fn in file_names]
-
+    view_paths = [join('/tree/{}/view'.format(branch_name2path(branch_name)), join(path or '', fn)) for fn in file_names]
     full_paths = [join(full_path, name) for name in file_names]
     path_pairs = zip(full_paths, view_paths)
 
@@ -752,6 +784,7 @@ def sorted_paths(repo, branch_name, path=None, showallfiles=False):
             info = {}
             info['name'] = basename(edit_path)
             info['display_type'] = path_display_type(edit_path)
+            info['link_name'] = u'{}/'.format(info['name']) if info['display_type'] in (FOLDER_FILE_TYPE, CATEGORY_LAYOUT, ARTICLE_LAYOUT) else info['name']
             file_title = get_value_from_front_matter('title', join(edit_path, u'index.{}'.format(CONTENT_FILE_EXTENSION)))
             if not file_title:
                 if info['display_type'] in (FOLDER_FILE_TYPE, IMAGE_FILE_TYPE, FILE_FILE_TYPE):
@@ -797,15 +830,15 @@ def make_directory_columns(clone, branch_name, repo_path=None, showallfiles=Fals
                 {'base_path': '',
                  'files':
                     [
-                        {'name': 'hello', 'title': 'Hello', 'base_path': '', 'file_path': 'hello', 'edit_path': '/tree/8bf27f6/edit/hello', 'view_path': '/tree/dfffcd8/view/hello', 'display_type': 'category', 'is_editable': False, 'modified_date': '75 minutes ago', 'selected': True},
-                        {'name': 'goodbye', 'title': 'Goodbye', 'base_path': '', 'file_path': 'goodbye', 'edit_path': '/tree/8bf27f6/edit/goodbye', 'view_path': '/tree/dfffcd8/view/goodbye', 'display_type': 'category', 'is_editable': False, 'modified_date': '2 days ago', 'selected': False}
+                        {'name': 'hello', 'title': 'Hello', 'base_path': '', 'file_path': 'hello', 'edit_path': '/tree/8bf27f6/edit/hello/', 'view_path': '/tree/dfffcd8/view/hello', 'display_type': 'category', 'is_editable': False, 'modified_date': '75 minutes ago', 'selected': True},
+                        {'name': 'goodbye', 'title': 'Goodbye', 'base_path': '', 'file_path': 'goodbye', 'edit_path': '/tree/8bf27f6/edit/goodbye/', 'view_path': '/tree/dfffcd8/view/goodbye', 'display_type': 'category', 'is_editable': False, 'modified_date': '2 days ago', 'selected': False}
                     ]
                 },
                 {'base_path': 'hello',
                  'files':
                     [
-                        {'name': 'world', 'title': 'World', 'base_path': 'hello', 'file_path': 'hello/world', 'edit_path': '/tree/8bf27f6/edit/hello/world', 'view_path': '/tree/dfffcd8/view/hello/world', 'display_type': 'category', 'is_editable': False, 'modified_date': '75 minutes ago', 'selected': True},
-                        {'name': 'moon', 'title': 'Moon', 'base_path': 'hello', 'file_path': 'hello/moon', 'edit_path': '/tree/8bf27f6/edit/hello/moon', 'view_path': '/tree/dfffcd8/view/hello/moon', 'display_type': 'category', 'is_editable': False, 'modified_date': '4 days ago', 'selected': False}
+                        {'name': 'world', 'title': 'World', 'base_path': 'hello', 'file_path': 'hello/world', 'edit_path': '/tree/8bf27f6/edit/hello/world/', 'view_path': '/tree/dfffcd8/view/hello/world', 'display_type': 'category', 'is_editable': False, 'modified_date': '75 minutes ago', 'selected': True},
+                        {'name': 'moon', 'title': 'Moon', 'base_path': 'hello', 'file_path': 'hello/moon', 'edit_path': '/tree/8bf27f6/edit/hello/moon/', 'view_path': '/tree/dfffcd8/view/hello/moon', 'display_type': 'category', 'is_editable': False, 'modified_date': '4 days ago', 'selected': False}
                     ]
                 }
             ]
@@ -831,7 +864,7 @@ def make_directory_columns(clone, branch_name, repo_path=None, showallfiles=Fals
         current_modify_path = join(modify_path_root, base_path)
         files = sorted_paths(clone, branch_name, base_path, showallfiles)
         # name, title, base_path, file_path, edit_path, view_path, display_type, is_editable, modified_date, selected
-        listing = [{'name': item['name'], 'title': item['title'], 'base_path': base_path, 'file_path': join(base_path, item['name']), 'edit_path': join(current_edit_path, item['name']), 'modify_path': join(current_modify_path, item['name']), 'view_path': item['view_path'], 'display_type': item['display_type'], 'is_editable': item['is_editable'], 'modified_date': item['modified_date'], 'selected': (current_dir == item['name'])} for item in files]
+        listing = [{'name': item['name'], 'title': item['title'], 'base_path': base_path, 'file_path': join(base_path, item['link_name']), 'edit_path': join(current_edit_path, item['link_name']), 'modify_path': join(current_modify_path, item['link_name']), 'view_path': item['view_path'], 'display_type': item['display_type'], 'is_editable': item['is_editable'], 'modified_date': item['modified_date'], 'selected': (current_dir == item['name'])} for item in files]
         dir_listings.append({'base_path': base_path, 'files': listing})
 
     return dir_listings
@@ -859,7 +892,7 @@ def publish_commit(repo, publish_path):
         else:
             del environ['GIT_WORK_TREE']
 
-def update_activity_state(safe_branch, comment_text, action_list, redirect_path):
+def update_activity_review_state(safe_branch, comment_text, action_list, redirect_path):
     ''' Update the activity review state, which may include merging, abandoning, or clobbering
         the associated branch.
     '''
@@ -879,9 +912,9 @@ def update_activity_state(safe_branch, comment_text, action_list, redirect_path)
             # handle a review action
             if action != 'comment':
                 if action == 'request_feedback':
-                    update_review_state(clone=repo, new_state=REVIEW_STATE_FEEDBACK, push=True)
+                    update_review_state(clone=repo, new_review_state=REVIEW_STATE_FEEDBACK, push=True)
                 elif action == 'endorse_edits':
-                    update_review_state(clone=repo, new_state=REVIEW_STATE_ENDORSED, push=True)
+                    update_review_state(clone=repo, new_review_state=REVIEW_STATE_ENDORSED, push=True)
             elif not comment_text:
                 flash(u'You can\'t leave an empty comment!', u'warning')
 
@@ -932,7 +965,7 @@ def publish_or_destroy_activity(branch_name, action, comment_text=None):
         raise conflict
 
     else:
-        activity_blurb = u'the "{task_description}" activity for {task_beneficiary}'.format(task_description=activity['task_description'], task_beneficiary=activity['task_beneficiary'])
+        activity_blurb = u'"{task_description}" activity for {task_beneficiary}'.format(task_description=activity['task_description'], task_beneficiary=activity['task_beneficiary'])
         if action == 'merge':
             flash(u'You published the {activity_blurb}!'.format(activity_blurb=activity_blurb), u'notice')
         elif action == 'abandon':
@@ -1022,10 +1055,13 @@ def make_kwargs_for_activity_files_page(repo, branch_name, path):
         working_branch_name=branch_name, actor_email=session.get('email', None)
     )
 
+    working_state = get_activity_working_state(repo, current_app.config['default_branch'], branch_name)
+
     activity.update(date_created=date_created, date_updated=date_updated,
                     edit_path=u'/tree/{}/edit/'.format(branch_name2path(branch_name)),
                     overview_path=u'/tree/{}/'.format(branch_name2path(branch_name)),
-                    review_state=review_state, review_authorized=review_authorized)
+                    review_state=review_state, review_authorized=review_authorized,
+                    working_state=working_state)
 
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(branch=branch_name, safe_branch=branch_name2path(branch_name),
@@ -1098,9 +1134,12 @@ def render_edit_view(repo, branch_name, path, file):
         working_branch_name=branch_name, actor_email=session.get('email', None)
     )
 
+    working_state = get_activity_working_state(repo, current_app.config['default_branch'], branch_name)
+
     activity.update(edit_path=u'/tree/{}/edit/'.format(branch_name2path(branch_name)),
                     overview_path=u'/tree/{}/'.format(branch_name2path(branch_name)),
-                    review_state=review_state, review_authorized=review_authorized)
+                    review_state=review_state, review_authorized=review_authorized,
+                    working_state=working_state)
 
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(branch=branch_name, safe_branch=branch_name2path(branch_name),
@@ -1236,7 +1275,7 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
     existing_branch = get_existing_branch(repo, default_branch_name, working_branch_name)
 
     if not existing_branch:
-        flash(u'There is no {} branch!'.format(working_branch_name), u'warning')
+        flash_only(MESSAGE_ACTIVITY_DELETED, u'warning')
         return file_path, False
 
     commit = existing_branch.commit
