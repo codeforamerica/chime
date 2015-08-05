@@ -2081,10 +2081,10 @@ class TestProcess (TestCase):
             erica.follow_link('/tree/{}/edit/other'.format(erica_branchname2))
             self.assertIsNotNone(erica.soup.find(text='Dollars'), 'Should see first published category')
             
-            # Frances should now also expect to see Erica's published category.
+            # Frances should still not expect to see Erica's published category.
             frances.open_link('/tree/{}/edit/'.format(frances_branchname))
             frances.follow_link('/tree/{}/edit/other'.format(frances_branchname))
-            self.assertIsNotNone(frances.soup.find(text='Dollars'), 'Should also see first published category')
+            self.assertIsNone(frances.soup.find(text='Dollars'), 'Should not see first published category')
 
     # in TestProcess
     def test_editing_process_with_conflicting_publish(self):
