@@ -581,14 +581,17 @@ class TestRepo (TestCase):
                                          self.clone2.commit().hexsha, 'master')
 
         #
-        # Show that upstream changes from master have been merged here.
+        # Show that upstream changes from master have NOT been merged here.
         #
         with open(self.clone2.working_dir + '/index.md') as file:
             front2b, body2b = jekyll_functions.load_jekyll_doc(file)
 
-        self.assertEqual(front2b[title_key_name], front1[title_key_name])
+        self.assertNotEqual(front2b[title_key_name], front1[title_key_name])
         self.assertEqual(body2b.strip(), 'Another change to the body')
-        self.assertTrue(self.clone2.commit().message.startswith('Merged work from'))
+        self.assertFalse(self.clone2.commit().message.startswith('Merged work from'))
+        
+        # There's no conflict; the merge would be clean.
+        self.assertIsNone(repo_functions.get_conflict(self.clone2, 'master'))
 
     # in TestRepo
     def test_multifile_merge(self):
@@ -711,9 +714,6 @@ class TestRepo (TestCase):
         edit_functions.create_new_page(self.clone1, '', 'conflict.md',
                                        dict(title='Hello'), 'Hello hello.')
 
-        edit_functions.create_new_page(self.clone2, '', 'conflict.md',
-                                       dict(title='Goodbye'), 'Goodbye goodbye.')
-
         #
         # Show that the changes from the first branch made it to origin.
         #
@@ -732,13 +732,19 @@ class TestRepo (TestCase):
         #
         # Show that the changes from the second branch conflict with the first.
         #
-        with self.assertRaises(repo_functions.MergeConflict) as conflict:
-            args2 = self.clone2, 'conflict.md', '...', branch2.commit.hexsha, 'master'
-            repo_functions.save_working_file(*args2)
+        self.assertIsNone(repo_functions.get_conflict(self.clone2, 'master'),
+                          "Shouldn't see any conflict yet")
 
-        self.assertEqual(conflict.exception.remote_commit, commit2)
+        edit_functions.create_new_page(self.clone2, '', 'conflict.md',
+                                       dict(title='Goodbye'), 'Goodbye goodbye.')
 
-        diffs = conflict.exception.remote_commit.diff(conflict.exception.local_commit)
+        args2 = self.clone2, 'conflict.md', '...', branch2.commit.hexsha, 'master'
+        repo_functions.save_working_file(*args2)
+        
+        conflict = repo_functions.get_conflict(self.clone2, 'master')
+
+        self.assertTrue(bool(conflict))
+        diffs = conflict.remote_commit.diff(conflict.local_commit)
 
         # there are two diffs; the first is addition of the
         # task metadata file, the second is the conflict file
@@ -2132,17 +2138,22 @@ class TestProcess (TestCase):
                 frances = ChimeTestClient(self.app.test_client(), self)
                 frances.sign_in('frances@example.com')
 
+            # Start a new task, "Bobbing for Apples", create a new category
+            # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
+            args = 'Bobbing', 'Apples', 'Ninjas', 'Flipping Out', 'So Awesome'
+            frances.add_branch_cat_subcat_article(*args)
+            f_article_path = frances.path
+
             # Start a new task, "Diving for Dollars", create a new category
             # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
             args = 'Diving', 'Dollars', 'Ninjas', 'Flipping Out', 'So Awesome'
-            branch_name = erica.add_branch_cat_subcat_article(*args)
+            e_branch_name = erica.add_branch_cat_subcat_article(*args)
 
             # Edit the new article.
             erica.edit_article(title_str='So, So Awesome', body_str='It was the best of times.')
-            article_path = erica.path
 
             # Ask for feedback
-            erica.follow_link(href='/tree/{}'.format(branch_name))
+            erica.follow_link(href='/tree/{}'.format(e_branch_name))
             erica.request_feedback(feedback_str='Is this okay?')
 
             #
@@ -2154,10 +2165,10 @@ class TestProcess (TestCase):
             frances.publish_activity()
             
             #
-            # Switch back and try to make another edit, but watch it fail.
+            # Now introduce a conflicting change on the original activity.
             #
-            erica.open_link(article_path)
-            erica.edit_outdated_article(title_str='Just Awful', body_str='It was the worst of times.')
+            frances.open_link(f_article_path)
+            frances.edit_article(title_str='So, So Awful', body_str='It was the worst of times.')
 
     # in TestProcess
     def test_task_not_marked_published_after_merge_conflict(self):
