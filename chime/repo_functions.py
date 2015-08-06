@@ -61,7 +61,8 @@ CONFLICT_ACTION_DELETED = u'deleted'
 CONFLICT_ACTION_EDITED = u'edited'
 
 # Flash text for merge conflict warnings
-MERGE_CONFLICT_WARNING_FLASH_MESSAGE = 'neener neener'
+MERGE_CONFLICT_WARNING_FLASH_MESSAGE = 'Someone else published a conflicting change.'
+UPSTREAM_EDIT_INFO_FLASH_MESSAGE = 'Someone else published a version of this site in the meantime.'
 
 class MergeConflict (Exception):
     def __init__(self, remote_commit, local_commit):
@@ -555,6 +556,17 @@ def get_conflict(clone, other_branch_name):
     else:
         # Merged clean, we're clean, everybody's clean.
         clone.git.reset('--hard')
+
+def get_changed(clone, other_branch_name):
+    ''' Check differenace against origin default branch, return a boolean True if any.
+    '''
+    clone.git.fetch('origin', other_branch_name)
+    
+    remote_commit = clone.refs[_origin(other_branch_name)].commit
+    local_commit = clone.commit()
+    
+    if remote_commit.hexsha != local_commit.hexsha:
+        return True
 
 def move_existing_file(clone, old_path, new_path, base_sha, default_branch_name):
     ''' Move a file in the working dir, push it to origin, return the commit.

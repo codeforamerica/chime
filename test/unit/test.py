@@ -596,7 +596,8 @@ class TestRepo (TestCase):
         self.assertFalse(self.clone2.commit().message.startswith('Merged work from'))
         
         # There's no conflict; the merge would be clean.
-        self.assertIsNone(repo_functions.get_conflict(self.clone2, 'master'))
+        self.assertIsNone(repo_functions.get_conflict(self.clone2, 'master'), "There is no conflict")
+        self.assertIsNotNone(repo_functions.get_changed(self.clone2, 'master'), "A change should be visible")
 
     # in TestRepo
     def test_multifile_merge(self):
@@ -2180,6 +2181,57 @@ class TestProcess (TestCase):
 
             frances.follow_link(href='/tree/{}'.format(f_branch_name))
             self.assertIsNotNone(frances.soup.find(text=repo_functions.MERGE_CONFLICT_WARNING_FLASH_MESSAGE),
+                                 'Should see a warning about the conflict in the activity history.')
+
+    def test_editing_process_with_nonconflicting_edit(self):
+        ''' Check edit process with a user attempting to change an activity with no conflict.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
+            
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in('frances@example.com')
+
+            # Start a new task, "Bobbing for Apples", create a new category
+            # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
+            args = 'Bobbing', 'Apples', 'Ninjas', 'Flipping Out', 'So Awesome'
+            f_branch_name = frances.add_branch_cat_subcat_article(*args)
+            f_article_path = frances.path
+
+            # Start a new task, "Diving for Dollars", create a new category
+            # "Samurai", subcategory "Flipping Out", and article "So Awesome".
+            args = 'Diving', 'Dollars', 'Samurai', 'Flipping Out', 'So Awesome'
+            e_branch_name = erica.add_branch_cat_subcat_article(*args)
+
+            # Edit the new article.
+            erica.edit_article(title_str='So, So Awesome', body_str='It was the best of times.')
+
+            # Ask for feedback
+            erica.follow_link(href='/tree/{}'.format(e_branch_name))
+            erica.request_feedback(feedback_str='Is this okay?')
+
+            #
+            # Switch users and publish the article.
+            #
+            frances.open_link(url=erica.path)
+            frances.leave_feedback(feedback_str='It is super-great.')
+            frances.approve_activity()
+            frances.publish_activity()
+            
+            #
+            # Now introduce a conflicting change on the original activity,
+            # and verify that the expected flash warning is displayed.
+            #
+            frances.open_link(f_article_path)
+            frances.edit_article(title_str='So, So Awful', body_str='It was the worst of times.')
+            self.assertIsNotNone(frances.soup.find(text=repo_functions.UPSTREAM_EDIT_INFO_FLASH_MESSAGE),
+                                 'Should see a warning about the conflict above the article.')
+
+            frances.follow_link(href='/tree/{}'.format(f_branch_name))
+            self.assertIsNotNone(frances.soup.find(text=repo_functions.UPSTREAM_EDIT_INFO_FLASH_MESSAGE),
                                  'Should see a warning about the conflict in the activity history.')
 
     # in TestProcess
