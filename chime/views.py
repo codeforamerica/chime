@@ -273,6 +273,9 @@ def branch_view(branch_name, path=None):
 def branch_edit(branch_name, path=None):
     repo = get_repo(flask_app=current_app)
     branch_name = branch_var2name(branch_name)
+    
+    if repo_functions.get_conflict(repo, current_app.config['default_branch']):
+        flash(repo_functions.MERGE_CONFLICT_WARNING_FLASH_MESSAGE, u'warning')
 
     full_path = join(repo.working_dir, path or '.').rstrip('/')
 
@@ -465,6 +468,9 @@ def show_activity_overview(branch_name):
     branch_name = branch_var2name(branch_name)
     repo = get_repo(flask_app=current_app)
     safe_branch = branch_name2path(branch_name)
+
+    if repo_functions.get_conflict(repo, current_app.config['default_branch']):
+        flash(repo_functions.MERGE_CONFLICT_WARNING_FLASH_MESSAGE, u'warning')
 
     # contains 'author_email', 'task_description', 'task_beneficiary'
     activity = repo_functions.get_task_metadata_for_branch(repo, branch_name)

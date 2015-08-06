@@ -55,6 +55,9 @@ CONFLICT_ACTION_CREATED = u'created'
 CONFLICT_ACTION_DELETED = u'deleted'
 CONFLICT_ACTION_EDITED = u'edited'
 
+# Flash text for merge conflict warnings
+MERGE_CONFLICT_WARNING_FLASH_MESSAGE = 'neener neener'
+
 class MergeConflict (Exception):
     def __init__(self, remote_commit, local_commit):
         self.remote_commit = remote_commit

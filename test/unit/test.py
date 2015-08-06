@@ -2141,7 +2141,7 @@ class TestProcess (TestCase):
             # Start a new task, "Bobbing for Apples", create a new category
             # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
             args = 'Bobbing', 'Apples', 'Ninjas', 'Flipping Out', 'So Awesome'
-            frances.add_branch_cat_subcat_article(*args)
+            f_branch_name = frances.add_branch_cat_subcat_article(*args)
             f_article_path = frances.path
 
             # Start a new task, "Diving for Dollars", create a new category
@@ -2165,10 +2165,17 @@ class TestProcess (TestCase):
             frances.publish_activity()
             
             #
-            # Now introduce a conflicting change on the original activity.
+            # Now introduce a conflicting change on the original activity,
+            # and verify that the expected flash warning is displayed.
             #
             frances.open_link(f_article_path)
             frances.edit_article(title_str='So, So Awful', body_str='It was the worst of times.')
+            self.assertIsNotNone(frances.soup.find(text=repo_functions.MERGE_CONFLICT_WARNING_FLASH_MESSAGE),
+                                 'Should see a warning about the conflict above the article.')
+
+            frances.follow_link(href='/tree/{}'.format(f_branch_name))
+            self.assertIsNotNone(frances.soup.find(text=repo_functions.MERGE_CONFLICT_WARNING_FLASH_MESSAGE),
+                                 'Should see a warning about the conflict in the activity history.')
 
     # in TestProcess
     def test_task_not_marked_published_after_merge_conflict(self):
