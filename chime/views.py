@@ -22,7 +22,8 @@ from .view_functions import (
     is_allowed_email, common_template_args, log_application_errors, is_article_dir, is_category_dir,
     make_activity_history, summarize_activity_history, render_edit_view, render_modify_dir, render_list_dir,
     add_article_or_category, strip_index_file, delete_page, save_page, render_activities_list, sorted_paths,
-    update_activity_state, CONTENT_FILE_EXTENSION, FOLDER_FILE_TYPE
+    update_activity_review_state, flash_only, file_display_name, CONTENT_FILE_EXTENSION, FOLDER_FILE_TYPE, ARTICLE_LAYOUT,
+    CATEGORY_LAYOUT, MESSAGE_ACTIVITY_DELETED
 )
 
 from .google_api_functions import (
@@ -225,7 +226,7 @@ def update_activity():
     comment_text = u''
     action_list = [item for item in request.form if item != 'comment_text']
     safe_branch = branch_name2path(branch_var2name(request.form.get('branch')))
-    return update_activity_state(safe_branch=safe_branch, comment_text=comment_text, action_list=action_list, redirect_path='/tree/{}/'.format(safe_branch))
+    return update_activity_review_state(safe_branch=safe_branch, comment_text=comment_text, action_list=action_list, redirect_path='/tree/{}/'.format(safe_branch))
 
 @app.route('/checkouts/<ref>.zip')
 @log_application_errors
@@ -258,7 +259,8 @@ def branch_view(branch_name, path=None):
     local_paths = glob(local_base + '.*')
 
     if not local_paths:
-        return '404: ' + local_base
+        flash_only(MESSAGE_ACTIVITY_DELETED, u'warning')
+        abort(500)
 
     local_path = local_paths[0]
     mime_type, _ = guess_type(local_path)
@@ -359,7 +361,8 @@ def branch_modify_category(branch_name, path=u''):
             Logger.debug('save')
             repo_functions.save_working_file(clone=repo, path=path, message=commit_message, base_sha=repo.commit().hexsha, default_branch_name=master_name)
             # flash the human-readable part of the commit message
-            flash(commit_message.split('\n')[0], u'notice')
+            flash_message = commit_message.split('\n')[0]
+            flash(flash_message, u'notice')
 
         safe_branch = branch_name2path(branch_var2name(branch_name))
         return redirect('/tree/{}/edit/{}'.format(safe_branch, redirect_path), code=303)
@@ -397,9 +400,9 @@ def branch_modify_category(branch_name, path=u''):
         if check_front_matter != front_matter:
             new_path, did_save = save_page(repo, current_app.config['default_branch'], branch_name, index_slug, new_values)
             if not did_save:
-                flash(u'Unable to save changes to the file {}!'.format(front_matter['title']), u'error')
+                flash(u'Unable to save changes to {}!'.format(front_matter['title']), u'error')
             else:
-                flash(u'Saved changes to the file {}! Remember to submit this change for feedback when you\'re ready to go live.'.format(front_matter['en-title']), u'notice')
+                flash(u'Saved changes to the {} topic! Remember to submit this change for feedback when you\'re ready to go live.'.format(front_matter['en-title']), u'notice')
 
         return redirect('/tree/{}/modify/{}'.format(safe_branch, strip_index_file(new_path)), code=303)
 
@@ -429,14 +432,15 @@ def branch_edit_file(branch_name, path=None):
         redirect_path = path
         commit_message = u'Uploaded file "{}"'.format(file_path)
 
-    elif action == 'create' and (create_what == 'article' or create_what == 'category') and create_path is not None:
+    elif action == 'create' and (create_what == ARTICLE_LAYOUT or create_what == CATEGORY_LAYOUT) and create_path is not None:
         # don't allow empty names for categories or articles
         request_path = request.form['request_path'].strip()
         if len(request_path) == 0 or len(slugify(request_path)) == 0:
             if len(request_path) != 0:
-                flash(u'{} is not an acceptable {} name!'.format(request_path, create_what), u'warning')
+                display_what = file_display_name(create_what)
+                flash(u'{} is not an acceptable {} name!'.format(request_path, display_what), u'warning')
             else:
-                describe_what = u'an article' if create_what == 'article' else u'a category'
+                describe_what = u'an article' if create_what == 'article' else u'a topic'
                 flash(u'Please enter a name to create {}!'.format(describe_what), u'warning')
             return redirect('/tree/{}/edit/{}'.format(safe_branch, file_path), code=303)
 
@@ -444,11 +448,16 @@ def branch_edit_file(branch_name, path=None):
         if do_save:
             commit = repo.commit()
             commit_message = add_message
+            describe_what = file_display_name(create_what)
+            flash(u'Created a new {} named {}! Remember to submit this change for feedback when you\'re ready to go live.'.format(describe_what, request.form['request_path']), u'notice')
         else:
             flash(add_message, u'notice')
 
     elif action == 'delete' and 'request_path' in request.form:
         redirect_path, do_save, commit_message = delete_page(repo=repo, browse_path=path, target_path=request.form['request_path'])
+        if do_save:
+            # flash the human-readable part of the commit message
+            flash(u'{}! Remember to submit this change for feedback when you\'re ready to go live.'.format(commit_message.split('\n')[0]), u'notice')
 
     else:
         raise Exception(u'Tried to edit a file, but received an unfamiliar command.')
@@ -505,12 +514,14 @@ def show_activity_overview(branch_name):
     date_created = repo.git.log('--format=%ad', '--date=relative', '--', repo_functions.TASK_METADATA_FILENAME).split('\n')[-1]
     date_updated = repo.git.log('--format=%ad', '--date=relative').split('\n')[0]
 
+    working_state = repo_functions.get_activity_working_state(repo, current_app.config['default_branch'], branch_name)
+
     activity.update(date_created=date_created, date_updated=date_updated,
                     edit_path=u'/tree/{}/edit/'.format(safe_branch),
                     overview_path=u'/tree/{}/'.format(safe_branch), safe_branch=safe_branch,
                     branch=safe_branch, history=history, history_summary=history_summary,
                     review_state=review_state, review_authorized=review_authorized,
-                    last_edited_email=last_edited_email)
+                    last_edited_email=last_edited_email, working_state=working_state)
 
     kwargs.update(activity=activity, app_authorized=app_authorized, languages=languages)
 
@@ -526,7 +537,7 @@ def edit_activity_overview(branch_name):
     comment_text = request.form.get('comment_text', u'').strip()
     action_list = [item for item in request.form if item != 'comment_text']
     safe_branch = branch_name2path(branch_var2name(branch_name))
-    return update_activity_state(safe_branch=safe_branch, comment_text=comment_text, action_list=action_list, redirect_path='/tree/{}/'.format(safe_branch))
+    return update_activity_review_state(safe_branch=safe_branch, comment_text=comment_text, action_list=action_list, redirect_path='/tree/{}/'.format(safe_branch))
 
 @app.route('/tree/<branch_name>/history/', methods=['GET'])
 @app.route('/tree/<branch_name>/history/<path:path>', methods=['GET'])
@@ -588,6 +599,9 @@ def branch_save(branch_name, path):
     repo = get_repo(flask_app=current_app)
     safe_branch = branch_name2path(branch_var2name(branch_name))
     new_path, did_save = save_page(repo, current_app.config['default_branch'], branch_name, path, request.form)
+    if did_save:
+        flash(u'Saved changes to the {} article! Remember to submit this change for feedback when you\'re ready to go live.'.format(request.form['en-title']), u'notice')
+
     return redirect('/tree/{}/edit/{}'.format(safe_branch, new_path), code=303)
 
 @app.route('/.well-known/deploy-key.txt')

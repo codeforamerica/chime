@@ -58,6 +58,7 @@ class ChimeTestClient:
         # Look for the link
         link = self.soup.find(lambda tag: bool(tag.name == 'a' and tag['href'] == href))
         response = self.client.get(link['href'])
+        redirect = href
         redirect_count = 0
         while response.status_code in (301, 302) and redirect_count < 3:
             redirect = urlparse(response.headers['Location']).path
@@ -105,6 +106,22 @@ class ChimeTestClient:
             self.soup = BeautifulSoup(response.data)
         else:
             self.follow_redirect(response, 303)
+
+    def delete_task(self, branch_name):
+        ''' Look for button to delete a task, click it.
+        '''
+        hidden = self.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('value') == branch_name))
+        form = hidden.find_parent('form')
+
+        self.test.assertEqual(form['method'].upper(), 'POST')
+
+        data = {i['name']: i.get('value', u'')
+                for i in form.find_all(['input', 'button'])}
+
+        delete_task_path = urlparse(urljoin(self.path, form['action'])).path
+        response = self.client.post(delete_task_path, data=data)
+
+        self.follow_redirect(response, 303)
 
     def add_category(self, category_name):
         ''' Look for form to add a category, submit it.
@@ -164,7 +181,7 @@ class ChimeTestClient:
         branch_name = self.get_branch_name()
 
         # Look for an "other" link that we know about - is it a category?
-        self.follow_link(href='/tree/{}/edit/other'.format(branch_name))
+        self.follow_link(href='/tree/{}/edit/other/'.format(branch_name))
 
         # Create a new category, subcategory, and article.
         self.add_category(category_name=cat)
