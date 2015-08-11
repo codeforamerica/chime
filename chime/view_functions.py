@@ -22,21 +22,21 @@ import time
 
 from dateutil import parser, tz
 from dateutil.relativedelta import relativedelta
-from flask import request, session, current_app, redirect, flash, render_template
+from flask import request, session, current_app, redirect, flash, render_template, abort
 from requests import get
 
 from .edit_functions import create_new_page, delete_file, update_page
 from .jekyll_functions import load_jekyll_doc, load_languages, build_jekyll_site
 from .google_api_functions import read_ga_config, fetch_google_analytics_for_page
 from .repo_functions import (
-    get_existing_branch, get_branch_if_exists_at_origin, ignore_task_metadata_on_merge,
+    get_existing_branch, get_branch_if_exists_locally, ignore_task_metadata_on_merge,
     get_message_classification, ChimeRepo, get_task_metadata_for_branch, complete_branch,
     abandon_branch, clobber_default_branch, get_review_state_and_authorized,
     save_working_file, update_review_state, provide_feedback, move_existing_file,
     get_last_edited_email, mark_upstream_push_needed, MergeConflict,
     get_activity_working_state, ACTIVITY_CREATED_MESSAGE, TASK_METADATA_FILENAME,
-    REVIEW_STATE_EDITED, REVIEW_STATE_FEEDBACK, REVIEW_STATE_ENDORSED, MESSAGE_CATEGORY_EDIT,
-    WORKING_STATE_PUBLISHED, WORKING_STATE_DELETED, WORKING_STATE_ACTIVE
+    REVIEW_STATE_EDITED, REVIEW_STATE_FEEDBACK, REVIEW_STATE_ENDORSED,
+    MESSAGE_CATEGORY_EDIT, WORKING_STATE_PUBLISHED, WORKING_STATE_DELETED
 )
 
 from .href import needs_redirect, get_redirect
@@ -562,6 +562,7 @@ def synched_checkout_required(route_function):
 
         # are we in a remotely published or deleted activity?
         working_state = get_activity_working_state(repo, master_name, branch_name)
+        local_branch = get_branch_if_exists_locally(repo, master_name, branch_name)
         if working_state == WORKING_STATE_PUBLISHED:
             tag_ref = repo.tag('refs/tags/{}'.format(branch_name))
             commit = tag_ref.commit
@@ -569,11 +570,23 @@ def synched_checkout_required(route_function):
             published_by = commit.committer.email
             flash_only(u'This activity was published {} by {}! Please start a new activity to make changes.'.format(published_date, published_by), u'warning')
 
+            # if the published branch doesn't exist locally, raise a 404
+            if not local_branch:
+                abort(404)
+
         elif working_state == WORKING_STATE_DELETED:
             flash_only(MESSAGE_ACTIVITY_DELETED, u'warning')
 
+            # if the deleted branch doesn't exist locally, raise a 404
+            if not local_branch:
+                abort(404)
+
         else:
+            # if the branch doesn't exist, raise a 404
             branch = get_existing_branch(repo, master_name, branch_name)
+            if not branch:
+                abort(404)
+
             branch.checkout()
             Logger.debug('  checked out to {}'.format(branch))
 
