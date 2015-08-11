@@ -30,8 +30,8 @@
     {% if column_depth != 1 or (column_depth == 1 and dir_columns|length == 1) %}
     <div class="dir grid__item {% if column_depth == 4 %}width-one-half end-row{% else %}width-one-fourth{% endif %}">
       {% if column_depth == 2 %}
-      <h2>Topics</h2>
-      <p class="dir__description">Topics are displayed on the homepage.</p>
+      <h2 class="articles-list__title">Topics</h2>
+      <p class="dir__description">are displayed on the homepage.</p>
       <div class="selection-box box-add-file-folder">
         {% if activity.working_state == 'active' %}
         <form action="." method="POST" class="form-one-line">
@@ -43,8 +43,8 @@
         {% endif %}
       </div>
       {% elif column_depth == 3 %}
-      <h2>Subtopics</h2>
-      <p class="dir__description">Subtopics help group user needs together.</p>
+      <h2 class="articles-list__title">Subtopics</h2>
+      <p class="dir__description">help group user needs together.</p>
       <div class="selection-box box-add-file-folder">
         {% if activity.working_state == 'active' %}
         <form action="." method="POST" class="form-one-line">
@@ -56,8 +56,8 @@
         {% endif %}
       </div>
       {% elif column_depth == 4 %}
-      <h2>Articles</h2>
-      <p class="dir__description">Each article is a user need.</p>
+      <h2 class="articles-list__title">Articles</h2>
+      <p class="dir__description">addresses a specific user need.</p>
       <div class="selection-box box-add-file-folder">
         {% if activity.working_state == 'active' %}
         <form action="." method="POST" class="form-one-line">

@@ -11,6 +11,10 @@
 	margin-bottom: 0;
 }
 
+.articles-list__title {
+	margin-bottom: 0;
+}
+
 .nav-page-type {
 	@include clearfix();
 	margin-top: .5em;
@@ -47,6 +51,7 @@
 
 .dir__description {
 	font-size: $base-font-size;
+	margin-top: 0;
 }
 
 .dir__placeholder-text {
@@ -69,8 +74,9 @@
 
 .dir-item {
 	position: relative;
-	padding: 1em;
-	font-size: $h5-font-size;
+	padding: .75em 1em;
+	padding-left: 3em;
+	font-size: $text-font-size;
 	margin: {
 		left: -.5em;
 		right: -.5em;
@@ -98,22 +104,17 @@
 }
 
 .dir-item__display-type {
-	margin-right: .75em;
+	position: absolute;
+	top: .9em;
+	left: 1em;
 }
 
 .dir-item__name {
 	color: $color-grey-700;
 	font-weight: 400;
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
 	display: block;
 	width: auto;
 	margin-right: 3em;
-	.lt-ie10 & {
-		text-overflow: clip;
-		-ms-text-overflow: clip;
-	}
 }
 
 .dir-item__actions {

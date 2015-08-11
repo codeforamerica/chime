@@ -29,8 +29,8 @@
     {% if (loop.index != 1 and loop.index != dir_columns|length) or (loop.index == 1 and dir_columns|length == 1) %}
     <div class="dir grid__item {% if loop.index < 4 %}width-one-fourth{% endif %}">
       {% if loop.index == 2 %}
-      <h2>Topics</h2>
-      <p class="dir__description">Topics are displayed on the homepage.</p>
+      <h2 class="articles-list__title">Topics</h2>
+      <p class="dir__description">are displayed on the homepage.</p>
       <div class="selection-box box-add-file-folder">
         <form action="{{ category.edit_path }}" method="POST" class="form-one-line">
             <input class="form-one-line__input" name="request_path" placeholder="Add topic" type="text" />
@@ -40,8 +40,8 @@
         </form>
       </div>
       {% elif loop.index == 3 %}
-      <h2>Subtopics</h2>
-      <p class="dir__description">Subtopics help group user needs together.</p>
+      <h2 class="articles-list__title">Subtopics</h2>
+      <p class="dir__description">help group user needs together.</p>
       <div class="selection-box box-add-file-folder">
         <form action="{{ category.edit_path }}" method="POST" class="form-one-line">
             <input class="form-one-line__input" name="request_path" placeholder="Add subtopic" type="text" />
@@ -89,9 +89,9 @@
           {% endif %}
           <h3 class="directory-modify__title">{{ dir_title }} Details</h3>
           <label>{{ dir_title }} Name</label>
-          <input name="{{ iso }}-title" type="text" value="{{ category_title }}" class="directory-modify__name">
+          <input name="{{ iso }}-title" type="text" value="{{ category_title }}" class="directory-modify__name" placeholder="Crime Statistics and Maps">
           <label>{{ dir_title }} Description</label>
-          <textarea name="{{ iso }}-description" class="directory-modify__description">{{ category_description }}</textarea>
+          <textarea name="{{ iso }}-description" class="directory-modify__description" placeholder="Crime statistics and reports by district and map">{{ category_description }}</textarea>
           <div class="directory-modify__action-bar row">
             {% if activity.working_state == 'active' %}
             <div class="row__left toolbar toolbar--left">
