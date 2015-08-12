@@ -60,6 +60,10 @@ CONFLICT_ACTION_CREATED = u'created'
 CONFLICT_ACTION_DELETED = u'deleted'
 CONFLICT_ACTION_EDITED = u'edited'
 
+# Flash text for merge conflict warnings
+MERGE_CONFLICT_WARNING_FLASH_MESSAGE = 'Someone else published a conflicting change.'
+UPSTREAM_EDIT_INFO_FLASH_MESSAGE = 'Someone else published a version of this site in the meantime.'
+
 class MergeConflict (Exception):
     def __init__(self, remote_commit, local_commit):
         self.remote_commit = remote_commit
@@ -521,7 +525,7 @@ def save_working_file(clone, path, message, base_sha, default_branch_name):
     #
     # Sync with the default and upstream branches in case someone made a change.
     #
-    for sync_branch_name in (active_branch_name, default_branch_name):
+    for sync_branch_name in (active_branch_name, ):
         try:
             sync_with_default_and_upstream_branches(clone, sync_branch_name)
         except MergeConflict as conflict:
@@ -530,6 +534,43 @@ def save_working_file(clone, path, message, base_sha, default_branch_name):
     clone.git.push('origin', active_branch_name)
 
     return clone.active_branch.commit
+
+def get_conflict(clone, other_branch_name):
+    ''' Attempt to merge from origin default branch, return a conflict (if any).
+    
+        Currently requires a clean working tree in the clone!
+    '''
+    clone.git.fetch('origin', other_branch_name)
+
+    try:
+        # Try a no-commit merge from the other branch.
+        clone.git.merge(_origin(other_branch_name), '--no-commit')
+
+    except GitCommandError as err:
+        # Okay, we have a conflict. Make a new MergeConflict and return it.
+        clone.git.merge('--abort')
+        logging.info('Git command "{}" returned status {}'.format(' '.join(err.command), err.status))
+        
+        remote_commit = clone.refs[_origin(other_branch_name)].commit
+        return MergeConflict(remote_commit, local_commit=clone.commit())
+    
+    else:
+        # Merged clean, we're clean, everybody's clean.
+        clone.git.reset('--hard')
+
+def get_changed(clone, other_branch_name):
+    ''' Check differenace against origin default branch, return a boolean True if any.
+    
+        Use the merge-base to see if further work has happened on the other branch.
+    '''
+    clone.git.fetch('origin', other_branch_name)
+    
+    local_commit = clone.commit()
+    base_hexsha = clone.git.merge_base(_origin(other_branch_name), local_commit)
+    remote_commit = clone.refs[_origin(other_branch_name)].commit
+    
+    if remote_commit.hexsha != base_hexsha:
+        return True
 
 def move_existing_file(clone, old_path, new_path, base_sha, default_branch_name):
     ''' Move a file in the working dir, push it to origin, return the commit.

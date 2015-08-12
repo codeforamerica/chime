@@ -172,6 +172,23 @@ class ChimeTestClient:
 
         # View the new article.
         self.follow_redirect(response, 303)
+    
+    def add_branch_cat_subcat_article(self, desc, benef, cat, subcat, title):
+        '''
+        '''
+        # Start a new task, "Diving for Dollars".
+        self.start_task(description=desc, beneficiary=benef)
+        branch_name = self.get_branch_name()
+
+        # Look for an "other" link that we know about - is it a category?
+        self.follow_link(href='/tree/{}/edit/other/'.format(branch_name))
+
+        # Create a new category, subcategory, and article.
+        self.add_category(category_name=cat)
+        self.add_subcategory(subcategory_name=subcat)
+        self.add_article(article_name=title)
+        
+        return branch_name
 
     def edit_article(self, title_str, body_str):
         ''' Look for form to edit an article, submit it.
@@ -297,8 +314,8 @@ class ChimeTestClient:
     def approve_activity(self):
         ''' Look for form to approve activity, submit it.
         '''
-        body = self.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'comment_text'))
-        form = body.find_parent('form')
+        input = self.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('value') == 'Looks Good!'))
+        form = input.find_parent('form')
         self.test.assertEqual(form['method'].upper(), 'POST')
 
         data = {i['name']: i.get('value', u'')
@@ -314,8 +331,8 @@ class ChimeTestClient:
     def publish_activity(self, expected_code=303):
         ''' Look for form to publish activity, submit it.
         '''
-        body = self.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'comment_text'))
-        form = body.find_parent('form')
+        input = self.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('value') == 'Publish'))
+        form = input.find_parent('form')
         self.test.assertEqual(form['method'].upper(), 'POST')
 
         data = {i['name']: i.get('value', u'')

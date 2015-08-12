@@ -586,14 +586,18 @@ class TestRepo (TestCase):
                                          self.clone2.commit().hexsha, 'master')
 
         #
-        # Show that upstream changes from master have been merged here.
+        # Show that upstream changes from master have NOT been merged here.
         #
         with open(self.clone2.working_dir + '/index.md') as file:
             front2b, body2b = jekyll_functions.load_jekyll_doc(file)
 
-        self.assertEqual(front2b[title_key_name], front1[title_key_name])
+        self.assertNotEqual(front2b[title_key_name], front1[title_key_name])
         self.assertEqual(body2b.strip(), 'Another change to the body')
-        self.assertTrue(self.clone2.commit().message.startswith('Merged work from'))
+        self.assertFalse(self.clone2.commit().message.startswith('Merged work from'))
+        
+        # There's no conflict; the merge would be clean.
+        self.assertIsNone(repo_functions.get_conflict(self.clone2, 'master'), "There is no conflict")
+        self.assertIsNotNone(repo_functions.get_changed(self.clone2, 'master'), "A change should be visible")
 
     # in TestRepo
     def test_multifile_merge(self):
@@ -716,9 +720,6 @@ class TestRepo (TestCase):
         edit_functions.create_new_page(self.clone1, '', 'conflict.md',
                                        dict(title='Hello'), 'Hello hello.')
 
-        edit_functions.create_new_page(self.clone2, '', 'conflict.md',
-                                       dict(title='Goodbye'), 'Goodbye goodbye.')
-
         #
         # Show that the changes from the first branch made it to origin.
         #
@@ -737,13 +738,19 @@ class TestRepo (TestCase):
         #
         # Show that the changes from the second branch conflict with the first.
         #
-        with self.assertRaises(repo_functions.MergeConflict) as conflict:
-            args2 = self.clone2, 'conflict.md', '...', branch2.commit.hexsha, 'master'
-            repo_functions.save_working_file(*args2)
+        self.assertIsNone(repo_functions.get_conflict(self.clone2, 'master'),
+                          "Shouldn't see any conflict yet")
 
-        self.assertEqual(conflict.exception.remote_commit, commit2)
+        edit_functions.create_new_page(self.clone2, '', 'conflict.md',
+                                       dict(title='Goodbye'), 'Goodbye goodbye.')
 
-        diffs = conflict.exception.remote_commit.diff(conflict.exception.local_commit)
+        args2 = self.clone2, 'conflict.md', '...', branch2.commit.hexsha, 'master'
+        repo_functions.save_working_file(*args2)
+        
+        conflict = repo_functions.get_conflict(self.clone2, 'master')
+
+        self.assertTrue(bool(conflict))
+        diffs = conflict.remote_commit.diff(conflict.local_commit)
 
         # there are two diffs; the first is addition of the
         # task metadata file, the second is the conflict file
@@ -2009,17 +2016,10 @@ class TestProcess (TestCase):
                 frances = ChimeTestClient(self.app.test_client(), self)
                 frances.sign_in('frances@example.com')
             
-            # Start a new task, "Diving for Dollars".
-            erica.start_task('Diving', 'Dollars')
-            branch_name = erica.get_branch_name()
-            
-            # Look for an "other" link that we know about - is it a category?
-            erica.follow_link('/tree/{}/edit/other/'.format(branch_name))
-
-            # Create a new category "Ninjas", subcategory "Flipping Out", and article "So Awesome".
-            erica.add_category('Ninjas')
-            erica.add_subcategory('Flipping Out')
-            erica.add_article('So Awesome')
+            # Start a new task, "Diving for Dollars", create a new category
+            # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
+            args = 'Diving', 'Dollars', 'Ninjas', 'Flipping Out', 'So Awesome'
+            branch_name = erica.add_branch_cat_subcat_article(*args)
             
             # Edit the new article.
             erica.edit_article('So, So Awesome', 'It was the best of times.')
@@ -2044,7 +2044,55 @@ class TestProcess (TestCase):
             self.assertTrue(author is not None)
 
     # in TestProcess
-    def test_editing_process_with_conflicting_publish(self):
+    def test_editing_process_with_two_categories(self):
+        ''' Check edit process with a user looking at activity from another user.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
+            
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in('frances@example.com')
+            
+            # Erica starts a new task, "Diving for Dollars".
+            erica.start_task('Diving', 'Dollars')
+            erica_branchname = erica.get_branch_name()
+            
+            # Erica creates a new category and asks for feedback.
+            erica.follow_link('/tree/{}/edit/other/'.format(erica_branchname))
+            erica.add_category('Dollars')
+            erica.follow_link('/tree/{}'.format(erica_branchname))
+            erica.request_feedback('Is this okay?')
+            
+            # Frances starts a new task, "Bobbing for Apples".
+            frances.start_task('Bobbing', 'Apples')
+            frances_branchname = frances.get_branch_name()
+            
+            # Frances creates a new category.
+            frances.follow_link('/tree/{}/edit/other/'.format(frances_branchname))
+            frances.add_category('Apples')
+            
+            # Frances approves Erica's new work and publishes it.
+            frances.open_link(erica.path)
+            frances.leave_feedback('It is super-great.')
+            frances.approve_activity()
+            frances.publish_activity()
+            
+            # Erica should now expect to see her own new category.
+            erica.start_task('Canticle', 'Leibowitz')
+            erica_branchname2 = erica.get_branch_name()
+            erica.follow_link('/tree/{}/edit/other/'.format(erica_branchname2))
+            self.assertIsNotNone(erica.soup.find(text='Dollars'), 'Should see first published category')
+            
+            # Frances should still not expect to see Erica's published category.
+            frances.open_link('/tree/{}/edit/'.format(frances_branchname))
+            frances.follow_link('/tree/{}/edit/other/'.format(frances_branchname))
+            self.assertIsNone(frances.soup.find(text='Dollars'), 'Should not see first published category')
+
+    # in TestProcess
+    def test_editing_process_with_outdated_publish(self):
         ''' Check edit process with a user attempting to change an activity that's been published.
         '''
         with HTTMock(self.auth_csv_example_allowed):
@@ -2056,17 +2104,10 @@ class TestProcess (TestCase):
                 frances = ChimeTestClient(self.app.test_client(), self)
                 frances.sign_in('frances@example.com')
 
-            # Start a new task, "Diving for Dollars".
-            erica.start_task(description='Diving', beneficiary='Dollars')
-            branch_name = erica.get_branch_name()
-
-            # Look for an "other" link that we know about - is it a category?
-            erica.follow_link(href='/tree/{}/edit/other/'.format(branch_name))
-
-            # Create a new category "Ninjas", subcategory "Flipping Out", and article "So Awesome".
-            erica.add_category(category_name='Ninjas')
-            erica.add_subcategory(subcategory_name='Flipping Out')
-            erica.add_article(article_name='So Awesome')
+            # Start a new task, "Diving for Dollars", create a new category
+            # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
+            args = 'Diving', 'Dollars', 'Ninjas', 'Flipping Out', 'So Awesome'
+            branch_name = erica.add_branch_cat_subcat_article(*args)
 
             # Edit the new article.
             erica.edit_article(title_str='So, So Awesome', body_str='It was the best of times.')
@@ -2085,22 +2126,113 @@ class TestProcess (TestCase):
             frances.publish_activity()
             
             #
-            # Check with upstream repository.
-            #
-            origin_commit = self.origin.refs.master.commit.hexsha
-            upstream_commit = self.upstream.refs.master.commit.hexsha
-            self.assertNotEqual(origin_commit, upstream_commit, 'Origin and upstream should not match before explicit synch')
-
-            running_state_dir = self.app.config['RUNNING_STATE_DIR']
-            repo_functions.push_upstream_if_needed(self.origin, running_state_dir)
-            upstream_commit = self.upstream.refs.master.commit.hexsha
-            self.assertEqual(origin_commit, upstream_commit, 'Origin and upstream should match after explicit synch')
-
-            #
-            # Switch back and try to make another edit, but watch it fail.
+            # Switch back and try to make another edit.
             #
             erica.open_link(article_path)
             erica.edit_outdated_article(title_str='Just Awful', body_str='It was the worst of times.')
+
+    # in TestProcess
+    def test_editing_process_with_conflicting_edit(self):
+        ''' Check edit process with a user attempting to change an activity with a conflict.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
+            
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in('frances@example.com')
+
+            # Start a new task, "Bobbing for Apples", create a new category
+            # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
+            args = 'Bobbing', 'Apples', 'Ninjas', 'Flipping Out', 'So Awesome'
+            f_branch_name = frances.add_branch_cat_subcat_article(*args)
+            f_article_path = frances.path
+
+            # Start a new task, "Diving for Dollars", create a new category
+            # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
+            args = 'Diving', 'Dollars', 'Ninjas', 'Flipping Out', 'So Awesome'
+            e_branch_name = erica.add_branch_cat_subcat_article(*args)
+
+            # Edit the new article.
+            erica.edit_article(title_str='So, So Awesome', body_str='It was the best of times.')
+
+            # Ask for feedback
+            erica.follow_link(href='/tree/{}'.format(e_branch_name))
+            erica.request_feedback(feedback_str='Is this okay?')
+
+            #
+            # Switch users and publish the article.
+            #
+            frances.open_link(url=erica.path)
+            frances.leave_feedback(feedback_str='It is super-great.')
+            frances.approve_activity()
+            frances.publish_activity()
+            
+            #
+            # Now introduce a conflicting change on the original activity,
+            # and verify that the expected flash warning is displayed.
+            #
+            frances.open_link(f_article_path)
+            frances.edit_article(title_str='So, So Awful', body_str='It was the worst of times.')
+            self.assertIsNotNone(frances.soup.find(text=repo_functions.MERGE_CONFLICT_WARNING_FLASH_MESSAGE),
+                                 'Should see a warning about the conflict above the article.')
+
+            frances.follow_link(href='/tree/{}'.format(f_branch_name))
+            self.assertIsNotNone(frances.soup.find(text=repo_functions.MERGE_CONFLICT_WARNING_FLASH_MESSAGE),
+                                 'Should see a warning about the conflict in the activity history.')
+
+    def test_editing_process_with_nonconflicting_edit(self):
+        ''' Check edit process with a user attempting to change an activity with no conflict.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
+            
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in('frances@example.com')
+
+            # Start a new task, "Bobbing for Apples", create a new category
+            # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
+            args = 'Bobbing', 'Apples', 'Ninjas', 'Flipping Out', 'So Awesome'
+            f_branch_name = frances.add_branch_cat_subcat_article(*args)
+            f_article_path = frances.path
+
+            # Start a new task, "Diving for Dollars", create a new category
+            # "Samurai", subcategory "Flipping Out", and article "So Awesome".
+            args = 'Diving', 'Dollars', 'Samurai', 'Flipping Out', 'So Awesome'
+            e_branch_name = erica.add_branch_cat_subcat_article(*args)
+
+            # Edit the new article.
+            erica.edit_article(title_str='So, So Awesome', body_str='It was the best of times.')
+
+            # Ask for feedback
+            erica.follow_link(href='/tree/{}'.format(e_branch_name))
+            erica.request_feedback(feedback_str='Is this okay?')
+
+            #
+            # Switch users and publish the article.
+            #
+            frances.open_link(url=erica.path)
+            frances.leave_feedback(feedback_str='It is super-great.')
+            frances.approve_activity()
+            frances.publish_activity()
+            
+            #
+            # Now introduce a conflicting change on the original activity,
+            # and verify that the expected flash warning is displayed.
+            #
+            frances.open_link(f_article_path)
+            frances.edit_article(title_str='So, So Awful', body_str='It was the worst of times.')
+            self.assertIsNone(frances.soup.find(text=repo_functions.UPSTREAM_EDIT_INFO_FLASH_MESSAGE),
+                              'Should not see a warning about the conflict in the activity history.')
+
+            frances.follow_link(href='/tree/{}'.format(f_branch_name))
+            self.assertIsNone(frances.soup.find(text=repo_functions.UPSTREAM_EDIT_INFO_FLASH_MESSAGE),
+                              'Should not see a warning about the conflict in the activity history.')
 
     # in TestProcess
     def test_task_not_marked_published_after_merge_conflict(self):
