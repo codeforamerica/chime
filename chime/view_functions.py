@@ -73,6 +73,7 @@ LAYOUT_PLURAL_LOOKUP = {
 
 # error messages
 MESSAGE_ACTIVITY_DELETED = u'This activity has been deleted or never existed! Please start a new activity to make changes.'
+MESSAGE_ACTIVITY_PUBLISHED = u'This activity was published {published_date} by {published_by}! Please start a new activity to make changes.'
 
 # files that match these regex patterns will not be shown in the file explorer
 FILE_FILTERS = [
@@ -568,7 +569,7 @@ def synched_checkout_required(route_function):
             commit = tag_ref.commit
             published_date = repo.git.show('--format=%ad', '--date=relative', commit.hexsha).strip()
             published_by = commit.committer.email
-            flash_only(u'This activity was published {} by {}! Please start a new activity to make changes.'.format(published_date, published_by), u'warning')
+            flash_only(MESSAGE_ACTIVITY_PUBLISHED.format(published_date=published_date, published_by=published_by), u'warning')
 
             # if the published branch doesn't exist locally, raise a 404
             if not local_branch:

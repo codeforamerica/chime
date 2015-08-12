@@ -2185,13 +2185,15 @@ class TestProcess (TestCase):
         ''' When someone else publishes a task you're working in, you're notified.
         '''
         with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            francis_email = u'frances@example.com'
             with HTTMock(self.mock_persona_verify_erica):
                 erica = ChimeTestClient(self.app.test_client(), self)
-                erica.sign_in('erica@example.com')
+                erica.sign_in(erica_email)
 
             with HTTMock(self.mock_persona_verify_frances):
                 frances = ChimeTestClient(self.app.test_client(), self)
-                frances.sign_in('frances@example.com')
+                frances.sign_in(francis_email)
 
             # Start a new task
             erica.start_task(description='Eating Carrion', beneficiary='Vultures')
@@ -2224,20 +2226,26 @@ class TestProcess (TestCase):
             # load an edit page
             erica.open_link(url='/tree/{}/edit/other/{}/'.format(erica_branch_name, category_slug))
             # a warning is flashed about working in a published branch
-            self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and u'This activity was published' in tag.text))
+            # we can't get the date exactly right, so test for every other part of the message
+            message_published = view_functions.MESSAGE_ACTIVITY_PUBLISHED.format(published_date=u'xxx', published_by=francis_email)
+            message_published_split = message_published.split(u'xxx')
+            for part in message_published_split:
+                self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and part in tag.text))
 
     # in TestProcess
     def test_page_not_found_when_branch_published(self):
         ''' When you're working in a published branch and don't have a local copy, you get a 404 error
         '''
         with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            francis_email = u'frances@example.com'
             with HTTMock(self.mock_persona_verify_erica):
                 erica = ChimeTestClient(self.app.test_client(), self)
-                erica.sign_in('erica@example.com')
+                erica.sign_in(erica_email)
 
             with HTTMock(self.mock_persona_verify_frances):
                 frances = ChimeTestClient(self.app.test_client(), self)
-                frances.sign_in('frances@example.com')
+                frances.sign_in(francis_email)
 
             # Start a new task
             erica.start_task(description='Eating Carrion', beneficiary='Vultures')
@@ -2276,7 +2284,12 @@ class TestProcess (TestCase):
             # load an edit page
             erica.open_link(url='/tree/{}/edit/other/{}/'.format(erica_branch_name, category_slug), expected_status_code=404)
             # a warning is flashed about working in a published branch
-            self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and u'This activity was published' in tag.text))
+            # we can't get the date exactly right, so test for every other part of the message
+            message_published = view_functions.MESSAGE_ACTIVITY_PUBLISHED.format(published_date=u'xxx', published_by=francis_email)
+            message_published_split = message_published.split(u'xxx')
+            for part in message_published_split:
+                self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and part in tag.text))
+
             # the 404 page was loaded
             pattern_template_comment_stripped = sub(ur'<!--|-->', u'', PATTERN_TEMPLATE_COMMENT)
             comments = erica.soup.find_all(text=lambda text: isinstance(text, Comment))
