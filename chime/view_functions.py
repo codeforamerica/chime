@@ -35,7 +35,6 @@ from .repo_functions import (
     save_working_file, update_review_state, provide_feedback, move_existing_file,
     get_last_edited_email, mark_upstream_push_needed, MergeConflict,
     get_activity_working_state, ACTIVITY_CREATED_MESSAGE, TASK_METADATA_FILENAME,
-    REVIEW_STATE_EDITED, REVIEW_STATE_FEEDBACK, REVIEW_STATE_ENDORSED,
     MESSAGE_CATEGORY_EDIT, WORKING_STATE_PUBLISHED, WORKING_STATE_DELETED
 )
 
@@ -927,9 +926,9 @@ def update_activity_review_state(safe_branch, comment_text, action_list, redirec
             # handle a review action
             if action != 'comment':
                 if action == 'request_feedback':
-                    update_review_state(clone=repo, new_review_state=REVIEW_STATE_FEEDBACK, push=True)
+                    update_review_state(clone=repo, new_review_state=current_app.config['REVIEW_STATE_FEEDBACK'], push=True)
                 elif action == 'endorse_edits':
-                    update_review_state(clone=repo, new_review_state=REVIEW_STATE_ENDORSED, push=True)
+                    update_review_state(clone=repo, new_review_state=current_app.config['REVIEW_STATE_ENDORSED'], push=True)
             elif not comment_text:
                 flash(u'You can\'t leave an empty comment!', u'warning')
 
@@ -1266,13 +1265,13 @@ def get_activity_action_and_authorized(branch_name, comment_text, action_list):
     # handle a review action
     if action != 'comment':
         if action == 'request_feedback':
-            if review_state == REVIEW_STATE_EDITED and review_authorized:
+            if review_state == current_app.config['REVIEW_STATE_EDITED'] and review_authorized:
                 action_authorized = True
         elif action == 'endorse_edits':
-            if review_state == REVIEW_STATE_FEEDBACK and review_authorized:
+            if review_state == current_app.config['REVIEW_STATE_FEEDBACK'] and review_authorized:
                 action_authorized = True
         elif action == 'merge':
-            if review_state == REVIEW_STATE_ENDORSED and review_authorized:
+            if review_state == current_app.config['REVIEW_STATE_ENDORSED'] and review_authorized:
                 action_authorized = True
         elif action == 'clobber' or action == 'abandon':
             action_authorized = True

@@ -35,7 +35,7 @@ from bs4 import Comment
 from chime import (
     create_app, jekyll_functions, repo_functions, edit_functions,
     google_api_functions, view_functions, publish,
-    google_access_token_update, errors)
+    google_access_token_update, errors, config)
 
 from unit.chime_test_client import ChimeTestClient
 
@@ -248,6 +248,8 @@ class TestRepo (TestCase):
         repo_functions.ignore_task_metadata_on_merge(self.clone2)
 
         self.session = dict(email=str(uuid4()))
+
+        self.config = config['default']
 
         environ['GIT_AUTHOR_NAME'] = ' '
         environ['GIT_COMMITTER_NAME'] = ' '
@@ -957,7 +959,7 @@ class TestRepo (TestCase):
 
         branch1.checkout()
         review_state, review_authorized = repo_functions.get_review_state_and_authorized(self.clone1, 'master', branch1_name, fake_author_email)
-        self.assertEqual(review_state, repo_functions.REVIEW_STATE_FRESH)
+        self.assertEqual(review_state, self.config.REVIEW_STATE_FRESH)
         self.assertTrue(review_authorized)
 
         edit_functions.update_page(self.clone1, 'index.md',
@@ -968,14 +970,14 @@ class TestRepo (TestCase):
 
         # verify that the activity has unreviewed edits and that Jim Content Creator is authorized to request feedback
         review_state, review_authorized = repo_functions.get_review_state_and_authorized(self.clone1, 'master', branch1_name, fake_creator_email)
-        self.assertEqual(review_state, repo_functions.REVIEW_STATE_EDITED)
+        self.assertEqual(review_state, self.config.REVIEW_STATE_EDITED)
         self.assertTrue(review_authorized)
 
         # request feedback as Jim Content Creator
-        repo_functions.update_review_state(self.clone1, repo_functions.REVIEW_STATE_FEEDBACK)
+        repo_functions.update_review_state(self.clone1, self.config.REVIEW_STATE_FEEDBACK)
         # verify that the activity has feedback requested and that fake is authorized to endorse
         review_state, review_authorized = repo_functions.get_review_state_and_authorized(self.clone1, 'master', branch1_name, fake_author_email)
-        self.assertEqual(review_state, repo_functions.REVIEW_STATE_FEEDBACK)
+        self.assertEqual(review_state, self.config.REVIEW_STATE_FEEDBACK)
         self.assertTrue(review_authorized)
 
         #
@@ -988,10 +990,10 @@ class TestRepo (TestCase):
         environ['GIT_COMMITTER_EMAIL'] = fake_reviewer_email
 
         # endorse
-        repo_functions.update_review_state(self.clone1, repo_functions.REVIEW_STATE_ENDORSED)
+        repo_functions.update_review_state(self.clone1, self.config.REVIEW_STATE_ENDORSED)
         # verify that the activity has been endorsed and that Joe Reviewer is authorized to publish
         review_state, review_authorized = repo_functions.get_review_state_and_authorized(self.clone1, 'master', branch1_name, fake_reviewer_email)
-        self.assertEqual(review_state, repo_functions.REVIEW_STATE_ENDORSED)
+        self.assertEqual(review_state, self.config.REVIEW_STATE_ENDORSED)
         self.assertTrue(review_authorized)
 
         #
@@ -1005,14 +1007,14 @@ class TestRepo (TestCase):
 
         # verify that the activity has unreviewed edits and that Joe Reviewer is authorized to request feedback
         review_state, review_authorized = repo_functions.get_review_state_and_authorized(self.clone1, 'master', branch1_name, fake_reviewer_email)
-        self.assertEqual(review_state, repo_functions.REVIEW_STATE_EDITED)
+        self.assertEqual(review_state, self.config.REVIEW_STATE_EDITED)
         self.assertTrue(review_authorized)
 
         # request feedback as Joe Reviewer
-        repo_functions.update_review_state(self.clone1, repo_functions.REVIEW_STATE_FEEDBACK)
+        repo_functions.update_review_state(self.clone1, self.config.REVIEW_STATE_FEEDBACK)
         # verify that the activity has feedback requested and that Joe Reviewer is not authorized to endorse
         review_state, review_authorized = repo_functions.get_review_state_and_authorized(self.clone1, 'master', branch1_name, fake_reviewer_email)
-        self.assertEqual(review_state, repo_functions.REVIEW_STATE_FEEDBACK)
+        self.assertEqual(review_state, self.config.REVIEW_STATE_FEEDBACK)
         self.assertFalse(review_authorized)
 
         #
@@ -1025,10 +1027,10 @@ class TestRepo (TestCase):
         environ['GIT_COMMITTER_EMAIL'] = fake_nonprofit_email
 
         # endorse
-        repo_functions.update_review_state(self.clone1, repo_functions.REVIEW_STATE_ENDORSED)
+        repo_functions.update_review_state(self.clone1, self.config.REVIEW_STATE_ENDORSED)
         # verify that the activity has been endorsed and that Jane Reviewer is authorized to publish
         review_state, review_authorized = repo_functions.get_review_state_and_authorized(self.clone1, 'master', branch1_name, fake_nonprofit_email)
-        self.assertEqual(review_state, repo_functions.REVIEW_STATE_ENDORSED)
+        self.assertEqual(review_state, self.config.REVIEW_STATE_ENDORSED)
         self.assertTrue(review_authorized)
 
         #
@@ -3224,7 +3226,7 @@ class TestApp (TestCase):
             # get the activity list page
             response = self.test_client.get('/', follow_redirects=True)
             self.assertEqual(response.status_code, 200)
-            # verify that there's an 'unreviewed edits' link
+            # verify that there's an unreviewed edits link
             self.assertTrue(PATTERN_UNREVIEWED_EDITS_LINK.format(branch_name=generated_branch_name) in response.data)
 
         # Request feedback on the change
@@ -3255,7 +3257,7 @@ class TestApp (TestCase):
             # get the activity list page
             response = self.test_client.get('/', follow_redirects=True)
             self.assertEqual(response.status_code, 200)
-            # verify that there's an 'feedback requested' link
+            # verify that there's a feedback requested link
             self.assertTrue(PATTERN_FEEDBACK_REQUESTED_LINK.format(branch_name=generated_branch_name) in response.data)
 
         # Endorse the change
