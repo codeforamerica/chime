@@ -2299,7 +2299,7 @@ class TestProcess (TestCase):
             erica.open_link(url=frances_overview_path)
             erica.leave_feedback(feedback_str='It is not bad.')
             erica.approve_activity()
-            erica.publish_activity(expected_code=500)
+            erica.publish_activity(expected_status_code=500)
 
             # we got a 500 error page about a merge conflict
             pattern_template_comment_stripped = sub(ur'<!--|-->', u'', PATTERN_TEMPLATE_COMMENT)
@@ -2317,13 +2317,15 @@ class TestProcess (TestCase):
         ''' When someone else publishes a task you're working in, you're notified.
         '''
         with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            francis_email = u'frances@example.com'
             with HTTMock(self.mock_persona_verify_erica):
                 erica = ChimeTestClient(self.app.test_client(), self)
-                erica.sign_in('erica@example.com')
+                erica.sign_in(erica_email)
 
             with HTTMock(self.mock_persona_verify_frances):
                 frances = ChimeTestClient(self.app.test_client(), self)
-                frances.sign_in('frances@example.com')
+                frances.sign_in(francis_email)
 
             # Start a new task
             erica.start_task(description='Eating Carrion', beneficiary='Vultures')
@@ -2356,7 +2358,74 @@ class TestProcess (TestCase):
             # load an edit page
             erica.open_link(url='/tree/{}/edit/other/{}/'.format(erica_branch_name, category_slug))
             # a warning is flashed about working in a published branch
-            self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and u'This activity was published' in tag.text))
+            # we can't get the date exactly right, so test for every other part of the message
+            message_published = view_functions.MESSAGE_ACTIVITY_PUBLISHED.format(published_date=u'xxx', published_by=francis_email)
+            message_published_split = message_published.split(u'xxx')
+            for part in message_published_split:
+                self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and part in tag.text))
+
+    # in TestProcess
+    def test_page_not_found_when_branch_published(self):
+        ''' When you're working in a published branch and don't have a local copy, you get a 404 error
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            francis_email = u'frances@example.com'
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in(erica_email)
+
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in(francis_email)
+
+            # Start a new task
+            erica.start_task(description='Eating Carrion', beneficiary='Vultures')
+            erica_branch_name = erica.get_branch_name()
+
+            # Enter the "other" folder
+            erica.follow_link(href='/tree/{}/edit/other/'.format(erica_branch_name))
+
+            # Create a new category
+            category_name = u'Forage'
+            category_slug = slugify(category_name)
+            erica.add_category(category_name=category_name)
+
+            # Ask for feedback
+            erica.follow_link(href='/tree/{}'.format(erica_branch_name))
+            erica.request_feedback(feedback_str='Is this okay?')
+
+            #
+            # Switch users
+            #
+            # approve and publish erica's changes
+            frances.open_link(url=erica.path)
+            frances.leave_feedback(feedback_str='It is perfect.')
+            frances.approve_activity()
+            frances.publish_activity()
+
+            # delete all trace of the branch locally
+            repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email='erica@example.com')
+            repo.git.checkout('master')
+            repo.git.branch('-D', erica_branch_name)
+            repo.git.remote('prune', 'origin')
+
+            #
+            # Switch users
+            #
+            # load an edit page
+            erica.open_link(url='/tree/{}/edit/other/{}/'.format(erica_branch_name, category_slug), expected_status_code=404)
+            # a warning is flashed about working in a published branch
+            # we can't get the date exactly right, so test for every other part of the message
+            message_published = view_functions.MESSAGE_ACTIVITY_PUBLISHED.format(published_date=u'xxx', published_by=francis_email)
+            message_published_split = message_published.split(u'xxx')
+            for part in message_published_split:
+                self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and part in tag.text))
+
+            # the 404 page was loaded
+            pattern_template_comment_stripped = sub(ur'<!--|-->', u'', PATTERN_TEMPLATE_COMMENT)
+            comments = erica.soup.find_all(text=lambda text: isinstance(text, Comment))
+            self.assertTrue(pattern_template_comment_stripped.format(u'error-404') in comments)
 
     # in TestProcess
     def test_notified_when_working_in_deleted_task(self):
@@ -2394,7 +2463,55 @@ class TestProcess (TestCase):
             # load an edit page
             erica.open_link(url='/tree/{}/edit/other/'.format(erica_branch_name))
             # a warning is flashed about working in a deleted branch
-            self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and tag.text == u'This activity has been deleted or never existed! Please start a new activity to make changes.'))
+            self.assertIsNotNone(erica.soup.find(text=view_functions.MESSAGE_ACTIVITY_DELETED))
+
+    # in TestProcess
+    def test_page_not_found_when_branch_deleted(self):
+        ''' When you're working in a deleted branch and don't have a local copy, you get a 404 error
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
+
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in('frances@example.com')
+
+            # Start a new task
+            task_description = u'Eating Carrion'
+            task_beneficiary = u'Vultures'
+            erica.start_task(description=task_description, beneficiary=task_beneficiary)
+            erica_branch_name = erica.get_branch_name()
+
+            # Enter the "other" folder
+            erica.follow_link(href='/tree/{}/edit/other/'.format(erica_branch_name))
+
+            #
+            # Switch users
+            #
+            # delete erica's task
+            frances.open_link(url='/')
+            frances.delete_task(branch_name=erica_branch_name)
+            self.assertEqual(PATTERN_FLASH_TASK_DELETED.format(description=task_description, beneficiary=task_beneficiary), frances.soup.find('li', class_='flash').text)
+
+            # delete all trace of the branch locally
+            repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email='erica@example.com')
+            repo.git.checkout('master')
+            repo.git.branch('-D', erica_branch_name)
+            repo.git.remote('prune', 'origin')
+
+            #
+            # Switch users
+            #
+            # load an edit page
+            erica.open_link(url='/tree/{}/edit/other/'.format(erica_branch_name), expected_status_code=404)
+            # a warning is flashed about working in a deleted branch
+            self.assertIsNotNone(erica.soup.find(text=view_functions.MESSAGE_ACTIVITY_DELETED))
+            # the 404 page was loaded
+            pattern_template_comment_stripped = sub(ur'<!--|-->', u'', PATTERN_TEMPLATE_COMMENT)
+            comments = erica.soup.find_all(text=lambda text: isinstance(text, Comment))
+            self.assertTrue(pattern_template_comment_stripped.format(u'error-404') in comments)
 
     # in TestProcess
     def test_forms_for_changes_in_active_task(self):
@@ -2815,6 +2932,7 @@ class TestApp (TestCase):
             response = self.test_client.get('/')
             self.assertFalse('Start' in response.data)
 
+    # in TestApp
     def test_need_description_to_start_activity(self):
         ''' You need a description to start a new activity
         '''
@@ -3009,7 +3127,7 @@ class TestApp (TestCase):
         self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('activities-list') in response.data)
         # the activity we just published shouldn't be listed on the page
         self.assertTrue(generated_branch_name not in response.data)
-        
+
         # Look in the published directory and see if the words are there.
         with open(join(self.publish_path, fake_page_slug, 'index.html')) as file:
             self.assertTrue(fake_page_content in file.read())
@@ -3191,7 +3309,7 @@ class TestApp (TestCase):
             # edit
             #
             response = self.test_client.get('/tree/{}/edit/'.format(fake_branch_name), follow_redirects=True)
-            self.assertEqual(response.status_code, 500)
+            self.assertEqual(response.status_code, 404)
             self.assertTrue(view_functions.MESSAGE_ACTIVITY_DELETED in response.data)
             # the branch path should not be in the returned HTML
             self.assertFalse(PATTERN_BRANCH_COMMENT.format(fake_branch_name) in response.data)
@@ -3202,7 +3320,7 @@ class TestApp (TestCase):
             # history
             #
             response = self.test_client.get('/tree/{}/history/'.format(fake_branch_name), follow_redirects=True)
-            self.assertEqual(response.status_code, 500)
+            self.assertEqual(response.status_code, 404)
             self.assertTrue(view_functions.MESSAGE_ACTIVITY_DELETED in response.data)
             # the branch path should not be in the returned HTML
             self.assertFalse(PATTERN_BRANCH_COMMENT.format(fake_branch_name) in response.data)
@@ -3213,7 +3331,7 @@ class TestApp (TestCase):
             # view
             #
             response = self.test_client.get('/tree/{}/view/'.format(fake_branch_name), follow_redirects=True)
-            self.assertEqual(response.status_code, 500)
+            self.assertEqual(response.status_code, 404)
             self.assertTrue(view_functions.MESSAGE_ACTIVITY_DELETED in response.data)
             # the branch path should not be in the returned HTML
             self.assertFalse(PATTERN_BRANCH_COMMENT.format(fake_branch_name) in response.data)
@@ -3238,7 +3356,7 @@ class TestApp (TestCase):
             fake_task_beneficiary = u'Nobody'
             fake_branch_name = repo_functions.make_branch_name()
             response = self.test_client.post('/tree/{}/edit/'.format(fake_branch_name), data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': fake_page_slug}, follow_redirects=True)
-            self.assertEqual(response.status_code, 500)
+            self.assertEqual(response.status_code, 404)
             self.assertTrue(view_functions.MESSAGE_ACTIVITY_DELETED in response.data)
             # the branch name should not be in the origin's branches list
             self.assertFalse(fake_branch_name in self.origin.branches)
@@ -3282,7 +3400,7 @@ class TestApp (TestCase):
             self.assertFalse(generated_branch_name in response.data)
 
             response = self.test_client.post('/tree/{}/save/{}'.format(generated_branch_name, fake_page_path), data={'layout': view_functions.ARTICLE_LAYOUT, 'hexsha': hexsha, 'en-title': 'Greetings', 'en-body': 'Hello world.\n', 'fr-title': '', 'fr-body': '', 'url-slug': 'hello'}, follow_redirects=True)
-            self.assertEqual(response.status_code, 500)
+            self.assertEqual(response.status_code, 404)
             self.assertTrue(view_functions.MESSAGE_ACTIVITY_DELETED in response.data)
             # the task name should not be in the returned HTML
             self.assertFalse(PATTERN_BRANCH_COMMENT.format(fake_task_description) in response.data)
@@ -3765,43 +3883,43 @@ class TestApp (TestCase):
         '''
         with HTTMock(self.auth_csv_example_allowed):
             with HTTMock(self.mock_persona_verify_erica):
-                user = ChimeTestClient(self.test_client, self)
-                user.sign_in(email='erica@example.com')
+                erica = ChimeTestClient(self.test_client, self)
+                erica.sign_in(email='erica@example.com')
 
             # Start a new task
-            user.start_task(description=u'Ferment Tuber Fibres Using Symbiotic Bacteria in the Intestines', beneficiary=u'Naked Mole Rats')
+            erica.start_task(description=u'Ferment Tuber Fibres Using Symbiotic Bacteria in the Intestines', beneficiary=u'Naked Mole Rats')
             # Get the branch name
-            branch_name = user.get_branch_name()
+            branch_name = erica.get_branch_name()
 
             # Enter the "other" folder
-            user.follow_link(href='/tree/{}/edit/other/'.format(branch_name))
+            erica.follow_link(href='/tree/{}/edit/other/'.format(branch_name))
 
             # Create a category and fill it with some subcategories and articles
             category_names = [u'Indigestible Cellulose']
             subcategory_names = [u'Volatile Fatty Acids', u'Non-Reproducing Females', u'Arid African Deserts']
             article_names = [u'Eusocial Exhibition', u'Old Enough to Eat Solid Food', u'Contributing to Extension of Tunnels', u'Foraging and Nest Building']
-            user.add_category(category_name=category_names[0])
+            erica.add_category(category_name=category_names[0])
             
-            category_path = user.path
-            user.add_subcategory(subcategory_name=subcategory_names[0])
-            user.open_link(category_path)
-            user.add_subcategory(subcategory_name=subcategory_names[1])
-            user.open_link(category_path)
-            user.add_subcategory(subcategory_name=subcategory_names[2])
+            category_path = erica.path
+            erica.add_subcategory(subcategory_name=subcategory_names[0])
+            erica.open_link(category_path)
+            erica.add_subcategory(subcategory_name=subcategory_names[1])
+            erica.open_link(category_path)
+            erica.add_subcategory(subcategory_name=subcategory_names[2])
 
-            subcategory_path = user.path
-            user.add_article(article_name=article_names[0])
-            user.open_link(subcategory_path)
-            user.add_article(article_name=article_names[1])
-            user.open_link(subcategory_path)
-            user.add_article(article_name=article_names[2])
-            user.open_link(subcategory_path)
-            user.add_article(article_name=article_names[3])
+            subcategory_path = erica.path
+            erica.add_article(article_name=article_names[0])
+            erica.open_link(subcategory_path)
+            erica.add_article(article_name=article_names[1])
+            erica.open_link(subcategory_path)
+            erica.add_article(article_name=article_names[2])
+            erica.open_link(subcategory_path)
+            erica.add_article(article_name=article_names[3])
 
             # Delete the all-containing category
-            user.open_link(category_path)
-            user.follow_modify_category_link(category_names[0])
-            user.delete_category()
+            erica.open_link(category_path)
+            erica.follow_modify_category_link(category_names[0])
+            erica.delete_category()
 
             # get and check the history
             repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email='erica@example.com')

@@ -37,11 +37,11 @@ class ChimeTestClient:
         '''
         self.open_link(self.path)
 
-    def open_link(self, url):
+    def open_link(self, url, expected_status_code=200):
         ''' Open a link
         '''
         response = self.client.get(url)
-        self.test.assertEqual(response.status_code, 200)
+        self.test.assertEqual(response.status_code, expected_status_code)
 
         self.path, self.soup = url, BeautifulSoup(response.data)
 
@@ -328,7 +328,7 @@ class ChimeTestClient:
         # View the saved feedback.
         self.follow_redirect(response, 303)
 
-    def publish_activity(self, expected_code=303):
+    def publish_activity(self, expected_status_code=303):
         ''' Look for form to publish activity, submit it.
         '''
         input = self.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('value') == 'Publish'))
@@ -342,4 +342,4 @@ class ChimeTestClient:
         publish_activity_path = urlparse(urljoin(self.path, form['action'])).path
         response = self.client.post(publish_activity_path, data=data)
         # View the published activity.
-        self.follow_redirect(response, expected_code)
+        self.follow_redirect(response, expected_status_code)
