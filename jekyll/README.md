@@ -29,7 +29,7 @@ It goes something like this:
   + `rbenv rehash`
 * Check jekyll
   + `cd ..`
-  + `jekyll/run-jekyll.sh`
+  + `jekyll/run-jekyll.sh --help`
   + Should produce the jekyll help, not error messages
 
 
