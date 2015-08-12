@@ -35,7 +35,8 @@ from bs4 import Comment
 from chime import (
     create_app, jekyll_functions, repo_functions, edit_functions,
     google_api_functions, view_functions, publish,
-    google_access_token_update, errors, config)
+    google_access_token_update, errors)
+from chime.config import Config
 
 from unit.chime_test_client import ChimeTestClient
 
@@ -249,7 +250,7 @@ class TestRepo (TestCase):
 
         self.session = dict(email=str(uuid4()))
 
-        self.config = config['default']
+        self.config = Config
 
         environ['GIT_AUTHOR_NAME'] = ' '
         environ['GIT_COMMITTER_NAME'] = ' '
