@@ -2126,7 +2126,7 @@ class TestProcess (TestCase):
             frances.publish_activity()
             
             #
-            # Switch back and try to make another edit, but watch it fail.
+            # Switch back and try to make another edit.
             #
             erica.open_link(article_path)
             erica.edit_outdated_article(title_str='Just Awful', body_str='It was the worst of times.')
