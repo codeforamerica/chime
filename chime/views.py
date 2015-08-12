@@ -22,7 +22,7 @@ from .view_functions import (
     is_allowed_email, common_template_args, log_application_errors, is_article_dir, is_category_dir,
     make_activity_history, summarize_activity_history, render_edit_view, render_modify_dir, render_list_dir,
     add_article_or_category, strip_index_file, delete_page, save_page, render_activities_list, sorted_paths,
-    update_activity_review_state, flash_only, file_display_name, CONTENT_FILE_EXTENSION, FOLDER_FILE_TYPE, ARTICLE_LAYOUT,
+    update_activity_review_state, flash_unique, flash_only, file_display_name, CONTENT_FILE_EXTENSION, FOLDER_FILE_TYPE, ARTICLE_LAYOUT,
     CATEGORY_LAYOUT, MESSAGE_ACTIVITY_DELETED
 )
 
@@ -277,7 +277,7 @@ def branch_edit(branch_name, path=None):
     branch_name = branch_var2name(branch_name)
     
     if repo_functions.get_conflict(repo, current_app.config['default_branch']):
-        flash(repo_functions.MERGE_CONFLICT_WARNING_FLASH_MESSAGE, u'warning')
+        flash_unique(repo_functions.MERGE_CONFLICT_WARNING_FLASH_MESSAGE, u'warning')
 
     full_path = join(repo.working_dir, path or '.').rstrip('/')
 
@@ -479,7 +479,7 @@ def show_activity_overview(branch_name):
     safe_branch = branch_name2path(branch_name)
 
     if repo_functions.get_conflict(repo, current_app.config['default_branch']):
-        flash(repo_functions.MERGE_CONFLICT_WARNING_FLASH_MESSAGE, u'warning')
+        flash_unique(repo_functions.MERGE_CONFLICT_WARNING_FLASH_MESSAGE, u'warning')
 
     # contains 'author_email', 'task_description', 'task_beneficiary'
     activity = repo_functions.get_task_metadata_for_branch(repo, branch_name)
