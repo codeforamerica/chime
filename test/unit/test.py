@@ -2227,12 +2227,12 @@ class TestProcess (TestCase):
             #
             frances.open_link(f_article_path)
             frances.edit_article(title_str='So, So Awful', body_str='It was the worst of times.')
-            self.assertIsNotNone(frances.soup.find(text=repo_functions.UPSTREAM_EDIT_INFO_FLASH_MESSAGE),
-                                 'Should see a warning about the conflict above the article.')
+            self.assertIsNone(frances.soup.find(text=repo_functions.UPSTREAM_EDIT_INFO_FLASH_MESSAGE),
+                              'Should not see a warning about the conflict in the activity history.')
 
             frances.follow_link(href='/tree/{}'.format(f_branch_name))
-            self.assertIsNotNone(frances.soup.find(text=repo_functions.UPSTREAM_EDIT_INFO_FLASH_MESSAGE),
-                                 'Should see a warning about the conflict in the activity history.')
+            self.assertIsNone(frances.soup.find(text=repo_functions.UPSTREAM_EDIT_INFO_FLASH_MESSAGE),
+                              'Should not see a warning about the conflict in the activity history.')
 
     # in TestProcess
     def test_task_not_marked_published_after_merge_conflict(self):
