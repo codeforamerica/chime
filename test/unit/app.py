@@ -2478,7 +2478,7 @@ class TestApp (TestCase):
             branch_name = frances.get_branch_name()
             
             # Look for an "other" link that we know about - is it a category?
-            frances.follow_link('/tree/{}/edit/other'.format(branch_name))
+            frances.follow_link('/tree/{}/edit/other/'.format(branch_name))
 
             # Create a new category "Ninjas", subcategory "Flipping Out", and article "So Awesome".
             frances.add_category('Ninjas')
