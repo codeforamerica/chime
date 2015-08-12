@@ -560,13 +560,16 @@ def get_conflict(clone, other_branch_name):
 
 def get_changed(clone, other_branch_name):
     ''' Check differenace against origin default branch, return a boolean True if any.
+    
+        Use the merge-base to see if further work has happened on the other branch.
     '''
     clone.git.fetch('origin', other_branch_name)
     
-    remote_commit = clone.refs[_origin(other_branch_name)].commit
     local_commit = clone.commit()
+    base_hexsha = clone.git.merge_base(_origin(other_branch_name), local_commit)
+    remote_commit = clone.refs[_origin(other_branch_name)].commit
     
-    if remote_commit.hexsha != local_commit.hexsha:
+    if remote_commit.hexsha != base_hexsha:
         return True
 
 def move_existing_file(clone, old_path, new_path, base_sha, default_branch_name):
