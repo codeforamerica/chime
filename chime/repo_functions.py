@@ -546,9 +546,10 @@ def get_conflict(clone, other_branch_name):
         # Try a no-commit merge from the other branch.
         clone.git.merge(_origin(other_branch_name), '--no-commit')
 
-    except GitCommandError:
+    except GitCommandError as err:
         # Okay, we have a conflict. Make a new MergeConflict and return it.
         clone.git.merge('--abort')
+        logging.info('Git command "{}" returned status {}'.format(' '.join(err.command), err.status))
         
         remote_commit = clone.refs[_origin(other_branch_name)].commit
         return MergeConflict(remote_commit, local_commit=clone.commit())
