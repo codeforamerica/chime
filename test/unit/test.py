@@ -2331,7 +2331,7 @@ class TestProcess (TestCase):
             # load an edit page
             erica.open_link(url='/tree/{}/edit/other/'.format(erica_branch_name))
             # a warning is flashed about working in a deleted branch
-            self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and tag.text == view_functions.MESSAGE_ACTIVITY_DELETED))
+            self.assertIsNotNone(erica.soup.find(text=view_functions.MESSAGE_ACTIVITY_DELETED))
 
     # in TestProcess
     def test_page_not_found_when_branch_deleted(self):
@@ -2375,7 +2375,7 @@ class TestProcess (TestCase):
             # load an edit page
             erica.open_link(url='/tree/{}/edit/other/'.format(erica_branch_name), expected_status_code=404)
             # a warning is flashed about working in a deleted branch
-            self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and tag.text == view_functions.MESSAGE_ACTIVITY_DELETED))
+            self.assertIsNotNone(erica.soup.find(text=view_functions.MESSAGE_ACTIVITY_DELETED))
             # the 404 page was loaded
             pattern_template_comment_stripped = sub(ur'<!--|-->', u'', PATTERN_TEMPLATE_COMMENT)
             comments = erica.soup.find_all(text=lambda text: isinstance(text, Comment))
