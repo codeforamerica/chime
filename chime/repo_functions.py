@@ -10,7 +10,7 @@ from re import match, search
 import json
 import random
 from . import edit_functions, google_api_functions
-from .config import ChimeConfig
+from .config import ChimeConstants
 
 TASK_METADATA_FILENAME = u'_task.yml'
 BRANCH_NAME_LENGTH = 9
@@ -626,11 +626,11 @@ def get_message_classification(subject, body):
     elif search(r'{}$'.format(REVIEW_STATE_COMMIT_PREFIX), subject):
         message_action = None
         if ACTIVITY_FEEDBACK_MESSAGE in body:
-            message_action = ChimeConfig.REVIEW_STATE_FEEDBACK
+            message_action = ChimeConstants.REVIEW_STATE_FEEDBACK
         elif ACTIVITY_ENDORSED_MESSAGE in body:
-            message_action = ChimeConfig.REVIEW_STATE_ENDORSED
+            message_action = ChimeConstants.REVIEW_STATE_ENDORSED
         elif ACTIVITY_PUBLISHED_MESSAGE in body:
-            message_action = ChimeConfig.REVIEW_STATE_PUBLISHED
+            message_action = ChimeConstants.REVIEW_STATE_PUBLISHED
         return MESSAGE_CATEGORY_INFO, MESSAGE_TYPE_REVIEW_UPDATE, message_action
     else:
         return MESSAGE_CATEGORY_EDIT, MESSAGE_TYPE_EDIT, None
@@ -687,19 +687,19 @@ def get_review_state_and_authorized(repo, default_branch_name, working_branch_na
     '''
     state, author_email = get_review_state_and_author_email(repo, default_branch_name, working_branch_name)
     # only the person who made the last edit should be able to request a review
-    if state == ChimeConfig.REVIEW_STATE_EDITED:
+    if state == ChimeConstants.REVIEW_STATE_EDITED:
         return state, (author_email == actor_email)
 
     # only a person who didn't request feedback should be able to endorse
-    if state == ChimeConfig.REVIEW_STATE_FEEDBACK:
+    if state == ChimeConstants.REVIEW_STATE_FEEDBACK:
         return state, (author_email != actor_email)
 
     # anybody should be able to publish an endorsed activity
-    if state == ChimeConfig.REVIEW_STATE_ENDORSED:
+    if state == ChimeConstants.REVIEW_STATE_ENDORSED:
         return state, True
 
     # nobody should be able to do anything if the site's published
-    if state == ChimeConfig.REVIEW_STATE_PUBLISHED:
+    if state == ChimeConstants.REVIEW_STATE_PUBLISHED:
         return state, False
 
     # no other restrictions
@@ -714,20 +714,20 @@ def get_review_state_and_author_email(repo, default_branch_name, working_branch_
     _, message_type, _ = get_message_classification(commit_subject, commit_body)
     author = last_commit.author.email
     # return the edited state for everything that isn't caught
-    state = ChimeConfig.REVIEW_STATE_EDITED
+    state = ChimeConstants.REVIEW_STATE_EDITED
 
     # handle review state updates
     if message_type == MESSAGE_TYPE_REVIEW_UPDATE:
         if ACTIVITY_FEEDBACK_MESSAGE in commit_body:
-            state = ChimeConfig.REVIEW_STATE_FEEDBACK
+            state = ChimeConstants.REVIEW_STATE_FEEDBACK
         elif ACTIVITY_ENDORSED_MESSAGE in commit_body:
-            state = ChimeConfig.REVIEW_STATE_ENDORSED
+            state = ChimeConstants.REVIEW_STATE_ENDORSED
         elif ACTIVITY_PUBLISHED_MESSAGE in commit_body:
-            state = ChimeConfig.REVIEW_STATE_PUBLISHED
+            state = ChimeConstants.REVIEW_STATE_PUBLISHED
 
     # if the last commit is the creation of the activity, or if it is the same as the base commit, the state is fresh
     elif search(r'{}$'.format(ACTIVITY_CREATED_MESSAGE), commit_subject) or last_commit.hexsha == base_commit_hexsha:
-        state = ChimeConfig.REVIEW_STATE_FRESH
+        state = ChimeConstants.REVIEW_STATE_FRESH
 
     return state, author
 
@@ -759,13 +759,13 @@ def add_empty_commit(clone, subject, body, push=True):
 def update_review_state(clone, new_review_state, push=True):
     ''' Adds a new empty commit changing the review state
     '''
-    if new_review_state not in (ChimeConfig.REVIEW_STATE_FEEDBACK, ChimeConfig.REVIEW_STATE_ENDORSED):
+    if new_review_state not in (ChimeConstants.REVIEW_STATE_FEEDBACK, ChimeConstants.REVIEW_STATE_ENDORSED):
         raise Exception(u'The review state can\'t be set to {} here.'.format(new_review_state))
 
     message_text = u''
-    if new_review_state == ChimeConfig.REVIEW_STATE_FEEDBACK:
+    if new_review_state == ChimeConstants.REVIEW_STATE_FEEDBACK:
         message_text = ACTIVITY_FEEDBACK_MESSAGE
-    elif new_review_state == ChimeConfig.REVIEW_STATE_ENDORSED:
+    elif new_review_state == ChimeConstants.REVIEW_STATE_ENDORSED:
         message_text = ACTIVITY_ENDORSED_MESSAGE
 
     return add_empty_commit(clone=clone, subject=REVIEW_STATE_COMMIT_PREFIX, body=message_text, push=push)
