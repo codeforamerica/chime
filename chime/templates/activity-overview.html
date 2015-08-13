@@ -27,13 +27,13 @@
 
         <ul class="activity-progress grid row">
             {% set review_step = 0 %}
-            {% if activity.review_state == "unreviewed edits" %}
+            {% if activity.review_state == config.REVIEW_STATE_EDITED %}
                 {% set review_step = 1 %}
-            {% elif activity.review_state == "feedback requested" %}
+            {% elif activity.review_state == config.REVIEW_STATE_FEEDBACK %}
                 {% set review_step = 2 %}
-            {% elif activity.review_state == "edits endorsed" %}
+            {% elif activity.review_state == config.REVIEW_STATE_ENDORSED %}
                 {% set review_step = 3 %}
-            {% elif activity.review_state == "changes published" %}
+            {% elif activity.review_state == config.REVIEW_STATE_PUBLISHED %}
                 {% set review_step = 4 %}
             {% endif %}
 
@@ -128,13 +128,13 @@
 
             {% for log_item in activity.history %}
             <div class="activity-log-item activity-log-item--{{ log_item.commit_category }}">
-                {% if log_item.commit_type == 'comment' %}
+                {% if log_item.commit_type == config.MESSAGE_TYPE_COMMENT %}
                 <div class="comment">
                     <div class="comment__author">{{ log_item.author_email }}</div>
                     <div class="comment__body">{{ log_item.commit_body }}</div>
                     <div class="comment__datetime">{{ log_item.commit_date }}</div>
                 </div>
-                {% elif log_item.commit_type == 'review update' %}
+                {% elif log_item.commit_type == config.MESSAGE_TYPE_REVIEW_UPDATE %}
                 <div class="activity-log-item__content">
                     <p class="text-{% if log_item.commit_action == config.REVIEW_STATE_FEEDBACK %}orange{% elif log_item.commit_action == config.REVIEW_STATE_ENDORSED %}green{% else %}blue{% endif %}">{{ log_item.author_email }} {{ log_item.commit_body }}</p>
                     <div class="activity-log-item__datetime">{{ log_item.commit_date }}</div>

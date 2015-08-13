@@ -1306,31 +1306,31 @@ class TestRepo (TestCase):
         check_item = activity_history.pop()
         self.assertEqual(u'The "{}" activity was started'.format(task_description), check_item['commit_subject'])
         self.assertEqual(u'Created task metadata file "{}"\nSet author_email to {}\nSet task_description to {}\nSet task_beneficiary to {}'.format(repo_functions.TASK_METADATA_FILENAME, fake_author_email, task_description, task_beneficiary), check_item['commit_body'])
-        self.assertEqual(repo_functions.MESSAGE_TYPE_ACTIVITY_UPDATE, check_item['commit_type'])
+        self.assertEqual(ChimeConstants.MESSAGE_TYPE_ACTIVITY_UPDATE, check_item['commit_type'])
 
         # check the delete
         check_item = activity_history.pop(0)
         self.assertEqual(u'The "{}" topic (containing 1 topic and 1 article) was deleted'.format(updated_details[0][1]), check_item['commit_subject'])
         self.assertEqual(u'[{{"action": "delete", "file_path": "{cat1_path}", "display_type": "category", "title": "{cat1_title}"}}, {{"action": "delete", "file_path": "{cat2_path}", "display_type": "category", "title": "{cat2_title}"}}, {{"action": "delete", "file_path": "{art1_path}", "display_type": "article", "title": "{art1_title}"}}]'.format(cat1_path=updated_details[0][3], cat1_title=updated_details[0][1], cat2_path=updated_details[1][3], cat2_title=updated_details[1][1], art1_path=updated_details[2][3], art1_title=updated_details[2][1]), check_item['commit_body'])
-        self.assertEqual(repo_functions.MESSAGE_TYPE_EDIT, check_item['commit_type'])
+        self.assertEqual(ChimeConstants.MESSAGE_TYPE_EDIT, check_item['commit_type'])
 
         # check the comments
         check_item = activity_history.pop(0)
         self.assertEqual(u'Provided feedback.', check_item['commit_subject'])
         self.assertEqual(newline_comment, check_item['commit_body'])
-        self.assertEqual(repo_functions.MESSAGE_TYPE_COMMENT, check_item['commit_type'])
+        self.assertEqual(ChimeConstants.MESSAGE_TYPE_COMMENT, check_item['commit_type'])
 
         check_item = activity_history.pop(0)
         self.assertEqual(u'Provided feedback.', check_item['commit_subject'])
         self.assertEqual(funny_comment, check_item['commit_body'])
-        self.assertEqual(repo_functions.MESSAGE_TYPE_COMMENT, check_item['commit_type'])
+        self.assertEqual(ChimeConstants.MESSAGE_TYPE_COMMENT, check_item['commit_type'])
 
         # check the category & article creations
         for pos, check_item in list(enumerate(activity_history)):
             check_detail = updated_details[len(updated_details) - (pos + 1)]
             self.assertEqual(u'The "{}" {} was created'.format(check_detail[1], view_functions.file_display_name(check_detail[2])), check_item['commit_subject'])
             self.assertEqual(u'[{{"action": "create", "file_path": "{file_path}", "display_type": "{display_type}", "title": "{title}"}}]'.format(file_path=check_detail[3], display_type=check_detail[2], title=check_detail[1]), check_item['commit_body'])
-            self.assertEqual(repo_functions.MESSAGE_TYPE_EDIT, check_item['commit_type'])
+            self.assertEqual(ChimeConstants.MESSAGE_TYPE_EDIT, check_item['commit_type'])
 
     # in TestRepo
     def test_newlines_in_commit_message_body(self):

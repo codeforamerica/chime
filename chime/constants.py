@@ -20,6 +20,18 @@ class ChimeConstants:
     # the activity has been deleted
     WORKING_STATE_DELETED = u'deleted'
 
+    # the different categories and types of messages that can be displayed in the activity overview
+    # info messages, like starting an activity or changing its review or working state
+    MESSAGE_CATEGORY_INFO = u'info'
+    MESSAGE_TYPE_ACTIVITY_UPDATE = u'activity update'
+    MESSAGE_TYPE_REVIEW_UPDATE = u'review update'
+    # edit messages, like creating or editing topics and articles
+    MESSAGE_CATEGORY_EDIT = u'edit'
+    MESSAGE_TYPE_EDIT = u'edit'
+    # comment messages, for leaving comments
+    MESSAGE_CATEGORY_COMMENT = u'comment'
+    MESSAGE_TYPE_COMMENT = u'comment'
+
     @staticmethod
     def init_app(app):
         pass

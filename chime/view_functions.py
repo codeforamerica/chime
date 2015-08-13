@@ -34,8 +34,7 @@ from .repo_functions import (
     abandon_branch, clobber_default_branch, get_review_state_and_authorized,
     save_working_file, update_review_state, provide_feedback, move_existing_file,
     get_last_edited_email, mark_upstream_push_needed, MergeConflict,
-    get_activity_working_state, ACTIVITY_CREATED_MESSAGE, TASK_METADATA_FILENAME,
-    MESSAGE_CATEGORY_EDIT
+    get_activity_working_state, ACTIVITY_CREATED_MESSAGE, TASK_METADATA_FILENAME
 )
 from .constants import ChimeConstants
 
@@ -719,7 +718,7 @@ def summarize_activity_history(repo=None, history=None, branch_name=u''):
     change_lookup = {}
     display_types_encountered = []
     # we only care about edits
-    edit_history = [action for action in reversed(history) if action['commit_category'] == MESSAGE_CATEGORY_EDIT]
+    edit_history = [action for action in reversed(history) if action['commit_category'] == ChimeConstants.MESSAGE_CATEGORY_EDIT]
     for action in edit_history:
         # get the list of changed files from the commit body
         try:
