@@ -36,7 +36,7 @@ from chime import (
     create_app, jekyll_functions, repo_functions, edit_functions,
     google_api_functions, view_functions, publish,
     google_access_token_update, errors)
-from chime.config import ChimeConstants
+from chime.constants import ChimeConstants
 
 from unit.chime_test_client import ChimeTestClient
 

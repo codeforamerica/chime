@@ -11,7 +11,7 @@ from os.path import realpath, join
 from flask import Blueprint, Flask
 
 from .httpd import run_apache_forever
-from .config import ChimeConstants
+from .constants import ChimeConstants
 from . import view_functions
 
 chime = Blueprint('chime', __name__, template_folder='templates')

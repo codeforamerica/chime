@@ -10,7 +10,7 @@ from re import match, search
 import json
 import random
 from . import edit_functions, google_api_functions
-from .config import ChimeConstants
+from .constants import ChimeConstants
 
 TASK_METADATA_FILENAME = u'_task.yml'
 BRANCH_NAME_LENGTH = 9
