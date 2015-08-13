@@ -1908,6 +1908,7 @@ class TestAppConfig (TestCase):
         create_app_environ['BROWSERID_URL'] = 'Hey'
         create_app(create_app_environ)
 
+    # in TestAppConfig
     def test_error_template_args(self):
         ''' Default error template args are generated as expected
         '''
@@ -1929,6 +1930,19 @@ class TestAppConfig (TestCase):
         self.assertTrue('support_phone_number' in template_args)
         self.assertEqual(template_args['support_email'], fake_support_email)
         self.assertEqual(template_args['support_phone_number'], fake_support_phone_number)
+
+    # in TestAppConfig
+    def test_for_constant_name_conflicts(self):
+        ''' None of the constant names defined in constants.py conflict with reserved config variable names
+        '''
+        flask_reserved_config_names = ['DEBUG', 'TESTING', 'PROPAGATE_EXCEPTIONS', 'PRESERVE_CONTEXT_ON_EXCEPTION', 'SECRET_KEY', 'SESSION_COOKIE_NAME', 'SESSION_COOKIE_DOMAIN', 'SESSION_COOKIE_PATH', 'SESSION_COOKIE_HTTPONLY', 'SESSION_COOKIE_SECURE', 'PERMANENT_SESSION_LIFETIME', 'USE_X_SENDFILE', 'LOGGER_NAME', 'SERVER_NAME', 'APPLICATION_ROOT', 'MAX_CONTENT_LENGTH', 'SEND_FILE_MAX_AGE_DEFAULT', 'TRAP_HTTP_EXCEPTIONS', 'TRAP_BAD_REQUEST_ERRORS', 'PREFERRED_URL_SCHEME', 'JSON_AS_ASCII', 'JSON_SORT_KEYS', 'JSONIFY_PRETTYPRINT_REGULAR']
+
+        chime_reserved_config_names = ['RUNNING_STATE_DIR', 'REPO_PATH', 'WORK_PATH', 'AUTH_DATA_HREF', 'BROWSERID_URL', 'GA_CLIENT_ID', 'GA_CLIENT_SECRET', 'GA_REDIRECT_URI', 'SUPPORT_EMAIL_ADDRESS', 'SUPPORT_PHONE_NUMBER', 'GDOCS_CLIENT_ID', 'GDOCS_CLIENT_SECRET', 'GITHUB_CLIENT_ID', 'GITHUB_CLIENT_SECRET', 'LIVE_SITE_URL', 'PUBLISH_SERVICE_URL']
+
+        check_names = flask_reserved_config_names + chime_reserved_config_names
+
+        for reserved_name in check_names:
+            self.assertFalse(hasattr(ChimeConstants, reserved_name), u'The reserved config variable name {} is present in ChimeConstants!'.format(reserved_name))
 
 class TestProcess (TestCase):
 
