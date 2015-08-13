@@ -33,7 +33,7 @@
       <h2 class="articles-list__title">Topics</h2>
       <p class="dir__description">are displayed on the homepage.</p>
       <div class="selection-box box-add-file-folder">
-        {% if activity.working_state == 'active' %}
+        {% if activity.working_state == config.WORKING_STATE_ACTIVE %}
         <form action="." method="POST" class="form-one-line">
             <input class="form-one-line__input" name="request_path" placeholder="Add topic" id="create-category-name" type="text" />
             <input name="create_what" value="category" type="hidden" />
@@ -46,7 +46,7 @@
       <h2 class="articles-list__title">Subtopics</h2>
       <p class="dir__description">help group user needs together.</p>
       <div class="selection-box box-add-file-folder">
-        {% if activity.working_state == 'active' %}
+        {% if activity.working_state == config.WORKING_STATE_ACTIVE %}
         <form action="." method="POST" class="form-one-line">
             <input class="form-one-line__input" name="request_path" placeholder="Add subtopic" id="create-subcategory-name" type="text" />
             <input name="create_what" value="category" type="hidden" />
@@ -59,7 +59,7 @@
       <h2 class="articles-list__title">Articles</h2>
       <p class="dir__description">addresses a specific user need.</p>
       <div class="selection-box box-add-file-folder">
-        {% if activity.working_state == 'active' %}
+        {% if activity.working_state == config.WORKING_STATE_ACTIVE %}
         <form action="." method="POST" class="form-one-line">
             <input class="form-one-line__input" name="request_path" placeholder="Add article" id="create-article-name" type="text" />
             <input name="create_what" value="article" type="hidden" />
@@ -74,7 +74,7 @@
          <!-- file type: {{file['display_type']}}, file name: {{file['name']}}, file title: {{file['title']}} -->
          <li class="dir-item {% if file['selected'] == True %}is-selected{% endif %}">
             <a class="dir-item__name {{file['display_type']}}" href="{{file['edit_path']}}"><span class="dir-item__display-type {{icon_class_lookup[file['display_type']]}}"></span>{{ file['title'] }}</a>
-            {% if activity.working_state == 'active' %}
+            {% if activity.working_state == config.WORKING_STATE_ACTIVE %}
             <div class="dir-item__actions toolbar--right">
             {% if column_depth == 4 %}
               <form action="." method="POST" class="toolbar__item">

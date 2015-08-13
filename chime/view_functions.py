@@ -35,8 +35,9 @@ from .repo_functions import (
     save_working_file, update_review_state, provide_feedback, move_existing_file,
     get_last_edited_email, mark_upstream_push_needed, MergeConflict,
     get_activity_working_state, ACTIVITY_CREATED_MESSAGE, TASK_METADATA_FILENAME,
-    MESSAGE_CATEGORY_EDIT, WORKING_STATE_PUBLISHED, WORKING_STATE_DELETED
+    MESSAGE_CATEGORY_EDIT
 )
+from .constants import ChimeConstants
 
 from .href import needs_redirect, get_redirect
 
@@ -564,7 +565,7 @@ def synched_checkout_required(route_function):
         # are we in a remotely published or deleted activity?
         working_state = get_activity_working_state(repo, master_name, branch_name)
         local_branch = get_branch_if_exists_locally(repo, master_name, branch_name)
-        if working_state == WORKING_STATE_PUBLISHED:
+        if working_state == ChimeConstants.WORKING_STATE_PUBLISHED:
             tag_ref = repo.tag('refs/tags/{}'.format(branch_name))
             commit = tag_ref.commit
             published_date = repo.git.show('--format=%ad', '--date=relative', commit.hexsha).strip()
@@ -575,7 +576,7 @@ def synched_checkout_required(route_function):
             if not local_branch:
                 abort(404)
 
-        elif working_state == WORKING_STATE_DELETED:
+        elif working_state == ChimeConstants.WORKING_STATE_DELETED:
             flash_only(MESSAGE_ACTIVITY_DELETED, u'warning')
 
             # if the deleted branch doesn't exist locally, raise a 404

@@ -16,7 +16,7 @@
         <p class="activity-dropdown__subtitle">Current Activity</p>
         <h2 class="activity-dropdown__title">{{ activity.task_description | title }}</h2>
         <a class="button button--green button--large activity-dropdown__button" href="/tree/{{branch}}">See full history and discussion</a>
-        {% if activity.review_state != config.REVIEW_STATE_PUBLISHED and activity.working_state == 'active' %}
+        {% if activity.review_state != config.REVIEW_STATE_PUBLISHED and activity.working_state == config.WORKING_STATE_ACTIVE %}
         <form action="{{ activity.overview_path }}" method="POST" class="comment comment--new">
           <div class="comment__author">{% if email %}{{ email }}{% else %}unknown{% endif %}</div>
           <div class="comment__body">

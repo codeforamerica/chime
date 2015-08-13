@@ -12,6 +12,14 @@ class ChimeConstants:
     # the site has been published
     REVIEW_STATE_PUBLISHED = u'changes published'
 
+    # the different working states for an activity
+    # the activity is current and active
+    WORKING_STATE_ACTIVE = u'active'
+    # the activity has been published
+    WORKING_STATE_PUBLISHED = u'published'
+    # the activity has been deleted
+    WORKING_STATE_DELETED = u'deleted'
+
     @staticmethod
     def init_app(app):
         pass

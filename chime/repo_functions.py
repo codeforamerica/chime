@@ -35,11 +35,6 @@ MESSAGE_TYPE_EDIT = u'edit'
 MESSAGE_CATEGORY_COMMENT = u'comment'
 MESSAGE_TYPE_COMMENT = u'comment'
 
-# the working state of the activity
-WORKING_STATE_ACTIVE = u'active'
-WORKING_STATE_PUBLISHED = u'published'
-WORKING_STATE_DELETED = u'deleted'
-
 # Name of file in running state dir that signals a need to push upstream.
 NEEDS_PUSH_FILE = 'needs-push'
 
@@ -125,12 +120,12 @@ def get_activity_working_state(repo, default_branch_name, branch_name):
     ''' Get whether the activity is active, published, or deleted.
     '''
     if branch_name in repo.tags:
-        return WORKING_STATE_PUBLISHED
+        return ChimeConstants.WORKING_STATE_PUBLISHED
 
     if not get_branch_if_exists_at_origin(repo, default_branch_name, branch_name):
-        return WORKING_STATE_DELETED
+        return ChimeConstants.WORKING_STATE_DELETED
 
-    return WORKING_STATE_ACTIVE
+    return ChimeConstants.WORKING_STATE_ACTIVE
 
 def get_branch_start_point(clone, default_branch_name, new_branch_name):
     ''' Return the last commit on the branch
