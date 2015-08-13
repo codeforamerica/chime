@@ -1316,7 +1316,7 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
     }
 
     for iso in load_languages(repo.working_dir):
-        if iso != 'en':
+        if iso != ChimeConstants.ISO_CODE_ENGLISH:
             front['title-' + iso] = dos2unix(new_values.get(iso + '-title', ''))
             front['description-' + iso] = dos2unix(new_values.get(iso + '-description', ''))
             front['body-' + iso] = dos2unix(new_values.get(iso + '-body', ''))

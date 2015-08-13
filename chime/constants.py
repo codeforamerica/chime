@@ -32,6 +32,10 @@ class ChimeConstants:
     COMMIT_CATEGORY_COMMENT = u'comment'
     COMMIT_TYPE_COMMENT = u'comment'
 
+    # ISO language codes
+    ISO_CODE_ENGLISH = 'en'
+    ISO_NAME_ENGLISH = 'English'
+
     @staticmethod
     def init_app(app):
         pass

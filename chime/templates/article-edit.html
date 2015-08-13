@@ -29,7 +29,7 @@
     <input name="url-slug" type="hidden" value="{{ url_slug }}" />
     <input name="order" type="hidden" value="{{ front['order'] }}" />
 {% for iso in languages %}
-    {% if iso == 'en' %}
+    {% if iso == config.ISO_CODE_ENGLISH %}
         {% set form_title = front['title'] %}
         {% set form_description = front['description'] %}
         {% set form_body = body %}
@@ -157,7 +157,7 @@
                     <span class="label toolbar__item">Translations: </span>
                 {% for iso in languages %}
                     {% set lang = languages[iso] %}
-                    {% if iso == 'en' %}
+                    {% if iso == config.ISO_CODE_ENGLISH %}
                         {% set class = 'button state-active' %}
                     {% else %}
                         {% set class = 'button' %}

@@ -78,7 +78,7 @@
           <input name="url-slug" type="hidden" value="{{ url_slug }}" />
           <input name="order" type="hidden" value="{{ category.order }}" />
       {% for iso in languages %}
-          {% if iso == 'en' %}
+          {% if iso == config.ISO_CODE_ENGLISH %}
               {% set category_title = category['title'] %}
               {% set category_description = category['description'] %}
               {% set display_class = '' %}
