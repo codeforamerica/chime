@@ -11,7 +11,7 @@ from os.path import realpath, join
 from flask import Blueprint, Flask
 
 from .httpd import run_apache_forever
-from .config import Config
+from .config import ChimeConfig
 from . import view_functions
 
 chime = Blueprint('chime', __name__, template_folder='templates')
@@ -70,7 +70,7 @@ def create_app(environ):
     app = Flask(__name__, static_folder='static')
     app.secret_key = 'boop'
     app.logger_name = 'chime-flask'
-    app.config.from_object(Config)
+    app.config.from_object(ChimeConfig)
     app.config['RUNNING_STATE_DIR'] = environ['RUNNING_STATE_DIR']
     app.config['GA_CLIENT_ID'] = environ['GA_CLIENT_ID']
     app.config['GA_CLIENT_SECRET'] = environ['GA_CLIENT_SECRET']

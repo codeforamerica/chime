@@ -1,5 +1,5 @@
 
-class Config:
+class ChimeConfig:
     # the different review states for an activity
     # no changes have yet been made to the activity
     REVIEW_STATE_FRESH = u'fresh'
