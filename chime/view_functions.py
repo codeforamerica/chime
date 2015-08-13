@@ -36,7 +36,7 @@ from .repo_functions import (
     get_last_edited_email, mark_upstream_push_needed, MergeConflict,
     get_activity_working_state, ACTIVITY_CREATED_MESSAGE, TASK_METADATA_FILENAME
 )
-from .constants import ChimeConstants
+from . import constants
 
 from .href import needs_redirect, get_redirect
 
@@ -564,7 +564,7 @@ def synched_checkout_required(route_function):
         # are we in a remotely published or deleted activity?
         working_state = get_activity_working_state(repo, master_name, branch_name)
         local_branch = get_branch_if_exists_locally(repo, master_name, branch_name)
-        if working_state == ChimeConstants.WORKING_STATE_PUBLISHED:
+        if working_state == constants.WORKING_STATE_PUBLISHED:
             tag_ref = repo.tag('refs/tags/{}'.format(branch_name))
             commit = tag_ref.commit
             published_date = repo.git.show('--format=%ad', '--date=relative', commit.hexsha).strip()
@@ -575,7 +575,7 @@ def synched_checkout_required(route_function):
             if not local_branch:
                 abort(404)
 
-        elif working_state == ChimeConstants.WORKING_STATE_DELETED:
+        elif working_state == constants.WORKING_STATE_DELETED:
             flash_only(MESSAGE_ACTIVITY_DELETED, u'warning')
 
             # if the deleted branch doesn't exist locally, raise a 404
@@ -718,7 +718,7 @@ def summarize_activity_history(repo=None, history=None, branch_name=u''):
     change_lookup = {}
     display_types_encountered = []
     # we only care about edits
-    edit_history = [action for action in reversed(history) if action['commit_category'] == ChimeConstants.COMMIT_CATEGORY_EDIT]
+    edit_history = [action for action in reversed(history) if action['commit_category'] == constants.COMMIT_CATEGORY_EDIT]
     for action in edit_history:
         # get the list of changed files from the commit body
         try:
@@ -1316,7 +1316,7 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
     }
 
     for iso in load_languages(repo.working_dir):
-        if iso != ChimeConstants.ISO_CODE_ENGLISH:
+        if iso != constants.ISO_CODE_ENGLISH:
             front['title-' + iso] = dos2unix(new_values.get(iso + '-title', ''))
             front['description-' + iso] = dos2unix(new_values.get(iso + '-description', ''))
             front['body-' + iso] = dos2unix(new_values.get(iso + '-body', ''))

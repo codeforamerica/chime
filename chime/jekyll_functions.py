@@ -28,7 +28,7 @@ from os.path import join, exists
 from collections import OrderedDict
 import yaml
 import logging
-from .constants import ChimeConstants
+from . import constants
 
 _marker = "---\n"
 
@@ -61,8 +61,8 @@ def load_languages(directory):
             languages[iso] = name
 
     # We want English always present.
-    if ChimeConstants.ISO_CODE_ENGLISH not in languages:
-        languages[ChimeConstants.ISO_CODE_ENGLISH] = ChimeConstants.ISO_NAME_ENGLISH
+    if constants.ISO_CODE_ENGLISH not in languages:
+        languages[constants.ISO_CODE_ENGLISH] = constants.ISO_NAME_ENGLISH
 
     return languages
 
