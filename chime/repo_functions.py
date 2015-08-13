@@ -600,7 +600,7 @@ def move_existing_file(clone, old_path, new_path, base_sha, default_branch_name)
 
     return clone.active_branch.commit
 
-def get_message_classification(subject, body):
+def get_commit_classification(subject, body):
     ''' Figure out what type of history log message this is, based on the subject and body
 
         returns:
@@ -617,9 +617,9 @@ def get_message_classification(subject, body):
                 it was changed to.
     '''
     if search(r'{}$|{}$|{}$'.format(ACTIVITY_CREATED_MESSAGE, ACTIVITY_UPDATED_MESSAGE, ACTIVITY_DELETED_MESSAGE), subject):
-        return ChimeConstants.MESSAGE_CATEGORY_INFO, ChimeConstants.MESSAGE_TYPE_ACTIVITY_UPDATE, None
+        return ChimeConstants.COMMIT_CATEGORY_INFO, ChimeConstants.COMMIT_TYPE_ACTIVITY_UPDATE, None
     elif search(r'{}$'.format(COMMENT_COMMIT_PREFIX), subject):
-        return ChimeConstants.MESSAGE_CATEGORY_COMMENT, ChimeConstants.MESSAGE_TYPE_COMMENT, None
+        return ChimeConstants.COMMIT_CATEGORY_COMMENT, ChimeConstants.COMMIT_TYPE_COMMENT, None
     elif search(r'{}$'.format(REVIEW_STATE_COMMIT_PREFIX), subject):
         message_action = None
         if ACTIVITY_FEEDBACK_MESSAGE in body:
@@ -628,9 +628,9 @@ def get_message_classification(subject, body):
             message_action = ChimeConstants.REVIEW_STATE_ENDORSED
         elif ACTIVITY_PUBLISHED_MESSAGE in body:
             message_action = ChimeConstants.REVIEW_STATE_PUBLISHED
-        return ChimeConstants.MESSAGE_CATEGORY_INFO, ChimeConstants.MESSAGE_TYPE_REVIEW_UPDATE, message_action
+        return ChimeConstants.COMMIT_CATEGORY_INFO, ChimeConstants.COMMIT_TYPE_REVIEW_UPDATE, message_action
     else:
-        return ChimeConstants.MESSAGE_CATEGORY_EDIT, ChimeConstants.MESSAGE_TYPE_EDIT, None
+        return ChimeConstants.COMMIT_CATEGORY_EDIT, ChimeConstants.COMMIT_TYPE_EDIT, None
 
 def get_commit_message_subject_and_body(commit):
     ''' split a commit's message into subject and body
@@ -650,12 +650,12 @@ def get_last_review_commit(repo, working_branch_name, base_commit_hexsha):
         return last_commit
 
     commit_subject, commit_body = get_commit_message_subject_and_body(last_commit)
-    _, message_type, _ = get_message_classification(commit_subject, commit_body)
+    _, commit_type, _ = get_commit_classification(commit_subject, commit_body)
     # use the most recent non-comment commit that's not the base commit
-    while message_type == ChimeConstants.MESSAGE_TYPE_COMMENT and last_commit.hexsha != base_commit_hexsha:
+    while commit_type == ChimeConstants.COMMIT_TYPE_COMMENT and last_commit.hexsha != base_commit_hexsha:
         last_commit = last_commit.parents[0]
         commit_subject, commit_body = get_commit_message_subject_and_body(last_commit)
-        _, message_type, _ = get_message_classification(commit_subject, commit_body)
+        _, commit_type, _ = get_commit_classification(commit_subject, commit_body)
 
     return last_commit
 
@@ -669,12 +669,12 @@ def get_last_edited_email(repo, default_branch_name, working_branch_name):
         return last_commit.author.email
 
     commit_subject, commit_body = get_commit_message_subject_and_body(last_commit)
-    _, message_type, _ = get_message_classification(commit_subject, commit_body)
+    _, commit_type, _ = get_commit_classification(commit_subject, commit_body)
     # use the most recent non-comment commit that's not the base commit
-    while message_type == ChimeConstants.MESSAGE_TYPE_COMMENT and last_commit.hexsha != base_commit_hexsha:
+    while commit_type == ChimeConstants.COMMIT_TYPE_COMMENT and last_commit.hexsha != base_commit_hexsha:
         last_commit = last_commit.parents[0]
         commit_subject, commit_body = get_commit_message_subject_and_body(last_commit)
-        _, message_type, _ = get_message_classification(commit_subject, commit_body)
+        _, commit_type, _ = get_commit_classification(commit_subject, commit_body)
 
     return last_commit.author.email
 
@@ -708,13 +708,13 @@ def get_review_state_and_author_email(repo, default_branch_name, working_branch_
     base_commit_hexsha = repo.git.merge_base(default_branch_name, working_branch_name)
     last_commit = get_last_review_commit(repo, working_branch_name, base_commit_hexsha)
     commit_subject, commit_body = get_commit_message_subject_and_body(last_commit)
-    _, message_type, _ = get_message_classification(commit_subject, commit_body)
+    _, commit_type, _ = get_commit_classification(commit_subject, commit_body)
     author = last_commit.author.email
     # return the edited state for everything that isn't caught
     state = ChimeConstants.REVIEW_STATE_EDITED
 
     # handle review state updates
-    if message_type == ChimeConstants.MESSAGE_TYPE_REVIEW_UPDATE:
+    if commit_type == ChimeConstants.COMMIT_TYPE_REVIEW_UPDATE:
         if ACTIVITY_FEEDBACK_MESSAGE in commit_body:
             state = ChimeConstants.REVIEW_STATE_FEEDBACK
         elif ACTIVITY_ENDORSED_MESSAGE in commit_body:

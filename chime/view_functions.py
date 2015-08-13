@@ -30,7 +30,7 @@ from .jekyll_functions import load_jekyll_doc, load_languages, build_jekyll_site
 from .google_api_functions import read_ga_config, fetch_google_analytics_for_page
 from .repo_functions import (
     get_existing_branch, get_branch_if_exists_locally, ignore_task_metadata_on_merge,
-    get_message_classification, ChimeRepo, get_task_metadata_for_branch, complete_branch,
+    get_commit_classification, ChimeRepo, get_task_metadata_for_branch, complete_branch,
     abandon_branch, clobber_default_branch, get_review_state_and_authorized,
     save_working_file, update_review_state, provide_feedback, move_existing_file,
     get_last_edited_email, mark_upstream_push_needed, MergeConflict,
@@ -678,7 +678,7 @@ def make_activity_history(repo):
     pattern = re.compile(r'\x00Name: (.*?)\tEmail: (.*?)\tDate: (.*?)\tSubject: (.*?)\tBody: (.*?)\x00', re.DOTALL)
     for log_details in pattern.findall(log):
         name, email, date, subject, body = tuple([item.decode('utf-8') for item in log_details])
-        commit_category, commit_type, commit_action = get_message_classification(subject, body)
+        commit_category, commit_type, commit_action = get_commit_classification(subject, body)
         log_item = dict(author_name=name, author_email=email, commit_date=date, commit_subject=subject,
                         commit_body=body, commit_category=commit_category, commit_type=commit_type,
                         commit_action=commit_action)
@@ -718,7 +718,7 @@ def summarize_activity_history(repo=None, history=None, branch_name=u''):
     change_lookup = {}
     display_types_encountered = []
     # we only care about edits
-    edit_history = [action for action in reversed(history) if action['commit_category'] == ChimeConstants.MESSAGE_CATEGORY_EDIT]
+    edit_history = [action for action in reversed(history) if action['commit_category'] == ChimeConstants.COMMIT_CATEGORY_EDIT]
     for action in edit_history:
         # get the list of changed files from the commit body
         try:
