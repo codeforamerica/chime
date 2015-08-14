@@ -456,9 +456,9 @@ def log_application_errors(route_function):
             error_code = getattr(e, 'code', 500)
 
             if error_code in range(400, 499):
-                Logger.info(e, exc_info=False, extra={'request': request})
+                Logger.info(e, exc_info=False, extra={'request': request, 'session':session})
             else:
-                Logger.error(e, exc_info=True, extra={'request': request})
+                Logger.error(e, exc_info=True, extra={'request': request, 'session':session})
 
             raise
 

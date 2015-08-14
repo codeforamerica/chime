@@ -2,15 +2,19 @@
 from __future__ import absolute_import
 
 from unittest import main, TestCase
-
 import collections
 from tempfile import mkdtemp
 from os.path import join, dirname, abspath
 from shutil import rmtree, copytree
 import random
 import logging
-
 import sys
+import flask
+
+import werkzeug.datastructures
+
+from chimelog import ChimeErrorReportFormatter, make_safe_for_json
+
 repo_root = abspath(join(dirname(__file__), '..'))
 sys.path.insert(0, repo_root)
 
@@ -27,8 +31,9 @@ from unit.chime_test_client import ChimeTestClient
 #
 
 _LoggingWatcher = collections.namedtuple("_LoggingWatcher", ["records", "output"])
-class _BaseTestCaseContext(object):
 
+
+class _BaseTestCaseContext(object):
     def __init__(self, test_case):
         self.test_case = test_case
 
@@ -60,9 +65,10 @@ class _AssertLogsContext(_BaseTestCaseContext):
 
     LOGGING_FORMAT = "%(levelname)s:%(name)s:%(message)s"
 
-    def __init__(self, test_case, logger_name, level):
+    def __init__(self, test_case, logger_name, level, formatter=None):
         _BaseTestCaseContext.__init__(self, test_case)
         self.logger_name = logger_name
+        self.formatter = formatter or logging.Formatter(self.LOGGING_FORMAT)
         if level:
             self.level = logging._levelNames.get(level, level)
         else:
@@ -74,9 +80,8 @@ class _AssertLogsContext(_BaseTestCaseContext):
             logger = self.logger = self.logger_name
         else:
             logger = self.logger = logging.getLogger(self.logger_name)
-        formatter = logging.Formatter(self.LOGGING_FORMAT)
         handler = _CapturingHandler()
-        handler.setFormatter(formatter)
+        handler.setFormatter(self.formatter)
         self.watcher = handler.watcher
         self.old_handlers = logger.handlers[:]
         self.old_level = logger.level
@@ -96,12 +101,11 @@ class _AssertLogsContext(_BaseTestCaseContext):
         if len(self.watcher.records) == 0:
             self._raiseFailure(
                 "no logs of level {} or higher triggered on {}"
-                .format(logging.getLevelName(self.level), self.logger.name))
+                    .format(logging.getLevelName(self.level), self.logger.name))
 
 
 class LogTestCase(TestCase):
-
-    def assertLogs(self, logger=None, level=None):
+    def assertLogs(self, logger=None, level=None, formatter=None):
         """Fail unless a log message of level *level* or higher is emitted
         on *logger_name* or its children.  If omitted, *level* defaults to
         INFO and *logger* defaults to the root logger.
@@ -121,10 +125,10 @@ class LogTestCase(TestCase):
             self.assertEqual(cm.output, ['INFO:foo:first message',
                                          'ERROR:foo.bar:second message'])
         """
-        return _AssertLogsContext(self, logger, level)
+        return _AssertLogsContext(self, logger, level, formatter)
 
-class TestLogger (LogTestCase):
 
+class TestLogger(LogTestCase):
     def setUp(self):
         # allow logging
         logging.disable(logging.NOTSET)
@@ -203,6 +207,89 @@ class TestLogger (LogTestCase):
             erica.open_link_blindly(url='/nothinghere')
 
         self.assertEqual(cm.output, ['INFO:chime.view_functions:404: Not Found'])
+
+    def test_logging_failure_format(self):
+        from chime.view_functions import log_application_errors
+
+        @log_application_errors
+        def fail():
+            raise ValueError('blow up')
+
+        self.app.app.add_url_rule('/fail', None, fail)
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
+
+        with self.assertLogs('chime.view_functions', level='DEBUG', formatter=ChimeErrorReportFormatter()) as cm:
+            erica.open_link_blindly(url='/fail')
+
+        self.assertEqual(1, len(cm.output))
+        sys.stderr.write(cm.output[0])
+        sys.stderr.write("\n")
+
+        self.assertTrue(hasattr(cm.records[0], 'request'))
+        self.assertRegexpMatches(cm.output[0], '.*ERROR.*blow up.*')
+
+        self.assertRegexpMatches(cm.output[0], "state =")
+        self.assertRegexpMatches(cm.output[0], '"method": "GET"')
+
+
+class TestChimeErrorReportFormatter(TestCase):
+    def test_make_safe_for_json(self):
+        class Sample:
+            a_property = "prop"
+
+            def a_string(self):
+                return "text"
+
+            def a_number(self):
+                return 5
+
+            def a_dict(self):
+                return {'key': 'value'}
+
+            def an_array(self):
+                return [0, 1, 2]
+
+            def a_boolean(self):
+                return True
+
+            def headers(self):
+                return werkzeug.datastructures.Headers()
+
+            def session(self):
+                return flask.sessions.SecureCookieSession({'key':'value'})
+
+            def fail(self):
+                raise ValueError("argh")
+
+
+        sample = Sample()
+
+        # direct calls
+        self.assertEqual("prop", make_safe_for_json(sample, "a_property"))
+        self.assertEqual("text", make_safe_for_json(sample, "a_string()"))
+        self.assertEqual(5, make_safe_for_json(sample, "a_number()"))
+        self.assertEqual("value", make_safe_for_json(sample, "a_dict()['key']"))
+        self.assertEqual(1, make_safe_for_json(sample, "an_array()[1]"))
+        self.assertEqual(True, make_safe_for_json(sample, "a_boolean()"))
+        self.assertEqual('value', make_safe_for_json(sample, "session()['key']"))
+
+        # letting the caller specify where the object goes in the eval
+        self.assertEqual({}, make_safe_for_json(sample, "dict({}.headers())"))
+
+
+        # good failure handling
+        self.assertEqual("SERIALIZATION_ERROR: For 'nonexistent': Sample instance has no attribute 'nonexistent'",
+                         make_safe_for_json(sample, "nonexistent"))
+        self.assertEqual("SERIALIZATION_ERROR: For 'nonexistent()': Sample instance has no attribute 'nonexistent'",
+                         make_safe_for_json(sample, "nonexistent()"))
+        self.assertEqual("SERIALIZATION_ERROR: For 'a_number()[0]': 'int' object has no attribute '__getitem__'",
+                         make_safe_for_json(sample, "a_number()[0]"))
+        self.assertRegexpMatches(make_safe_for_json(sample, "fail"),
+                                 "^SERIALIZATION_ERROR: For 'fail': .* not JSON serializable$",
+                         )
 
 
 if __name__ == '__main__':
