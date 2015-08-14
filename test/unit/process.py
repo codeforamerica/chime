@@ -625,7 +625,7 @@ class TestProcess (TestCase):
             # verify that the branch exists locally and remotely
             repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email='erica@example.com')
             self.assertTrue(erica_branch_name in repo.branches)
-            self.assertTrue('refs/heads/{}'.format(erica_branch_name) in repo.git.ls_remote('origin', erica_branch_name))
+            self.assertTrue('refs/heads/{}'.format(erica_branch_name) in repo.git.ls_remote('origin', erica_branch_name).split())
 
             #
             # Switch users
@@ -652,8 +652,8 @@ class TestProcess (TestCase):
 
             # verify that the branch exists locally and not remotely
             self.assertTrue(erica_branch_name in repo.branches)
-            self.assertTrue('refs/tags/{}'.format(erica_branch_name) in repo.git.ls_remote('origin', erica_branch_name))
-            self.assertFalse('refs/heads/{}'.format(erica_branch_name) in repo.git.ls_remote('origin', erica_branch_name))
+            self.assertTrue('refs/tags/{}'.format(erica_branch_name) in repo.git.ls_remote('origin', erica_branch_name).split())
+            self.assertFalse('refs/heads/{}'.format(erica_branch_name) in repo.git.ls_remote('origin', erica_branch_name).split())
 
     # in TestProcess
     def test_notified_when_working_in_deleted_task(self):
