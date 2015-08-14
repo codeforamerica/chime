@@ -588,6 +588,74 @@ class TestProcess (TestCase):
             self.assertTrue(pattern_template_comment_stripped.format(u'error-404') in comments)
 
     # in TestProcess
+    def test_published_branch_not_resurrected_on_save(self):
+        ''' Saving a change on a branch that exists locally but isn't at origin because it was published doesn't re-create the branch.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            francis_email = u'frances@example.com'
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in(erica_email)
+
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in(francis_email)
+
+            # Start a new task
+            task_description = u'Squeeze A School Of Fish Into A Bait Ball'
+            task_beneficiary = u'Dolphins'
+            erica.start_task(description=task_description, beneficiary=task_beneficiary)
+            erica_branch_name = erica.get_branch_name()
+
+            # Enter the "other" folder
+            erica.follow_link(href='/tree/{}/edit/other/'.format(erica_branch_name))
+
+            # Create a category, subcategory, and article
+            article_name = u'Stunned Fish'
+            erica.add_category(category_name=u'Plowing Through')
+            erica.add_subcategory(subcategory_name=u'Feeding On')
+            erica.add_article(article_name=article_name)
+            erica_article_path = erica.path
+
+            # Ask for feedback
+            erica.follow_link(href='/tree/{}'.format(erica_branch_name))
+            erica.request_feedback(feedback_str='Is this okay?')
+
+            # verify that the branch exists locally and remotely
+            repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email='erica@example.com')
+            self.assertTrue(erica_branch_name in repo.branches)
+            self.assertTrue('refs/heads/{}'.format(erica_branch_name) in repo.git.ls_remote('origin', erica_branch_name))
+
+            #
+            # Switch users
+            #
+            # approve and publish erica's changes
+            frances.open_link(url=erica.path)
+            frances.leave_feedback(feedback_str='It is perfect.')
+            frances.approve_activity()
+            frances.publish_activity()
+
+            #
+            # Switch users
+            #
+            # load the article edit page
+            erica.open_link(url=erica_article_path)
+            # a warning is flashed about working in a published branch
+            # we can't get the date exactly right, so test for every other part of the message
+            message_published = view_functions.MESSAGE_ACTIVITY_PUBLISHED.format(published_date=u'xxx', published_by=francis_email)
+            message_published_split = message_published.split(u'xxx')
+            for part in message_published_split:
+                self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and part in tag.text))
+            # assert that trying to save an edit to the article fails
+            erica.edit_article_and_fail(title_str=article_name, body_str=u'Chase fish into shallow water to catch them.')
+
+            # verify that the branch exists locally and not remotely
+            self.assertTrue(erica_branch_name in repo.branches)
+            self.assertTrue('refs/tags/{}'.format(erica_branch_name) in repo.git.ls_remote('origin', erica_branch_name))
+            self.assertFalse('refs/heads/{}'.format(erica_branch_name) in repo.git.ls_remote('origin', erica_branch_name))
+
+    # in TestProcess
     def test_notified_when_working_in_deleted_task(self):
         ''' When someone else deletes a task you're working in, you're notified.
         '''
@@ -672,6 +740,62 @@ class TestProcess (TestCase):
             pattern_template_comment_stripped = sub(ur'<!--|-->', u'', PATTERN_TEMPLATE_COMMENT)
             comments = erica.soup.find_all(text=lambda text: isinstance(text, Comment))
             self.assertTrue(pattern_template_comment_stripped.format(u'error-404') in comments)
+
+    # in TestProcess
+    def test_deleted_branch_not_resurrected_on_save(self):
+        ''' Saving a change on a branch that exists locally but isn't at origin because it was deleted doesn't re-create the branch.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
+
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in('frances@example.com')
+
+            # Start a new task
+            task_description = u'Squeeze A School Of Fish Into A Bait Ball'
+            task_beneficiary = u'Dolphins'
+            erica.start_task(description=task_description, beneficiary=task_beneficiary)
+            erica_branch_name = erica.get_branch_name()
+
+            # Enter the "other" folder
+            erica.follow_link(href='/tree/{}/edit/other/'.format(erica_branch_name))
+
+            # Create a category, subcategory, and article
+            article_name = u'Stunned Fish'
+            erica.add_category(category_name=u'Plowing Through')
+            erica.add_subcategory(subcategory_name=u'Feeding On')
+            erica.add_article(article_name=article_name)
+            erica_article_path = erica.path
+
+            # verify that the branch exists locally and remotely
+            repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email='erica@example.com')
+            self.assertTrue(erica_branch_name in repo.branches)
+            self.assertIsNotNone(repo_functions.get_branch_if_exists_at_origin(clone=repo, default_branch_name='master', new_branch_name=erica_branch_name))
+
+            #
+            # Switch users
+            #
+            # delete erica's task
+            frances.open_link(url='/')
+            frances.delete_task(branch_name=erica_branch_name)
+            self.assertEqual(PATTERN_FLASH_TASK_DELETED.format(description=task_description, beneficiary=task_beneficiary), frances.soup.find('li', class_='flash').text)
+
+            #
+            # Switch users
+            #
+            # load the article edit page
+            erica.open_link(url=erica_article_path)
+            # a warning is flashed about working in a deleted branch
+            self.assertIsNotNone(erica.soup.find(text=view_functions.MESSAGE_ACTIVITY_DELETED))
+            # assert that trying to save an edit to the article fails
+            erica.edit_article_and_fail(title_str=article_name, body_str=u'Chase fish into shallow water to catch them.')
+
+            # verify that the branch exists locally and not remotely
+            self.assertTrue(erica_branch_name in repo.branches)
+            self.assertIsNone(repo_functions.get_branch_if_exists_at_origin(clone=repo, default_branch_name='master', new_branch_name=erica_branch_name))
 
     # in TestProcess
     def test_forms_for_changes_in_active_task(self):
