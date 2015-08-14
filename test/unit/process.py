@@ -625,6 +625,8 @@ class TestProcess (TestCase):
             # verify that the branch exists locally and remotely
             repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email='erica@example.com')
             self.assertTrue(erica_branch_name in repo.branches)
+            # there's a remote branch with the branch name, but no tag
+            self.assertFalse('refs/tags/{}'.format(erica_branch_name) in repo.git.ls_remote('origin', erica_branch_name).split())
             self.assertTrue('refs/heads/{}'.format(erica_branch_name) in repo.git.ls_remote('origin', erica_branch_name).split())
 
             #
@@ -652,6 +654,7 @@ class TestProcess (TestCase):
 
             # verify that the branch exists locally and not remotely
             self.assertTrue(erica_branch_name in repo.branches)
+            # there's a remote tag with the branch name, but no branch
             self.assertTrue('refs/tags/{}'.format(erica_branch_name) in repo.git.ls_remote('origin', erica_branch_name).split())
             self.assertFalse('refs/heads/{}'.format(erica_branch_name) in repo.git.ls_remote('origin', erica_branch_name).split())
 
