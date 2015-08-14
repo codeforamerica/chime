@@ -5,11 +5,6 @@ from .error_functions import common_error_template_args, make_email_params, summ
 from .view_functions import common_template_args, get_repo
 from .repo_functions import MergeConflict
 
-ERROR_TYPE_404 = u'404'
-ERROR_TYPE_500 = u'500'
-ERROR_TYPE_MERGE_CONFLICT = u'merge-conflict'
-ERROR_TYPE_EXCEPTION = u'exception'
-
 @app.app_errorhandler(404)
 def page_not_found(error):
     ''' Render a 404 error page
@@ -27,7 +22,6 @@ def page_not_found(error):
     if branch_name:
         kwargs.update({"edit_path": u'/tree/{}/edit/'.format(branch_name)})
 
-    kwargs.update({"error_type": ERROR_TYPE_404})
     template_message = u'(404) {}'.format(path)
     kwargs.update({"message": template_message})
     kwargs.update({"email_params": make_email_params(message=template_message)})
@@ -39,7 +33,7 @@ def internal_server_error(error):
     '''
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(common_error_template_args(current_app.config))
-    kwargs.update({"error_type": ERROR_TYPE_500})
+    kwargs.update({"show_merge_conflict": False})
     path = urlparse(request.url).path
     template_message = u'(500) {}'.format(path)
     kwargs.update({"message": template_message})
@@ -54,9 +48,7 @@ def merge_conflict(error):
     kwargs.update(common_error_template_args(current_app.config))
 
     kwargs.update({"conflict_files": summarize_conflict_details(error)})
-
-    kwargs.update({"error_type": ERROR_TYPE_MERGE_CONFLICT})
-
+    kwargs.update({"show_merge_conflict": True})
     message = u'\n'.join([u'{} {}'.format(item['actions'], item['path']) for item in error.files()])
     template_message = u'(MergeConflict)\n{}'.format(message)
     kwargs.update({"message": template_message})
@@ -76,7 +68,7 @@ def exception(error):
         error_message = error.args[0]
     except:
         error_message = u''
-    kwargs.update({"error_type": ERROR_TYPE_EXCEPTION})
+    kwargs.update({"show_merge_conflict": False})
     kwargs.update({"error_class": error_class})
     template_message = u'({}) {}'.format(error_class, error_message)
     kwargs.update({"message": template_message})

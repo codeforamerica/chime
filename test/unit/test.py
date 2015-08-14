@@ -36,6 +36,7 @@ from chime import (
     create_app, jekyll_functions, repo_functions, edit_functions,
     google_api_functions, view_functions, publish,
     google_access_token_update, errors)
+from chime import constants
 
 from unit.chime_test_client import ChimeTestClient
 
@@ -957,7 +958,7 @@ class TestRepo (TestCase):
 
         branch1.checkout()
         review_state, review_authorized = repo_functions.get_review_state_and_authorized(self.clone1, 'master', branch1_name, fake_author_email)
-        self.assertEqual(review_state, repo_functions.REVIEW_STATE_FRESH)
+        self.assertEqual(review_state, constants.REVIEW_STATE_FRESH)
         self.assertTrue(review_authorized)
 
         edit_functions.update_page(self.clone1, 'index.md',
@@ -968,14 +969,14 @@ class TestRepo (TestCase):
 
         # verify that the activity has unreviewed edits and that Jim Content Creator is authorized to request feedback
         review_state, review_authorized = repo_functions.get_review_state_and_authorized(self.clone1, 'master', branch1_name, fake_creator_email)
-        self.assertEqual(review_state, repo_functions.REVIEW_STATE_EDITED)
+        self.assertEqual(review_state, constants.REVIEW_STATE_EDITED)
         self.assertTrue(review_authorized)
 
         # request feedback as Jim Content Creator
-        repo_functions.update_review_state(self.clone1, repo_functions.REVIEW_STATE_FEEDBACK)
+        repo_functions.update_review_state(self.clone1, constants.REVIEW_STATE_FEEDBACK)
         # verify that the activity has feedback requested and that fake is authorized to endorse
         review_state, review_authorized = repo_functions.get_review_state_and_authorized(self.clone1, 'master', branch1_name, fake_author_email)
-        self.assertEqual(review_state, repo_functions.REVIEW_STATE_FEEDBACK)
+        self.assertEqual(review_state, constants.REVIEW_STATE_FEEDBACK)
         self.assertTrue(review_authorized)
 
         #
@@ -988,10 +989,10 @@ class TestRepo (TestCase):
         environ['GIT_COMMITTER_EMAIL'] = fake_reviewer_email
 
         # endorse
-        repo_functions.update_review_state(self.clone1, repo_functions.REVIEW_STATE_ENDORSED)
+        repo_functions.update_review_state(self.clone1, constants.REVIEW_STATE_ENDORSED)
         # verify that the activity has been endorsed and that Joe Reviewer is authorized to publish
         review_state, review_authorized = repo_functions.get_review_state_and_authorized(self.clone1, 'master', branch1_name, fake_reviewer_email)
-        self.assertEqual(review_state, repo_functions.REVIEW_STATE_ENDORSED)
+        self.assertEqual(review_state, constants.REVIEW_STATE_ENDORSED)
         self.assertTrue(review_authorized)
 
         #
@@ -1005,14 +1006,14 @@ class TestRepo (TestCase):
 
         # verify that the activity has unreviewed edits and that Joe Reviewer is authorized to request feedback
         review_state, review_authorized = repo_functions.get_review_state_and_authorized(self.clone1, 'master', branch1_name, fake_reviewer_email)
-        self.assertEqual(review_state, repo_functions.REVIEW_STATE_EDITED)
+        self.assertEqual(review_state, constants.REVIEW_STATE_EDITED)
         self.assertTrue(review_authorized)
 
         # request feedback as Joe Reviewer
-        repo_functions.update_review_state(self.clone1, repo_functions.REVIEW_STATE_FEEDBACK)
+        repo_functions.update_review_state(self.clone1, constants.REVIEW_STATE_FEEDBACK)
         # verify that the activity has feedback requested and that Joe Reviewer is not authorized to endorse
         review_state, review_authorized = repo_functions.get_review_state_and_authorized(self.clone1, 'master', branch1_name, fake_reviewer_email)
-        self.assertEqual(review_state, repo_functions.REVIEW_STATE_FEEDBACK)
+        self.assertEqual(review_state, constants.REVIEW_STATE_FEEDBACK)
         self.assertFalse(review_authorized)
 
         #
@@ -1025,10 +1026,10 @@ class TestRepo (TestCase):
         environ['GIT_COMMITTER_EMAIL'] = fake_nonprofit_email
 
         # endorse
-        repo_functions.update_review_state(self.clone1, repo_functions.REVIEW_STATE_ENDORSED)
+        repo_functions.update_review_state(self.clone1, constants.REVIEW_STATE_ENDORSED)
         # verify that the activity has been endorsed and that Jane Reviewer is authorized to publish
         review_state, review_authorized = repo_functions.get_review_state_and_authorized(self.clone1, 'master', branch1_name, fake_nonprofit_email)
-        self.assertEqual(review_state, repo_functions.REVIEW_STATE_ENDORSED)
+        self.assertEqual(review_state, constants.REVIEW_STATE_ENDORSED)
         self.assertTrue(review_authorized)
 
         #
@@ -1305,31 +1306,31 @@ class TestRepo (TestCase):
         check_item = activity_history.pop()
         self.assertEqual(u'The "{}" activity was started'.format(task_description), check_item['commit_subject'])
         self.assertEqual(u'Created task metadata file "{}"\nSet author_email to {}\nSet task_description to {}\nSet task_beneficiary to {}'.format(repo_functions.TASK_METADATA_FILENAME, fake_author_email, task_description, task_beneficiary), check_item['commit_body'])
-        self.assertEqual(repo_functions.MESSAGE_TYPE_ACTIVITY_UPDATE, check_item['commit_type'])
+        self.assertEqual(constants.COMMIT_TYPE_ACTIVITY_UPDATE, check_item['commit_type'])
 
         # check the delete
         check_item = activity_history.pop(0)
         self.assertEqual(u'The "{}" topic (containing 1 topic and 1 article) was deleted'.format(updated_details[0][1]), check_item['commit_subject'])
         self.assertEqual(u'[{{"action": "delete", "file_path": "{cat1_path}", "display_type": "category", "title": "{cat1_title}"}}, {{"action": "delete", "file_path": "{cat2_path}", "display_type": "category", "title": "{cat2_title}"}}, {{"action": "delete", "file_path": "{art1_path}", "display_type": "article", "title": "{art1_title}"}}]'.format(cat1_path=updated_details[0][3], cat1_title=updated_details[0][1], cat2_path=updated_details[1][3], cat2_title=updated_details[1][1], art1_path=updated_details[2][3], art1_title=updated_details[2][1]), check_item['commit_body'])
-        self.assertEqual(repo_functions.MESSAGE_TYPE_EDIT, check_item['commit_type'])
+        self.assertEqual(constants.COMMIT_TYPE_EDIT, check_item['commit_type'])
 
         # check the comments
         check_item = activity_history.pop(0)
         self.assertEqual(u'Provided feedback.', check_item['commit_subject'])
         self.assertEqual(newline_comment, check_item['commit_body'])
-        self.assertEqual(repo_functions.MESSAGE_TYPE_COMMENT, check_item['commit_type'])
+        self.assertEqual(constants.COMMIT_TYPE_COMMENT, check_item['commit_type'])
 
         check_item = activity_history.pop(0)
         self.assertEqual(u'Provided feedback.', check_item['commit_subject'])
         self.assertEqual(funny_comment, check_item['commit_body'])
-        self.assertEqual(repo_functions.MESSAGE_TYPE_COMMENT, check_item['commit_type'])
+        self.assertEqual(constants.COMMIT_TYPE_COMMENT, check_item['commit_type'])
 
         # check the category & article creations
         for pos, check_item in list(enumerate(activity_history)):
             check_detail = updated_details[len(updated_details) - (pos + 1)]
             self.assertEqual(u'The "{}" {} was created'.format(check_detail[1], view_functions.file_display_name(check_detail[2])), check_item['commit_subject'])
             self.assertEqual(u'[{{"action": "create", "file_path": "{file_path}", "display_type": "{display_type}", "title": "{title}"}}]'.format(file_path=check_detail[3], display_type=check_detail[2], title=check_detail[1]), check_item['commit_body'])
-            self.assertEqual(repo_functions.MESSAGE_TYPE_EDIT, check_item['commit_type'])
+            self.assertEqual(constants.COMMIT_TYPE_EDIT, check_item['commit_type'])
 
     # in TestRepo
     def test_newlines_in_commit_message_body(self):
@@ -1907,6 +1908,7 @@ class TestAppConfig (TestCase):
         create_app_environ['BROWSERID_URL'] = 'Hey'
         create_app(create_app_environ)
 
+    # in TestAppConfig
     def test_error_template_args(self):
         ''' Default error template args are generated as expected
         '''
@@ -1928,6 +1930,19 @@ class TestAppConfig (TestCase):
         self.assertTrue('support_phone_number' in template_args)
         self.assertEqual(template_args['support_email'], fake_support_email)
         self.assertEqual(template_args['support_phone_number'], fake_support_phone_number)
+
+    # in TestAppConfig
+    def test_for_constant_name_conflicts(self):
+        ''' None of the constant names defined in constants.py conflict with reserved config variable names
+        '''
+        flask_reserved_config_names = ['DEBUG', 'TESTING', 'PROPAGATE_EXCEPTIONS', 'PRESERVE_CONTEXT_ON_EXCEPTION', 'SECRET_KEY', 'SESSION_COOKIE_NAME', 'SESSION_COOKIE_DOMAIN', 'SESSION_COOKIE_PATH', 'SESSION_COOKIE_HTTPONLY', 'SESSION_COOKIE_SECURE', 'PERMANENT_SESSION_LIFETIME', 'USE_X_SENDFILE', 'LOGGER_NAME', 'SERVER_NAME', 'APPLICATION_ROOT', 'MAX_CONTENT_LENGTH', 'SEND_FILE_MAX_AGE_DEFAULT', 'TRAP_HTTP_EXCEPTIONS', 'TRAP_BAD_REQUEST_ERRORS', 'PREFERRED_URL_SCHEME', 'JSON_AS_ASCII', 'JSON_SORT_KEYS', 'JSONIFY_PRETTYPRINT_REGULAR']
+
+        chime_reserved_config_names = ['RUNNING_STATE_DIR', 'REPO_PATH', 'WORK_PATH', 'AUTH_DATA_HREF', 'BROWSERID_URL', 'GA_CLIENT_ID', 'GA_CLIENT_SECRET', 'GA_REDIRECT_URI', 'SUPPORT_EMAIL_ADDRESS', 'SUPPORT_PHONE_NUMBER', 'GDOCS_CLIENT_ID', 'GDOCS_CLIENT_SECRET', 'GITHUB_CLIENT_ID', 'GITHUB_CLIENT_SECRET', 'LIVE_SITE_URL', 'PUBLISH_SERVICE_URL']
+
+        check_names = flask_reserved_config_names + chime_reserved_config_names
+
+        for reserved_name in check_names:
+            self.assertFalse(hasattr(constants, reserved_name), u'The reserved config variable name {} is present in constants!'.format(reserved_name))
 
 class TestProcess (TestCase):
 
@@ -3224,7 +3239,7 @@ class TestApp (TestCase):
             # get the activity list page
             response = self.test_client.get('/', follow_redirects=True)
             self.assertEqual(response.status_code, 200)
-            # verify that there's an 'unreviewed edits' link
+            # verify that there's an unreviewed edits link
             self.assertTrue(PATTERN_UNREVIEWED_EDITS_LINK.format(branch_name=generated_branch_name) in response.data)
 
         # Request feedback on the change
@@ -3255,7 +3270,7 @@ class TestApp (TestCase):
             # get the activity list page
             response = self.test_client.get('/', follow_redirects=True)
             self.assertEqual(response.status_code, 200)
-            # verify that there's an 'feedback requested' link
+            # verify that there's a feedback requested link
             self.assertTrue(PATTERN_FEEDBACK_REQUESTED_LINK.format(branch_name=generated_branch_name) in response.data)
 
         # Endorse the change

@@ -21,17 +21,17 @@
               <p class="current-task__author row__left">Last edited by {{ activity.last_edited_email }}</p>
               <div class="current-task__actions row__right toolbar--right">
                   {% if activity.review_authorized %}
-                    {% if activity.review_state == 'unreviewed edits' %}
+                    {% if activity.review_state == config.REVIEW_STATE_EDITED %}
                     <a href="{{ activity.overview_path }}" class="toolbar__item button">Unreviewed Edits</a>
-                    {% elif activity.review_state == 'feedback requested' %}
+                    {% elif activity.review_state == config.REVIEW_STATE_FEEDBACK %}
                     <a href="{{ activity.overview_path }}" class="toolbar__item button">Feedback requested</a>
-                    {% elif activity.review_state == 'edits endorsed' %}
+                    {% elif activity.review_state == config.REVIEW_STATE_ENDORSED %}
                     <a href="{{ activity.overview_path }}" class="toolbar__item button">Ready to publish</a>
-                    {% elif activity.review_state == 'changes published' %}
+                    {% elif activity.review_state == config.REVIEW_STATE_PUBLISHED %}
                     <a href="{{ activity.overview_path }}" class="toolbar__item button">Published</a>
                     {% endif %}
                   {% else %}
-                    {% if activity.review_state == 'feedback requested' %}
+                    {% if activity.review_state == config.REVIEW_STATE_FEEDBACK %}
                     <a href="{{ activity.overview_path }}" class="toolbar__item button">Waiting for feedback</a>
                     {% endif %}
                   {% endif %}

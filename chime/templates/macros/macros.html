@@ -16,7 +16,7 @@
         <p class="activity-dropdown__subtitle">Current Activity</p>
         <h2 class="activity-dropdown__title">{{ activity.task_description | title }}</h2>
         <a class="button button--green button--large activity-dropdown__button" href="/tree/{{branch}}">See full history and discussion</a>
-        {% if activity.review_state != 'changes published' and activity.working_state == 'active' %}
+        {% if activity.review_state != config.REVIEW_STATE_PUBLISHED and activity.working_state == config.WORKING_STATE_ACTIVE %}
         <form action="{{ activity.overview_path }}" method="POST" class="comment comment--new">
           <div class="comment__author">{% if email %}{{ email }}{% else %}unknown{% endif %}</div>
           <div class="comment__body">
@@ -24,11 +24,11 @@
           </div>
           <div class="comment__actions toolbar toolbar--right">
           {% if activity.review_authorized %}
-            {% if activity.review_state == 'unreviewed edits' %}
+            {% if activity.review_state == config.REVIEW_STATE_EDITED %}
             <input class="toolbar__item button button--orange" type="submit" name="request_feedback" value="Request Feedback">
-            {% elif activity.review_state == 'feedback requested' %}
+            {% elif activity.review_state == config.REVIEW_STATE_FEEDBACK %}
             <input class="toolbar__item button button--green" type="submit" name="endorse_edits" value="Looks Good!">
-            {% elif activity.review_state == 'edits endorsed' %}
+            {% elif activity.review_state == config.REVIEW_STATE_ENDORSED %}
             <input class="toolbar__item button button--blue" type="submit" name="merge" value="Publish">
             {% endif %}
           {% endif %}

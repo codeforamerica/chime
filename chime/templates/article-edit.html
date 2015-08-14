@@ -29,7 +29,7 @@
     <input name="url-slug" type="hidden" value="{{ url_slug }}" />
     <input name="order" type="hidden" value="{{ front['order'] }}" />
 {% for iso in languages %}
-    {% if iso == 'en' %}
+    {% if iso == config.ISO_CODE_ENGLISH %}
         {% set form_title = front['title'] %}
         {% set form_description = front['description'] %}
         {% set form_body = body %}
@@ -53,7 +53,7 @@
         <div class="row__right toolbar--right">
             <a href="{{ history_path }}" class="button  toolbar__item">History</a>
             <a href="{{ view_path }}" target="_blank" class="button  toolbar__item">Preview</a>
-            {% if activity.working_state == 'active' %}
+            {% if activity.working_state == config.WORKING_STATE_ACTIVE %}
             <input type="submit" class="button button--green toolbar__item" value="Save"/>
             {% endif %}
         </div>
@@ -157,7 +157,7 @@
                     <span class="label toolbar__item">Translations: </span>
                 {% for iso in languages %}
                     {% set lang = languages[iso] %}
-                    {% if iso == 'en' %}
+                    {% if iso == config.ISO_CODE_ENGLISH %}
                         {% set class = 'button state-active' %}
                     {% else %}
                         {% set class = 'button' %}

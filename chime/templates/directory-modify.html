@@ -78,7 +78,7 @@
           <input name="url-slug" type="hidden" value="{{ url_slug }}" />
           <input name="order" type="hidden" value="{{ category.order }}" />
       {% for iso in languages %}
-          {% if iso == 'en' %}
+          {% if iso == config.ISO_CODE_ENGLISH %}
               {% set category_title = category['title'] %}
               {% set category_description = category['description'] %}
               {% set display_class = '' %}
@@ -93,14 +93,14 @@
           <label>{{ dir_title }} Description</label>
           <textarea name="{{ iso }}-description" class="directory-modify__description" placeholder="Crime statistics and reports by district and map">{{ category_description }}</textarea>
           <div class="directory-modify__action-bar row">
-            {% if activity.working_state == 'active' %}
+            {% if activity.working_state == config.WORKING_STATE_ACTIVE %}
             <div class="row__left toolbar toolbar--left">
               <button name="delete" type="submit" class="button button--red toolbar__item"><span class="fa fa-trash"></span> Delete</button>
             </div>
             {% endif %}
             <div class="row__right toolbar toolbar--right">
               <a href="{{ category.edit_path }}" class="button toolbar__item">Cancel</a>
-              {% if activity.working_state == 'active' %}<button name="save" type="submit" class="button button--green toolbar__item">Save</button>{% endif %}
+              {% if activity.working_state == config.WORKING_STATE_ACTIVE %}<button name="save" type="submit" class="button button--green toolbar__item">Save</button>{% endif %}
             </div>
 
           </div>

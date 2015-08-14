@@ -9,8 +9,8 @@ import yaml
 from re import match, search
 import json
 import random
-
 from . import edit_functions, google_api_functions
+from . import constants
 
 TASK_METADATA_FILENAME = u'_task.yml'
 BRANCH_NAME_LENGTH = 9
@@ -23,34 +23,6 @@ REVIEW_STATE_COMMIT_PREFIX = u'Updated review state.'
 ACTIVITY_FEEDBACK_MESSAGE = u'requested feedback on this activity.'
 ACTIVITY_ENDORSED_MESSAGE = u'endorsed this activity.'
 ACTIVITY_PUBLISHED_MESSAGE = u'published this activity.'
-
-# the different categories and types of messages that can be displayed in the activity overview
-MESSAGE_CATEGORY_INFO = u'info'
-MESSAGE_TYPE_ACTIVITY_UPDATE = u'activity update'
-MESSAGE_TYPE_REVIEW_UPDATE = u'review update'
-
-MESSAGE_CATEGORY_EDIT = u'edit'
-MESSAGE_TYPE_EDIT = u'edit'
-
-MESSAGE_CATEGORY_COMMENT = u'comment'
-MESSAGE_TYPE_COMMENT = u'comment'
-
-# the different review states for an activity
-# no changes have yet been made to the activity
-REVIEW_STATE_FRESH = u'fresh'
-# there are un-reviewed edits in the activity (or no edits at all)
-REVIEW_STATE_EDITED = u'unreviewed edits'
-# there are un-reviewed edits in the activity and a review has been requested
-REVIEW_STATE_FEEDBACK = u'feedback requested'
-# a review has happened and the site is ready to be published
-REVIEW_STATE_ENDORSED = u'edits endorsed'
-# the site has been published
-REVIEW_STATE_PUBLISHED = u'changes published'
-
-# the working state of the activity
-WORKING_STATE_ACTIVE = u'active'
-WORKING_STATE_PUBLISHED = u'published'
-WORKING_STATE_DELETED = u'deleted'
 
 # Name of file in running state dir that signals a need to push upstream.
 NEEDS_PUSH_FILE = 'needs-push'
@@ -137,12 +109,12 @@ def get_activity_working_state(repo, default_branch_name, branch_name):
     ''' Get whether the activity is active, published, or deleted.
     '''
     if branch_name in repo.tags:
-        return WORKING_STATE_PUBLISHED
+        return constants.WORKING_STATE_PUBLISHED
 
     if not get_branch_if_exists_at_origin(repo, default_branch_name, branch_name):
-        return WORKING_STATE_DELETED
+        return constants.WORKING_STATE_DELETED
 
-    return WORKING_STATE_ACTIVE
+    return constants.WORKING_STATE_ACTIVE
 
 def get_branch_start_point(clone, default_branch_name, new_branch_name):
     ''' Return the last commit on the branch
@@ -628,24 +600,37 @@ def move_existing_file(clone, old_path, new_path, base_sha, default_branch_name)
 
     return clone.active_branch.commit
 
-def get_message_classification(subject, body):
+def get_commit_classification(subject, body):
     ''' Figure out what type of history log message this is, based on the subject and body
+
+        returns:
+            commit_category:
+                the general category the commit falls into, like 'info', 'edit', or
+                'comment';
+
+            commit_type:
+                the type of message within that category, i.e. an 'info' commit can be
+                an activity or review update;
+
+            commit_action:
+                if the commit changes the review state of an activity, this is the state
+                it was changed to.
     '''
     if search(r'{}$|{}$|{}$'.format(ACTIVITY_CREATED_MESSAGE, ACTIVITY_UPDATED_MESSAGE, ACTIVITY_DELETED_MESSAGE), subject):
-        return MESSAGE_CATEGORY_INFO, MESSAGE_TYPE_ACTIVITY_UPDATE, None
+        return constants.COMMIT_CATEGORY_INFO, constants.COMMIT_TYPE_ACTIVITY_UPDATE, None
     elif search(r'{}$'.format(COMMENT_COMMIT_PREFIX), subject):
-        return MESSAGE_CATEGORY_COMMENT, MESSAGE_TYPE_COMMENT, None
+        return constants.COMMIT_CATEGORY_COMMENT, constants.COMMIT_TYPE_COMMENT, None
     elif search(r'{}$'.format(REVIEW_STATE_COMMIT_PREFIX), subject):
         message_action = None
         if ACTIVITY_FEEDBACK_MESSAGE in body:
-            message_action = REVIEW_STATE_FEEDBACK
+            message_action = constants.REVIEW_STATE_FEEDBACK
         elif ACTIVITY_ENDORSED_MESSAGE in body:
-            message_action = REVIEW_STATE_ENDORSED
+            message_action = constants.REVIEW_STATE_ENDORSED
         elif ACTIVITY_PUBLISHED_MESSAGE in body:
-            message_action = REVIEW_STATE_PUBLISHED
-        return MESSAGE_CATEGORY_INFO, MESSAGE_TYPE_REVIEW_UPDATE, message_action
+            message_action = constants.REVIEW_STATE_PUBLISHED
+        return constants.COMMIT_CATEGORY_INFO, constants.COMMIT_TYPE_REVIEW_UPDATE, message_action
     else:
-        return MESSAGE_CATEGORY_EDIT, MESSAGE_TYPE_EDIT, None
+        return constants.COMMIT_CATEGORY_EDIT, constants.COMMIT_TYPE_EDIT, None
 
 def get_commit_message_subject_and_body(commit):
     ''' split a commit's message into subject and body
@@ -665,12 +650,12 @@ def get_last_review_commit(repo, working_branch_name, base_commit_hexsha):
         return last_commit
 
     commit_subject, commit_body = get_commit_message_subject_and_body(last_commit)
-    _, message_type, _ = get_message_classification(commit_subject, commit_body)
+    _, commit_type, _ = get_commit_classification(commit_subject, commit_body)
     # use the most recent non-comment commit that's not the base commit
-    while message_type == MESSAGE_TYPE_COMMENT and last_commit.hexsha != base_commit_hexsha:
+    while commit_type == constants.COMMIT_TYPE_COMMENT and last_commit.hexsha != base_commit_hexsha:
         last_commit = last_commit.parents[0]
         commit_subject, commit_body = get_commit_message_subject_and_body(last_commit)
-        _, message_type, _ = get_message_classification(commit_subject, commit_body)
+        _, commit_type, _ = get_commit_classification(commit_subject, commit_body)
 
     return last_commit
 
@@ -684,12 +669,12 @@ def get_last_edited_email(repo, default_branch_name, working_branch_name):
         return last_commit.author.email
 
     commit_subject, commit_body = get_commit_message_subject_and_body(last_commit)
-    _, message_type, _ = get_message_classification(commit_subject, commit_body)
+    _, commit_type, _ = get_commit_classification(commit_subject, commit_body)
     # use the most recent non-comment commit that's not the base commit
-    while message_type == MESSAGE_TYPE_COMMENT and last_commit.hexsha != base_commit_hexsha:
+    while commit_type == constants.COMMIT_TYPE_COMMENT and last_commit.hexsha != base_commit_hexsha:
         last_commit = last_commit.parents[0]
         commit_subject, commit_body = get_commit_message_subject_and_body(last_commit)
-        _, message_type, _ = get_message_classification(commit_subject, commit_body)
+        _, commit_type, _ = get_commit_classification(commit_subject, commit_body)
 
     return last_commit.author.email
 
@@ -699,19 +684,19 @@ def get_review_state_and_authorized(repo, default_branch_name, working_branch_na
     '''
     state, author_email = get_review_state_and_author_email(repo, default_branch_name, working_branch_name)
     # only the person who made the last edit should be able to request a review
-    if state == REVIEW_STATE_EDITED:
+    if state == constants.REVIEW_STATE_EDITED:
         return state, (author_email == actor_email)
 
     # only a person who didn't request feedback should be able to endorse
-    if state == REVIEW_STATE_FEEDBACK:
+    if state == constants.REVIEW_STATE_FEEDBACK:
         return state, (author_email != actor_email)
 
     # anybody should be able to publish an endorsed activity
-    if state == REVIEW_STATE_ENDORSED:
+    if state == constants.REVIEW_STATE_ENDORSED:
         return state, True
 
     # nobody should be able to do anything if the site's published
-    if state == REVIEW_STATE_PUBLISHED:
+    if state == constants.REVIEW_STATE_PUBLISHED:
         return state, False
 
     # no other restrictions
@@ -723,23 +708,23 @@ def get_review_state_and_author_email(repo, default_branch_name, working_branch_
     base_commit_hexsha = repo.git.merge_base(default_branch_name, working_branch_name)
     last_commit = get_last_review_commit(repo, working_branch_name, base_commit_hexsha)
     commit_subject, commit_body = get_commit_message_subject_and_body(last_commit)
-    _, message_type, _ = get_message_classification(commit_subject, commit_body)
+    _, commit_type, _ = get_commit_classification(commit_subject, commit_body)
     author = last_commit.author.email
     # return the edited state for everything that isn't caught
-    state = REVIEW_STATE_EDITED
+    state = constants.REVIEW_STATE_EDITED
 
     # handle review state updates
-    if message_type == MESSAGE_TYPE_REVIEW_UPDATE:
+    if commit_type == constants.COMMIT_TYPE_REVIEW_UPDATE:
         if ACTIVITY_FEEDBACK_MESSAGE in commit_body:
-            state = REVIEW_STATE_FEEDBACK
+            state = constants.REVIEW_STATE_FEEDBACK
         elif ACTIVITY_ENDORSED_MESSAGE in commit_body:
-            state = REVIEW_STATE_ENDORSED
+            state = constants.REVIEW_STATE_ENDORSED
         elif ACTIVITY_PUBLISHED_MESSAGE in commit_body:
-            state = REVIEW_STATE_PUBLISHED
+            state = constants.REVIEW_STATE_PUBLISHED
 
     # if the last commit is the creation of the activity, or if it is the same as the base commit, the state is fresh
     elif search(r'{}$'.format(ACTIVITY_CREATED_MESSAGE), commit_subject) or last_commit.hexsha == base_commit_hexsha:
-        state = REVIEW_STATE_FRESH
+        state = constants.REVIEW_STATE_FRESH
 
     return state, author
 
@@ -771,13 +756,13 @@ def add_empty_commit(clone, subject, body, push=True):
 def update_review_state(clone, new_review_state, push=True):
     ''' Adds a new empty commit changing the review state
     '''
-    if new_review_state not in (REVIEW_STATE_FEEDBACK, REVIEW_STATE_ENDORSED):
+    if new_review_state not in (constants.REVIEW_STATE_FEEDBACK, constants.REVIEW_STATE_ENDORSED):
         raise Exception(u'The review state can\'t be set to {} here.'.format(new_review_state))
 
     message_text = u''
-    if new_review_state == REVIEW_STATE_FEEDBACK:
+    if new_review_state == constants.REVIEW_STATE_FEEDBACK:
         message_text = ACTIVITY_FEEDBACK_MESSAGE
-    elif new_review_state == REVIEW_STATE_ENDORSED:
+    elif new_review_state == constants.REVIEW_STATE_ENDORSED:
         message_text = ACTIVITY_ENDORSED_MESSAGE
 
     return add_empty_commit(clone=clone, subject=REVIEW_STATE_COMMIT_PREFIX, body=message_text, push=push)

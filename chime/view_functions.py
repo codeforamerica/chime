@@ -30,14 +30,13 @@ from .jekyll_functions import load_jekyll_doc, load_languages, build_jekyll_site
 from .google_api_functions import read_ga_config, fetch_google_analytics_for_page
 from .repo_functions import (
     get_existing_branch, get_branch_if_exists_locally, ignore_task_metadata_on_merge,
-    get_message_classification, ChimeRepo, get_task_metadata_for_branch, complete_branch,
+    get_commit_classification, ChimeRepo, get_task_metadata_for_branch, complete_branch,
     abandon_branch, clobber_default_branch, get_review_state_and_authorized,
     save_working_file, update_review_state, provide_feedback, move_existing_file,
     get_last_edited_email, mark_upstream_push_needed, MergeConflict,
-    get_activity_working_state, ACTIVITY_CREATED_MESSAGE, TASK_METADATA_FILENAME,
-    REVIEW_STATE_EDITED, REVIEW_STATE_FEEDBACK, REVIEW_STATE_ENDORSED,
-    MESSAGE_CATEGORY_EDIT, WORKING_STATE_PUBLISHED, WORKING_STATE_DELETED
+    get_activity_working_state, ACTIVITY_CREATED_MESSAGE, TASK_METADATA_FILENAME
 )
+from . import constants
 
 from .href import needs_redirect, get_redirect
 
@@ -56,6 +55,7 @@ ARTICLE_LAYOUT = 'article'
 FOLDER_FILE_TYPE = 'folder'
 FILE_FILE_TYPE = 'file'
 IMAGE_FILE_TYPE = 'image'
+# how we describe items based on their layout
 LAYOUT_DISPLAY_LOOKUP = {
     CATEGORY_LAYOUT: 'topic',
     ARTICLE_LAYOUT: 'article',
@@ -564,7 +564,7 @@ def synched_checkout_required(route_function):
         # are we in a remotely published or deleted activity?
         working_state = get_activity_working_state(repo, master_name, branch_name)
         local_branch = get_branch_if_exists_locally(repo, master_name, branch_name)
-        if working_state == WORKING_STATE_PUBLISHED:
+        if working_state == constants.WORKING_STATE_PUBLISHED:
             tag_ref = repo.tag('refs/tags/{}'.format(branch_name))
             commit = tag_ref.commit
             published_date = repo.git.show('--format=%ad', '--date=relative', commit.hexsha).strip()
@@ -575,7 +575,7 @@ def synched_checkout_required(route_function):
             if not local_branch:
                 abort(404)
 
-        elif working_state == WORKING_STATE_DELETED:
+        elif working_state == constants.WORKING_STATE_DELETED:
             flash_only(MESSAGE_ACTIVITY_DELETED, u'warning')
 
             # if the deleted branch doesn't exist locally, raise a 404
@@ -678,7 +678,7 @@ def make_activity_history(repo):
     pattern = re.compile(r'\x00Name: (.*?)\tEmail: (.*?)\tDate: (.*?)\tSubject: (.*?)\tBody: (.*?)\x00', re.DOTALL)
     for log_details in pattern.findall(log):
         name, email, date, subject, body = tuple([item.decode('utf-8') for item in log_details])
-        commit_category, commit_type, commit_action = get_message_classification(subject, body)
+        commit_category, commit_type, commit_action = get_commit_classification(subject, body)
         log_item = dict(author_name=name, author_email=email, commit_date=date, commit_subject=subject,
                         commit_body=body, commit_category=commit_category, commit_type=commit_type,
                         commit_action=commit_action)
@@ -718,7 +718,7 @@ def summarize_activity_history(repo=None, history=None, branch_name=u''):
     change_lookup = {}
     display_types_encountered = []
     # we only care about edits
-    edit_history = [action for action in reversed(history) if action['commit_category'] == MESSAGE_CATEGORY_EDIT]
+    edit_history = [action for action in reversed(history) if action['commit_category'] == constants.COMMIT_CATEGORY_EDIT]
     for action in edit_history:
         # get the list of changed files from the commit body
         try:
@@ -926,9 +926,9 @@ def update_activity_review_state(safe_branch, comment_text, action_list, redirec
             # handle a review action
             if action != 'comment':
                 if action == 'request_feedback':
-                    update_review_state(clone=repo, new_review_state=REVIEW_STATE_FEEDBACK, push=True)
+                    update_review_state(clone=repo, new_review_state=current_app.config['REVIEW_STATE_FEEDBACK'], push=True)
                 elif action == 'endorse_edits':
-                    update_review_state(clone=repo, new_review_state=REVIEW_STATE_ENDORSED, push=True)
+                    update_review_state(clone=repo, new_review_state=current_app.config['REVIEW_STATE_ENDORSED'], push=True)
             elif not comment_text:
                 flash(u'You can\'t leave an empty comment!', u'warning')
 
@@ -1265,13 +1265,13 @@ def get_activity_action_and_authorized(branch_name, comment_text, action_list):
     # handle a review action
     if action != 'comment':
         if action == 'request_feedback':
-            if review_state == REVIEW_STATE_EDITED and review_authorized:
+            if review_state == current_app.config['REVIEW_STATE_EDITED'] and review_authorized:
                 action_authorized = True
         elif action == 'endorse_edits':
-            if review_state == REVIEW_STATE_FEEDBACK and review_authorized:
+            if review_state == current_app.config['REVIEW_STATE_FEEDBACK'] and review_authorized:
                 action_authorized = True
         elif action == 'merge':
-            if review_state == REVIEW_STATE_ENDORSED and review_authorized:
+            if review_state == current_app.config['REVIEW_STATE_ENDORSED'] and review_authorized:
                 action_authorized = True
         elif action == 'clobber' or action == 'abandon':
             action_authorized = True
@@ -1316,7 +1316,7 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
     }
 
     for iso in load_languages(repo.working_dir):
-        if iso != 'en':
+        if iso != constants.ISO_CODE_ENGLISH:
             front['title-' + iso] = dos2unix(new_values.get(iso + '-title', ''))
             front['description-' + iso] = dos2unix(new_values.get(iso + '-description', ''))
             front['body-' + iso] = dos2unix(new_values.get(iso + '-body', ''))
