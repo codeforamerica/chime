@@ -213,7 +213,6 @@ class ChimeTestClient:
             save button available for the form.
         '''
         response = self.submit_edit_article_form(title_str, body_str)
-
         # View the updated article.
         self.follow_redirect(response, 303)
 
@@ -238,10 +237,11 @@ class ChimeTestClient:
         # View the updated article.
         self.follow_redirect(response, 303)
 
-    def edit_published_article(self, title_str, body_str):
+    def edit_article_and_fail(self, title_str, body_str):
         ''' Look for form to edit an article we know to be published, submit it and assert that the sumbission fails.
         '''
         response = self.submit_edit_article_form(title_str, body_str)
+        # Assert that the submission failed
         self.test.assertTrue(response.status_code in range(400, 499))
 
     def follow_modify_category_link(self, title_str):
