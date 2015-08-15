@@ -13,7 +13,7 @@ import flask
 
 import werkzeug.datastructures
 
-from chimelog import ChimeErrorReportFormatter, make_safe_for_json
+from chime.chimelog import ChimeErrorReportFormatter, make_safe_for_json
 
 repo_root = abspath(join(dirname(__file__), '..'))
 sys.path.insert(0, repo_root)
