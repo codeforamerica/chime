@@ -533,9 +533,13 @@ def synch_required(route_function):
     @wraps(route_function)
     def decorated_function(*args, **kwargs):
         response = route_function(*args, **kwargs)
-
-        # Push upstream only if the request method indicates a change.
+        
         if request.method in ('PUT', 'POST', 'DELETE'):
+            # Push to origin in all cases.
+            repo = get_repo(flask_app=current_app)
+            repo.git.push('origin')
+
+            # Push upstream only if the request method indicates a change.
             mark_upstream_push_needed(current_app.config['RUNNING_STATE_DIR'])
 
         return response
