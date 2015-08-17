@@ -802,5 +802,32 @@ class TestProcess (TestCase):
             save_button = edit_form.find('input', value='Save')
             self.assertIsNone(save_button)
 
+    def test_editing_out_of_date_article(self):
+        ''' Check edit process with a user attempting to edit an out-of-date article.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
+            
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in('frances@example.com')
+
+            # Start a new task, "Bobbing for Apples", create a new category
+            # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
+            args = 'Bobbing', 'Apples', 'Ninjas', 'Flipping Out', 'So Awesome'
+            frances.add_branch_cat_subcat_article(*args)
+
+            # Erica now opens the article that Frances started.
+            erica.open_link(frances.path)
+            
+            # Frances starts a different article.
+            frances.open_link(dirname(dirname(frances.path)) + '/')
+            frances.add_article('So Terrible')
+            
+            # Meanwhile, Erica completes her edits.
+            erica.edit_article(title_str='So, So Awesome', body_str='It was the best of times.')
+
 if __name__ == '__main__':
     main()
