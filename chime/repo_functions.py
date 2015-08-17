@@ -485,6 +485,20 @@ def sync_with_default_and_upstream_branches(clone, sync_branch_name):
         clone.git.reset(hard=True)
         raise MergeConflict(remote_commit, clone.commit())
 
+def save_local_working_file(clone, path, message):
+    ''' Save a file in the working dir, return the commit.
+
+        Rely on Git environment variables for author emails and names.
+
+        Make no attempt to merge.
+    '''
+    if exists(join(clone.working_dir, path)):
+        clone.index.add([path])
+
+    clone.index.commit(message.encode('utf-8'))
+
+    return clone.active_branch.commit
+
 def save_working_file(clone, path, message, base_sha, default_branch_name):
     ''' Save a file in the working dir, push it to origin, return the commit.
 

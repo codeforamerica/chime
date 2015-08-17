@@ -818,7 +818,8 @@ class TestProcess (TestCase):
             # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
             args = 'Bobbing', 'Apples', 'Ninjas', 'Flipping Out', 'So Awesome'
             frances.add_branch_cat_subcat_article(*args)
-
+            frances.edit_article(title_str='So, So Awesome', body_str='It was the best of times.')
+            
             # Erica now opens the article that Frances started.
             erica.open_link(frances.path)
             
@@ -827,7 +828,7 @@ class TestProcess (TestCase):
             frances.add_article('So Terrible')
             
             # Meanwhile, Erica completes her edits.
-            erica.edit_article(title_str='So, So Awesome', body_str='It was the best of times.')
+            erica.edit_article(title_str='So, So Awesome', body_str='It was the best of times.\n\nBut also the worst of times.')
 
 if __name__ == '__main__':
     main()

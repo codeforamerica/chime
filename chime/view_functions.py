@@ -34,7 +34,8 @@ from .repo_functions import (
     abandon_branch, clobber_default_branch, get_review_state_and_authorized,
     save_working_file, update_review_state, provide_feedback, move_existing_file,
     get_last_edited_email, mark_upstream_push_needed, MergeConflict,
-    get_activity_working_state, ACTIVITY_CREATED_MESSAGE, TASK_METADATA_FILENAME
+    get_activity_working_state, ACTIVITY_CREATED_MESSAGE, TASK_METADATA_FILENAME,
+    make_branch_name, save_local_working_file, sync_with_default_and_upstream_branches
 )
 from . import constants
 
@@ -1303,13 +1304,20 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
     commit = existing_branch.commit
 
     if commit.hexsha != new_values.get('hexsha'):
-        raise Exception(u'Unable to save page because someone else made edits while you were working.')
-
-    #
-    # Write changes.
-    #
-    existing_branch.checkout()
-
+        tmp_branch_name = make_branch_name()
+        print 'tmp_branch_name:', tmp_branch_name, new_values.get('hexsha')
+        tmp_branch = repo.create_head(tmp_branch_name, commit=new_values.get('hexsha'), force=True)
+        print 'tmp_branch:', tmp_branch
+        tmp_branch.checkout()
+        possible_conflict = True
+    
+    else:
+        #
+        # Write changes.
+        #
+        existing_branch.checkout()
+        possible_conflict = False
+    
     # make sure order is an integer; otherwise default to 0
     try:
         order = int(dos2unix(new_values.get('order', '0')))
@@ -1331,16 +1339,36 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
 
     body = dos2unix(new_values.get('en-body', ''))
     update_page(repo, file_path, front, body)
+    
+    #
+    # Save local file.
+    #
+    display_name = new_values.get('en-title')
+    display_type = new_values.get('layout')
+    action_descriptions = [{'action': u'edit', 'title': display_name, 'display_type': display_type, 'file_path': file_path}]
+    commit_message = u'The "{}" {} was edited\n\n{}'.format(display_name, display_type, json.dumps(action_descriptions, ensure_ascii=False))
+    c2 = save_local_working_file(repo, file_path, commit_message)
+    print 'c2:', c2
+
+    if possible_conflict:
+        print 'Possible conflict!!1!'
+        print 'Rebasing on', existing_branch.commit
+        repo.git.rebase(existing_branch.commit)
+        rebase_commit = tmp_branch.commit
+        print 'rebased and out...', rebase_commit
+        
+        # Ditch the temporary branch now that rebase has worked.
+        existing_branch.checkout()
+        repo.git.reset(rebase_commit, hard=True)
+        repo.git.branch('-D', tmp_branch_name)
+        
+        sync_with_default_and_upstream_branches(repo, working_branch_name)
+        repo.git.push('origin')
 
     #
     # Try to merge from the master to the current branch.
     #
     try:
-        display_name = new_values.get('en-title')
-        display_type = new_values.get('layout')
-        action_descriptions = [{'action': u'edit', 'title': display_name, 'display_type': display_type, 'file_path': file_path}]
-        commit_message = u'The "{}" {} was edited\n\n{}'.format(display_name, display_type, json.dumps(action_descriptions, ensure_ascii=False))
-        c2 = save_working_file(repo, file_path, commit_message, commit.hexsha, default_branch_name)
         # they may've renamed the page by editing the URL slug
         original_slug = file_path
         if re.search(r'\/index.{}$'.format(CONTENT_FILE_EXTENSION), file_path):
