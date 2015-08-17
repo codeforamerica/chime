@@ -4,21 +4,13 @@ from __future__ import absolute_import
 from unittest import main, TestCase
 
 from tempfile import mkdtemp
-from StringIO import StringIO
-from os.path import join, exists, dirname, isdir, abspath, isfile, sep, realpath
-from urlparse import urlparse, urljoin
-from urllib import quote
-from os import environ, remove, mkdir
+from os.path import join, dirname, abspath
 from shutil import rmtree, copytree
-from uuid import uuid4
-from re import search, sub
+from re import sub
 import random
-from datetime import date, timedelta
 import sys
 from chime.repo_functions import ChimeRepo
 from slugify import slugify
-import json
-import time
 import logging
 import tempfile
 logging.disable(logging.CRITICAL)
@@ -26,17 +18,12 @@ logging.disable(logging.CRITICAL)
 repo_root = abspath(join(dirname(__file__), '..'))
 sys.path.insert(0, repo_root)
 
-from git.cmd import GitCommandError
 from box.util.rotunicode import RotUnicode
 from httmock import response, HTTMock
-from mock import MagicMock, patch
+from mock import MagicMock
 from bs4 import Comment
 
-from chime import (
-    create_app, jekyll_functions, repo_functions, edit_functions,
-    google_api_functions, view_functions, publish,
-    google_access_token_update, errors)
-from chime import constants
+from chime import create_app, repo_functions, google_api_functions, view_functions
 
 from unit.chime_test_client import ChimeTestClient
 
