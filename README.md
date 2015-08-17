@@ -7,6 +7,9 @@ Make an issue: https://github.com/chimecms/chime/issues/new
 
 # Install
 
+If you're a Docker user, you can always download the latest build from the Docker Hub as [chimecms/chime](https://hub.docker.com/r/chimecms/chime). Or if you'd like to work with
+the source:
+
 1. Chime CMS is a Python Flask web application. Follow the instructions on
    [Python Virtual Environments](https://github.com/codeforamerica/howto/blob/master/Python-Virtualenv.md)
    to prepare your Python development space. Make sure to use Python 2.7. Your commands may look something like:
