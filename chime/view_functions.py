@@ -1334,9 +1334,7 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
 
     if commit.hexsha != new_values.get('hexsha'):
         tmp_branch_name = make_branch_name()
-        print 'tmp_branch_name:', tmp_branch_name, new_values.get('hexsha')
         tmp_branch = repo.create_head(tmp_branch_name, commit=new_values.get('hexsha'), force=True)
-        print 'tmp_branch:', tmp_branch
         tmp_branch.checkout()
         possible_conflict = True
     
@@ -1377,14 +1375,10 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
     action_descriptions = [{'action': u'edit', 'title': display_name, 'display_type': display_type, 'file_path': file_path}]
     commit_message = u'The "{}" {} was edited\n\n{}'.format(display_name, display_type, json.dumps(action_descriptions, ensure_ascii=False))
     c2 = save_local_working_file(repo, file_path, commit_message)
-    print 'c2:', c2
 
     if possible_conflict:
-        print 'Possible conflict!!1!'
-        print 'Rebasing on', existing_branch.commit
         repo.git.rebase(existing_branch.commit)
         rebase_commit = tmp_branch.commit
-        print 'rebased and out...', rebase_commit
         
         # Ditch the temporary branch now that rebase has worked.
         existing_branch.checkout()
