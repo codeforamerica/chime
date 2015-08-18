@@ -526,6 +526,18 @@ def browserid_hostname_required(route_function):
 
     return decorated_function
 
+def guess_branch_names_in_decorator(kwargs, config, form):
+    '''
+    '''
+    branch_name_raw = kwargs.get('branch_name')
+    if not branch_name_raw:
+        branch_name_raw = form.get('branch', None)
+
+    branch_name = branch_name_raw and branch_var2name(branch_name_raw)
+    master_name = config['default_branch']
+    
+    return branch_name, master_name
+
 def synch_required(route_function):
     ''' Decorator for routes needing a repository synched to upstream.
 
@@ -559,13 +571,8 @@ def synched_checkout_required(route_function):
     @wraps(route_function)
     def decorated_function(*args, **kwargs):
         repo = get_repo(flask_app=current_app)
-        # get the branch name from request.form if it's not in kwargs
-        branch_name_raw = kwargs['branch_name'] if 'branch_name' in kwargs else None
-        if not branch_name_raw:
-            branch_name_raw = request.form.get('branch', None)
-
-        branch_name = branch_var2name(branch_name_raw)
-        master_name = current_app.config['default_branch']
+        branch_name, master_name = \
+            guess_branch_names_in_decorator(kwargs, current_app.config, request.form)
 
         # fetch
         repo.git.fetch('origin')
