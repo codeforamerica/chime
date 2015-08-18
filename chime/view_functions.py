@@ -1390,9 +1390,9 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
         existing_branch.checkout()
         repo.git.reset(rebase_commit, hard=True)
         repo.git.branch('-D', tmp_branch_name)
-        
-        sync_with_default_and_upstream_branches(repo, working_branch_name)
-        repo.git.push('origin')
+    
+    sync_with_default_and_upstream_branches(repo, working_branch_name)
+    repo.git.push('origin')
 
     #
     # Try to merge from the master to the current branch.
