@@ -797,7 +797,7 @@ class TestApp (TestCase):
 
         with HTTMock(self.auth_csv_example_allowed):
             #
-            # try adding a new file
+            # try navigating to a non-existent branch
             #
             fake_task_description = u'This should not create a branch'
             fake_task_beneficiary = u'Nobody'
@@ -831,12 +831,14 @@ class TestApp (TestCase):
             self.assertEqual(response.status_code, 200)
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('article-edit') in response.data)
 
+            # load the article list and verify that the new article is listed
             response = self.test_client.get('/tree/{}/edit/'.format(generated_branch_name), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('articles-list') in response.data)
             self.assertTrue(PATTERN_BRANCH_COMMENT.format(generated_branch_name) in response.data)
             self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": fake_page_slug, "file_title": fake_page_slug, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data)
 
+            # load the article edit page and grab the hexsha from the form
             response = self.test_client.get('/tree/{}/edit/{}'.format(generated_branch_name, fake_page_path))
             self.assertEqual(response.status_code, 200)
             hexsha = search(r'<input name="hexsha" value="(\w+)"', response.data).group(1)
@@ -846,13 +848,12 @@ class TestApp (TestCase):
             self.assertEqual(response.status_code, 200)
             self.assertFalse(generated_branch_name in response.data)
 
+            # try submitting a change to the article
             response = self.test_client.post('/tree/{}/save/{}'.format(generated_branch_name, fake_page_path), data={'layout': view_functions.ARTICLE_LAYOUT, 'hexsha': hexsha, 'en-title': 'Greetings', 'en-body': 'Hello world.\n', 'fr-title': '', 'fr-body': '', 'url-slug': 'hello'}, follow_redirects=True)
             self.assertEqual(response.status_code, 404)
             self.assertTrue(view_functions.MESSAGE_ACTIVITY_DELETED in response.data)
             # the task name should not be in the returned HTML
             self.assertFalse(PATTERN_BRANCH_COMMENT.format(fake_task_description) in response.data)
-            # 'content tips', which is in the tree-branch-edit template, shouldn't be in the returned HTML either
-            self.assertFalse('Content tips' in response.data)
             # the branch name should not be in the origin's branches list
             self.assertFalse('{}'.format(generated_branch_name) in self.origin.branches)
 
