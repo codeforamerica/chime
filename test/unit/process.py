@@ -259,7 +259,7 @@ class TestProcess (TestCase):
             # Switch back and try to make another edit.
             #
             erica.open_link(article_path)
-            erica.edit_outdated_article(title_str='Just Awful', body_str='It was the worst of times.')
+            erica.edit_published_article(title_str='Just Awful', body_str='It was the worst of times.')
 
     # in TestProcess
     def test_editing_process_with_conflicting_edit(self):

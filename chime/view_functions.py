@@ -541,15 +541,37 @@ def guess_branch_names_in_decorator(kwargs, config, form):
 def synch_required(route_function):
     ''' Decorator for routes needing a repository synched to upstream.
 
-        Syncs with upstream origin before and after. Use below @login_required.
+        Syncs with upstream origin after. Use below @login_required.
     '''
     @wraps(route_function)
     def decorated_function(*args, **kwargs):
+        repo = get_repo(flask_app=current_app)
+        branch_name, master_name = \
+            guess_branch_names_in_decorator(kwargs, current_app.config, request.form)
+
+        # fetch
+        repo.git.fetch('origin')
+
+        if branch_name:
+            # are we in a remotely published or deleted activity?
+            working_state = get_activity_working_state(repo, master_name, branch_name)
+            local_branch = get_branch_if_exists_locally(repo, master_name, branch_name)
+
+            if working_state == constants.WORKING_STATE_PUBLISHED:
+                tag_ref = repo.tag('refs/tags/{}'.format(branch_name))
+                commit = tag_ref.commit
+                published_date = repo.git.show('--format=%ad', '--date=relative', commit.hexsha).strip()
+                published_by = commit.committer.email
+                flash_only(MESSAGE_ACTIVITY_PUBLISHED.format(published_date=published_date, published_by=published_by), u'warning')
+
+                # if the published branch doesn't exist locally, raise a 404
+                if not local_branch:
+                    abort(404)
+
         response = route_function(*args, **kwargs)
         
         if request.method in ('PUT', 'POST', 'DELETE'):
             # Attempt to push to origin in all cases.
-            repo = get_repo(flask_app=current_app)
             try:
                 repo.git.push('origin')
             except Exception as e:
