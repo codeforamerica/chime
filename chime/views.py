@@ -50,6 +50,7 @@ def not_allowed():
 
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(auth_url=auth_data_href, is_auth_data_default=is_auth_data_default)
+    kwargs.update(support_email=current_app.config.get('SUPPORT_EMAIL_ADDRESS'))
 
     if not email:
         return render_template('signin.html', **kwargs)

@@ -59,9 +59,9 @@
         signinLink.onclick = function() { navigator.id.request(opts); return false };
       }
 
-      var signoutLink = document.getElementById('signout');
-      if (signoutLink) {
-        signoutLink.onclick = function() { navigator.id.logout(); return false };
+      var signoutLinks = document.querySelectorAll('a[class*="signout-link"]')
+      for (var it = 0; it < signoutLinks.length; it++) {
+        signoutLinks[it].onclick = function() { navigator.id.logout(); return false };
       }
     </script>
 </html>
