@@ -288,7 +288,7 @@ class TestApp (TestCase):
         self.assertFalse('erica@example.com' in response.data)
 
         with HTTMock(self.mock_persona_verify_erica):
-            response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
+            response = self.test_client.post('/sign-in', data={'assertion': 'erica@example.com'})
             self.assertEqual(response.status_code, 200)
 
         with HTTMock(self.auth_csv_example_disallowed):
@@ -303,7 +303,7 @@ class TestApp (TestCase):
         self.assertFalse('Start' in response.data)
 
         with HTTMock(self.mock_persona_verify_erica):
-            response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
+            response = self.test_client.post('/sign-in', data={'assertion': 'erica@example.com'})
             self.assertEqual(response.status_code, 200)
 
         with HTTMock(self.auth_csv_example_allowed):
@@ -325,7 +325,7 @@ class TestApp (TestCase):
         self.assertFalse('Start' in response.data)
 
         with HTTMock(self.mock_persona_verify_william):
-            response = self.test_client.post('/sign-in', data={'email': 'william@example.org'})
+            response = self.test_client.post('/sign-in', data={'assertion': 'william@example.org'})
             self.assertEqual(response.status_code, 200)
 
         with HTTMock(self.auth_csv_example_allowed):
@@ -350,7 +350,7 @@ class TestApp (TestCase):
         self.assertFalse('Start' in response.data)
 
         with HTTMock(self.mock_persona_verify_erica):
-            response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
+            response = self.test_client.post('/sign-in', data={'assertion': 'erica@example.com'})
             self.assertEqual(response.status_code, 200)
 
         with HTTMock(self.auth_csv_example_allowed):
@@ -491,7 +491,7 @@ class TestApp (TestCase):
         fake_page_path = u'{}/index.{}'.format(fake_page_slug, view_functions.CONTENT_FILE_EXTENSION)
         fake_page_content = u'People of earth we salute you.'
         with HTTMock(self.mock_persona_verify_erica):
-            self.test_client.post('/sign-in', data={'email': fake_author_email})
+            self.test_client.post('/sign-in', data={'assertion': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
             # create a new branch
@@ -558,7 +558,7 @@ class TestApp (TestCase):
         #
         # Log in as a different person
         with HTTMock(self.mock_persona_verify_frances):
-            self.test_client.post('/sign-in', data={'email': fake_endorser_email})
+            self.test_client.post('/sign-in', data={'assertion': fake_endorser_email})
 
         # Endorse the change
         with HTTMock(self.auth_csv_example_allowed):
@@ -585,7 +585,7 @@ class TestApp (TestCase):
         '''
         fake_author_email = u'erica@example.com'
         with HTTMock(self.mock_persona_verify_erica):
-            self.test_client.post('/sign-in', data={'email': fake_author_email})
+            self.test_client.post('/sign-in', data={'assertion': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
@@ -634,7 +634,7 @@ class TestApp (TestCase):
 
         # log in
         with HTTMock(self.mock_persona_verify_erica):
-            self.test_client.post('/sign-in', data={'email': fake_author_email})
+            self.test_client.post('/sign-in', data={'assertion': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
             # create a new branch
@@ -684,7 +684,7 @@ class TestApp (TestCase):
         #
         # Log in as a different person
         with HTTMock(self.mock_persona_verify_frances):
-            self.test_client.post('/sign-in', data={'email': fake_endorser_email})
+            self.test_client.post('/sign-in', data={'assertion': fake_endorser_email})
 
         with HTTMock(self.auth_csv_example_allowed):
             # get the edit page for the branch
@@ -713,7 +713,7 @@ class TestApp (TestCase):
 
         # log back in as the original editor
         with HTTMock(self.mock_persona_verify_erica):
-            self.test_client.post('/sign-in', data={'email': fake_author_email})
+            self.test_client.post('/sign-in', data={'assertion': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
             # get the edit page for the branch
@@ -748,7 +748,7 @@ class TestApp (TestCase):
         ''' Navigating to a made-up URL should not create a branch
         '''
         with HTTMock(self.mock_persona_verify_erica):
-            self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
+            self.test_client.post('/sign-in', data={'assertion': 'erica@example.com'})
 
         with HTTMock(self.auth_csv_example_allowed):
             fake_branch_name = 'this-should-not-create-a-branch'
@@ -793,7 +793,7 @@ class TestApp (TestCase):
         fake_page_path = u'{}/index.{}'.format(fake_page_slug, view_functions.CONTENT_FILE_EXTENSION)
 
         with HTTMock(self.mock_persona_verify_erica):
-            self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
+            self.test_client.post('/sign-in', data={'assertion': 'erica@example.com'})
 
         with HTTMock(self.auth_csv_example_allowed):
             #
@@ -863,7 +863,7 @@ class TestApp (TestCase):
         '''
         fake_author_email = u'erica@example.com'
         with HTTMock(self.mock_persona_verify_erica):
-            self.test_client.post('/sign-in', data={'email': fake_author_email})
+            self.test_client.post('/sign-in', data={'assertion': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
@@ -907,7 +907,7 @@ class TestApp (TestCase):
         '''
         fake_author_email = u'erica@example.com'
         with HTTMock(self.mock_persona_verify_erica):
-            self.test_client.post('/sign-in', data={'email': fake_author_email})
+            self.test_client.post('/sign-in', data={'assertion': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
             # create a new clone via get_repo
@@ -933,7 +933,7 @@ class TestApp (TestCase):
         '''
         fake_author_email = u'erica@example.com'
         with HTTMock(self.mock_persona_verify_erica):
-            self.test_client.post('/sign-in', data={'email': fake_author_email})
+            self.test_client.post('/sign-in', data={'assertion': fake_author_email})
 
         fake_task_description = u'unimportant task'
         fake_task_beneficiary = u'unimportant person'
@@ -968,7 +968,7 @@ class TestApp (TestCase):
         ''' Ensure we get a successful page load on callback from Google authentication
         '''
         with HTTMock(self.mock_persona_verify_erica):
-            self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
+            self.test_client.post('/sign-in', data={'assertion': 'erica@example.com'})
 
         with HTTMock(self.mock_google_authorization):
             self.test_client.post('/authorize')
@@ -987,7 +987,7 @@ class TestApp (TestCase):
     # in TestApp
     def test_analytics_setup_is_successful(self):
         with HTTMock(self.mock_persona_verify_erica):
-            self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
+            self.test_client.post('/sign-in', data={'assertion': 'erica@example.com'})
 
         with HTTMock(self.mock_google_authorization):
             self.test_client.post('/authorize')
@@ -1018,7 +1018,7 @@ class TestApp (TestCase):
         ''' Ensure that we get an appropriate error flashed when we fail to auth with google
         '''
         with HTTMock(self.mock_persona_verify_erica):
-            response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
+            response = self.test_client.post('/sign-in', data={'assertion': 'erica@example.com'})
 
         with HTTMock(self.mock_google_authorization):
             response = self.test_client.post('/authorize')
@@ -1035,7 +1035,7 @@ class TestApp (TestCase):
         ''' Ensure that we get an appropriate error flashed when we have an invalid access token
         '''
         with HTTMock(self.mock_persona_verify_erica):
-            response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
+            response = self.test_client.post('/sign-in', data={'assertion': 'erica@example.com'})
             self.assertEqual(response.status_code, 200)
 
         with HTTMock(self.mock_google_invalid_credentials_response):
@@ -1051,7 +1051,7 @@ class TestApp (TestCase):
             associated with the authorized Google account
         '''
         with HTTMock(self.mock_persona_verify_erica):
-            response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
+            response = self.test_client.post('/sign-in', data={'assertion': 'erica@example.com'})
             self.assertEqual(response.status_code, 200)
 
         with HTTMock(self.mock_google_no_properties_response):
@@ -1079,7 +1079,7 @@ class TestApp (TestCase):
         '''
         fake_author_email = u'erica@example.com'
         with HTTMock(self.mock_persona_verify_erica):
-            self.test_client.post('/sign-in', data={'email': fake_author_email})
+            self.test_client.post('/sign-in', data={'assertion': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
@@ -1214,7 +1214,7 @@ class TestApp (TestCase):
         '''
         fake_author_email = u'erica@example.com'
         with HTTMock(self.mock_persona_verify_erica):
-            self.test_client.post('/sign-in', data={'email': fake_author_email})
+            self.test_client.post('/sign-in', data={'assertion': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
@@ -1256,7 +1256,7 @@ class TestApp (TestCase):
         '''
         fake_author_email = u'erica@example.com'
         with HTTMock(self.mock_persona_verify_erica):
-            self.test_client.post('/sign-in', data={'email': fake_author_email})
+            self.test_client.post('/sign-in', data={'assertion': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
@@ -1397,7 +1397,7 @@ class TestApp (TestCase):
         '''
         fake_author_email = u'erica@example.com'
         with HTTMock(self.mock_persona_verify_erica):
-            self.test_client.post('/sign-in', data={'email': fake_author_email})
+            self.test_client.post('/sign-in', data={'assertion': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
@@ -1445,7 +1445,7 @@ class TestApp (TestCase):
         '''
         fake_author_email = u'erica@example.com'
         with HTTMock(self.mock_persona_verify_erica):
-            self.test_client.post('/sign-in', data={'email': fake_author_email})
+            self.test_client.post('/sign-in', data={'assertion': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
@@ -1493,7 +1493,7 @@ class TestApp (TestCase):
         '''
         fake_author_email = u'erica@example.com'
         with HTTMock(self.mock_persona_verify_erica):
-            self.test_client.post('/sign-in', data={'email': fake_author_email})
+            self.test_client.post('/sign-in', data={'assertion': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
@@ -1567,7 +1567,7 @@ class TestApp (TestCase):
         '''
         fake_author_email = u'erica@example.com'
         with HTTMock(self.mock_persona_verify_erica):
-            self.test_client.post('/sign-in', data={'email': fake_author_email})
+            self.test_client.post('/sign-in', data={'assertion': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
@@ -1647,7 +1647,7 @@ class TestApp (TestCase):
         '''
         fake_author_email = u'erica@example.com'
         with HTTMock(self.mock_persona_verify_erica):
-            self.test_client.post('/sign-in', data={'email': fake_author_email})
+            self.test_client.post('/sign-in', data={'assertion': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
@@ -1710,7 +1710,7 @@ class TestApp (TestCase):
         '''
         fake_author_email = u'erica@example.com'
         with HTTMock(self.mock_persona_verify_erica):
-            self.test_client.post('/sign-in', data={'email': fake_author_email})
+            self.test_client.post('/sign-in', data={'assertion': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
@@ -1787,7 +1787,7 @@ class TestApp (TestCase):
         '''
         fake_author_email = u'erica@example.com'
         with HTTMock(self.mock_persona_verify_erica):
-            self.test_client.post('/sign-in', data={'email': fake_author_email})
+            self.test_client.post('/sign-in', data={'assertion': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
@@ -1857,7 +1857,7 @@ class TestApp (TestCase):
         '''
         fake_author_email = u'erica@example.com'
         with HTTMock(self.mock_persona_verify_erica):
-            self.test_client.post('/sign-in', data={'email': fake_author_email})
+            self.test_client.post('/sign-in', data={'assertion': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
@@ -1919,7 +1919,7 @@ class TestApp (TestCase):
         '''
         fake_author_email = u'erica@example.com'
         with HTTMock(self.mock_persona_verify_erica):
-            self.test_client.post('/sign-in', data={'email': fake_author_email})
+            self.test_client.post('/sign-in', data={'assertion': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
@@ -2067,7 +2067,7 @@ class TestApp (TestCase):
         '''
         fake_author_email = u'erica@example.com'
         with HTTMock(self.mock_persona_verify_erica):
-            self.test_client.post('/sign-in', data={'email': fake_author_email})
+            self.test_client.post('/sign-in', data={'assertion': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
@@ -2108,7 +2108,7 @@ class TestApp (TestCase):
         '''
         fake_author_email = u'erica@example.com'
         with HTTMock(self.mock_persona_verify_erica):
-            self.test_client.post('/sign-in', data={'email': fake_author_email})
+            self.test_client.post('/sign-in', data={'assertion': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
@@ -2168,7 +2168,7 @@ class TestApp (TestCase):
         '''
         fake_author_email = u'erica@example.com'
         with HTTMock(self.mock_persona_verify_erica):
-            self.test_client.post('/sign-in', data={'email': fake_author_email})
+            self.test_client.post('/sign-in', data={'assertion': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
@@ -2226,7 +2226,7 @@ class TestApp (TestCase):
         '''
         fake_author_email = u'erica@example.com'
         with HTTMock(self.mock_persona_verify_erica):
-            self.test_client.post('/sign-in', data={'email': fake_author_email})
+            self.test_client.post('/sign-in', data={'assertion': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
@@ -2262,7 +2262,7 @@ class TestApp (TestCase):
         '''
         fake_author_email = u'erica@example.com'
         with HTTMock(self.mock_persona_verify_erica):
-            self.test_client.post('/sign-in', data={'email': fake_author_email})
+            self.test_client.post('/sign-in', data={'assertion': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
@@ -2288,7 +2288,7 @@ class TestApp (TestCase):
         ''' A 500 page is generated when we provoke a server error
         '''
         with HTTMock(self.mock_persona_verify_erica):
-            response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
+            response = self.test_client.post('/sign-in', data={'assertion': 'erica@example.com'})
 
         with HTTMock(self.mock_internal_server_error):
             response = self.test_client.get('/', follow_redirects=True)
@@ -2302,7 +2302,7 @@ class TestApp (TestCase):
         ''' A 500 page is generated when we provoke an uncaught exception
         '''
         with HTTMock(self.mock_persona_verify_erica):
-            response = self.test_client.post('/sign-in', data={'email': 'erica@example.com'})
+            response = self.test_client.post('/sign-in', data={'assertion': 'erica@example.com'})
 
         with HTTMock(self.mock_exception):
             response = self.test_client.get('/', follow_redirects=True)
@@ -2329,7 +2329,7 @@ class TestApp (TestCase):
         #
         # Log in as person 1
         with HTTMock(self.mock_persona_verify_erica):
-            self.test_client.post('/sign-in', data={'email': fake_email_1})
+            self.test_client.post('/sign-in', data={'assertion': fake_email_1})
 
         with HTTMock(self.auth_csv_example_allowed):
             # create a new branch
@@ -2366,7 +2366,7 @@ class TestApp (TestCase):
         #
         # Log in as person 2
         with HTTMock(self.mock_persona_verify_frances):
-            self.test_client.post('/sign-in', data={'email': fake_email_2})
+            self.test_client.post('/sign-in', data={'assertion': fake_email_2})
 
         with HTTMock(self.auth_csv_example_allowed):
             # create a new branch
@@ -2412,7 +2412,7 @@ class TestApp (TestCase):
         #
         # Log in as person 1
         with HTTMock(self.mock_persona_verify_erica):
-            self.test_client.post('/sign-in', data={'email': fake_email_1})
+            self.test_client.post('/sign-in', data={'assertion': fake_email_1})
 
         # Endorse person 2's change
         with HTTMock(self.auth_csv_example_allowed):
