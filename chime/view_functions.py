@@ -573,7 +573,7 @@ def synch_required(route_function):
         if request.method in ('PUT', 'POST', 'DELETE'):
             # Attempt to push to origin in all cases.
             try:
-                repo.git.push('origin')
+                repo.git.push('origin', ':')
             except Exception as e:
                 # TODO: don't just eat this.
                 pass
@@ -1386,7 +1386,7 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
         repo.git.branch('-D', tmp_branch_name)
     
     sync_with_default_and_upstream_branches(repo, working_branch_name)
-    repo.git.push('origin')
+    repo.git.push('origin', ':')
 
     #
     # Try to merge from the master to the current branch.
