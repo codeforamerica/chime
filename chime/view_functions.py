@@ -535,9 +535,13 @@ def synch_required(route_function):
         response = route_function(*args, **kwargs)
         
         if request.method in ('PUT', 'POST', 'DELETE'):
-            # Push to origin in all cases.
+            # Attempt to push to origin in all cases.
             repo = get_repo(flask_app=current_app)
-            repo.git.push('origin')
+            try:
+                repo.git.push('origin')
+            except Exception as e:
+                # TODO: don't just eat this.
+                pass
 
             # Push upstream only if the request method indicates a change.
             mark_upstream_push_needed(current_app.config['RUNNING_STATE_DIR'])
