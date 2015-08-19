@@ -1,0 +1,15 @@
+<html>
+<head>
+    <link href="/static/stylesheets/main.css" rel="stylesheet"/>
+</head>
+<body>
+{% include 'includes/flashes.html' %}
+<div class="admin__main row row--main grid col__flex">
+    <h1>Admin</h1>
+    <!-- World's most boring admin interface. Feel free to make shiny! -->
+    <form method="POST" action="/admin/publish">
+        <p><input type="submit" value="publish"/></p>
+    </form>
+</div>
+</body>
+</html>
