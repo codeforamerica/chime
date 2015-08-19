@@ -797,10 +797,8 @@ class TestApp (TestCase):
 
         with HTTMock(self.auth_csv_example_allowed):
             #
-            # try navigating to a non-existent branch
+            # try creating an article in a non-existent branch
             #
-            fake_task_description = u'This should not create a branch'
-            fake_task_beneficiary = u'Nobody'
             fake_branch_name = repo_functions.make_branch_name()
             response = self.test_client.post('/tree/{}/edit/'.format(fake_branch_name), data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': fake_page_slug}, follow_redirects=True)
             self.assertEqual(response.status_code, 404)
@@ -811,6 +809,8 @@ class TestApp (TestCase):
             #
             # create a branch then delete it right before a POSTing a save command
             #
+            fake_task_description = u'Doing fake stuff'
+            fake_task_beneficiary = u'Nobody'
             response = self.test_client.post('/start', data={'task_description': fake_task_description, 'task_beneficiary': fake_task_beneficiary}, follow_redirects=True)
             # we should be on the new task's edit page
             self.assertEqual(response.status_code, 200)
