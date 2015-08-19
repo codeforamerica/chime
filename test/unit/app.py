@@ -10,7 +10,7 @@ from os import environ, mkdir
 from shutil import rmtree, copytree
 from re import search, sub
 import random
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 import sys
 from chime.repo_functions import ChimeRepo
 from slugify import slugify
@@ -279,6 +279,27 @@ class TestApp (TestCase):
 
     def mock_exception(self, url, request):
         raise Exception(u'This is a generic exception.')
+
+    # in TestApp
+    def test_no_cache_headers(self):
+        ''' The expected no-cache headers are in the server response.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.test_client, self)
+                erica.sign_in(email='erica@example.com')
+
+            erica.open_link('/')
+
+            # The static no-cache headers are as expected
+            self.assertEqual(erica.headers['Cache-Control'], 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0')
+            self.assertEqual(erica.headers['Pragma'], 'no-cache')
+            self.assertEqual(erica.headers['Expires'], '-1')
+
+            # The last modified date is within 10 seconds of now
+            last_modified = datetime.strptime(erica.headers['Last-Modified'], '%Y-%m-%d %H:%M:%S.%f')
+            delta = datetime.now() - last_modified
+            self.assertTrue(delta.seconds < 10)
 
     # in TestApp
     def test_bad_login(self):
