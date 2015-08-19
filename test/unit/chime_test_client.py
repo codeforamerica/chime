@@ -192,6 +192,8 @@ class ChimeTestClient:
 
     def submit_edit_article_form(self, title_str, body_str):
         ''' Submit the edit article form and return the response for testing or passing on.
+
+            Note: This will submit the form even if it doesn't have a save/submit button.
         '''
         body = self.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'en-body'))
         form = body.find_parent('form')
