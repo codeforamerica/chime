@@ -23,7 +23,7 @@ from .view_functions import (
     make_activity_history, summarize_activity_history, render_edit_view, render_modify_dir, render_list_dir,
     add_article_or_category, strip_index_file, delete_page, save_page, render_activities_list, sorted_paths,
     update_activity_review_state, flash_only, flash_unique, file_display_name, CONTENT_FILE_EXTENSION,
-    FOLDER_FILE_TYPE, ARTICLE_LAYOUT, CATEGORY_LAYOUT, MESSAGE_ACTIVITY_DELETED
+    FOLDER_FILE_TYPE, ARTICLE_LAYOUT, CATEGORY_LAYOUT, MESSAGE_ACTIVITY_DELETED, publish_commit
 )
 
 from .google_api_functions import (
@@ -618,6 +618,23 @@ def deploy_key():
 @app.route('/styleguide')
 def styleguide():
     return render_template('styleguide.html')
+
+@app.route('/admin')
+@log_application_errors
+@login_required
+def admin():
+    return render_template('admin.html')
+
+@app.route('/admin/publish', methods = ['POST'])
+@log_application_errors
+@login_required
+def publish():
+    repo = get_repo(flask_app=current_app)
+    master_name = current_app.config['default_branch']
+    repo.git.checkout(master_name)
+    publish_commit(repo, current_app.config['PUBLISH_PATH'])
+    flash(u'Published!', u'notice')
+    return redirect('/admin')
 
 @app.route('/<path:path>')
 @log_application_errors
