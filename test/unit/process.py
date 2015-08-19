@@ -793,8 +793,15 @@ class TestProcess (TestCase):
             erica.open_link(url=erica_article_path)
             # a warning is flashed about working in a deleted branch
             self.assertIsNotNone(erica.soup.find(text=view_functions.MESSAGE_ACTIVITY_DELETED))
-            # assert that trying to save an edit to the article fails
-            erica.edit_article_and_fail(title_str=article_name, body_str=u'Chase fish into shallow water to catch them.')
+
+            # try to save an edit to the article
+            erica.edit_article(title_str=article_name, body_str=u'Chase fish into shallow water to catch them.')
+            # we're in the article-edit template
+            pattern_template_comment_stripped = sub(ur'<!--|-->', u'', PATTERN_TEMPLATE_COMMENT)
+            comments = erica.soup.find_all(text=lambda text: isinstance(text, Comment))
+            self.assertTrue(pattern_template_comment_stripped.format(u'article-edit') in comments)
+            # a warning is flashed about working in a deleted branch
+            self.assertIsNotNone(erica.soup.find(text=view_functions.MESSAGE_ACTIVITY_DELETED))
 
             # verify that the branch exists locally and not remotely
             self.assertTrue(erica_branch_name in repo.branches)
