@@ -18,7 +18,7 @@ class ChimeTestClient:
         response = self.client.get('/')
         self.test.assertFalse('Start' in response.data)
 
-        self.path, self.soup = '/', BeautifulSoup(response.data)
+        self.path, self.soup, self.headers = '/', BeautifulSoup(response.data), response.headers
 
     def sign_in(self, email):
         ''' Sign in with a given email address.
@@ -43,14 +43,14 @@ class ChimeTestClient:
         response = self.client.get(url)
         self.test.assertEqual(response.status_code, expected_status_code)
 
-        self.path, self.soup = url, BeautifulSoup(response.data)
+        self.path, self.soup, self.headers = url, BeautifulSoup(response.data), response.headers
 
     def open_link_blindly(self, url):
         ''' Open a link without testing
         '''
         response = self.client.get(url)
 
-        self.path, self.soup = url, BeautifulSoup(response.data)
+        self.path, self.soup, self.headers = url, BeautifulSoup(response.data), response.headers
 
     def follow_link(self, href):
         ''' Follow a link after making sure it's present in the page.
@@ -67,7 +67,7 @@ class ChimeTestClient:
 
         self.test.assertEqual(response.status_code, 200)
 
-        self.path, self.soup = redirect, BeautifulSoup(response.data)
+        self.path, self.soup, self.headers = redirect, BeautifulSoup(response.data), response.headers
 
     def follow_redirect(self, response, code):
         ''' Expect and follow a response HTTP redirect.
@@ -75,13 +75,13 @@ class ChimeTestClient:
         self.test.assertEqual(response.status_code, code, 'Status {} should have been {}'.format(response.status_code, code))
 
         if code in range(500, 599):
-            self.soup = BeautifulSoup(response.data)
+            self.soup, self.headers = BeautifulSoup(response.data), response.headers
         else:
             redirect = urlparse(response.headers['Location']).path
             response = self.client.get(redirect)
             self.test.assertEqual(response.status_code, 200)
 
-            self.path, self.soup = redirect, BeautifulSoup(response.data)
+            self.path, self.soup, self.headers = redirect, BeautifulSoup(response.data), response.headers
 
     def get_branch_name(self):
         ''' Extract and return the branch name from the current soup.
@@ -103,7 +103,7 @@ class ChimeTestClient:
         response = self.client.post('/start', data=data)
 
         if response.status_code == 200:
-            self.soup = BeautifulSoup(response.data)
+            self.soup, self.headers = BeautifulSoup(response.data), response.headers
         else:
             self.follow_redirect(response, 303)
 
