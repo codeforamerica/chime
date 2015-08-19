@@ -9,6 +9,7 @@ from glob import glob
 
 from requests import post
 from slugify import slugify
+from datetime import datetime
 from flask import current_app, flash, render_template, redirect, request, Response, session, abort
 
 from . import chime as app
@@ -32,6 +33,14 @@ from .google_api_functions import (
 )
 
 from . import view_functions
+
+@app.after_request
+def after_request(response):
+    response.headers['Last-Modified'] = datetime.now()
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '-1'
+    return response
 
 @app.route('/', methods=['GET'])
 @log_application_errors
