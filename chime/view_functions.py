@@ -573,10 +573,11 @@ def synch_required(route_function):
         if request.method in ('PUT', 'POST', 'DELETE'):
             # Attempt to push to origin in all cases.
             if branch_name:
-                repo.git.push('origin', branch_name)
+                if working_state == constants.WORKING_STATE_ACTIVE:
+                    repo.git.push('origin', branch_name)
 
-            # Push upstream only if the request method indicates a change.
-            mark_upstream_push_needed(current_app.config['RUNNING_STATE_DIR'])
+                    # Push upstream only if the request method indicates a change.
+                    mark_upstream_push_needed(current_app.config['RUNNING_STATE_DIR'])
 
         return response
 
