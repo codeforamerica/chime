@@ -34,7 +34,8 @@ from .repo_functions import (
     abandon_branch, clobber_default_branch, get_review_state_and_authorized,
     save_working_file, update_review_state, provide_feedback, move_existing_file,
     get_last_edited_email, mark_upstream_push_needed, MergeConflict,
-    get_activity_working_state, ACTIVITY_CREATED_MESSAGE, TASK_METADATA_FILENAME
+    get_activity_working_state, ACTIVITY_CREATED_MESSAGE, TASK_METADATA_FILENAME,
+    make_branch_name, save_local_working_file, sync_with_default_and_upstream_branches
 )
 from . import constants
 
@@ -525,18 +526,58 @@ def browserid_hostname_required(route_function):
 
     return decorated_function
 
+def guess_branch_names_in_decorator(kwargs, config, form):
+    '''
+    '''
+    branch_name_raw = kwargs.get('branch_name')
+    if not branch_name_raw:
+        branch_name_raw = form.get('branch', None)
+
+    branch_name = branch_name_raw and branch_var2name(branch_name_raw)
+    master_name = config['default_branch']
+    
+    return branch_name, master_name
+
 def synch_required(route_function):
     ''' Decorator for routes needing a repository synched to upstream.
 
-        Syncs with upstream origin before and after. Use below @login_required.
+        Syncs with upstream origin after. Use below @login_required.
     '''
     @wraps(route_function)
     def decorated_function(*args, **kwargs):
-        response = route_function(*args, **kwargs)
+        repo = get_repo(flask_app=current_app)
+        branch_name, master_name = \
+            guess_branch_names_in_decorator(kwargs, current_app.config, request.form)
 
-        # Push upstream only if the request method indicates a change.
+        # fetch
+        repo.git.fetch('origin')
+
+        if branch_name:
+            # are we in a remotely published or deleted activity?
+            working_state = get_activity_working_state(repo, master_name, branch_name)
+            local_branch = get_branch_if_exists_locally(repo, master_name, branch_name)
+
+            if working_state == constants.WORKING_STATE_PUBLISHED:
+                tag_ref = repo.tag('refs/tags/{}'.format(branch_name))
+                commit = tag_ref.commit
+                published_date = repo.git.show('--format=%ad', '--date=relative', commit.hexsha).strip()
+                published_by = commit.committer.email
+                flash_only(MESSAGE_ACTIVITY_PUBLISHED.format(published_date=published_date, published_by=published_by), u'warning')
+
+                # if the published branch doesn't exist locally, raise a 404
+                if not local_branch:
+                    abort(404)
+
+        response = route_function(*args, **kwargs)
+        
         if request.method in ('PUT', 'POST', 'DELETE'):
-            mark_upstream_push_needed(current_app.config['RUNNING_STATE_DIR'])
+            # Attempt to push to origin in all cases.
+            if branch_name:
+                if working_state == constants.WORKING_STATE_ACTIVE:
+                    repo.git.push('origin', branch_name)
+
+                    # Push upstream only if the request method indicates a change.
+                    mark_upstream_push_needed(current_app.config['RUNNING_STATE_DIR'])
 
         return response
 
@@ -550,13 +591,8 @@ def synched_checkout_required(route_function):
     @wraps(route_function)
     def decorated_function(*args, **kwargs):
         repo = get_repo(flask_app=current_app)
-        # get the branch name from request.form if it's not in kwargs
-        branch_name_raw = kwargs['branch_name'] if 'branch_name' in kwargs else None
-        if not branch_name_raw:
-            branch_name_raw = request.form.get('branch', None)
-
-        branch_name = branch_var2name(branch_name_raw)
-        master_name = current_app.config['default_branch']
+        branch_name, master_name = \
+            guess_branch_names_in_decorator(kwargs, current_app.config, request.form)
 
         # fetch
         repo.git.fetch('origin')
@@ -1285,23 +1321,26 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
     ''' Save the page with the passed values
     '''
     working_branch_name = branch_var2name(working_branch_name)
+    if get_activity_working_state(repo, default_branch_name, working_branch_name) != constants.WORKING_STATE_ACTIVE:
+        return file_path, False
 
     existing_branch = get_existing_branch(repo, default_branch_name, working_branch_name)
-
-    if not existing_branch:
-        flash_only(MESSAGE_ACTIVITY_DELETED, u'warning')
-        return file_path, False
 
     commit = existing_branch.commit
 
     if commit.hexsha != new_values.get('hexsha'):
-        raise Exception(u'Unable to save page because someone else made edits while you were working.')
-
-    #
-    # Write changes.
-    #
-    existing_branch.checkout()
-
+        tmp_branch_name = make_branch_name()
+        tmp_branch = repo.create_head(tmp_branch_name, commit=new_values.get('hexsha'), force=True)
+        tmp_branch.checkout()
+        possible_conflict = True
+    
+    else:
+        #
+        # Write changes.
+        #
+        existing_branch.checkout()
+        possible_conflict = False
+    
     # make sure order is an integer; otherwise default to 0
     try:
         order = int(dos2unix(new_values.get('order', '0')))
@@ -1323,16 +1362,33 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
 
     body = dos2unix(new_values.get('en-body', ''))
     update_page(repo, file_path, front, body)
+    
+    #
+    # Save local file.
+    #
+    display_name = new_values.get('en-title')
+    display_type = new_values.get('layout')
+    action_descriptions = [{'action': u'edit', 'title': display_name, 'display_type': display_type, 'file_path': file_path}]
+    commit_message = u'The "{}" {} was edited\n\n{}'.format(display_name, display_type, json.dumps(action_descriptions, ensure_ascii=False))
+    c2 = save_local_working_file(repo, file_path, commit_message)
+
+    if possible_conflict:
+        repo.git.rebase(existing_branch.commit)
+        rebase_commit = tmp_branch.commit
+        
+        # Ditch the temporary branch now that rebase has worked.
+        existing_branch.checkout()
+        repo.git.reset(rebase_commit, hard=True)
+        repo.git.branch('-D', tmp_branch_name)
+    
+    sync_with_default_and_upstream_branches(repo, working_branch_name)
+
+    repo.git.push('origin', working_branch_name)
 
     #
     # Try to merge from the master to the current branch.
     #
     try:
-        display_name = new_values.get('en-title')
-        display_type = new_values.get('layout')
-        action_descriptions = [{'action': u'edit', 'title': display_name, 'display_type': display_type, 'file_path': file_path}]
-        commit_message = u'The "{}" {} was edited\n\n{}'.format(display_name, display_type, json.dumps(action_descriptions, ensure_ascii=False))
-        c2 = save_working_file(repo, file_path, commit_message, commit.hexsha, default_branch_name)
         # they may've renamed the page by editing the URL slug
         original_slug = file_path
         if re.search(r'\/index.{}$'.format(CONTENT_FILE_EXTENSION), file_path):

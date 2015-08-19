@@ -259,7 +259,7 @@ class TestProcess (TestCase):
             # Switch back and try to make another edit.
             #
             erica.open_link(article_path)
-            erica.edit_outdated_article(title_str='Just Awful', body_str='It was the worst of times.')
+            erica.edit_published_article(title_str='Just Awful', body_str='It was the worst of times.')
 
     # in TestProcess
     def test_editing_process_with_conflicting_edit(self):
@@ -312,6 +312,36 @@ class TestProcess (TestCase):
             frances.follow_link(href='/tree/{}'.format(f_branch_name))
             self.assertIsNotNone(frances.soup.find(text=repo_functions.MERGE_CONFLICT_WARNING_FLASH_MESSAGE),
                                  'Should see a warning about the conflict in the activity history.')
+
+    # in TestProcess
+    def test_editing_process_with_conflicting_edit_but_no_publish(self):
+        ''' Check edit process with a user attempting to change an activity with a conflict.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
+
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in('frances@example.com')
+
+            # Frances: Start a new task, "Bobbing for Apples", create a new category
+            # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
+            args = 'Bobbing', 'Apples', 'Ninjas', 'Flipping Out', 'So Awesome'
+            frances.add_branch_cat_subcat_article(*args)
+            frances.path
+
+            # Erica: Start a new task, "Diving for Dollars", create a new category
+            # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
+            args = 'Diving', 'Dollars', 'Ninjas', 'Flipping Out', 'So Awesome'
+            erica.add_branch_cat_subcat_article(*args)
+
+            # Erica edits the new article.
+            erica.edit_article(title_str='So, So Awesome', body_str='It was the best of times.')
+
+            # Frances edits the new article.
+            frances.edit_article(title_str='So, So Awful', body_str='It was the worst of times.')
 
     def test_editing_process_with_nonconflicting_edit(self):
         ''' Check edit process with a user attempting to change an activity with no conflict.
@@ -801,6 +831,34 @@ class TestProcess (TestCase):
             edit_form = erica.soup.find(lambda tag: bool(tag.name == 'form' and u'/tree/{}/save/'.format(erica_branch_name) in tag.get('action')))
             save_button = edit_form.find('input', value='Save')
             self.assertIsNone(save_button)
+
+    def test_editing_out_of_date_article(self):
+        ''' Check edit process with a user attempting to edit an out-of-date article.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
+            
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in('frances@example.com')
+
+            # Start a new task, "Bobbing for Apples", create a new category
+            # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
+            args = 'Bobbing', 'Apples', 'Ninjas', 'Flipping Out', 'So Awesome'
+            frances.add_branch_cat_subcat_article(*args)
+            frances.edit_article(title_str='So, So Awesome', body_str='It was the best of times.')
+            
+            # Erica now opens the article that Frances started.
+            erica.open_link(frances.path)
+            
+            # Frances starts a different article.
+            frances.open_link(dirname(dirname(frances.path)) + '/')
+            frances.add_article('So Terrible')
+            
+            # Meanwhile, Erica completes her edits.
+            erica.edit_article(title_str='So, So Awesome', body_str='It was the best of times.\n\nBut also the worst of times.')
 
 if __name__ == '__main__':
     main()
