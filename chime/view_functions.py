@@ -1321,12 +1321,10 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
     ''' Save the page with the passed values
     '''
     working_branch_name = branch_var2name(working_branch_name)
+    if get_activity_working_state(repo, default_branch_name, working_branch_name) != constants.WORKING_STATE_ACTIVE:
+        return file_path, False
 
     existing_branch = get_existing_branch(repo, default_branch_name, working_branch_name)
-
-    if not existing_branch:
-        flash_only(MESSAGE_ACTIVITY_DELETED, u'warning')
-        return file_path, False
 
     commit = existing_branch.commit
 
