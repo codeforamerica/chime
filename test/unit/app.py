@@ -10,7 +10,7 @@ from os import environ, mkdir
 from shutil import rmtree, copytree
 from re import search, sub
 import random
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 import sys
 from chime.repo_functions import ChimeRepo
 from slugify import slugify
@@ -279,6 +279,27 @@ class TestApp (TestCase):
 
     def mock_exception(self, url, request):
         raise Exception(u'This is a generic exception.')
+
+    # in TestApp
+    def test_no_cache_headers(self):
+        ''' The expected no-cache headers are in the server response.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.test_client, self)
+                erica.sign_in(email='erica@example.com')
+
+            erica.open_link('/')
+
+            # The static no-cache headers are as expected
+            self.assertEqual(erica.headers['Cache-Control'], 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0')
+            self.assertEqual(erica.headers['Pragma'], 'no-cache')
+            self.assertEqual(erica.headers['Expires'], '-1')
+
+            # The last modified date is within 10 seconds of now
+            last_modified = datetime.strptime(erica.headers['Last-Modified'], '%Y-%m-%d %H:%M:%S.%f')
+            delta = datetime.now() - last_modified
+            self.assertTrue(delta.seconds < 10)
 
     # in TestApp
     def test_bad_login(self):
@@ -2463,6 +2484,39 @@ class TestApp (TestCase):
             erica.follow_link(href='/tree/{}/edit/{}/'.format(branch_name, testing_slug))
             # we should've automatically been redirected into the 'categories' directory
             self.assertEqual(erica.path, '/tree/{}/edit/{}/'.format(branch_name, join(testing_slug, categories_slug)))
+
+    # in TestApp
+    def test_article_preview(self):
+        ''' Check edit process with a user previewing their article.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in('frances@example.com')
+            
+            # Start a new task, "Diving for Dollars".
+            frances.start_task('Diving', 'Dollars')
+            branch_name = frances.get_branch_name()
+            
+            # Look for an "other" link that we know about - is it a category?
+            frances.follow_link('/tree/{}/edit/other/'.format(branch_name))
+
+            # Create a new category "Ninjas", subcategory "Flipping Out", and article "So Awesome".
+            frances.add_category('Ninjas')
+            frances.add_subcategory('Flipping Out')
+            frances.add_article('So Awesome')
+            edit_path = frances.path
+            
+            # Preview the new article.
+            frances.preview_article('So, So Awesome', 'It was the best of times.')
+
+            expected_path = '/tree/{}/view/other/ninjas/flipping-out/so-awesome'.format(branch_name)
+            self.assertTrue(frances.path.startswith(expected_path), 'Should be on a preview path')
+            self.assertTrue('best of times' in str(frances.soup), 'Should see current content there')
+
+            # Look back at the edit form.
+            frances.open_link(edit_path)
+            self.assertTrue('best of times' in str(frances.soup), 'Should see current content there, too')
 
 class TestPublishApp (TestCase):
 

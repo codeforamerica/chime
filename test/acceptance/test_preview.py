@@ -13,6 +13,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import StaleElementReferenceException
 from acceptance.browser import Browser
 
 from acceptance.chime_test_case import ChimeTestCase, rewrite_for_all_browsers
@@ -146,14 +147,16 @@ class TestPreview(ChimeTestCase):
         self.driver.find_element_by_xpath("//input[@value='Save']").click()
 
         # preview the page
-        self.driver.find_element(By.XPATH, "//a[@target='_blank']").click()
+        clicked = False
+        while not clicked:
+            try:
+                self.driver.find_element_by_xpath("//input[@value='Preview']").click()
+                clicked = True
+            except StaleElementReferenceException:
+                pass
 
-        # wait until the preview window's available and switch to it
-        self.waiter.until(self.switch_to_other_window(main_window))
-        self.waiter.until(EC.presence_of_element_located((By.TAG_NAME, 'body')))
+        # assert that the submitted text is on the preview screen
         self.assertIn(body_text_marker, self.driver.find_element_by_class_name('article-content').text)
-        self.driver.close()
-        self.driver.switch_to.window(main_window)
 
         # go back to the main page
         self.driver.get(main_url)

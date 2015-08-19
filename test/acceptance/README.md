@@ -80,3 +80,12 @@ running `fab -d <command>`. You can view all fab commands with `fab -l`
       t, or y will keep the instance around.
     + branch: Takes a string of a branch name. If provided, it will
       attempt to checkout to that branch before running the tests.
+
+**Testing Locally**
+
+To run acceptance tests locally:
+
++ Download and install the [ChromeDriver tool](https://sites.google.com/a/chromium.org/chromedriver/)
++ Start the application running with **ACCEPTANCE_TEST_MODE** set to **True**: `env ACCEPTANCE_TEST_MODE=True foreman run python run.py`
++ Make sure the address in `hosts.txt` is that of your local server, i.e. `127.0.0.1:5000`
++ Run the acceptance tests with test email and password env variables: `env TESTING_EMAIL='erica@example.com' TESTING_PASSWORD='12345' nosetests test/acceptance/`

@@ -9,6 +9,7 @@ from glob import glob
 
 from requests import post
 from slugify import slugify
+from datetime import datetime
 from flask import current_app, flash, render_template, redirect, request, Response, session, abort
 
 from . import chime as app
@@ -32,6 +33,14 @@ from .google_api_functions import (
 )
 
 from . import view_functions
+
+@app.after_request
+def after_request(response):
+    response.headers['Last-Modified'] = datetime.now()
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '-1'
+    return response
 
 @app.route('/', methods=['GET'])
 @log_application_errors
@@ -602,7 +611,10 @@ def branch_save(branch_name, path):
     if did_save:
         flash(u'Saved changes to the {} article! Remember to submit this change for feedback when you\'re ready to go live.'.format(request.form['en-title']), u'notice')
 
-    return redirect('/tree/{}/edit/{}'.format(safe_branch, new_path), code=303)
+    if request.form.get('action', '').lower() == 'preview':
+        return redirect('/tree/{}/view/{}'.format(safe_branch, new_path), code=303)
+    else:
+        return redirect('/tree/{}/edit/{}'.format(safe_branch, new_path), code=303)
 
 @app.route('/.well-known/deploy-key.txt')
 @log_application_errors
