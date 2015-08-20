@@ -8,8 +8,7 @@
         {% if email %}
             <h2>Not Allowed</h2>
             <p><strong>{{email}}</strong> doesn't appear to be an approved editor.</p>
-            <p>Sign in to a different account or request permission.</p>
-            <input type="button" id="signout" value="Sign out" class="button button--red">
+            <p><a href="#" class="signout-link">Sign Out</a> and try a different account, or {% if support_email %}<a href="mailto:{{ support_email }}">{% endif %}contact this site's administrator{% if support_email %}</a>{% endif %} to request access.</p>
         {% else %}
             <h2>Sign in</h2>
             <p>To access the website editor, you need to be signed in.</p>
@@ -23,7 +22,7 @@
     </div>
 </div>
 <div class="row row--main">
-    <p class="clue">Looking for the Chime homepage? <a href="https://chimecms.org">It's over here</a></p>    
+    <p class="clue">Looking for the Chime homepage? <a href="http://chimecms.org">It's over here</a></p>
 </div>
 {% endblock %}
 

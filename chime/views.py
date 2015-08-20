@@ -59,6 +59,7 @@ def not_allowed():
 
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(auth_url=auth_data_href, is_auth_data_default=is_auth_data_default)
+    kwargs.update(support_email=current_app.config.get('SUPPORT_EMAIL_ADDRESS'))
 
     if not email:
         return render_template('signin.html', **kwargs)
@@ -72,16 +73,21 @@ def not_allowed():
 @app.route('/sign-in', methods=['POST', 'GET'])
 @log_application_errors
 def sign_in():
+    assertion = request.form.get('assertion') if request.method == 'POST' else request.values.get('assertion')
+    if not assertion:
+        Logger.info("Failed Persona auth (no email address passed)")
+        return Response('Failed', status=400)
+
     if current_app.config['ACCEPTANCE_TEST_MODE']:
-        session['email'] = request.values.get('assertion')
+        session['email'] = assertion
         Logger.info("bypassing auth")
     else:
-        success, email = _verify_persona_assertion(request.form.get('assertion'))
+        success, email = _verify_persona_assertion(assertion)
         if success:
             Logger.info("Successful Persona auth")
             session['email'] = email
         else:
-            Logger.info("Failed Persona auth")
+            Logger.info("Failed Persona auth (rejected by Persona)")
             return Response('Failed', status=400)
     Logger.info("Logged in as '{}'".format(session['email']))
     return 'OK'
@@ -92,8 +98,7 @@ def _verify_persona_assertion(assertion):
                             audience=current_app.config['BROWSERID_URL']))
     response = posted.json()
     success = response.get('status', '') == 'okay'
-    return success, response['email']
-
+    return success, response.get('email')
 
 @app.route('/sign-out', methods=['POST'])
 @log_application_errors

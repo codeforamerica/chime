@@ -26,7 +26,7 @@ class ChimeTestClient:
             Should be used inside an HTTMock that overrides Chime's internal
             call to Persona verifier: https://verifier.login.persona.org/verify
         '''
-        response = self.client.post('/sign-in', data={'email': email})
+        response = self.client.post('/sign-in', data={'assertion': email})
         self.test.assertEqual(response.status_code, 200)
 
         response = self.client.get('/')
