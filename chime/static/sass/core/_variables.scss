@@ -28,7 +28,8 @@ $base-line-height:		1.5em !default;
 $heading-line-height:	1.3em !default;
 
 // Colors
-$color-link:			#009DDB;
+$color-brand-blue:		#2b93d1;
+$color-link:			$color-brand-blue;
 
 $color-grey-50:			#fafafa;
 $color-grey-100:		#f5f5f5;
