@@ -190,8 +190,10 @@ class ChimeTestClient:
         
         return branch_name
 
-    def edit_article(self, title_str, body_str):
-        ''' Look for form to edit an article, submit it.
+    def submit_edit_article_form(self, title_str, body_str):
+        ''' Submit the edit article form and return the response for testing or passing on.
+
+            Note: This will submit the form even if it doesn't have a save/submit button.
         '''
         body = self.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'en-body'))
         form = body.find_parent('form')
@@ -206,8 +208,13 @@ class ChimeTestClient:
         data[body['name']] = body_str
 
         edit_article_path = urlparse(urljoin(self.path, form['action'])).path
-        response = self.client.post(edit_article_path, data=data)
+        return self.client.post(edit_article_path, data=data)
 
+    def edit_article(self, title_str, body_str):
+        ''' Look for form to edit an article, submit it. This will submit even if there's no
+            save button available for the form.
+        '''
+        response = self.submit_edit_article_form(title_str, body_str)
         # View the updated article.
         self.follow_redirect(response, 303)
 
@@ -232,23 +239,11 @@ class ChimeTestClient:
         # View the updated article.
         self.follow_redirect(response, 303)
 
-    def edit_published_article(self, title_str, body_str):
+    def edit_article_and_fail(self, title_str, body_str):
         ''' Look for form to edit an article we know to be published, submit it and assert that the sumbission fails.
         '''
-        body = self.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'en-body'))
-        form = body.find_parent('form')
-        title = form.find(lambda tag: bool(tag.name == 'input' and tag.get('name') == 'en-title'))
-        self.test.assertEqual(form['method'].upper(), 'POST')
-
-        data = {i['name']: i.get('value', u'')
-                for i in form.find_all(['input', 'button', 'textarea'])
-                if i.get('type') != 'submit'}
-
-        data[title['name']] = title_str
-        data[body['name']] = body_str
-
-        edit_article_path = urlparse(urljoin(self.path, form['action'])).path
-        response = self.client.post(edit_article_path, data=data)
+        response = self.submit_edit_article_form(title_str, body_str)
+        # Assert that the submission failed
         self.test.assertTrue(response.status_code in range(400, 499))
 
     def follow_modify_category_link(self, title_str):
