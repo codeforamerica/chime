@@ -1,11 +1,26 @@
 from . import chime as app
 from flask import current_app, render_template, session, request
 from urlparse import urlparse
+from functools import wraps
 from .error_functions import common_error_template_args, make_email_params, summarize_conflict_details, extract_branch_name_from_path
 from .view_functions import common_template_args, get_repo
 from .repo_functions import MergeConflict
 
+def raise_if_debug(route_function):
+    ''' Wrap error functions with this to manually raise the error
+        without routing it if the application is in debug mode.
+    '''
+    @wraps(route_function)
+    def decorated_function(*args, **kwargs):
+        if current_app.config['DEBUG']:
+            raise
+
+        return route_function(*args, **kwargs)
+
+    return decorated_function
+
 @app.app_errorhandler(404)
+@raise_if_debug
 def page_not_found(error):
     ''' Render a 404 error page
     '''
@@ -28,6 +43,7 @@ def page_not_found(error):
     return render_template('error_404.html', **kwargs), 404
 
 @app.app_errorhandler(500)
+@raise_if_debug
 def internal_server_error(error):
     ''' Render a 500 error page
     '''
@@ -41,6 +57,7 @@ def internal_server_error(error):
     return render_template('error_500.html', **kwargs), 500
 
 @app.app_errorhandler(MergeConflict)
+@raise_if_debug
 def merge_conflict(error):
     ''' Render a 500 error page with merge conflict details
     '''
@@ -57,6 +74,7 @@ def merge_conflict(error):
     return render_template('error_500.html', **kwargs), 500
 
 @app.app_errorhandler(Exception)
+@raise_if_debug
 def exception(error):
     ''' Render a 500 error page for exceptions not caught elsewhere
     '''
