@@ -176,7 +176,6 @@ class TestApp (TestCase):
 
         random.choice = MagicMock(return_value="P")
 
-        self.app.app.debug = True
         self.test_client = self.app.test_client()
 
     def tearDown(self):
