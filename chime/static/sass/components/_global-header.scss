@@ -1,7 +1,7 @@
 .global-header {
 	@include main-padding;
-	background-color: $color-blue-600;
-	color: $color-blue-100;
+	background-color: $color-brand-blue;
+	color: #fff;
 	padding: {
 		top: 0;
 		bottom: 0;
@@ -13,14 +13,18 @@
 }
 
 .global-header__title {
-	@include allcaps();
+	@include retina-image('../images/chime_logo', 100% auto);
+	background-repeat: no-repeat;
 	float: left;
 	font-size: 1.2rem;
 	color: #fff;
 	font-weight: bold;
 	text-decoration: none;
 	margin-right: 2em;
-	margin-top: .7em;
+	margin-top: .9em;
+	text-indent: -9999px;
+	width: 55px;
+
 }
 
 .global-header__link {
@@ -28,17 +32,17 @@
 	color: #fff;
 	font-weight: 400;
 	padding: 1em 2em;
-	border-left: 1px solid $color-blue-450;
+	border-left: 1px solid shade($color-brand-blue, 10%);
 	margin: 0;
 	&:hover {
 		color: #fff;
 		text-decoration: underline;
-		background-color: $color-blue-450;
+		background-color: shade($color-brand-blue, 10%);
 	}
 }
 
 .activity-dropdown {
-	background-color: $color-blue-400;
+	background-color: tint($color-brand-blue, 20%);
 }
 
 .activity-dropdown__link {

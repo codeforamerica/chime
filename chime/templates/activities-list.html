@@ -48,7 +48,7 @@
         </div>
         <div class="new-task grid__item width-one-third end-row">
           <h2 class="new-task__title">Start a new activity</h2>
-          <p class="new-task__description">Describe the new activity in terms of a user need.</p>
+          <p class="new-task__description">Describe the new activity in terms of a public need.</p>
           <form action="/start" method="POST" class="new-task__form">
             <p>I am<input name="task_description" placeholder="clarifying the permitting application process" type="text" class="need"{% if task_description %} value="{{ task_description }}"{% endif %} /> for <input type="text" name="task_beneficiary" placeholder="business owners"{% if task_beneficiary %} value="{{ task_beneficiary }}"{% endif %} /></p>
             <p><button type="submit" class="create button button--green">Let's go!</button></p>
