@@ -12,7 +12,7 @@ def raise_if_debug(route_function):
     '''
     @wraps(route_function)
     def decorated_function(*args, **kwargs):
-        if current_app.config['DEBUG']:
+        if current_app.debug:
             raise
 
         return route_function(*args, **kwargs)
@@ -20,7 +20,6 @@ def raise_if_debug(route_function):
     return decorated_function
 
 @app.app_errorhandler(404)
-@raise_if_debug
 def page_not_found(error):
     ''' Render a 404 error page
     '''
