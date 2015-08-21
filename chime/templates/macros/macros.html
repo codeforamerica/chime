@@ -9,6 +9,9 @@
     </nav>
   </div>
   <nav class="global-header__nav  row__right  toolbar--right">
+    {% if config.get('DEBUG') %}
+    <span class="toolbar__item global-header__link">&#x1f525; DEBUG MODE IS ON &#x1f525;</span>
+    {% endif %}
     {% if branch %}
     <div class="dropdown activity-dropdown toolbar__item global-header__link">
       <a href="/tree/{{ branch }}" class="dropdown__label activity-dropdown__link">{{ activity.task_description | title }}</a>
