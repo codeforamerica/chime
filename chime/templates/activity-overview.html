@@ -101,7 +101,11 @@
                 {% endif %}
             {% endif %}
 
+            {% if activity.working_state == config.WORKING_STATE_ACTIVE %}
             <p class="activity-overview__description"><a href="{{ activity.edit_path }}">Do more work on this activity</a> or {{ comment_note }}.</p>
+            {% else %}
+            <p class="activity-overview__description"><a href="{{ activity.edit_path }}">Browse this activity.</a></p>
+            {% endif %}
 
             {% if activity.review_state != config.REVIEW_STATE_PUBLISHED and activity.working_state == config.WORKING_STATE_ACTIVE %}
             <div class="activity-log-item activity-log-item--comment">

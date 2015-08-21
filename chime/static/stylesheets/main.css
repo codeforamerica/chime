@@ -1461,34 +1461,35 @@ input[type="submit"]:disabled:hover {
   padding: 1em 2em;
   border-left: 1px solid #2684bc;
   margin: 0;
+  line-height: 1em;
 }
-/* line 37, ../sass/components/_global-header.scss */
+/* line 38, ../sass/components/_global-header.scss */
 .global-header__link:hover {
   color: #fff;
   text-decoration: underline;
   background-color: #2684bc;
 }
 
-/* line 44, ../sass/components/_global-header.scss */
+/* line 45, ../sass/components/_global-header.scss */
 .activity-dropdown {
   background-color: #55a8da;
 }
 
-/* line 48, ../sass/components/_global-header.scss */
+/* line 49, ../sass/components/_global-header.scss */
 .activity-dropdown__link {
   color: #fff;
 }
-/* line 50, ../sass/components/_global-header.scss */
+/* line 51, ../sass/components/_global-header.scss */
 .activity-dropdown__link:hover {
   color: #fff;
 }
 
-/* line 55, ../sass/components/_global-header.scss */
+/* line 56, ../sass/components/_global-header.scss */
 .activity-dropdown__subtitle {
   margin: 0em;
 }
 
-/* line 59, ../sass/components/_global-header.scss */
+/* line 60, ../sass/components/_global-header.scss */
 .activity-dropdown__title {
   font-weight: 600;
   padding-bottom: 1em;
@@ -1498,7 +1499,7 @@ input[type="submit"]:disabled:hover {
   color: #212121;
 }
 
-/* line 68, ../sass/components/_global-header.scss */
+/* line 69, ../sass/components/_global-header.scss */
 .activity-dropdown__button {
   width: 100%;
   margin-bottom: 2em;

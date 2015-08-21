@@ -226,13 +226,15 @@ class TestProcess (TestCase):
         ''' Check edit process with a user attempting to change an activity that's been published.
         '''
         with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            frances_email = u'frances@example.com'
             with HTTMock(self.mock_persona_verify_erica):
                 erica = ChimeTestClient(self.app.test_client(), self)
-                erica.sign_in('erica@example.com')
-            
+                erica.sign_in(erica_email)
+
             with HTTMock(self.mock_persona_verify_frances):
                 frances = ChimeTestClient(self.app.test_client(), self)
-                frances.sign_in('frances@example.com')
+                frances.sign_in(frances_email)
 
             # Start a new task, "Diving for Dollars", create a new category
             # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
@@ -254,12 +256,19 @@ class TestProcess (TestCase):
             frances.leave_feedback(feedback_str='It is super-great.')
             frances.approve_activity()
             frances.publish_activity()
-            
+
             #
             # Switch back and try to make another edit.
             #
             erica.open_link(article_path)
-            erica.edit_article_and_fail(title_str='Just Awful', body_str='It was the worst of times.')
+            erica.edit_article(title_str='Just Awful', body_str='It was the worst of times.')
+
+            # a warning is flashed about working in a published branch
+            # we can't get the date exactly right, so test for every other part of the message
+            message_published = view_functions.MESSAGE_ACTIVITY_PUBLISHED.format(published_date=u'xxx', published_by=frances_email)
+            message_published_split = message_published.split(u'xxx')
+            for part in message_published_split:
+                self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and part in tag.text))
 
     # in TestProcess
     def test_editing_process_with_conflicting_edit(self):
@@ -478,14 +487,14 @@ class TestProcess (TestCase):
         '''
         with HTTMock(self.auth_csv_example_allowed):
             erica_email = u'erica@example.com'
-            francis_email = u'frances@example.com'
+            frances_email = u'frances@example.com'
             with HTTMock(self.mock_persona_verify_erica):
                 erica = ChimeTestClient(self.app.test_client(), self)
                 erica.sign_in(erica_email)
 
             with HTTMock(self.mock_persona_verify_frances):
                 frances = ChimeTestClient(self.app.test_client(), self)
-                frances.sign_in(francis_email)
+                frances.sign_in(frances_email)
 
             # Start a new task
             erica.start_task(description='Eating Carrion', beneficiary='Vultures')
@@ -519,7 +528,7 @@ class TestProcess (TestCase):
             erica.open_link(url='/tree/{}/edit/other/{}/'.format(erica_branch_name, category_slug))
             # a warning is flashed about working in a published branch
             # we can't get the date exactly right, so test for every other part of the message
-            message_published = view_functions.MESSAGE_ACTIVITY_PUBLISHED.format(published_date=u'xxx', published_by=francis_email)
+            message_published = view_functions.MESSAGE_ACTIVITY_PUBLISHED.format(published_date=u'xxx', published_by=frances_email)
             message_published_split = message_published.split(u'xxx')
             for part in message_published_split:
                 self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and part in tag.text))
@@ -530,14 +539,14 @@ class TestProcess (TestCase):
         '''
         with HTTMock(self.auth_csv_example_allowed):
             erica_email = u'erica@example.com'
-            francis_email = u'frances@example.com'
+            frances_email = u'frances@example.com'
             with HTTMock(self.mock_persona_verify_erica):
                 erica = ChimeTestClient(self.app.test_client(), self)
                 erica.sign_in(erica_email)
 
             with HTTMock(self.mock_persona_verify_frances):
                 frances = ChimeTestClient(self.app.test_client(), self)
-                frances.sign_in(francis_email)
+                frances.sign_in(frances_email)
 
             # Start a new task
             erica.start_task(description='Eating Carrion', beneficiary='Vultures')
@@ -577,7 +586,7 @@ class TestProcess (TestCase):
             erica.open_link(url='/tree/{}/edit/other/{}/'.format(erica_branch_name, category_slug), expected_status_code=404)
             # a warning is flashed about working in a published branch
             # we can't get the date exactly right, so test for every other part of the message
-            message_published = view_functions.MESSAGE_ACTIVITY_PUBLISHED.format(published_date=u'xxx', published_by=francis_email)
+            message_published = view_functions.MESSAGE_ACTIVITY_PUBLISHED.format(published_date=u'xxx', published_by=frances_email)
             message_published_split = message_published.split(u'xxx')
             for part in message_published_split:
                 self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and part in tag.text))
@@ -593,14 +602,14 @@ class TestProcess (TestCase):
         '''
         with HTTMock(self.auth_csv_example_allowed):
             erica_email = u'erica@example.com'
-            francis_email = u'frances@example.com'
+            frances_email = u'frances@example.com'
             with HTTMock(self.mock_persona_verify_erica):
                 erica = ChimeTestClient(self.app.test_client(), self)
                 erica.sign_in(erica_email)
 
             with HTTMock(self.mock_persona_verify_frances):
                 frances = ChimeTestClient(self.app.test_client(), self)
-                frances.sign_in(francis_email)
+                frances.sign_in(frances_email)
 
             # Start a new task
             task_description = u'Squeeze A School Of Fish Into A Bait Ball'
@@ -645,12 +654,13 @@ class TestProcess (TestCase):
             erica.open_link(url=erica_article_path)
             # a warning is flashed about working in a published branch
             # we can't get the date exactly right, so test for every other part of the message
-            message_published = view_functions.MESSAGE_ACTIVITY_PUBLISHED.format(published_date=u'xxx', published_by=francis_email)
+            message_published = view_functions.MESSAGE_ACTIVITY_PUBLISHED.format(published_date=u'xxx', published_by=frances_email)
             message_published_split = message_published.split(u'xxx')
             for part in message_published_split:
                 self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and part in tag.text))
-            # assert that trying to save an edit to the article fails
-            erica.edit_article_and_fail(title_str=article_name, body_str=u'Chase fish into shallow water to catch them.')
+
+            # submit an edit to the article
+            erica.edit_article(title_str=article_name, body_str=u'Chase fish into shallow water to catch them.')
 
             # verify that the branch exists locally and not remotely
             self.assertTrue(erica_branch_name in repo.branches)
