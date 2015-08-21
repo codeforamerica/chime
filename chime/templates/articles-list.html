@@ -38,7 +38,7 @@
             <input class="form-one-line__input" name="request_path" placeholder="Add topic" id="create-category-name" type="text" />
             <input name="create_what" value="category" type="hidden" />
             <input name="create_path" value="{{column['base_path']}}" type="hidden" />
-            <button class="form-one-line__submit button" name="action" type="submit" id="create-category-button"><span class="fa fa-plus"></span></button>
+            <button class="form-one-line__submit button" name="action" type="submit" id="create-category-button" value="create"><span class="fa fa-plus"></span></button>
         </form>
         {% endif %}
       </div>
@@ -51,7 +51,7 @@
             <input class="form-one-line__input" name="request_path" placeholder="Add subtopic" id="create-subcategory-name" type="text" />
             <input name="create_what" value="category" type="hidden" />
             <input name="create_path" value="{{column['base_path']}}" type="hidden" />
-            <button class="form-one-line__submit button" name="action" type="submit" id="create-subcategory-button"><span class="fa fa-plus"></span></button>
+            <button class="form-one-line__submit button" name="action" type="submit" id="create-subcategory-button" value="create"><span class="fa fa-plus"></span></button>
         </form>
         {% endif %}
       </div>
@@ -64,7 +64,7 @@
             <input class="form-one-line__input" name="request_path" placeholder="Add article" id="create-article-name" type="text" />
             <input name="create_what" value="article" type="hidden" />
             <input name="create_path" value="{{column['base_path']}}" type="hidden" />
-            <button class="form-one-line__submit button" name="action" type="submit" id="create-article-button"><span class="fa fa-plus"></span></button>
+            <button class="form-one-line__submit button" name="action" type="submit" id="create-article-button" value="create"><span class="fa fa-plus"></span></button>
         </form>
         {% endif %}
       </div>
