@@ -130,11 +130,15 @@ class ChimeTestClient:
         form = input.find_parent('form')
         self.test.assertEqual(form['method'].upper(), 'POST')
 
-        data = {i['name']: i.get('value', u'') for i in form.find_all('input')}
+        data = {i['name']: i.get('value', u'') for i in form.find_all(['input', 'button'])}
         data[input['name']] = category_name
+
+        print data
 
         add_category_path = urlparse(urljoin(self.path, form['action'])).path
         response = self.client.post(add_category_path, data=data)
+
+        print add_category_path
 
         # Drop down to where the subcategories are.
         self.follow_redirect(response, 303)
