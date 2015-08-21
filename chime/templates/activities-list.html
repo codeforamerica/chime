@@ -36,7 +36,7 @@
                     {% endif %}
                   {% endif %}
                   <form action="/update" method="POST" class="toolbar__item">
-                    <input class="toolbar__item button button--red" type="submit" name="abandon" value="Delete">
+                    <button class="toolbar__item button button--red" type="submit" name="abandon">Delete</button>
                     <input type="hidden" name="branch" value="{{ activity.safe_branch }}">
                   </form>
                 </div>
@@ -51,7 +51,7 @@
           <p class="new-task__description">Describe the new activity in terms of a public need.</p>
           <form action="/start" method="POST" class="new-task__form">
             <p>I am<input name="task_description" placeholder="clarifying the permitting application process" type="text" class="need"{% if task_description %} value="{{ task_description }}"{% endif %} /> for <input type="text" name="task_beneficiary" placeholder="business owners"{% if task_beneficiary %} value="{{ task_beneficiary }}"{% endif %} /></p>
-            <p><button type="submit" class="create button button--green">Let's go!</button></p>
+            <p><button type="submit" class="create button button--green">Create Activity</button></p>
           </form>  
         </div>
     </div>

@@ -47,9 +47,11 @@
         {% block content %}{% endblock %}
      <!-- end content -->
 
-      {% block scripts %}{% endblock %}
+     <script src="/static/javascript/placeholders.min.js"></script>
+     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+     <script src="/static/javascript/button-states.js"></script>
 
-        <script src="/static/javascript/placeholders.min.js"></script>
+      {% block scripts %}{% endblock %}
     </body>
 
     <script type="text/javascript">

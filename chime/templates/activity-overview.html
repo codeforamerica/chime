@@ -113,14 +113,14 @@
                     <div class="comment__actions toolbar toolbar--right">
                     {% if activity.review_authorized %}
                         {% if activity.review_state == config.REVIEW_STATE_EDITED %}
-                        <input class="toolbar__item button button--orange" type="submit" name="request_feedback" value="Request Feedback">
+                        <button class="toolbar__item button button--orange" type="submit" name="request_feedback">Request Feedback</button>
                         {% elif activity.review_state == config.REVIEW_STATE_FEEDBACK %}
-                        <input class="toolbar__item button button--green" type="submit" name="endorse_edits" value="Looks Good!">
+                        <button class="toolbar__item button button--green" type="submit" name="endorse_edits">Looks Good!</button>
                         {% elif activity.review_state == config.REVIEW_STATE_ENDORSED %}
-                        <input class="toolbar__item button button--blue" type="submit" name="merge" value="Publish">
+                        <button class="toolbar__item button button--blue" type="submit" name="merge">Publish</button>
                         {% endif %}
                     {% endif %}
-                        <input class="toolbar__item button " type="submit" name="comment" value="Leave a Comment">
+                        <button class="toolbar__item button " type="submit" name="comment">Leave a Comment</button>
                     </div>
                 </form>
             </div>

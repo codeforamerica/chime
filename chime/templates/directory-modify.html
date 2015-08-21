@@ -36,7 +36,7 @@
             <input class="form-one-line__input" name="request_path" placeholder="Add topic" type="text" />
             <input name="create_what" value="category" type="hidden" />
             <input name="create_path" value="{{column['base_path']}}" type="hidden" />
-            <input class="form-one-line__submit button" name="action" type="submit" value="Create" />
+            <button class="form-one-line__submit button" name="action" type="submit"><span class="fa fa-plus"></span></button>
         </form>
       </div>
       {% elif loop.index == 3 %}
@@ -47,7 +47,7 @@
             <input class="form-one-line__input" name="request_path" placeholder="Add subtopic" type="text" />
             <input name="create_what" value="category" type="hidden" />
             <input name="create_path" value="{{column['base_path']}}" type="hidden" />
-            <input class="form-one-line__submit button" name="action" type="submit" value="Create" />
+            <button class="form-one-line__submit button" name="action" type="submit"><span class="fa fa-plus"></span></button>
         </form>
       </div>
       {% endif %}
