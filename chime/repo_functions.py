@@ -147,6 +147,15 @@ def get_branch_if_exists_locally(clone, default_branch_name, new_branch_name):
 
     return None
 
+def get_branch_commit_matches_tag_commit(clone, default_branch_name, new_branch_name):
+    ''' Return True if same-named branch and tag commits match
+    '''
+    if new_branch_name in clone.branches and new_branch_name in clone.tags:
+        tag_commit = clone.tags[new_branch_name].commit
+        return (clone.branches[new_branch_name].commit == tag_commit)
+
+    return False
+
 def get_branch_if_exists_at_origin(clone, default_branch_name, new_branch_name):
     ''' Get and return a branch if it exists at the origin, otherwise return None
     '''
