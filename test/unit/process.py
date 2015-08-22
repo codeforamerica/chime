@@ -54,7 +54,7 @@ PATTERN_FORM_CATEGORY_DESCRIPTION = u'<textarea name="en-description" class="dir
 # review stuff
 PATTERN_REQUEST_FEEDBACK_BUTTON = u'<button class="toolbar__item button button--orange" type="submit" name="request_feedback">Request Feedback</button>'
 PATTERN_UNREVIEWED_EDITS_LINK = u'<a href="/tree/{branch_name}/" class="toolbar__item button">Unreviewed Edits</a>'
-PATTERN_ENDORSE_BUTTON = u'<button class="toolbar__item button button--green" type="submit" name="endorse_edits">Looks Good!</button>'
+PATTERN_ENDORSE_BUTTON = u'<button class="toolbar__item button button--green" type="submit" name="endorse_edits">Endorse Edits</button>'
 PATTERN_FEEDBACK_REQUESTED_LINK = u'<a href="/tree/{branch_name}/" class="toolbar__item button">Feedback requested</a>'
 PATTERN_PUBLISH_BUTTON = u'<button class="toolbar__item button button--blue" type="submit" name="merge">Publish</button>'
 PATTERN_READY_TO_PUBLISH_LINK = u'<a href="/tree/{branch_name}/" class="toolbar__item button">Ready to publish</a>'
@@ -479,7 +479,7 @@ class TestProcess (TestCase):
             # re-load the overview page
             erica.open_link(url=frances_overview_path)
             # verify that the publish button is still available
-            self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'input' and tag['value'] == u'Publish'))
+            self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'button' and tag['value'] == u'Publish'))
 
     # in TestProcess
     def test_notified_when_working_in_published_task(self):
@@ -890,7 +890,7 @@ class TestProcess (TestCase):
 
             # there's a save button on the edit form
             edit_form = erica.soup.find(lambda tag: bool(tag.name == 'form' and u'/tree/{}/save/'.format(erica_branch_name) in tag.get('action')))
-            save_button = edit_form.find('input', value='Save')
+            save_button = edit_form.find('button', value='Save')
             self.assertIsNotNone(save_button)
 
     # in TestProcess
@@ -973,7 +973,7 @@ class TestProcess (TestCase):
 
             # there's no save button on the edit form
             edit_form = erica.soup.find(lambda tag: bool(tag.name == 'form' and u'/tree/{}/save/'.format(erica_branch_name) in tag.get('action')))
-            save_button = edit_form.find('input', value='Save')
+            save_button = edit_form.find('button', value='Save')
             self.assertIsNone(save_button)
 
     def test_editing_out_of_date_article(self):

@@ -60,11 +60,11 @@ PATTERN_FORM_CATEGORY_TITLE = u'<input name="en-title" type="text" value="{title
 PATTERN_FORM_CATEGORY_DESCRIPTION = u'<textarea name="en-description" class="directory-modify__description" placeholder="Crime statistics and reports by district and map">{description}</textarea>'
 
 # review stuff
-PATTERN_REQUEST_FEEDBACK_BUTTON = u'<button class="toolbar__item button button--orange" type="submit" name="request_feedback">Request Feedback</button>'
+PATTERN_REQUEST_FEEDBACK_BUTTON = u'<button class="toolbar__item button button--orange" type="submit" name="request_feedback" value="Request Feedback">Request Feedback</button>'
 PATTERN_UNREVIEWED_EDITS_LINK = u'<a href="/tree/{branch_name}/" class="toolbar__item button">Unreviewed Edits</a>'
-PATTERN_ENDORSE_BUTTON = u'<button class="toolbar__item button button--green" type="submit" name="endorse_edits">Looks Good!</button>'
+PATTERN_ENDORSE_BUTTON = u'<button class="toolbar__item button button--green" type="submit" name="endorse_edits" value="Endorse Edits">Endorse Edits</button>'
 PATTERN_FEEDBACK_REQUESTED_LINK = u'<a href="/tree/{branch_name}/" class="toolbar__item button">Feedback requested</a>'
-PATTERN_PUBLISH_BUTTON = u'<button class="toolbar__item button button--blue" type="submit" name="merge">Publish</button>'
+PATTERN_PUBLISH_BUTTON = u'<button class="toolbar__item button button--blue" type="submit" name="merge" value="Publish">Publish</button>'
 PATTERN_READY_TO_PUBLISH_LINK = u'<a href="/tree/{branch_name}/" class="toolbar__item button">Ready to publish</a>'
 
 class TestAppConfig (TestCase):
@@ -582,7 +582,7 @@ class TestApp (TestCase):
 
         # Endorse the change
         with HTTMock(self.auth_csv_example_allowed):
-            response = self.test_client.post('/tree/{}/'.format(generated_branch_name), data={'comment_text': u'', 'endorse_edits': 'Looks Good!'}, follow_redirects=True)
+            response = self.test_client.post('/tree/{}/'.format(generated_branch_name), data={'comment_text': u'', 'endorse_edits': 'Endorse Edits'}, follow_redirects=True)
         self.assertEqual(response.status_code, 200)
         self.assertTrue(u'{} {}'.format(fake_endorser_email, repo_functions.ACTIVITY_ENDORSED_MESSAGE) in response.data)
 
@@ -710,13 +710,13 @@ class TestApp (TestCase):
             # get the edit page for the branch
             response = self.test_client.get('/tree/{}/edit/'.format(generated_branch_name), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
-            # verify that there's a 'looks good!' button
+            # verify that there's a 'Endorse Edits' button
             self.assertTrue(PATTERN_ENDORSE_BUTTON in response.data)
 
             # get the overview page for the branch
             response = self.test_client.get('/tree/{}/'.format(generated_branch_name), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
-            # verify that there's a 'looks good!' button
+            # verify that there's a 'Endorse Edits' button
             self.assertTrue(PATTERN_ENDORSE_BUTTON in response.data)
 
             # get the activity list page
@@ -727,7 +727,7 @@ class TestApp (TestCase):
 
         # Endorse the change
         with HTTMock(self.auth_csv_example_allowed):
-            response = self.test_client.post('/tree/{}/'.format(generated_branch_name), data={'comment_text': u'', 'endorse_edits': 'Looks Good!'}, follow_redirects=True)
+            response = self.test_client.post('/tree/{}/'.format(generated_branch_name), data={'comment_text': u'', 'endorse_edits': 'Endorse Edits'}, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             self.assertTrue(u'{} {}'.format(fake_endorser_email, repo_functions.ACTIVITY_ENDORSED_MESSAGE) in response.data)
 
@@ -2423,7 +2423,7 @@ class TestApp (TestCase):
 
         # Endorse person 1's change
         with HTTMock(self.auth_csv_example_allowed):
-            response = self.test_client.post('/tree/{}/'.format(generated_branch_name_1), data={'comment_text': u'', 'endorse_edits': 'Looks Good!'}, follow_redirects=True)
+            response = self.test_client.post('/tree/{}/'.format(generated_branch_name_1), data={'comment_text': u'', 'endorse_edits': 'Endorse Edits'}, follow_redirects=True)
 
         # And publish person 1's change!
         with HTTMock(self.auth_csv_example_allowed):
@@ -2437,7 +2437,7 @@ class TestApp (TestCase):
 
         # Endorse person 2's change
         with HTTMock(self.auth_csv_example_allowed):
-            response = self.test_client.post('/tree/{}/'.format(generated_branch_name_2), data={'comment_text': u'', 'endorse_edits': 'Looks Good!'}, follow_redirects=True)
+            response = self.test_client.post('/tree/{}/'.format(generated_branch_name_2), data={'comment_text': u'', 'endorse_edits': 'Endorse Edits'}, follow_redirects=True)
 
         # And publish person 2's change!
         with HTTMock(self.auth_csv_example_allowed):

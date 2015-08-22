@@ -52,8 +52,8 @@
         <div class="row__right toolbar--right">
             <a href="{{ history_path }}" class="button  toolbar__item">History</a>
             {% if activity.working_state == config.WORKING_STATE_ACTIVE %}
-            <button type="submit" class="button button--green toolbar__item" name="action">Preview</button>
-            <button type="submit" class="button button--green toolbar__item">Save</button>
+            <button type="submit" class="button toolbar__item" name="action" value="Preview">Preview</button>
+            <button type="submit" class="button button--green toolbar__item" value="Save">Save</button>
             {% endif %}
         </div>
     </div>    

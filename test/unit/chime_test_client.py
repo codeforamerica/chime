@@ -133,12 +133,8 @@ class ChimeTestClient:
         data = {i['name']: i.get('value', u'') for i in form.find_all(['input', 'button'])}
         data[input['name']] = category_name
 
-        print data
-
         add_category_path = urlparse(urljoin(self.path, form['action'])).path
         response = self.client.post(add_category_path, data=data)
-
-        print add_category_path
 
         # Drop down to where the subcategories are.
         self.follow_redirect(response, 303)
@@ -150,7 +146,7 @@ class ChimeTestClient:
         form = input.find_parent('form')
         self.test.assertEqual(form['method'].upper(), 'POST')
 
-        data = {i['name']: i.get('value', u'') for i in form.find_all('input')}
+        data = {i['name']: i.get('value', u'') for i in form.find_all(['input', 'button'])}
         data[input['name']] = subcategory_name
 
         add_subcategory_path = urlparse(urljoin(self.path, form['action'])).path
@@ -168,7 +164,7 @@ class ChimeTestClient:
         form = input.find_parent('form')
         self.test.assertEqual(form['method'].upper(), 'POST')
 
-        data = {i['name']: i.get('value', u'') for i in form.find_all('input')}
+        data = {i['name']: i.get('value', u'') for i in form.find_all(['input', 'button'])}
         data[input['name']] = article_name
 
         add_article_path = urlparse(urljoin(self.path, form['action'])).path
@@ -288,6 +284,8 @@ class ChimeTestClient:
         data = {i['name']: i.get('value', u'')
                 for i in del_form.find_all(['input', 'button', 'textarea'])}
 
+        print data
+
         delete_article_path = urlparse(urljoin(self.path, del_form['action'])).path
         response = self.client.post(delete_article_path, data=data)
 
@@ -321,7 +319,7 @@ class ChimeTestClient:
 
         data = {i['name']: i.get('value', u'')
                 for i in form.find_all(['input', 'button', 'textarea'])
-                if i.get('value') != 'Looks Good!'}
+                if i.get('value') != 'Endorse Edits'}
 
         data[body['name']] = feedback_str
 
@@ -334,8 +332,8 @@ class ChimeTestClient:
     def approve_activity(self):
         ''' Look for form to approve activity, submit it.
         '''
-        input = self.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('value') == 'Looks Good!'))
-        form = input.find_parent('form')
+        button = self.soup.find(lambda tag: bool(tag.name == 'button' and tag.get('value') == 'Endorse Edits'))
+        form = button.find_parent('form')
         self.test.assertEqual(form['method'].upper(), 'POST')
 
         data = {i['name']: i.get('value', u'')
@@ -351,8 +349,8 @@ class ChimeTestClient:
     def publish_activity(self, expected_status_code=303):
         ''' Look for form to publish activity, submit it.
         '''
-        input = self.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('value') == 'Publish'))
-        form = input.find_parent('form')
+        button = self.soup.find(lambda tag: bool(tag.name == 'button' and tag.get('value') == 'Publish'))
+        form = button.find_parent('form')
         self.test.assertEqual(form['method'].upper(), 'POST')
 
         data = {i['name']: i.get('value', u'')

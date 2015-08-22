@@ -79,7 +79,7 @@
             {% if column_depth == 4 %}
               <form action="." method="POST" class="toolbar__item">
                 <input name="request_path" value="{{file['file_path']}}" type="hidden">
-                <button name="action" type="submit"  class="dir-item__action button dir-item__action--delete"><span class="fa fa-trash"></span></button>
+                <button name="action" type="submit" class="dir-item__action button dir-item__action--delete" value="delete"><span class="fa fa-trash"></span></button>
               </form>
             {% else %}
               <a href="{{file['modify_path']}}" class="toolbar__item dir-item__action button "><span class="fa fa-pencil"></span></a>
