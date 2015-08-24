@@ -518,7 +518,7 @@ def save_working_file(clone, path, message, base_sha, default_branch_name):
     if exists(join(clone.working_dir, path)):
         clone.index.add([path])
 
-    clone.index.commit(message.encode('utf-8'))
+    clone.index.commit(message)
     active_branch_name = clone.active_branch.name
 
     #
@@ -754,7 +754,7 @@ def make_commit_message(subject, body):
 def add_empty_commit(clone, subject, body, push=True):
     ''' Adds a new empty commit with the passed details
     '''
-    clone.index.commit(make_commit_message(subject=subject, body=body).encode('utf-8'))
+    clone.index.commit(make_commit_message(subject=subject, body=body))
     active_branch_name = clone.active_branch.name
 
     #
