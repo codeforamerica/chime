@@ -7,32 +7,30 @@ Make an issue: https://github.com/chimecms/chime/issues/new
 
 # Install
 
-To work with the Chime source code:
+If you're a Docker user, you can always download the latest build from the Docker Hub as [chimecms/chime](https://hub.docker.com/r/chimecms/chime). Or if you'd like to work with
+the source:
 
 1. Chime CMS is a Python Flask web application. Follow the instructions on
    [Python Virtual Environments](https://github.com/codeforamerica/howto/blob/master/Python-Virtualenv.md)
    to prepare your Python development space. Make sure to use Python 2.7. Your commands may look something like:
- + `sudo pip install virtualenv`
- + `virtualenv -p /usr/bin/python2.7 .venv`
- + `source .venv/bin/activate`
+ + sudo pip install virtualenv
+ + virtualenv -p /usr/bin/python2.7 .venv
+ + source .venv/bin/activate
 
 2. Install the project requirements: `pip install -r requirements.txt`
 
-3. You will need a Github repository in the directory `sample-site` cloned from [chimecms/chime-starter](https://github.com/chimecms/chime-starter):
- + `git clone --bare --single-branch --branch master https://github.com/chimecms/chime-starter.git sample-site`
- + `git --git-dir sample-site remote rename origin starter` (ignore the error about _config section 'remote.starter.fetch'_)
+3. You will need a bare Github repository in the directory `sample-site` with an initial empty commit
+   (this will become configurable in the future):
+ + `mkdir sample-site`
+ + `cd sample-site`
+ + `git init`
+ + `git commit --allow-empty -m "First commit"`
 
-4. copy `env.sample` to `.env`.
+4. copy env.sample to .env
 
-5. You will also need a working copy of [Jekyll](https://github.com/codeforamerica/howto/blob/master/Jekyll.md):
- + `sudo apt-get -y install rbenv curl`
- + `./jekyll/install-jekyll.sh`
+5. Run app using [Honcho and the `Procfile`](https://github.com/codeforamerica/howto/blob/master/Procfile.md):
 
-6. Run Chime in debug mode using [Honcho and the `Procfile`](https://github.com/codeforamerica/howto/blob/master/Procfile.md):
-
-        $ honcho run python ./run.py
-
-If you're a Docker user, we maintain a public build at the Docker Hub as [chimecms/chime](https://hub.docker.com/r/chimecms/chime).
+        $ honcho start
 
 # Who maintains this?
 

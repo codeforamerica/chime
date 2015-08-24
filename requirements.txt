@@ -1,5 +1,5 @@
 PyYAML==3.10
-GitPython==1.0.1
+GitPython==0.3.2.RC1
 Flask==0.10.1
 oauth2>=1.5.211
 requests==2.2.1
