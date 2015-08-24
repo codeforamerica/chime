@@ -47,6 +47,10 @@
         {% endif %}
 
         <p><a href="{{ activities_path }}">Return to the activities list</a></p>
+        
+        {% if error_uuid %}
+            <p><small>Error #{{ error_uuid }}</small></p>
+        {% endif %}
     </div>
 
 </div>

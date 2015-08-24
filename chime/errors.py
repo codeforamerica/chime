@@ -39,6 +39,7 @@ def page_not_found(error):
     template_message = u'(404) {}'.format(path)
     kwargs.update({"message": template_message})
     kwargs.update({"email_params": make_email_params(message=template_message)})
+    kwargs.update({'error_uuid': getattr(error, 'uuid', None)})
     return render_template('error_404.html', **kwargs), 404
 
 @app.app_errorhandler(500)
@@ -53,6 +54,7 @@ def internal_server_error(error):
     template_message = u'(500) {}'.format(path)
     kwargs.update({"message": template_message})
     kwargs.update({"email_params": make_email_params(message=template_message)})
+    kwargs.update({'error_uuid': getattr(error, 'uuid', None)})
     return render_template('error_500.html', **kwargs), 500
 
 @app.app_errorhandler(MergeConflict)
@@ -69,6 +71,7 @@ def merge_conflict(error):
     template_message = u'(MergeConflict)\n{}'.format(message)
     kwargs.update({"message": template_message})
     kwargs.update({"email_params": make_email_params(message=template_message, path=urlparse(request.url).path)})
+    kwargs.update({'error_uuid': getattr(error, 'uuid', None)})
 
     return render_template('error_500.html', **kwargs), 500
 
@@ -90,4 +93,5 @@ def exception(error):
     template_message = u'({}) {}'.format(error_class, error_message)
     kwargs.update({"message": template_message})
     kwargs.update({"email_params": make_email_params(message=template_message, path=urlparse(request.url).path)})
+    kwargs.update({'error_uuid': getattr(error, 'uuid', None)})
     return render_template('error_500.html', **kwargs), 500
