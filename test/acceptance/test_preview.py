@@ -144,13 +144,13 @@ class TestPreview(ChimeTestCase):
         self.driver.find_element_by_id('en-body').send_keys(*test_page_content)
 
         # save the page
-        self.driver.find_element_by_xpath("//input[@value='Save']").click()
+        self.driver.find_element_by_xpath("//button[@value='Save']").click()
 
         # preview the page
         clicked = False
         while not clicked:
             try:
-                self.driver.find_element_by_xpath("//input[@value='Preview']").click()
+                self.driver.find_element_by_xpath("//button[@value='Preview']").click()
                 clicked = True
             except StaleElementReferenceException:
                 pass
@@ -162,7 +162,7 @@ class TestPreview(ChimeTestCase):
         self.driver.get(main_url)
         # delete our branch
         delete_button = self.driver.find_element_by_xpath(
-            "//a[contains(text(),'{}')]/../..//input[@value='Delete']".format(task_description))
+            "//a[contains(text(),'{}')]/../..//button[@value='Delete']".format(task_description))
         self.scrollTo(delete_button)
         delete_button.click()
 
