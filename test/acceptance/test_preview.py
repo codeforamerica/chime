@@ -165,7 +165,7 @@ class TestPreview(ChimeTestCase):
             "//a[contains(text(),'{}')]/../..//button[@value='Delete']".format(task_description))
         self.scrollTo(delete_button)
         delete_button.click()
-
+        
         notice_text = self.driver.find_element_by_class_name('flash--notice').text
         self.assertIn("You deleted", notice_text)
         self.assertIn(task_description, notice_text)
