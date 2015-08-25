@@ -21,13 +21,16 @@ def common_error_template_args(app_config):
         "support_phone_number": app_config.get('SUPPORT_PHONE_NUMBER')
     }
 
-def make_email_params(message, path=None):
+def make_email_params(message, path=None, uuid=None):
     ''' Construct email params to send to the template.
     '''
+    email_subject = EMAIL_SUBJECT_TEXT
     email_message = EMAIL_BODY_PREFIX + message
     if path:
         email_message = u'\n'.join([email_message, u'path: {}'.format(path)])
-    return u'?subject={}&body={}'.format(quote(EMAIL_SUBJECT_TEXT), quote(email_message))
+    if uuid:
+        email_subject = u'{} ({})'.format(email_subject, uuid)
+    return u'?subject={}&body={}'.format(quote(email_subject), quote(email_message))
 
 def extract_branch_name_from_path(path):
     ''' If the name of a branch that exists in the passed repo is in the passed URL, return it

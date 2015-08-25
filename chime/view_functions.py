@@ -21,6 +21,7 @@ import csv
 import re
 import json
 import time
+import uuid
 
 from dateutil import parser, tz
 from dateutil.relativedelta import relativedelta
@@ -458,10 +459,14 @@ def log_application_errors(route_function):
             # not all exceptions have a 'code' attribute
             error_code = getattr(e, 'code', 500)
 
+            # assign an error UUID attribute
+            e.uuid = str(uuid.uuid4())[-12:]
+            extras = dict(request=request, session=session, id=e.uuid)
+
             if error_code in range(400, 499):
-                Logger.info(e, exc_info=False, extra={'request': request, 'session':session})
+                Logger.info(e, exc_info=False, extra=extras)
             else:
-                Logger.error(e, exc_info=True, extra={'request': request, 'session':session})
+                Logger.error(e, exc_info=True, extra=extras)
 
             raise
 
