@@ -49,7 +49,11 @@
         <p><a href="{{ activities_path }}">Return to the activities list</a></p>
         
         {% if error_uuid %}
-            <p><small>Error #{{ error_uuid }}</small></p>
+            {% if config.get('ACCEPTANCE_TEST_MODE', False) %}
+                <p><big>Error #{{ error_uuid }}</big></p>
+            {% else %}
+                <p><small>Error #{{ error_uuid }}</small></p>
+            {% endif %}
         {% endif %}
     </div>
 

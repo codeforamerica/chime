@@ -460,7 +460,7 @@ def log_application_errors(route_function):
             error_code = getattr(e, 'code', 500)
 
             # assign an error UUID attribute
-            e.uuid = str(uuid.uuid4())
+            e.uuid = str(uuid.uuid4())[-12:]
             extras = dict(request=request, session=session, id=e.uuid)
 
             if error_code in range(400, 499):
