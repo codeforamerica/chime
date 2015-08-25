@@ -36,10 +36,11 @@ def page_not_found(error):
     if branch_name:
         kwargs.update({"edit_path": u'/tree/{}/edit/'.format(branch_name)})
 
+    error_uuid = getattr(error, 'uuid', None)
     template_message = u'(404) {}'.format(path)
     kwargs.update({"message": template_message})
-    kwargs.update({"email_params": make_email_params(message=template_message)})
-    kwargs.update({'error_uuid': getattr(error, 'uuid', None)})
+    kwargs.update({"email_params": make_email_params(message=template_message, uuid=error_uuid)})
+    kwargs.update({'error_uuid': error_uuid})
     return render_template('error_404.html', **kwargs), 404
 
 @app.app_errorhandler(500)
@@ -51,10 +52,12 @@ def internal_server_error(error):
     kwargs.update(common_error_template_args(current_app.config))
     kwargs.update({"show_merge_conflict": False})
     path = urlparse(request.url).path
+
+    error_uuid = getattr(error, 'uuid', None)
     template_message = u'(500) {}'.format(path)
     kwargs.update({"message": template_message})
-    kwargs.update({"email_params": make_email_params(message=template_message)})
-    kwargs.update({'error_uuid': getattr(error, 'uuid', None)})
+    kwargs.update({"email_params": make_email_params(message=template_message, uuid=error_uuid)})
+    kwargs.update({'error_uuid': error_uuid})
     return render_template('error_500.html', **kwargs), 500
 
 @app.app_errorhandler(MergeConflict)
@@ -68,10 +71,12 @@ def merge_conflict(error):
     kwargs.update({"conflict_files": summarize_conflict_details(error)})
     kwargs.update({"show_merge_conflict": True})
     message = u'\n'.join([u'{} {}'.format(item['actions'], item['path']) for item in error.files()])
+
+    error_uuid = getattr(error, 'uuid', None)
     template_message = u'(MergeConflict)\n{}'.format(message)
     kwargs.update({"message": template_message})
-    kwargs.update({"email_params": make_email_params(message=template_message, path=urlparse(request.url).path)})
-    kwargs.update({'error_uuid': getattr(error, 'uuid', None)})
+    kwargs.update({"email_params": make_email_params(message=template_message, path=urlparse(request.url).path, uuid=error_uuid)})
+    kwargs.update({'error_uuid': error_uuid})
 
     return render_template('error_500.html', **kwargs), 500
 
@@ -90,8 +95,10 @@ def exception(error):
         error_message = u''
     kwargs.update({"show_merge_conflict": False})
     kwargs.update({"error_class": error_class})
+
+    error_uuid = getattr(error, 'uuid', None)
     template_message = u'({}) {}'.format(error_class, error_message)
     kwargs.update({"message": template_message})
-    kwargs.update({"email_params": make_email_params(message=template_message, path=urlparse(request.url).path)})
-    kwargs.update({'error_uuid': getattr(error, 'uuid', None)})
+    kwargs.update({"email_params": make_email_params(message=template_message, path=urlparse(request.url).path, uuid=error_uuid)})
+    kwargs.update({'error_uuid': error_uuid})
     return render_template('error_500.html', **kwargs), 500
