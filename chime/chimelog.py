@@ -78,6 +78,8 @@ class ChimeErrorReportFormatter(Formatter):
         :return: pretty-printed JSON-formatted string
         '''
         result = collections.OrderedDict()
+        if hasattr(record, 'id') and record.id:
+            result['error-id'] = record.id
         if hasattr(record, 'session') and record.session:
             result['email'] = record.session['email']
         if hasattr(record, 'request') and record.request:
