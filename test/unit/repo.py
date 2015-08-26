@@ -270,6 +270,18 @@ class TestRepo (TestCase):
         self.assertEqual(False, second_result[3])
 
     # in TestRepo
+    def test_create_category_with_slash_in_name(self):
+        ''' We can't create a category that exists already.
+        '''
+        category_name = u'Kristen/Melissa/Kate/Leslie'
+        category_slug = slugify(category_name)
+        add_result = view_functions.add_article_or_category(self.clone1, 'categories', category_name, view_functions.CATEGORY_LAYOUT)
+        self.assertEqual(u'The "{category_name}" topic was created\n\n[{{"action": "create", "file_path": "categories/{category_slug}/index.markdown", "display_type": "category", "title": "{category_name}"}}]'.format(category_name=category_name, category_slug=category_slug), add_result[0])
+        self.assertEqual(u'categories/{category_slug}/index.markdown'.format(category_slug=category_slug), add_result[1])
+        self.assertEqual(u'categories/{category_slug}/'.format(category_slug=category_slug), add_result[2])
+        self.assertEqual(True, add_result[3])
+
+    # in TestRepo
     def test_delete_directory(self):
         ''' Make a new file and directory and delete them.
         '''
