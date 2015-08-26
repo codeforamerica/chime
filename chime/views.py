@@ -289,11 +289,14 @@ def branch_view(branch_name, path=None):
 def branch_edit(branch_name, path=None):
     repo = get_repo(flask_app=current_app)
     branch_name = branch_var2name(branch_name)
-    
     if repo_functions.get_conflict(repo, current_app.config['default_branch']):
         flash_unique(repo_functions.MERGE_CONFLICT_WARNING_FLASH_MESSAGE, u'warning')
 
     full_path = join(repo.working_dir, path or '.').rstrip('/')
+
+    # make sure the path points to something that exists
+    if not exists(full_path):
+        abort(404)
 
     if isdir(full_path):
         # if this is a directory representing an article, redirect to edit
