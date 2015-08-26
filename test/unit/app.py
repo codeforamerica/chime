@@ -2517,6 +2517,30 @@ class TestApp (TestCase):
             frances.open_link(edit_path)
             self.assertTrue('best of times' in str(frances.soup), 'Should see current content there, too')
 
+    # in TestApp
+    def test_alpha_sort_in_admin(self):
+        ''' Make sure items are sorted alphabetically in the Chime admin interface
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in('frances@example.com')
+
+            # Start a new task
+            frances.start_task('Crunching Beetles', 'Trap-Door Spiders')
+            branch_name = frances.get_branch_name()
+
+            # Look for an "other" link that we know about - is it a category?
+            frances.follow_link('/tree/{}/edit/other/'.format(branch_name))
+
+            # Create a bunch of new categories
+            frances.add_categories(['Anthicidae', 'Scydmaenidae', 'Paussinae', 'Bostrychidae', 'Scolytidae', 'Anobiidae', 'Meloidae', 'Dermestidae', 'Silphidae'])
+
+            # The categories should be sorted by title on the page
+            rendered_categories = [tag.text for tag in frances.soup.find_all('a', class_='category')]
+            sorted_categories = sorted(rendered_categories)
+            self.assertEqual(rendered_categories, sorted_categories)
+
 class TestPublishApp (TestCase):
 
     def setUp(self):

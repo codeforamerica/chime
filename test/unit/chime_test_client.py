@@ -139,6 +139,12 @@ class ChimeTestClient:
         # Drop down to where the subcategories are.
         self.follow_redirect(response, 303)
 
+    def add_categories(self, category_list):
+        ''' Add many categories.
+        '''
+        for category_name in category_list:
+            self.add_category(category_name)
+
     def add_subcategory(self, subcategory_name):
         ''' Look for form to add a subcategory, submit it..
         '''

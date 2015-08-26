@@ -922,6 +922,8 @@ def make_directory_columns(clone, branch_name, repo_path=None, showallfiles=Fals
         files = sorted_paths(clone, branch_name, base_path, showallfiles)
         # name, title, base_path, file_path, edit_path, view_path, display_type, is_editable, modified_date, selected
         listing = [{'name': item['name'], 'title': item['title'], 'base_path': base_path, 'file_path': join(base_path, item['link_name']), 'edit_path': join(current_edit_path, item['link_name']), 'modify_path': join(current_modify_path, item['link_name']), 'view_path': item['view_path'], 'display_type': item['display_type'], 'is_editable': item['is_editable'], 'modified_date': item['modified_date'], 'selected': (current_dir == item['name'])} for item in files]
+        # explicitly sort the list alphabetically by title
+        listing.sort(key=lambda k: k['title'])
         dir_listings.append({'base_path': base_path, 'files': listing})
 
     return dir_listings

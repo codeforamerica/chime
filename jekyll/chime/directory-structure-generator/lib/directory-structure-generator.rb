@@ -45,7 +45,7 @@ module Jekyll
             end
             # sort the root pages within their column, so
             # non-category pages can use them
-            all_columns[0] = all_columns[0].sort_by { |hsh| hsh['order'] }
+            all_columns[0] = all_columns[0].sort_by { |hsh| hsh['title'] }
 
             # step through all the pages
             for target_page in site.pages
@@ -88,8 +88,8 @@ module Jekyll
                         end
                     end
 
-                    # sort by order and assign
-                    column_info['pages'] = column_pages.sort_by { |hsh| hsh['order'] }
+                    # sort and assign
+                    column_info['pages'] = column_pages.sort_by { |hsh| hsh['title'] }
                     display_columns << column_info
                     end_range += 1
                 end
