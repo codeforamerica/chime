@@ -2305,6 +2305,31 @@ class TestApp (TestCase):
             self.assertTrue(u'(123) 456-7890' in response.data)
 
     # in TestApp
+    def test_garbage_edit_url_raises_page_not_found(self):
+        ''' A 404 page is generated when we get an address that doesn't exist
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
+
+            # Start a new task
+            erica.start_task(description=u'Take Malarone', beneficiary=u'People Susceptible to Malaria')
+            # Get the branch name
+            branch_name = erica.get_branch_name()
+            # Enter the "other" folder
+            other_slug = u'other'
+            erica.follow_link(href='/tree/{}/edit/{}/'.format(branch_name, other_slug))
+
+            # Create a category
+            category_name = u'Rubber Plants'
+            category_slug = slugify(category_name)
+            erica.add_category(category_name=category_name)
+
+            # Try to load a non-existent page within the category
+            erica.open_link(url='/tree/{}/edit/{}/malaria'.format(branch_name, category_slug), expected_status_code=404)
+
+    # in TestApp
     def test_internal_server_error(self):
         ''' A 500 page is generated when we provoke a server error
         '''
