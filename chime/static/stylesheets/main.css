@@ -1466,7 +1466,7 @@ input[type="submit"]:disabled:hover {
 }
 
 /* line 30, ../sass/components/_global-header.scss */
-.global-header__link {
+.global-header__link.toolbar__item {
   text-decoration: none;
   color: #fff;
   font-weight: 400;
@@ -1476,7 +1476,7 @@ input[type="submit"]:disabled:hover {
   line-height: 1em;
 }
 /* line 38, ../sass/components/_global-header.scss */
-.global-header__link:hover {
+.global-header__link.toolbar__item:hover {
   color: #fff;
   text-decoration: underline;
   background-color: #2684bc;
