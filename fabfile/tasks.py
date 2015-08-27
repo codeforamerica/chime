@@ -3,7 +3,9 @@
 from __future__ import with_statement, print_function
 
 import os
+import tempfile
 import time
+import json
 
 import boto.ec2
 from fabric.operations import local
@@ -101,21 +103,23 @@ def test_chime(setup=True, despawn=True, despawn_on_failure=False):
 
     print(green('Running tests...'))
     time.sleep(2)
+
+    handle, output_filename = tempfile.mkstemp(prefix='tests-', suffix='.txt')
+    os.environ['OUTPUT_FILE'] = output_filename
+    os.close(handle)
+    print('Saving output to', output_filename)
+
     try:
-        OUTPUT_FILE = os.environ.get('OUTPUT_FILE')
-        if OUTPUT_FILE:
-            with open(OUTPUT_FILE, 'w') as output:
-                print('Starting...', file=output)
+        with open(output_filename, 'w') as output:
+            print(json.dumps(dict(start=time.time())), file=output)
         local('nosetests  --processes=9 --process-timeout=300 ' + fabconf.get('FAB_CONFIG_PATH') + '/../test/acceptance')
-        if OUTPUT_FILE:
-            with open(OUTPUT_FILE, 'a') as output:
-                print('...all done.', file=output)
+        with open(output_filename, 'a') as output:
+            print(json.dumps(dict(ok=True, end=time.time())), file=output)
         if _looks_true(despawn):
             _despawn(public_dns)
     except:
-        if OUTPUT_FILE:
-            with open(OUTPUT_FILE, 'a') as output:
-                print('...failed', file=output)
+        with open(output_filename, 'a') as output:
+            print(json.dumps(dict(ok=False, end=time.time())), file=output)
         if _looks_true(despawn_on_failure):
             _despawn(public_dns)
         raise

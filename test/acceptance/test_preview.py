@@ -7,6 +7,7 @@ from unittest import main
 import sys
 import time
 import urllib
+import json
 
 from selenium import webdriver
 from selenium.webdriver import ActionChains
@@ -35,9 +36,8 @@ class TestPreview(ChimeTestCase):
         self.host = self.load_hosts_file()[0]
         self.live_site = 'http://' + self.host
         if OUTPUT_FILE:
-            self.output = open(OUTPUT_FILE, 'a')
-        else:
-            self.output = False
+            self.started = time.time()
+            self.status = 'started'
 
     def mutate_email(self, email):
         return email.replace('@', '+' + self.random_digits() + '@')
@@ -175,8 +175,8 @@ class TestPreview(ChimeTestCase):
         self.assertIn("You deleted", notice_text)
         self.assertIn(task_description, notice_text)
 
-        if self.output:
-            print(self, 'done', file=self.output)
+        if OUTPUT_FILE:
+            self.status = dict(ok=True, status='done')
 
 
     def random_digits(self, count=6):
@@ -203,8 +203,8 @@ class TestPreview(ChimeTestCase):
         self.driver.switch_to.window(main_window)
 
     def onFailure(self, exception_info):
-        if self.output:
-            print(self, 'failed', file=self.output)
+        if OUTPUT_FILE:
+            self.status = dict(ok=False, status='failed', exception=repr(exception_info))
         super(TestPreview, self).onFailure(exception_info)
         self.screenshot()
 
@@ -215,17 +215,20 @@ class TestPreview(ChimeTestCase):
             sys.stderr.write("no driver to take screenshot\n")
 
     def onError(self, exception_info):
-        if self.output:
-            print(self, 'errored', file=self.output)
+        if OUTPUT_FILE:
+            self.status = dict(ok=False, status='errored', exception=repr(exception_info))
         super(TestPreview, self).onError(exception_info)
         self.screenshot()
 
     def tearDown(self):
         if hasattr(self, 'driver') and self.driver:
             self.driver.quit()
-        if self.output:
-            print(self, 'teardown', file=self.output)
-            self.output.close()
+        if OUTPUT_FILE:
+            elapsed = time.time() - self.started
+            self.status.update(dict(test=repr(self), elapsed=elapsed))
+            line = json.dumps(self.status)
+            with open(OUTPUT_FILE, 'a') as file:
+                print(line, file=file)
 
     def scrollTo(self, element):
         ActionChains(self.driver).move_to_element(element).perform()
