@@ -250,11 +250,18 @@ def get_checkout(ref):
 @login_required
 @synched_checkout_required
 def branch_view(branch_name, path=None):
-    r = get_repo(flask_app=current_app)
+    repo = get_repo(flask_app=current_app)
 
-    build_jekyll_site(r.working_dir)
+    build_jekyll_site(repo.working_dir)
 
-    local_base, _ = splitext(join(join(r.working_dir, '_site'), path or ''))
+    view_path = join(repo.working_dir, '_site', path or '')
+
+    # make sure the path points to something that exists
+    exists_path = strip_index_file(view_path.rstrip('/'))
+    if not exists(exists_path):
+        abort(404)
+
+    local_base, _ = splitext(view_path)
 
     if isdir(local_base):
         local_base += '/index'
