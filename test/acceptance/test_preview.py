@@ -13,8 +13,10 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import StaleElementReferenceException
+from selenium.common.exceptions import WebDriverException
 from acceptance.browser import Browser
+
+from datetime import datetime
 
 from acceptance.chime_test_case import ChimeTestCase, rewrite_for_all_browsers
 
@@ -134,7 +136,8 @@ class TestPreview(ChimeTestCase):
         self.driver.find_element_by_id("create-category-button").click()
         self.driver.find_element_by_id("create-subcategory-name").send_keys(self.marked_string('subcategory'))
         self.driver.find_element_by_id("create-subcategory-button").click()
-        self.driver.find_element_by_id("create-article-name").send_keys(self.marked_string('article'))
+        article_title = self.marked_string('article')
+        self.driver.find_element_by_id("create-article-name").send_keys(article_title)
         self.driver.find_element_by_id("create-article-button").click()
 
         # add some content to that page
@@ -146,30 +149,64 @@ class TestPreview(ChimeTestCase):
         # save the page
         self.driver.find_element_by_xpath("//button[@value='Save']").click()
 
+        # wait until we see the flash notification of the save
+        self.waiter.until(
+            EC.visibility_of_element_located((By.XPATH, "//li[contains(text(),'Saved changes to the {} article!')]".format(article_title)))
+        )
+
         # preview the page
-        clicked = False
-        while not clicked:
-            try:
-                self.driver.find_element_by_xpath("//button[@value='Preview']").click()
-                clicked = True
-            except StaleElementReferenceException:
-                pass
+        self.driver.find_element_by_xpath("//button[@value='Preview']").click()
 
         # assert that the submitted text is on the preview screen
         self.assertIn(body_text_marker, self.driver.find_element_by_class_name('article-content').text)
 
         # go back to the main page
         self.driver.get(main_url)
-        # delete our branch
-        delete_button = self.driver.find_element_by_xpath(
-            "//a[contains(text(),'{}')]/../..//button[@value='Delete']".format(task_description))
-        self.scrollTo(delete_button)
-        delete_button.click()
-        
-        notice_text = self.driver.find_element_by_class_name('flash--notice').text
-        self.assertIn("You deleted", notice_text)
-        self.assertIn(task_description, notice_text)
 
+        # delete our activity
+        # hide the stubby status bar, it can block the delete button
+        self.driver.execute_script('window.navigator.id.stubby.widgetElement.style.visibility="hidden";')
+        delete_xpath = "//a[contains(text(),'{}')]/../..//button[@value='Delete']".format(task_description)
+        self.scrollTo(self.driver.find_element_by_xpath(delete_xpath))
+
+        # click the button when it's clickable
+        # need to do this because the position isn't getting updated immediately after scroll
+        self.click_button_when_clickable(delete_xpath)
+
+        # wait until the activity is no longer visible in the list
+        self.waiter.until(
+            EC.invisibility_of_element_located((By.XPATH, "//a[contains(text(),'{}')]".format(task_description)))
+        )
+
+        # show the stubby status bar again
+        self.driver.execute_script('window.navigator.id.stubby.widgetElement.style.visibility="visible";')
+
+        # verify the flash notification
+        # it's possible that the 'saved' flash from the preview and the 'deleted' flash are showing at
+        # the same time, so step through all the flashes looking for the 'deleted' one
+        flashes = self.driver.find_elements_by_class_name('flash--notice')
+        found_flash = False
+        for flash in flashes:
+            if 'You deleted the "{}" activity'.format(task_description) in flash.text:
+                found_flash = True
+                break
+
+        self.assertTrue(found_flash)
+
+    def click_button_when_clickable(self, target_xpath, timeout_after=5):
+        ''' Try to click the element at the passed xpath until it's successful, or
+            time out after the passed number of seconds
+        '''
+        clicked = False
+        timeout = False
+        started = datetime.now()
+        while not clicked and not timeout:
+            try:
+                self.driver.find_element_by_xpath(target_xpath).click()
+                clicked = True
+            except WebDriverException:
+                timeout = (datetime.now() - started).seconds > timeout_after
+                pass
 
     def random_digits(self, count=6):
         format_as = "{:0" + str(count) + "d}"
