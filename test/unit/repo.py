@@ -270,6 +270,31 @@ class TestRepo (TestCase):
         self.assertEqual(False, second_result[3])
 
     # in TestRepo
+    def test_create_category_with_slash_in_name(self):
+        ''' Trying to create an category with /s in its name creates a single category
+        '''
+        category_name = u'Kristen/Melissa/Kate/Leslie'
+        category_slug = slugify(category_name)
+        add_result = view_functions.add_article_or_category(self.clone1, 'categories', category_name, view_functions.CATEGORY_LAYOUT)
+        self.assertEqual(u'The "{category_name}" topic was created\n\n[{{"action": "create", "file_path": "categories/{category_slug}/index.markdown", "display_type": "category", "title": "{category_name}"}}]'.format(category_name=category_name, category_slug=category_slug), add_result[0])
+        self.assertEqual(u'categories/{category_slug}/index.markdown'.format(category_slug=category_slug), add_result[1])
+        self.assertEqual(u'categories/{category_slug}/'.format(category_slug=category_slug), add_result[2])
+        self.assertEqual(True, add_result[3])
+
+    # in TestRepo
+    def test_create_article_with_slash_in_name(self):
+        ''' Trying to create an article with /s in its name creates a single article
+        '''
+        article_name = u'Erin/Abby/Jillian/Patty'
+        article_slug = slugify(article_name)
+
+        add_result = view_functions.add_article_or_category(self.clone1, 'categories/example', article_name, view_functions.ARTICLE_LAYOUT)
+        self.assertEqual(u'The "{article_name}" article was created\n\n[{{"action": "create", "file_path": "categories/example/{article_slug}/index.markdown", "display_type": "article", "title": "{article_name}"}}]'.format(article_name=article_name, article_slug=article_slug), add_result[0])
+        self.assertEqual(u'categories/example/{article_slug}/index.markdown'.format(article_slug=article_slug), add_result[1])
+        self.assertEqual(u'categories/example/{article_slug}/index.markdown'.format(article_slug=article_slug), add_result[2])
+        self.assertEqual(True, add_result[3])
+
+    # in TestRepo
     def test_delete_directory(self):
         ''' Make a new file and directory and delete them.
         '''

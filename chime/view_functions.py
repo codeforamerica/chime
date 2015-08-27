@@ -1221,34 +1221,18 @@ def add_article_or_category(repo, dir_path, request_path, create_what):
 
     request_path = request_path.rstrip('/')
 
-    # create and commit intermediate categories recursively
-    if u'/' in request_path:
-        cat_paths = repo.dirs_for_path(request_path)
-        flash_messages = []
-        for i in range(len(cat_paths)):
-            cat_path = cat_paths[i]
-            dir_cat_path = join(dir_path, sep.join(cat_paths[:i]))
-            commit_message, file_path, _, do_save = add_article_or_category(repo, dir_cat_path, cat_path, CATEGORY_LAYOUT)
-            if do_save:
-                Logger.debug('save')
-                save_working_file(repo, file_path, commit_message, repo.commit().hexsha, current_app.config['default_branch'])
-            else:
-                flash_messages.append(commit_message)
-
-        if len(flash_messages):
-            flash(', '.join(flash_messages), u'notice')
-
     # create the article or category
     display_name = request_path
-    name = u'{}/index.{}'.format(display_name, CONTENT_FILE_EXTENSION)
+    slug_name = slugify(request_path)
+    name = u'{}/index.{}'.format(slug_name, CONTENT_FILE_EXTENSION)
     file_path = repo.canonicalize_path(dir_path, name)
 
     if create_what == ARTICLE_LAYOUT:
         redirect_path = file_path
-        create_front = dict(title=u'', description=u'', order=0, layout=ARTICLE_LAYOUT)
+        create_front = dict(title=display_name, description=u'', order=0, layout=ARTICLE_LAYOUT)
     elif create_what == CATEGORY_LAYOUT:
         redirect_path = strip_index_file(file_path)
-        create_front = dict(title=u'', description=u'', order=0, layout=CATEGORY_LAYOUT)
+        create_front = dict(title=display_name, description=u'', order=0, layout=CATEGORY_LAYOUT)
 
     display_what = file_display_name(create_what)
     if repo.exists(file_path):
