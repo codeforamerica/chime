@@ -3,26 +3,18 @@
 }
 
 .toolbar--left {
-	:first-child {
-		margin-left: 0;
+	.toolbar__item {
+		margin-right: 1em;
 	}
 }
 
 .toolbar--right {
 	float: right;
-	:last-child {
-		margin-right: 0;
+	.toolbar__item {
+		margin-left: 1em;
 	}
 }
 
 .toolbar__item {
 	float: left;
-	margin: {
-		left: .5em;
-		right: .5em;
-	}
-}
-
-.toolbar__item {
-	
 }

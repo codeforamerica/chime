@@ -897,15 +897,17 @@ a:hover {
 /* line 147, ../sass/styleguide.scss */
 .code-sample pre {
   display: none;
+  font-size: 12px;
   background-color: transparent;
   overflow-y: hidden;
+  padding: 1em 0;
 }
-/* line 151, ../sass/styleguide.scss */
+/* line 153, ../sass/styleguide.scss */
 .code-sample pre code {
   background-color: transparent;
 }
 
-/* line 157, ../sass/styleguide.scss */
+/* line 159, ../sass/styleguide.scss */
 .preview + .code-sample {
   margin-top: -2em;
   border-top: 0px;
