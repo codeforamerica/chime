@@ -1,4 +1,5 @@
 # -- coding: utf-8 --
+from __future__ import print_function
 
 import os
 from random import randint
@@ -23,7 +24,7 @@ BROWSERS_TO_TRY = Browser.from_string(os.environ.get('BROWSERS_TO_TEST', "").str
 TEST_REPETITIONS = int(os.environ.get('TEST_REPETITIONS',"1"))
 TEST_RETRY_COUNT = int(os.environ.get('TEST_RETRY_COUNT',"1"))
 
-
+OUTPUT_FILE = os.environ.get('OUTPUT_FILE')
 
 class TestPreview(ChimeTestCase):
     _multiprocess_can_split_ = True
@@ -33,6 +34,10 @@ class TestPreview(ChimeTestCase):
         self.password = os.environ['TESTING_PASSWORD']
         self.host = self.load_hosts_file()[0]
         self.live_site = 'http://' + self.host
+        if OUTPUT_FILE:
+            self.output = open(OUTPUT_FILE, 'a')
+        else:
+            self.output = False
 
     def mutate_email(self, email):
         return email.replace('@', '+' + self.random_digits() + '@')
@@ -170,6 +175,9 @@ class TestPreview(ChimeTestCase):
         self.assertIn("You deleted", notice_text)
         self.assertIn(task_description, notice_text)
 
+        if self.output:
+            print(self, 'done', file=self.output)
+
 
     def random_digits(self, count=6):
         format_as = "{:0" + str(count) + "d}"
@@ -195,6 +203,8 @@ class TestPreview(ChimeTestCase):
         self.driver.switch_to.window(main_window)
 
     def onFailure(self, exception_info):
+        if self.output:
+            print(self, 'failed', file=self.output)
         super(TestPreview, self).onFailure(exception_info)
         self.screenshot()
 
@@ -205,13 +215,17 @@ class TestPreview(ChimeTestCase):
             sys.stderr.write("no driver to take screenshot\n")
 
     def onError(self, exception_info):
+        if self.output:
+            print(self, 'errored', file=self.output)
         super(TestPreview, self).onError(exception_info)
         self.screenshot()
 
     def tearDown(self):
         if hasattr(self, 'driver') and self.driver:
             self.driver.quit()
-        pass
+        if self.output:
+            print(self, 'teardown', file=self.output)
+            self.output.close()
 
     def scrollTo(self, element):
         ActionChains(self.driver).move_to_element(element).perform()

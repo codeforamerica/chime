@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import with_statement
+from __future__ import with_statement, print_function
 
+import os
 import time
 
 import boto.ec2
@@ -101,10 +102,20 @@ def test_chime(setup=True, despawn=True, despawn_on_failure=False):
     print(green('Running tests...'))
     time.sleep(2)
     try:
+        OUTPUT_FILE = os.environ.get('OUTPUT_FILE')
+        if OUTPUT_FILE:
+            with open(OUTPUT_FILE, 'w') as output:
+                print('Starting...', file=output)
         local('nosetests  --processes=9 --process-timeout=300 ' + fabconf.get('FAB_CONFIG_PATH') + '/../test/acceptance')
+        if OUTPUT_FILE:
+            with open(OUTPUT_FILE, 'a') as output:
+                print('...all done.', file=output)
         if _looks_true(despawn):
             _despawn(public_dns)
     except:
+        if OUTPUT_FILE:
+            with open(OUTPUT_FILE, 'a') as output:
+                print('...failed', file=output)
         if _looks_true(despawn_on_failure):
             _despawn(public_dns)
         raise
@@ -157,6 +168,9 @@ def _load_hosts():
         return [h.strip() for h in hosts if h != '']
     except IOError:
         return []
+
+        if self.output:
+            print(self, 'done', file=self.output)
 
 
 def _write_host_to_file(host):
