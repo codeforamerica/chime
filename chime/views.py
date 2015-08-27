@@ -293,19 +293,14 @@ def branch_edit(branch_name, path=None):
             index_path = join(path or u'', u'index.{}'.format(CONTENT_FILE_EXTENSION))
             return redirect('/tree/{}/edit/{}'.format(branch_name2path(branch_name), index_path))
 
-        # if the directory path didn't end with a slash, add it
+        # if the directory path didn't end with a slash, add it and redirect
         if path and not path.endswith('/'):
             return redirect('/tree/{}/edit/{}/'.format(branch_name2path(branch_name), path), code=302)
 
-        # if, in this directory, there is a non-article or -category directory that's the
-        # only visible object in the hierarchy, redirect inside
-        directory_contents = sorted_paths(repo=repo, branch_name=branch_name, path=path)
-        if len(directory_contents) == 1 and directory_contents[0]['display_type'] == FOLDER_FILE_TYPE:
-            if path:
-                path = join(path, directory_contents[0]['name'])
-            else:
-                path = directory_contents[0]['name']
-            return redirect('/tree/{}/edit/{}/'.format(branch_name2path(branch_name), path), code=302)
+        # redirect inside solo directories if necessary
+        redirect_path = get_redirect_path_for_solo_directory(repo, branch_name, path)
+        if redirect_path:
+            return redirect(redirect_path, code=302)
 
         # render the directory contents
         return render_list_dir(repo, branch_name, path)
