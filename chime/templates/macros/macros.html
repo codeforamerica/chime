@@ -27,15 +27,15 @@
           </div>
           <div class="comment__actions toolbar toolbar--right">
           {% if activity.review_authorized %}
-            {% if activity.review_state == config.REVIEW_STATE_EDITED %}
-            <input class="toolbar__item button button--orange" type="submit" name="request_feedback" value="Request Feedback">
-            {% elif activity.review_state == config.REVIEW_STATE_FEEDBACK %}
-            <input class="toolbar__item button button--green" type="submit" name="endorse_edits" value="Looks Good!">
-            {% elif activity.review_state == config.REVIEW_STATE_ENDORSED %}
-            <input class="toolbar__item button button--blue" type="submit" name="merge" value="Publish">
-            {% endif %}
+              {% if activity.review_state == config.REVIEW_STATE_EDITED %}
+              <button class="toolbar__item button button--orange" type="submit" name="request_feedback" value="Request Feedback">Request Feedback</button>
+              {% elif activity.review_state == config.REVIEW_STATE_FEEDBACK %}
+              <button class="toolbar__item button button--green" type="submit" name="endorse_edits" value="Endorse Edits">Endorse Edits</button>
+              {% elif activity.review_state == config.REVIEW_STATE_ENDORSED %}
+              <button class="toolbar__item button button--blue" type="submit" name="merge" value="Publish">Publish</button>
+              {% endif %}
           {% endif %}
-            <input class="toolbar__item button button" type="submit" name="comment" value="Comment">
+            <button class="toolbar__item button button" type="submit" name="comment" value="Leave a comment">Leave a comment</button>
           </div>
         </form>
         {% endif %}

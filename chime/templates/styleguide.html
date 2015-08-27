@@ -98,7 +98,7 @@
 
 
       <h1>Buttons</h1>
-      <p>Buttons come in three sizes: regular, medium, and large.</p>
+      <p>Buttons come in three sizes: regular, medium, and large. All buttons also have a loading state and disabled state. Loading states should be used when unintended multiple clicks cause serious unintentional consequences.</p>
       <h2>Small Buttons</h2>
       <div class="row preview">
         <div class="toolbar toolbar--left">
@@ -107,6 +107,8 @@
           <button class="toolbar__item button button--green">Button</button>
           <button class="toolbar__item button button--blue">Button</button>
           <button class="toolbar__item button button--orange">Button</button>
+          <button class="toolbar__item button is-loading">Button</button>
+          <button class="toolbar__item button" disabled="disabled">Button</button>
         </div>
       </div>
 
@@ -118,6 +120,8 @@
           <button class="toolbar__item button button--medium button--green">Button</button>
           <button class="toolbar__item button button--medium button--blue">Button</button>
           <button class="toolbar__item button button--medium button--orange">Button</button>
+          <button class="toolbar__item button button--medium is-loading">Button</button>
+          <button class="toolbar__item button button--medium" disabled="disabled">Button</button>
         </div>
       </div>
 
@@ -129,6 +133,8 @@
           <button class="toolbar__item button button--large button--green">Button</button>
           <button class="toolbar__item button button--large button--blue">Button</button>
           <button class="toolbar__item button button--large button--orange">Button</button>
+          <button class="toolbar__item button button--large is-loading">Button</button>
+          <button class="toolbar__item button button--large" disabled="disabled">Button</button>
         </div>
       </div>
 
