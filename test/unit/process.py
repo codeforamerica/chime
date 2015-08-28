@@ -407,13 +407,15 @@ class TestProcess (TestCase):
         ''' Two people editing the same article in the same branch get a useful error.
         '''
         with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            frances_email = u'frances@example.com'
             with HTTMock(self.mock_persona_verify_erica):
                 erica = ChimeTestClient(self.app.test_client(), self)
-                erica.sign_in('erica@example.com')
+                erica.sign_in(erica_email)
 
             with HTTMock(self.mock_persona_verify_frances):
                 frances = ChimeTestClient(self.app.test_client(), self)
-                frances.sign_in('frances@example.com')
+                frances.sign_in(frances_email)
 
             # Frances: Start a new task, topic, subtopic, article
             args = 'Triassic', 'Artemia', 'Biological', 'Toxicity', 'Assays'
@@ -425,8 +427,13 @@ class TestProcess (TestCase):
 
             # Erica edits the new article.
             erica.edit_article(title_str='Assays', body_str='Broad leaf-like appendages')
-            # Frances fails to edit the same article
-            frances.edit_article_and_fail(title_str='Assays', body_str='Typical primitive arthropod', expected_status_code=500)
+            # Frances edits the same article and gets an error
+            frances.edit_article(title_str='Assays', body_str='Typical primitive arthropod')
+            # we can't get the date exactly right, so test for every other part of the message
+            message_published = view_functions.MESSAGE_PAGE_EDITED.format(published_date=u'xxx', published_by=erica_email)
+            message_published_split = message_published.split(u'xxx')
+            for part in message_published_split:
+                self.assertIsNotNone(frances.soup.find(lambda tag: tag.name == 'li' and part in tag.text))
 
             # Frances successfully browses elsewhere in the activity
             frances.open_link(url='/tree/{}/'.format(branch_name))
