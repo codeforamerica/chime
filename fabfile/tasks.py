@@ -4,6 +4,7 @@ from __future__ import with_statement, print_function
 
 import os
 import tempfile
+import subprocess
 import time
 import json
 
@@ -126,7 +127,7 @@ def test_chime(setup=True, despawn=True, despawn_on_failure=False):
         raise
     finally:
         if _looks_true(os.environ.get('REPORT_TO_S3')):
-            _send_results_to_cloud(output_filename, 'acceptance-test-nights.json')
+            _send_results_to_cloud(output_filename)
 
 @task
 def redeploy():
@@ -197,7 +198,7 @@ def _save_hosts(hosts):
     with open(fabconf.get('FAB_HOSTS_FILE'), 'w') as f:
         f.write(",".join(hosts))
 
-def _send_results_to_cloud(filename, key_name):
+def _send_results_to_cloud(filename):
     ''' Send JSON results to the moon.
     '''
     with open(filename) as file:
@@ -206,17 +207,20 @@ def _send_results_to_cloud(filename, key_name):
     headers = {'Content-Type': 'application/json'}
     
     # The first and last lines have the start and end times.
-    output = dict(results=results[1:-1])
+    commit = subprocess.check_output('git rev-parse HEAD'.split()).decode('utf8')[:12]
+    output = dict(results=results[1:-1], commit=commit)
     output.update(results[0])
     output.update(results[-1])
     string = json.dumps(output, indent=2)
 
     connection = connect_s3(fabconf.get('AWS_ACCESS_KEY'), fabconf.get('AWS_SECRET_KEY'))
-    key = connection.get_bucket('chimecms-test-results').new_key(key_name)
-    key.set_contents_from_string(string, policy='public-read', headers=headers)
-    url = key.generate_url(expires_in=0, query_auth=False, force_http=True)
 
-    print('Uploaded to', url)
+    for key_name in ('acceptance-test-nights.json', 'acceptance-test-nights-{}.json'.format(commit)): 
+        key = connection.get_bucket('chimecms-test-results').new_key(key_name)
+        key.set_contents_from_string(string, policy='public-read', headers=headers)
+        url = key.generate_url(expires_in=0, query_auth=False, force_http=True)
+
+        print('Uploaded to', url)
 
 def _connect_to_ec2():
     '''
