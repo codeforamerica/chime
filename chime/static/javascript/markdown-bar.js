@@ -38,29 +38,37 @@ function MarkdownBar(bar, textarea) {
 	var markdownBar = $(bar);
 	var markdownTextarea = $(textarea);
 
-	// This value is to keep track of where the current value is the textarea is. Used to compare 
-	var startValue = markdownTextarea.val();
+	// Values to keep track of current state of the text editor (value and selection range).
+	var initialValue, initialSelection;
 
 	//Implement Undo Stack
 	var undoStack = new Undo.Stack();
 	var EditCommand = Undo.Command.extend({
-		constructor: function(textarea, oldValue, newValue) {
+		constructor: function(textarea, initialValue, finalValue, initialSelection, finalSelection) {
 			this.textarea = textarea;
-			this.oldValue = oldValue;
-			this.newValue = newValue;
+			this.initialValue = initialValue;
+			this.finalValue = finalValue;
+			this.initialSelection = initialSelection;
+			this.finalSelection = finalSelection;
 		},
 		execute: function() {
 			// trigger is required for live preview to update.
 			this.textarea.trigger('change');
 		},
 		undo: function() {
-			this.textarea.val(this.oldValue)
-			startValue = this.oldValue;
+			this.textarea.val(this.initialValue)
+			initialValue = this.initialValue;
+			initialSelection = this.initialSelection;
+			console.log(this.initialSelection);
+			self.setSelectionRange(this.textarea.get(0), this.initialSelection.start, this.initialSelection.end)
 			this.textarea.trigger('change');
 		},
 		redo: function() {
-			this.textarea.val(this.newValue)
-			startValue = this.newValue;
+			this.textarea.val(this.finalValue)
+			initialValue = this.finalValue;
+			console.log(this.finalSelection);
+			initialSelection = this.finalSelection;
+			self.setSelectionRange(this.textarea.get(0), this.finalSelection.start, this.finalSelection.end)
 			this.textarea.trigger('change');
 		}
 	})
@@ -136,12 +144,19 @@ function MarkdownBar(bar, textarea) {
 	this.markdownify = function(event, syntax, filler, patternType) {
 		event.preventDefault();
 
-		startValue = markdownTextarea.val();
+		initialValue = markdownTextarea.val();
 
 		markdownTextarea.get(0).focus();
-		var selection = self.getInputSelection(markdownTextarea.get(0));
 
-		// If patterntype is block, content should begin at beginning of line and end at the end of line
+		// Compute initial and final selections
+		var selection = self.getSelectionRange(markdownTextarea.get(0));
+		var finalSelection = {};
+		initialSelection.start = selection.start;
+		initialSelection.end = selection.end;
+		finalSelection.start = selection.start + syntax.indexOf('${content}');
+		finalSelection.end = selection.end + syntax.indexOf('${content}');
+
+		// change current selection to expand to entire line if using a block pattern
 		if(patternType == "block") {
 			while(markdownTextarea.val().charAt(selection.start-1) != '\n' && selection.start > 0) {
 				selection.start--;
@@ -151,35 +166,29 @@ function MarkdownBar(bar, textarea) {
 			}
 		}
 
-		// Iterate over each line.
+		// If multiple lines, iterate over each line.
 		var newContent = "";
 		var content = markdownTextarea.val().slice(selection.start, selection.end).split(/\n/);
 		$(content).each(function(index, contentLine) {
-
-			//Add filler text 
-			if(contentLine == "") {
-				contentLine = filler;
-			}
-
-			
 			newContent = newContent + self.interpolate(syntax, {content: contentLine});
 			if(index < content.length-1) {
 				newContent = newContent + '\n';
 			}
 		});
 
-
 		// Replace content in textarea
 		var contentBefore = markdownTextarea.val().slice(0, selection.start);
 		var contentAfter = markdownTextarea.val().slice(selection.end, markdownTextarea.val().length)
-		var newValue = (contentBefore + newContent + contentAfter);
-		markdownTextarea.val(newValue);
+		var finalValue = (contentBefore + newContent + contentAfter);
+		markdownTextarea.val(finalValue);
 
-		//Add to undo stack
-		undoStack.execute(new EditCommand(markdownTextarea, startValue, newValue));
-		startValue = newValue;
-
+		//Add to undo stack and update initial value and selection
+		undoStack.execute(new EditCommand(markdownTextarea, initialValue, finalValue, initialSelection, finalSelection));
+		initialValue = finalValue;
+		initialSelection = finalSelection;
 		markdownTextarea.focus();
+		self.setSelectionRange(markdownTextarea.get(0), finalSelection.start, finalSelection.end);
+		
 	}
 
 	// String interpolation function
@@ -213,59 +222,78 @@ function MarkdownBar(bar, textarea) {
 
 	// From: http://stackoverflow.com/questions/235411/is-there-an-internet-explorer-approved-substitute-for-selection.start-and-selecti
 	// Cross-browser implementation of getting selection.
-	this.getInputSelection = function(el) {
-    var start = 0, end = 0, normalizedValue, range,
-        textInputRange, len, endRange;
+	this.getSelectionRange = function(el) {
+	    var start = 0, end = 0, normalizedValue, range,
+	        textInputRange, len, endRange;
 
-    if (typeof el.selectionStart == "number" && typeof el.selectionEnd == "number") {
-        start = el.selectionStart;
-        end = el.selectionEnd;
-    } else {
-        range = document.selection.createRange();
+	    if (typeof el.selectionStart == "number" && typeof el.selectionEnd == "number") {
+	        start = el.selectionStart;
+	        end = el.selectionEnd;
+	    } 
+	    else {
+	        range = document.selection.createRange();
 
-        if (range && range.parentElement() == el) {
-            len = el.value.length;
-            normalizedValue = el.value.replace(/\r\n/g, "\n");
+	        if (range && range.parentElement() == el) {
+	            len = el.value.length;
+	            normalizedValue = el.value.replace(/\r\n/g, "\n");
 
-            // Create a working TextRange that lives only in the input
-            textInputRange = el.createTextRange();
-            textInputRange.moveToBookmark(range.getBookmark());
+	            // Create a working TextRange that lives only in the input
+	            textInputRange = el.createTextRange();
+	            textInputRange.moveToBookmark(range.getBookmark());
 
-            // Check if the start and end of the selection are at the very end
-            // of the input, since moveStart/moveEnd doesn't return what we want
-            // in those cases
-            endRange = el.createTextRange();
-            endRange.collapse(false);
+	            // Check if the start and end of the selection are at the very end
+	            // of the input, since moveStart/moveEnd doesn't return what we want
+	            // in those cases
+	            endRange = el.createTextRange();
+	            endRange.collapse(false);
 
-            if (textInputRange.compareEndPoints("StartToEnd", endRange) > -1) {
-                start = end = len;
-            } else {
-                start = -textInputRange.moveStart("character", -len);
-                start += normalizedValue.slice(0, start).split("\n").length - 1;
+	            if (textInputRange.compareEndPoints("StartToEnd", endRange) > -1) {
+	                start = end = len;
+	            } else {
+	                start = -textInputRange.moveStart("character", -len);
+	                start += normalizedValue.slice(0, start).split("\n").length - 1;
 
-                if (textInputRange.compareEndPoints("EndToEnd", endRange) > -1) {
-                    end = len;
-                } else {
-                    end = -textInputRange.moveEnd("character", -len);
-                    end += normalizedValue.slice(0, end).split("\n").length - 1;
-                }
-            }
-        }
-    }
+	                if (textInputRange.compareEndPoints("EndToEnd", endRange) > -1) {
+	                    end = len;
+	                } else {
+	                    end = -textInputRange.moveEnd("character", -len);
+	                    end += normalizedValue.slice(0, end).split("\n").length - 1;
+	                }
+	            }
+	        }
+	    }
 
-    return {
-        start: start,
-        end: end
-    };
-}
+		return {
+			start: start,
+			end: end
+		};
+	}
+
+	// From http://stackoverflow.com/questions/499126/jquery-set-cursor-position-in-text-area
+	// Cross-browser implementation of setting selection.
+	this.setSelectionRange = function(input, selectionStart, selectionEnd) {
+		if (input.setSelectionRange) {
+			input.focus();
+			input.setSelectionRange(selectionStart, selectionEnd);
+		}
+		else if (input.createTextRange) {
+			var range = input.createTextRange();
+			range.collapse(true);
+			range.moveEnd('character', selectionEnd);
+			range.moveStart('character', selectionStart);
+			range.select();
+		}
+	}
 
 	
 	this.init = function() {
+		// initialize current state of the editor
+		 initialValue = markdownTextarea.val();
+		 initialSelection = self.getSelectionRange(markdownTextarea.get(0));
 
 		// Bind Textarea to Undo Stack (reimplementing basic undo/redo functionality)
 		var timer;
 		markdownTextarea.bind('keyup', function(event) {
-
 			// skip if keyup on 'Z' when undoing/redoing (metaKey or ctrlKey is held down)
 			if (event.metaKey && event.which == 90 || event.ctrlKey && event.which == 90 ) {
 				return false;
@@ -277,14 +305,32 @@ function MarkdownBar(bar, textarea) {
 
 			clearTimeout(timer);
 			timer = setTimeout(function() {
-				var newValue = markdownTextarea.val();
+				var finalValue = markdownTextarea.val();
+				// Get final 
+				var cursorDiff = finalValue.length - initialValue.length;
+				var finalSelection = {};
+				finalSelection.start = initialSelection.end + cursorDiff; //needs to subtract from cursor end for highlights
+				finalSelection.end = initialSelection.end + cursorDiff;
 				// ignore meta key presses
-				if (newValue != startValue) {
-					undoStack.execute(new EditCommand(markdownTextarea, startValue, newValue));
-					startValue = newValue;
+				if (finalValue != initialValue) {
+					//add to undoStack and update initial value and selections
+					console.log(initialSelection.start, finalSelection.start);
+					undoStack.execute(new EditCommand(markdownTextarea, initialValue, finalValue, initialSelection, finalSelection));
+					initialValue = finalValue;
+					initialSelection = finalSelection;
 				}
 			}, 150);
 		});
+
+		// Update current selection range state on events that can change the selection range.
+		$(markdownTextarea).on('keydown click focus mouseup', function(e) {
+			currentSelection = self.getSelectionRange(markdownTextarea.get(0));
+			var finalValue = markdownTextarea.val();
+			if(finalValue == initialValue) {
+				initialSelection = currentSelection;
+				console.log(initialSelection);
+			}
+		})
 
 
 		// Add buttons to markdown bar and bind events

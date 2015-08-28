@@ -31,7 +31,7 @@
 	text-decoration: none;
 	color: #fff;
 	font-weight: 400;
-	padding: 1em 2em;
+	padding: 1em 2em 1em 2em;
 	border-left: 1px solid shade($color-brand-blue, 10%);
 	margin: 0;
 	line-height: 1em;
@@ -42,12 +42,19 @@
 	}
 }
 
-.activity-dropdown {
+.activity-dropdown.global-header__link {
 	background-color: tint($color-brand-blue, 20%);
+	width: 30em;
+	padding-right: 4em;
 }
 
 .activity-dropdown__link {
+	display: block;
 	color: #fff;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	overflow: hidden;
+	height: 1.2em;
 	&:hover {
 		color: #fff;
 	}
@@ -64,6 +71,7 @@
 	margin-bottom: 1em;
 	border-bottom: 1px solid $color-grey-300;
 	color: $color-grey-900;
+	line-height: $heading-line-height;
 }
 
 .activity-dropdown__button {
