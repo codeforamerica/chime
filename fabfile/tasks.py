@@ -8,6 +8,7 @@ import time
 import json
 
 import boto.ec2
+from boto import connect_s3
 from fabric.operations import local
 from fabric.api import task, env, run, sudo
 from fabric.colors import green, yellow, red
@@ -123,6 +124,8 @@ def test_chime(setup=True, despawn=True, despawn_on_failure=False):
         if _looks_true(despawn_on_failure):
             _despawn(public_dns)
         raise
+    finally:
+        _send_results_to_cloud(output_filename, 'acceptance-test-nights.json')
 
 @task
 def redeploy():
@@ -192,6 +195,20 @@ def _strip_host_from_file(host):
 def _save_hosts(hosts):
     with open(fabconf.get('FAB_HOSTS_FILE'), 'w') as f:
         f.write(",".join(hosts))
+
+def _send_results_to_cloud(filename, key_name):
+    ''' Send JSON results to the moon.
+    '''
+    with open(filename) as file:
+        headers = {'Content-Type': 'application/json'}
+        results = json.dumps([json.loads(line) for line in file], indent=2)
+
+    connection = connect_s3(fabconf.get('AWS_ACCESS_KEY'), fabconf.get('AWS_SECRET_KEY'))
+    key = connection.get_bucket('chimecms-test-results').new_key(key_name)
+    key.set_contents_from_string(results, policy='public-read', headers=headers)
+    url = key.generate_url(expires_in=0, query_auth=False, force_http=True)
+
+    print('Uploaded to', url)
 
 def _connect_to_ec2():
     '''
