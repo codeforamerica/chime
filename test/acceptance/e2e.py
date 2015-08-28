@@ -69,7 +69,7 @@ class TestSelenium(TestCase):
 
         # create a new page
         self.waiter.until(EC.visibility_of_element_located((By.XPATH, "//form[@action='.']/input[@type='text']"))).send_keys('foobar')
-        self.driver.find_element_by_xpath("//form[@action='.']/input[@type='submit']").click()
+        self.driver.find_element_by_xpath("//form[@action='.']/button[@type='submit']").click()
 
         # add some content to that page
         self.waiter.until(EC.visibility_of_element_located((By.NAME, 'en-title'))).send_keys('foo')
@@ -77,7 +77,7 @@ class TestSelenium(TestCase):
         self.driver.find_element_by_id('en-body markItUp').send_keys(*test_page_content)
 
         # save the page
-        self.driver.find_element_by_xpath("//input[@value='Save']").click()
+        self.driver.find_element_by_xpath("//button[@value='Save']").click()
 
         # preview the page
         self.waiter.until(EC.presence_of_element_located((By.XPATH, "//a[@target='_blank']"))).click()

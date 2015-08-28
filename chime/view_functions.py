@@ -323,6 +323,30 @@ def is_dir_with_layout(file_path, layout, only=True):
     # it's not a directory
     return False
 
+def get_solo_directory_name(repo, branch_name, path):
+    ''' If, in the passed directory, there is a non-article or -category directory
+        that's the only visible object in the hierarchy, return its name.
+    '''
+    directory_contents = sorted_paths(repo=repo, branch_name=branch_name, path=path)
+    if len(directory_contents) == 1 and directory_contents[0]['display_type'] == FOLDER_FILE_TYPE:
+        return directory_contents[0]['name']
+
+    return None
+
+def get_redirect_path_for_solo_directory(repo, branch_name, path):
+    ''' If, in the passed directory, there is a non-article or -category directory
+        that's the only visible object in the hierarchy, return a redirect URL inside
+        that directory
+    '''
+    solo_directory_name = get_solo_directory_name(repo, branch_name, path)
+    if solo_directory_name:
+        path = join(path, solo_directory_name) if path else solo_directory_name
+        vars = dict(branch_name=branch_name2path(branch_name), path=path)
+        return '/tree/{branch_name}/edit/{path}/'.format(**vars)
+
+    # no redirect necessary
+    return None
+
 def relative_datetime_string(datetime_string):
     ''' Get a relative date for a string.
     '''

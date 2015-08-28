@@ -146,8 +146,10 @@
 	}
 	pre {
 		display: none;
+		font-size: $small-font-size;
 		background-color: transparent;
 		overflow-y: hidden;
+		padding: 1em 0;
 		code {
 			background-color: transparent;
 		}			

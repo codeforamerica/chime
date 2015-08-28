@@ -17,20 +17,9 @@ from . import repo_functions, edit_functions
 from . import publish
 from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
 
-from .view_functions import (
-    branch_name2path, branch_var2name, get_repo, login_required, browserid_hostname_required,
-    synch_required, synched_checkout_required, should_redirect, make_redirect, get_auth_data_file,
-    is_allowed_email, common_template_args, log_application_errors, is_article_dir, is_category_dir,
-    make_activity_history, summarize_activity_history, render_edit_view, render_modify_dir, render_list_dir,
-    add_article_or_category, strip_index_file, delete_page, save_page, render_activities_list, sorted_paths,
-    update_activity_review_state, flash_only, flash_unique, file_display_name, CONTENT_FILE_EXTENSION,
-    FOLDER_FILE_TYPE, ARTICLE_LAYOUT, CATEGORY_LAYOUT, MESSAGE_ACTIVITY_DELETED, publish_commit
-)
+from .view_functions import branch_name2path, branch_var2name, get_repo, login_required, browserid_hostname_required, synch_required, synched_checkout_required, should_redirect, make_redirect, get_auth_data_file, is_allowed_email, common_template_args, log_application_errors, is_article_dir, is_category_dir, make_activity_history, summarize_activity_history, render_edit_view, render_modify_dir, render_list_dir, add_article_or_category, strip_index_file, delete_page, save_page, render_activities_list, update_activity_review_state, flash_only, flash_unique, file_display_name, get_redirect_path_for_solo_directory, CONTENT_FILE_EXTENSION, ARTICLE_LAYOUT, CATEGORY_LAYOUT, MESSAGE_ACTIVITY_DELETED, publish_commit
 
-from .google_api_functions import (
-    read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens, authorize_google,
-    get_google_personal_info, get_google_analytics_properties
-)
+from .google_api_functions import read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens, authorize_google, get_google_personal_info, get_google_analytics_properties
 
 from . import view_functions
 
@@ -261,11 +250,18 @@ def get_checkout(ref):
 @login_required
 @synched_checkout_required
 def branch_view(branch_name, path=None):
-    r = get_repo(flask_app=current_app)
+    repo = get_repo(flask_app=current_app)
 
-    build_jekyll_site(r.working_dir)
+    build_jekyll_site(repo.working_dir)
 
-    local_base, _ = splitext(join(join(r.working_dir, '_site'), path or ''))
+    view_path = join(repo.working_dir, '_site', path or '')
+
+    # make sure the path points to something that exists
+    exists_path = strip_index_file(view_path.rstrip('/'))
+    if not exists(exists_path):
+        abort(404)
+
+    local_base, _ = splitext(view_path)
 
     if isdir(local_base):
         local_base += '/index'
@@ -304,19 +300,14 @@ def branch_edit(branch_name, path=None):
             index_path = join(path or u'', u'index.{}'.format(CONTENT_FILE_EXTENSION))
             return redirect('/tree/{}/edit/{}'.format(branch_name2path(branch_name), index_path))
 
-        # if the directory path didn't end with a slash, add it
+        # if the directory path didn't end with a slash, add it and redirect
         if path and not path.endswith('/'):
             return redirect('/tree/{}/edit/{}/'.format(branch_name2path(branch_name), path), code=302)
 
-        # if, in this directory, there is a non-article or -category directory that's the
-        # only visible object in the hierarchy, redirect inside
-        directory_contents = sorted_paths(repo=repo, branch_name=branch_name, path=path)
-        if len(directory_contents) == 1 and directory_contents[0]['display_type'] == FOLDER_FILE_TYPE:
-            if path:
-                path = join(path, directory_contents[0]['name'])
-            else:
-                path = directory_contents[0]['name']
-            return redirect('/tree/{}/edit/{}/'.format(branch_name2path(branch_name), path), code=302)
+        # redirect inside solo directories if necessary
+        redirect_path = get_redirect_path_for_solo_directory(repo, branch_name, path)
+        if redirect_path:
+            return redirect(redirect_path, code=302)
 
         # render the directory contents
         return render_list_dir(repo, branch_name, path)

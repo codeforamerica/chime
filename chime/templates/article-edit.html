@@ -8,7 +8,6 @@
 {% block body_class %}{{ template_name }}{% endblock %}
 
 {% block scripts %}
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 <script src="/static/javascript/markdown-hints.js"></script>
 
 <!--[if !IE]><!-->
@@ -51,10 +50,10 @@
             </div>
         </div>
         <div class="row__right toolbar--right">
-            <a href="{{ history_path }}" class="button  toolbar__item">History</a>
+            <a href="{{ history_path }}" class="button button--medium toolbar__item">History</a>
             {% if activity.working_state == config.WORKING_STATE_ACTIVE %}
-            <input type="submit" class="button button--green toolbar__item" name="action" value="Preview"/>
-            <input type="submit" class="button button--green toolbar__item" value="Save"/>
+            <button type="submit" class="button button--medium toolbar__item" name="action" value="Preview">Preview</button>
+            <button type="submit" class="button button--medium button--green toolbar__item" value="Save">Save Progress</button>
             {% endif %}
         </div>
     </div>    

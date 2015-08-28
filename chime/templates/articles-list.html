@@ -38,7 +38,7 @@
             <input class="form-one-line__input" name="request_path" placeholder="Add topic" id="create-category-name" type="text" />
             <input name="create_what" value="category" type="hidden" />
             <input name="create_path" value="{{column['base_path']}}" type="hidden" />
-            <input class="form-one-line__submit button" name="action" type="submit" id="create-category-button" value="Create" />
+            <button class="form-one-line__submit button" name="action" type="submit" id="create-category-button" value="create"><span class="fa fa-plus"></span></button>
         </form>
         {% endif %}
       </div>
@@ -51,7 +51,7 @@
             <input class="form-one-line__input" name="request_path" placeholder="Add subtopic" id="create-subcategory-name" type="text" />
             <input name="create_what" value="category" type="hidden" />
             <input name="create_path" value="{{column['base_path']}}" type="hidden" />
-            <input class="form-one-line__submit button" name="action" type="submit" id="create-subcategory-button" value="Create" />
+            <button class="form-one-line__submit button" name="action" type="submit" id="create-subcategory-button" value="create"><span class="fa fa-plus"></span></button>
         </form>
         {% endif %}
       </div>
@@ -64,7 +64,7 @@
             <input class="form-one-line__input" name="request_path" placeholder="Add article" id="create-article-name" type="text" />
             <input name="create_what" value="article" type="hidden" />
             <input name="create_path" value="{{column['base_path']}}" type="hidden" />
-            <input class="form-one-line__submit button" name="action" type="submit" id="create-article-button" value="Create" />
+            <button class="form-one-line__submit button" name="action" type="submit" id="create-article-button" value="create"><span class="fa fa-plus"></span></button>
         </form>
         {% endif %}
       </div>
@@ -79,7 +79,7 @@
             {% if column_depth == 4 %}
               <form action="." method="POST" class="toolbar__item">
                 <input name="request_path" value="{{file['file_path']}}" type="hidden">
-                <button name="action" type="submit" value="delete" class="dir-item__action button dir-item__action--delete"><span class="fa fa-trash"></span></button>
+                <button name="action" type="submit" class="dir-item__action button dir-item__action--delete" value="delete"><span class="fa fa-trash"></span></button>
               </form>
             {% else %}
               <a href="{{file['modify_path']}}" class="toolbar__item dir-item__action button "><span class="fa fa-pencil"></span></a>
