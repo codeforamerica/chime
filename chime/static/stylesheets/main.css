@@ -824,22 +824,28 @@ a:hover {
 .dropdown {
   position: relative;
   text-align: left;
+  padding-right: 4em;
 }
-/* line 4, ../sass/components/_dropdown-nav.scss */
+/* line 5, ../sass/components/_dropdown-nav.scss */
 .dropdown:after {
+  position: absolute;
+  right: 2em;
+  top: 50%;
+  margin-top: -0.75em;
+  line-height: 1.5em;
   display: inline-block;
   margin-left: .5em;
   font-family: "FontAwesome";
   content: '\f107';
 }
-/* line 11, ../sass/components/_dropdown-nav.scss */
+/* line 17, ../sass/components/_dropdown-nav.scss */
 .dropdown:hover .dropdown__popup {
   display: block;
   opacity: 1;
-  min-width: 380px;
+  min-width: 30em;
 }
 
-/* line 19, ../sass/components/_dropdown-nav.scss */
+/* line 25, ../sass/components/_dropdown-nav.scss */
 .dropdown__popup {
   -webkit-transition: opacity 0.2s ease-out;
   -moz-transition: opacity 0.2s ease-out;
@@ -864,21 +870,21 @@ a:hover {
 .dropdown__popup:after {
   clear: both;
 }
-/* line 33, ../sass/components/_dropdown-nav.scss */
+/* line 39, ../sass/components/_dropdown-nav.scss */
 .lt-ie10 .dropdown__popup {
   border: 1px solid #e0e0e0;
 }
-/* line 37, ../sass/components/_dropdown-nav.scss */
+/* line 43, ../sass/components/_dropdown-nav.scss */
 .dropdown__popup > li {
   margin: .5em 0;
 }
 
-/* line 42, ../sass/components/_dropdown-nav.scss */
+/* line 48, ../sass/components/_dropdown-nav.scss */
 .dropdown__popup--right {
   right: 0;
   left: auto;
 }
-/* line 45, ../sass/components/_dropdown-nav.scss */
+/* line 51, ../sass/components/_dropdown-nav.scss */
 .dropdown__popup--right:before {
   left: auto;
   right: 2em;
@@ -1313,22 +1319,28 @@ input[type="submit"]:disabled:hover {
 .dropdown {
   position: relative;
   text-align: left;
+  padding-right: 4em;
 }
-/* line 4, ../sass/components/_dropdown-nav.scss */
+/* line 5, ../sass/components/_dropdown-nav.scss */
 .dropdown:after {
+  position: absolute;
+  right: 2em;
+  top: 50%;
+  margin-top: -0.75em;
+  line-height: 1.5em;
   display: inline-block;
   margin-left: .5em;
   font-family: "FontAwesome";
   content: '\f107';
 }
-/* line 11, ../sass/components/_dropdown-nav.scss */
+/* line 17, ../sass/components/_dropdown-nav.scss */
 .dropdown:hover .dropdown__popup {
   display: block;
   opacity: 1;
-  min-width: 380px;
+  min-width: 30em;
 }
 
-/* line 19, ../sass/components/_dropdown-nav.scss */
+/* line 25, ../sass/components/_dropdown-nav.scss */
 .dropdown__popup {
   -webkit-transition: opacity 0.2s ease-out;
   -moz-transition: opacity 0.2s ease-out;
@@ -1353,21 +1365,21 @@ input[type="submit"]:disabled:hover {
 .dropdown__popup:after {
   clear: both;
 }
-/* line 33, ../sass/components/_dropdown-nav.scss */
+/* line 39, ../sass/components/_dropdown-nav.scss */
 .lt-ie10 .dropdown__popup {
   border: 1px solid #e0e0e0;
 }
-/* line 37, ../sass/components/_dropdown-nav.scss */
+/* line 43, ../sass/components/_dropdown-nav.scss */
 .dropdown__popup > li {
   margin: .5em 0;
 }
 
-/* line 42, ../sass/components/_dropdown-nav.scss */
+/* line 48, ../sass/components/_dropdown-nav.scss */
 .dropdown__popup--right {
   right: 0;
   left: auto;
 }
-/* line 45, ../sass/components/_dropdown-nav.scss */
+/* line 51, ../sass/components/_dropdown-nav.scss */
 .dropdown__popup--right:before {
   left: auto;
   right: 2em;
@@ -1470,40 +1482,43 @@ input[type="submit"]:disabled:hover {
   text-decoration: none;
   color: #fff;
   font-weight: 400;
-  padding: 1em 2em;
+  padding: 1em 2em 1em 2em;
   border-left: 1px solid #2684bc;
   margin: 0;
-  line-height: 1em;
 }
-/* line 38, ../sass/components/_global-header.scss */
+/* line 37, ../sass/components/_global-header.scss */
 .global-header__link.toolbar__item:hover {
   color: #fff;
   text-decoration: underline;
   background-color: #2684bc;
 }
 
-/* line 45, ../sass/components/_global-header.scss */
-.activity-dropdown {
+/* line 44, ../sass/components/_global-header.scss */
+.activity-dropdown.global-header__link {
   background-color: #55a8da;
-  width: 380px;
+  width: 30em;
+  padding-right: 4em;
 }
 
 /* line 50, ../sass/components/_global-header.scss */
 .activity-dropdown__link {
-  text-align: center;
+  display: block;
   color: #fff;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
 }
-/* line 53, ../sass/components/_global-header.scss */
+/* line 56, ../sass/components/_global-header.scss */
 .activity-dropdown__link:hover {
   color: #fff;
 }
 
-/* line 58, ../sass/components/_global-header.scss */
+/* line 61, ../sass/components/_global-header.scss */
 .activity-dropdown__subtitle {
   margin: 0em;
 }
 
-/* line 62, ../sass/components/_global-header.scss */
+/* line 65, ../sass/components/_global-header.scss */
 .activity-dropdown__title {
   font-weight: 600;
   padding-bottom: 1em;
@@ -1514,7 +1529,7 @@ input[type="submit"]:disabled:hover {
   line-height: 1.3em;
 }
 
-/* line 72, ../sass/components/_global-header.scss */
+/* line 75, ../sass/components/_global-header.scss */
 .activity-dropdown__button {
   width: 100%;
   margin-bottom: 2em;
@@ -1826,7 +1841,7 @@ input[type="submit"]:disabled:hover {
 .markdown-bar__tooltip {
   display: none;
   position: absolute;
-  width: 100px;
+  width: 8em;
   left: 0;
   top: 100%;
   margin-top: 7px;

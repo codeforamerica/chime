@@ -1,7 +1,13 @@
 .dropdown {
 	position: relative;
 	text-align: left;
+	padding-right: 4em;
 	&:after {
+		position: absolute;
+		right: 2em;
+		top: 50%;
+		margin-top: -$base-line-height/2;
+		line-height: $base-line-height;
 		display: inline-block;
 		margin-left: .5em;
 		font-family: "FontAwesome";
@@ -11,7 +17,7 @@
 		.dropdown__popup {
 			display: block;
 			opacity: 1;
-			min-width: 380px;
+			min-width: 30em;
 		}
 	}	
 }

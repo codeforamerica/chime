@@ -14,10 +14,10 @@
     {% endif %}
     {% if branch %}
     <div class="dropdown activity-dropdown toolbar__item global-header__link">
-      <a href="/tree/{{ branch }}" class="dropdown__label activity-dropdown__link">{{ activity.task_description | title }}</a>
+      <a href="/tree/{{ branch }}" class="dropdown__label activity-dropdown__link">{{ activity.task_description | title }} for {{ activity.task_beneficiary | title }}</a>
       <div class="dropdown__popup dropdown__popup--right">
         <p class="activity-dropdown__subtitle">Current Activity</p>
-        <h2 class="activity-dropdown__title">{{ activity.task_description | title }}</h2>
+        <h2 class="activity-dropdown__title">{{ activity.task_description | title }} for {{ activity.task_beneficiary | title }}</h2>
         <a class="button button--green button--large activity-dropdown__button" href="/tree/{{branch}}">See full history and discussion</a>
         {% if activity.review_state != config.REVIEW_STATE_PUBLISHED and activity.working_state == config.WORKING_STATE_ACTIVE %}
         <form action="{{ activity.overview_path }}" method="POST" class="comment comment--new">

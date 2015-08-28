@@ -31,10 +31,9 @@
 	text-decoration: none;
 	color: #fff;
 	font-weight: 400;
-	padding: 1em 2em;
+	padding: 1em 2em 1em 2em;
 	border-left: 1px solid shade($color-brand-blue, 10%);
 	margin: 0;
-	line-height: 1em;
 	&:hover {
 		color: #fff;
 		text-decoration: underline;
@@ -42,14 +41,18 @@
 	}
 }
 
-.activity-dropdown {
+.activity-dropdown.global-header__link {
 	background-color: tint($color-brand-blue, 20%);
-	width: 380px;
+	width: 30em;
+	padding-right: 4em;
 }
 
 .activity-dropdown__link {
-	text-align: center;
+	display: block;
 	color: #fff;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	overflow: hidden;
 	&:hover {
 		color: #fff;
 	}
