@@ -60,11 +60,11 @@ PATTERN_FORM_CATEGORY_TITLE = u'<input name="en-title" type="text" value="{title
 PATTERN_FORM_CATEGORY_DESCRIPTION = u'<textarea name="en-description" class="directory-modify__description" placeholder="Crime statistics and reports by district and map">{description}</textarea>'
 
 # review stuff
-PATTERN_REQUEST_FEEDBACK_BUTTON = u'<input class="toolbar__item button button--orange" type="submit" name="request_feedback" value="Request Feedback">'
+PATTERN_REQUEST_FEEDBACK_BUTTON = u'<button class="toolbar__item button button--orange" type="submit" name="request_feedback" value="Request Feedback">Request Feedback</button>'
 PATTERN_UNREVIEWED_EDITS_LINK = u'<a href="/tree/{branch_name}/" class="toolbar__item button">Unreviewed Edits</a>'
-PATTERN_ENDORSE_BUTTON = u'<input class="toolbar__item button button--green" type="submit" name="endorse_edits" value="Looks Good!">'
+PATTERN_ENDORSE_BUTTON = u'<button class="toolbar__item button button--green" type="submit" name="endorse_edits" value="Endorse Edits">Endorse Edits</button>'
 PATTERN_FEEDBACK_REQUESTED_LINK = u'<a href="/tree/{branch_name}/" class="toolbar__item button">Feedback requested</a>'
-PATTERN_PUBLISH_BUTTON = u'<input class="toolbar__item button button--blue" type="submit" name="merge" value="Publish">'
+PATTERN_PUBLISH_BUTTON = u'<button class="toolbar__item button button--blue" type="submit" name="merge" value="Publish">Publish</button>'
 PATTERN_READY_TO_PUBLISH_LINK = u'<a href="/tree/{branch_name}/" class="toolbar__item button">Ready to publish</a>'
 
 class TestAppConfig (TestCase):
@@ -582,7 +582,7 @@ class TestApp (TestCase):
 
         # Endorse the change
         with HTTMock(self.auth_csv_example_allowed):
-            response = self.test_client.post('/tree/{}/'.format(generated_branch_name), data={'comment_text': u'', 'endorse_edits': 'Looks Good!'}, follow_redirects=True)
+            response = self.test_client.post('/tree/{}/'.format(generated_branch_name), data={'comment_text': u'', 'endorse_edits': 'Endorse Edits'}, follow_redirects=True)
         self.assertEqual(response.status_code, 200)
         self.assertTrue(u'{} {}'.format(fake_endorser_email, repo_functions.ACTIVITY_ENDORSED_MESSAGE) in response.data)
 
@@ -710,13 +710,13 @@ class TestApp (TestCase):
             # get the edit page for the branch
             response = self.test_client.get('/tree/{}/edit/'.format(generated_branch_name), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
-            # verify that there's a 'looks good!' button
+            # verify that there's a 'Endorse Edits' button
             self.assertTrue(PATTERN_ENDORSE_BUTTON in response.data)
 
             # get the overview page for the branch
             response = self.test_client.get('/tree/{}/'.format(generated_branch_name), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
-            # verify that there's a 'looks good!' button
+            # verify that there's a 'Endorse Edits' button
             self.assertTrue(PATTERN_ENDORSE_BUTTON in response.data)
 
             # get the activity list page
@@ -727,7 +727,7 @@ class TestApp (TestCase):
 
         # Endorse the change
         with HTTMock(self.auth_csv_example_allowed):
-            response = self.test_client.post('/tree/{}/'.format(generated_branch_name), data={'comment_text': u'', 'endorse_edits': 'Looks Good!'}, follow_redirects=True)
+            response = self.test_client.post('/tree/{}/'.format(generated_branch_name), data={'comment_text': u'', 'endorse_edits': 'Endorse Edits'}, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             self.assertTrue(u'{} {}'.format(fake_endorser_email, repo_functions.ACTIVITY_ENDORSED_MESSAGE) in response.data)
 
@@ -1802,77 +1802,6 @@ class TestApp (TestCase):
             self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": cat_slug, "file_title": new_cat_title, "file_type": view_functions.CATEGORY_LAYOUT}) in response.data)
 
     # in TestApp
-    def test_create_many_categories_with_slash_separated_input(self):
-        ''' Entering a slash-separated string into the new article or category
-            field will create category folders where folders don't already exist
-        '''
-        fake_author_email = u'erica@example.com'
-        with HTTMock(self.mock_persona_verify_erica):
-            self.test_client.post('/sign-in', data={'assertion': fake_author_email})
-
-        with HTTMock(self.auth_csv_example_allowed):
-            # start a new branch via the http interface
-            # invokes view_functions/get_repo which creates a clone
-            task_description = u'put the needle on the record'
-            task_beneficiary = u'all the people in the house'
-
-            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
-            self.assertTrue(working_branch.name in self.clone1.branches)
-            self.assertTrue(working_branch.name in self.origin.branches)
-            working_branch_name = working_branch.name
-            working_branch.checkout()
-
-            # create multiple new categories
-            page_slug = u'when/the/drum/beat'
-            response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': page_slug},
-                                             follow_redirects=True)
-            self.assertEqual(response.status_code, 200)
-
-            # pull the changes
-            self.clone1.git.pull('origin', working_branch_name)
-
-            # category directories were created
-            dirs = page_slug.split('/')
-            for i in range(len(dirs)):
-                dir_location = join(self.clone1.working_dir, u'/'.join(dirs[:i + 1]))
-                # dir_location = join(self.clone1.working_dir, u'drum/beat/goes/like')
-                idx_location = u'{}/index.{}'.format(dir_location, view_functions.CONTENT_FILE_EXTENSION)
-                self.assertTrue(exists(dir_location) and isdir(dir_location))
-                # an index page was created inside
-                self.assertTrue(exists(idx_location))
-                # the directory and index page pass the category test
-                self.assertTrue(view_functions.is_category_dir(dir_location))
-
-            # now create a new page
-            page_slug = u'goes/like/this'
-            page_path = u'{}/index.{}'.format(page_slug, view_functions.CONTENT_FILE_EXTENSION)
-            response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': page_slug},
-                                             follow_redirects=True)
-            self.assertEqual(response.status_code, 200)
-            self.assertTrue(page_path in response.data)
-
-            # pull the changes
-            self.clone1.git.pull('origin', working_branch_name)
-
-            # category directories were created
-            dirs = page_slug.split('/')
-            for i in range(len(dirs)):
-                dir_location = join(self.clone1.working_dir, u'/'.join(dirs[:i + 1]))
-                # dir_location = join(self.clone1.working_dir, u'drum/beat/goes/like')
-                idx_location = u'{}/index.{}'.format(dir_location, view_functions.CONTENT_FILE_EXTENSION)
-                self.assertTrue(exists(dir_location) and isdir(dir_location))
-                # an index page was created inside
-                self.assertTrue(exists(idx_location))
-                if i < len(dirs) - 1:
-                    # the directory and index page pass the category test
-                    self.assertTrue(view_functions.is_category_dir(dir_location))
-                else:
-                    # the directory and index page pass the article test
-                    self.assertTrue(view_functions.is_article_dir(dir_location))
-
-    # in TestApp
     def test_column_navigation_structure(self):
         ''' The column navigation structure matches the structure of the site.
         '''
@@ -2305,6 +2234,57 @@ class TestApp (TestCase):
             self.assertTrue(u'(123) 456-7890' in response.data)
 
     # in TestApp
+    def test_garbage_edit_url_raises_page_not_found(self):
+        ''' A 404 page is generated when we get an edit address that doesn't exist
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
+
+            # Start a new task
+            erica.start_task(description=u'Take Malarone', beneficiary=u'People Susceptible to Malaria')
+            # Get the branch name
+            branch_name = erica.get_branch_name()
+            # Enter the "other" folder
+            other_slug = u'other'
+            erica.follow_link(href='/tree/{}/edit/{}/'.format(branch_name, other_slug))
+
+            # Create a category
+            category_name = u'Rubber Plants'
+            category_slug = slugify(category_name)
+            erica.add_category(category_name=category_name)
+
+            # Try to load a non-existent page within the category
+            erica.open_link(url='/tree/{}/edit/{}/malaria'.format(branch_name, category_slug), expected_status_code=404)
+
+    # in TestApp
+    def test_garbage_view_url_raises_page_not_found(self):
+        ''' A 404 page is generated when we get a view address that doesn't exist
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
+
+            # Start a new task
+            erica.start_task(description=u'Chew Mulberry Leaves', beneficiary=u'Silkworms')
+            # Get the branch name
+            branch_name = erica.get_branch_name()
+
+            # Enter the "other" folder
+            other_slug = u'other'
+            erica.follow_link(href='/tree/{}/edit/{}/'.format(branch_name, other_slug))
+
+            # Create a category
+            category_name = u'Bombyx Mori'
+            category_slug = slugify(category_name)
+            erica.add_category(category_name=category_name)
+
+            # Try to load a non-existent asset within the other folder
+            erica.open_link(url='/tree/{}/view/{}/{}/missing.jpg'.format(branch_name, other_slug, category_slug), expected_status_code=404)
+
+    # in TestApp
     def test_internal_server_error(self):
         ''' A 500 page is generated when we provoke a server error
         '''
@@ -2423,7 +2403,7 @@ class TestApp (TestCase):
 
         # Endorse person 1's change
         with HTTMock(self.auth_csv_example_allowed):
-            response = self.test_client.post('/tree/{}/'.format(generated_branch_name_1), data={'comment_text': u'', 'endorse_edits': 'Looks Good!'}, follow_redirects=True)
+            response = self.test_client.post('/tree/{}/'.format(generated_branch_name_1), data={'comment_text': u'', 'endorse_edits': 'Endorse Edits'}, follow_redirects=True)
 
         # And publish person 1's change!
         with HTTMock(self.auth_csv_example_allowed):
@@ -2437,7 +2417,7 @@ class TestApp (TestCase):
 
         # Endorse person 2's change
         with HTTMock(self.auth_csv_example_allowed):
-            response = self.test_client.post('/tree/{}/'.format(generated_branch_name_2), data={'comment_text': u'', 'endorse_edits': 'Looks Good!'}, follow_redirects=True)
+            response = self.test_client.post('/tree/{}/'.format(generated_branch_name_2), data={'comment_text': u'', 'endorse_edits': 'Endorse Edits'}, follow_redirects=True)
 
         # And publish person 2's change!
         with HTTMock(self.auth_csv_example_allowed):

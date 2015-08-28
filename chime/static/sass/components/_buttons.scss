@@ -4,12 +4,13 @@
 	text-decoration: none;
 	background: $color-grey-100;
 	border: 1px solid $color-grey-300;
-	color: $color-grey-800;
+	color: $color-grey-700;
 	font-family: $font-sans;
-	font-size: $small-font-size;
-	font-weight: 600;
+	font-size: $base-font-size;
+	font-weight: 400;
 	border-radius: $border-radius;
-	padding: .3em .8em;
+	padding: .1em .6em;
+	position: relative;
 
 	&:hover {
 		@include transition-duration(0s);
@@ -24,8 +25,23 @@
 	}
 
 	&:disabled {
-		opacity: .4;
+		border-color: $color-grey-200;
+		background-color: $color-grey-100;
 		cursor: default;
+		color: $color-grey-500;
+	}
+
+	&.is-loading {
+		@include transition-duration(.1s);
+		padding-right: .5em;
+		&:after {
+			@include animation(spinner 1s infinite steps(8));
+			display: inline-block;
+			margin-left: .5em;
+			content: '\f110';
+			font: normal normal normal 14px/1 FontAwesome;
+			margin-top: .1em;
+		}
 	}
 
 	// removes blue outline in webkit
@@ -46,6 +62,10 @@
 		border-color: $color-blue-700;
 		background-color: $color-blue-700;
 	}
+	&:disabled {
+		border-color: $color-blue-300;
+		background-color: $color-blue-200;
+	}
 }
 
 .button--green {
@@ -59,6 +79,10 @@
 	&:active, &.is-selected {
 		border-color: $color-green-700;
 		background-color: $color-green-700;
+	}
+	&:disabled {
+		border-color: $color-green-300;
+		background-color: $color-green-200;
 	}
 }
 
@@ -81,6 +105,10 @@
 		border-color: $color-orange-700;
 		background-color: $color-orange-700;
 	}
+	&:disabled {
+		border-color: $color-orange-300;
+		background-color: $color-orange-200;
+	}
 }
 
 .button--text {
@@ -99,10 +127,22 @@
 	font-size: $base-font-size;
 	padding: .5em 1em;
 	font-weight: 400;
+	&.is-loading {
+		padding-right: 1em;
+		&:after {
+			margin-top: 0;
+		}
+	}
 }
 
 .button--large {
 	font-size: $h4-font-size;
 	padding: .5em 1em;
 	font-weight: 400;
+	&.is-loading {
+		padding-right: 1em;
+		&:after {
+			margin-top: 0;
+		}
+	}
 }
