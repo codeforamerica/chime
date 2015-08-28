@@ -11,6 +11,7 @@ best practice. See: http://lists.gnu.org/archive/html/fab-user/2013-11/msg00006.
 
 import os
 import os.path
+import pwd
 
 fabconf = {}
 
@@ -41,8 +42,10 @@ fabconf['PROJECT_PATH'] = '{apps}/{project}'.format(
 fabconf['DOMAINS'] = os.environ.get('DOMAINS')
 
 # Name tag for your server instance on EC2
+# Use recommendation from https://docs.python.org/2/library/os.html#os.getlogin 
+# to get around ioctl error thrown by os.getlogin() in a cron job.
 fabconf['INSTANCE_NAME_TAG'] = os.environ.get('INSTANCE_NAME_TAG', 'ChimeCMS Autotest')
-fabconf['INSTANCE_CREATED_BY'] = '{}-{}'.format(os.getlogin(),os.uname()[1])
+fabconf['INSTANCE_CREATED_BY'] = '{}-{}'.format(pwd.getpwuid(os.getuid())[0], os.uname()[1])
 
 # EC2 key.
 fabconf['AWS_ACCESS_KEY'] = os.environ['AWS_ACCESS_KEY']

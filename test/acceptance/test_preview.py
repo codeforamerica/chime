@@ -1,4 +1,5 @@
 # -- coding: utf-8 --
+from __future__ import print_function
 
 import os
 from random import randint
@@ -6,6 +7,7 @@ from unittest import main
 import sys
 import time
 import urllib
+import json
 
 from selenium import webdriver
 from selenium.webdriver import ActionChains
@@ -25,7 +27,7 @@ BROWSERS_TO_TRY = Browser.from_string(os.environ.get('BROWSERS_TO_TEST', "").str
 TEST_REPETITIONS = int(os.environ.get('TEST_REPETITIONS',"1"))
 TEST_RETRY_COUNT = int(os.environ.get('TEST_RETRY_COUNT',"1"))
 
-
+OUTPUT_FILE = os.environ.get('OUTPUT_FILE')
 
 class TestPreview(ChimeTestCase):
     _multiprocess_can_split_ = True
@@ -35,6 +37,10 @@ class TestPreview(ChimeTestCase):
         self.password = os.environ['TESTING_PASSWORD']
         self.host = self.load_hosts_file()[0]
         self.live_site = 'http://' + self.host
+        if OUTPUT_FILE:
+            self.browser = None
+            self.started = time.time()
+            self.status = 'started'
 
     def mutate_email(self, email):
         return email.replace('@', '+' + self.random_digits() + '@')
@@ -94,6 +100,8 @@ class TestPreview(ChimeTestCase):
 
     def test_create_page_and_preview(self, browser=None):
         self.use_driver(browser)
+        if OUTPUT_FILE:
+            self.browser = ' '.join([browser.os, browser.os_version, browser.browser, browser.browser_version])
 
         signin_method = "stubby_js"
         if signin_method=='magic_url':
@@ -208,6 +216,9 @@ class TestPreview(ChimeTestCase):
                 timeout = (datetime.now() - started).seconds > timeout_after
                 pass
 
+        if OUTPUT_FILE:
+            self.status = dict(ok=True, status='done')
+
     def random_digits(self, count=6):
         format_as = "{:0" + str(count) + "d}"
         return format_as.format(randint(0, 10 ** count - 1))
@@ -232,6 +243,8 @@ class TestPreview(ChimeTestCase):
         self.driver.switch_to.window(main_window)
 
     def onFailure(self, exception_info):
+        if OUTPUT_FILE:
+            self.status = dict(ok=False, status='failed', exception=repr(exception_info))
         super(TestPreview, self).onFailure(exception_info)
         self.screenshot()
 
@@ -242,13 +255,20 @@ class TestPreview(ChimeTestCase):
             sys.stderr.write("no driver to take screenshot\n")
 
     def onError(self, exception_info):
+        if OUTPUT_FILE:
+            self.status = dict(ok=False, status='errored', exception=repr(exception_info))
         super(TestPreview, self).onError(exception_info)
         self.screenshot()
 
     def tearDown(self):
         if hasattr(self, 'driver') and self.driver:
             self.driver.quit()
-        pass
+        if OUTPUT_FILE:
+            elapsed = time.time() - self.started
+            self.status.update(dict(elapsed=elapsed, browser=self.browser))
+            line = json.dumps(self.status)
+            with open(OUTPUT_FILE, 'a') as file:
+                print(line, file=file)
 
     def scrollTo(self, element):
         ActionChains(self.driver).move_to_element(element).perform()

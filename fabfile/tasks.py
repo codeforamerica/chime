@@ -1,10 +1,20 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import with_statement
+from __future__ import with_statement, division, print_function
 
+import os
+import tempfile
+import subprocess
 import time
+import json
+
+from requests import get, post
+from itertools import groupby
+from operator import itemgetter
+from io import StringIO
 
 import boto.ec2
+from boto import connect_s3
 from fabric.operations import local
 from fabric.api import task, env, run, sudo
 from fabric.colors import green, yellow, red
@@ -100,14 +110,29 @@ def test_chime(setup=True, despawn=True, despawn_on_failure=False):
 
     print(green('Running tests...'))
     time.sleep(2)
+
+    handle, output_filename = tempfile.mkstemp(prefix='tests-', suffix='.txt')
+    os.environ['OUTPUT_FILE'] = output_filename
+    os.close(handle)
+    print('Saving output to', output_filename)
+
     try:
+        with open(output_filename, 'w') as output:
+            print(json.dumps(dict(start=time.time())), file=output)
         local('nosetests  --processes=9 --process-timeout=300 ' + fabconf.get('FAB_CONFIG_PATH') + '/../test/acceptance')
+        with open(output_filename, 'a') as output:
+            print(json.dumps(dict(ok=True, end=time.time())), file=output)
         if _looks_true(despawn):
             _despawn(public_dns)
     except:
+        with open(output_filename, 'a') as output:
+            print(json.dumps(dict(ok=False, end=time.time())), file=output)
         if _looks_true(despawn_on_failure):
             _despawn(public_dns)
         raise
+    finally:
+        if _looks_true(os.environ.get('REPORT_TO_S3')):
+            _send_results_to_cloud(output_filename, os.environ.get('SLACK_URL'))
 
 @task
 def redeploy():
@@ -158,6 +183,9 @@ def _load_hosts():
     except IOError:
         return []
 
+        if self.output:
+            print(self, 'done', file=self.output)
+
 
 def _write_host_to_file(host):
     hosts = _load_hosts()
@@ -174,6 +202,72 @@ def _strip_host_from_file(host):
 def _save_hosts(hosts):
     with open(fabconf.get('FAB_HOSTS_FILE'), 'w') as f:
         f.write(",".join(hosts))
+
+def _send_results_to_cloud(filename, slack_webhook_url):
+    ''' Send JSON results to the moon.
+    '''
+    with open(filename) as file:
+        results = [json.loads(line) for line in file]
+
+    headers = {'Content-Type': 'application/json'}
+    
+    # The first and last lines have the start and end times.
+    commit = subprocess.check_output('git rev-parse HEAD'.split()).decode('utf8')[:12]
+    output = dict(results=results[1:-1], commit=commit)
+    output.update(results[0])
+    output.update(results[-1])
+    string = json.dumps(output, indent=2)
+
+    connection = connect_s3(fabconf.get('AWS_ACCESS_KEY'), fabconf.get('AWS_SECRET_KEY'))
+
+    for key_name in ('acceptance-test-nights.json', 'acceptance-test-nights-{:.0f}.json'.format(time.time())): 
+        key = connection.get_bucket('chimecms-test-results').new_key(key_name)
+        key.set_contents_from_string(string, policy='public-read', headers=headers)
+        url = key.generate_url(expires_in=0, query_auth=False, force_http=True)
+
+        print('Uploaded to', url)
+
+    if slack_webhook_url:
+        _send_results_to_slack(output, slack_webhook_url)
+
+def _send_results_to_slack(output, slack_webhook_url):
+    '''
+    '''
+    rsort = itemgetter('browser', 'elapsed')
+    rgroup = itemgetter('browser')
+
+    commit, results = output['commit'], output['results']
+    output = StringIO()
+
+    tree_url = 'https://github.com/chimecms/chime/tree/{}'.format(commit)
+    summary = u'Browserstack results for Chime <{}|{}>:\n'.format(tree_url, commit)
+
+    print(summary, file=output)
+
+    for (browser, group) in groupby(sorted(results, key=rsort), rgroup):
+        statuses, times = zip(*[(r['status'], r['elapsed']) for r in group])
+        
+        min_time, med_time, max_time = min(times), times[len(times)//2], max(times)
+        time_format = u'Completed in {med:.0f} seconds (max {max:.0f}s)'
+        time_summary = time_format.format(min=min_time, med=med_time, max=max_time)
+        
+        done_count = len([s for s in statuses if s == 'done'])
+        fail_count = len([s for s in statuses if s == 'failed'])
+        error_count = len([s for s in statuses if s == 'errored'])
+        status_percent = 100 * done_count / len(statuses)
+        status_format = u'*{percent:.0f}%:* {done} succeeded, {failed} failed, and {errored} errored'
+        status_kwargs = dict(percent=status_percent, done=done_count, failed=fail_count, errored=error_count)
+        status_summary = status_format.format(**status_kwargs)
+        
+        print(u'• {}: {}'.format(browser, status_summary, time_summary), file=output)
+
+    text = output.getvalue()
+
+    post(slack_webhook_url, headers={'Content-Type': 'application/json'},
+         data=json.dumps(dict(username='Browserstax', icon_emoji=':game_die:', text=text)))
+
+    print('Sent to', slack_webhook_url)
+
 
 def _connect_to_ec2():
     '''
@@ -277,7 +371,11 @@ def _install_chime_if_necessary():
         rsync_code()
         print(green('Running chef setup scripts...'))
         time.sleep(2)
-        run('cd chime && sudo ACCEPTANCE_TEST_MODE=1 chef/run.sh')
+
+        # Directory name needs to match current directory due to rsync:
+        # http://docs.fabfile.org/en/1.10/api/contrib/project.html#fabric.contrib.project.rsync_project
+        dirname = os.path.basename(os.path.abspath('.'))
+        run('cd {dir} && sudo ACCEPTANCE_TEST_MODE=1 chef/run.sh'.format(dir=dirname))
 
 
 def _make_sure_host_name_is_right(hostname):
