@@ -320,7 +320,11 @@ def _install_chime_if_necessary():
         rsync_code()
         print(green('Running chef setup scripts...'))
         time.sleep(2)
-        run('cd chime && sudo ACCEPTANCE_TEST_MODE=1 chef/run.sh')
+
+        # Directory name needs to match current directory due to rsync:
+        # http://docs.fabfile.org/en/1.10/api/contrib/project.html#fabric.contrib.project.rsync_project
+        dirname = os.path.basename(os.path.abspath('.'))
+        run('cd {dir} && sudo ACCEPTANCE_TEST_MODE=1 chef/run.sh'.format(dir=dirname))
 
 
 def _make_sure_host_name_is_right(hostname):
