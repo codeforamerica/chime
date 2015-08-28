@@ -36,6 +36,7 @@ class TestPreview(ChimeTestCase):
         self.host = self.load_hosts_file()[0]
         self.live_site = 'http://' + self.host
         if OUTPUT_FILE:
+            self.browser = None
             self.started = time.time()
             self.status = 'started'
 
@@ -97,6 +98,8 @@ class TestPreview(ChimeTestCase):
 
     def test_create_page_and_preview(self, browser=None):
         self.use_driver(browser)
+        if OUTPUT_FILE:
+            self.browser = ' '.join([browser.os, browser.os_version, browser.browser, browser.browser_version])
 
         signin_method = "stubby_js"
         if signin_method=='magic_url':
@@ -225,7 +228,7 @@ class TestPreview(ChimeTestCase):
             self.driver.quit()
         if OUTPUT_FILE:
             elapsed = time.time() - self.started
-            self.status.update(dict(test=repr(self), elapsed=elapsed))
+            self.status.update(dict(elapsed=elapsed, browser=self.browser))
             line = json.dumps(self.status)
             with open(OUTPUT_FILE, 'a') as file:
                 print(line, file=file)

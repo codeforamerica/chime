@@ -125,7 +125,8 @@ def test_chime(setup=True, despawn=True, despawn_on_failure=False):
             _despawn(public_dns)
         raise
     finally:
-        _send_results_to_cloud(output_filename, 'acceptance-test-nights.json')
+        if _looks_true(os.environ.get('REPORT_TO_S3')):
+            _send_results_to_cloud(output_filename, 'acceptance-test-nights.json')
 
 @task
 def redeploy():
@@ -208,10 +209,11 @@ def _send_results_to_cloud(filename, key_name):
     output = dict(results=results[1:-1])
     output.update(results[0])
     output.update(results[-1])
+    string = json.dumps(output, indent=2)
 
     connection = connect_s3(fabconf.get('AWS_ACCESS_KEY'), fabconf.get('AWS_SECRET_KEY'))
     key = connection.get_bucket('chimecms-test-results').new_key(key_name)
-    key.set_contents_from_string(output, policy='public-read', headers=headers)
+    key.set_contents_from_string(string, policy='public-read', headers=headers)
     url = key.generate_url(expires_in=0, query_auth=False, force_http=True)
 
     print('Uploaded to', url)
