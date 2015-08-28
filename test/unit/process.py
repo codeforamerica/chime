@@ -430,9 +430,9 @@ class TestProcess (TestCase):
             # Frances edits the same article and gets an error
             frances.edit_article(title_str='Assays', body_str='Typical primitive arthropod')
             # we can't get the date exactly right, so test for every other part of the message
-            message_published = view_functions.MESSAGE_PAGE_EDITED.format(published_date=u'xxx', published_by=erica_email)
-            message_published_split = message_published.split(u'xxx')
-            for part in message_published_split:
+            message_edited = view_functions.MESSAGE_PAGE_EDITED.format(published_date=u'xxx', published_by=erica_email)
+            message_edited_split = message_edited.split(u'xxx')
+            for part in message_edited_split:
                 self.assertIsNotNone(frances.soup.find(lambda tag: tag.name == 'li' and part in tag.text))
 
             # Frances successfully browses elsewhere in the activity
