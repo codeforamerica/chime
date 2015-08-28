@@ -220,7 +220,7 @@ def _send_results_to_cloud(filename, slack_webhook_url):
 
     connection = connect_s3(fabconf.get('AWS_ACCESS_KEY'), fabconf.get('AWS_SECRET_KEY'))
 
-    for key_name in ('acceptance-test-nights.json', 'acceptance-test-nights-{}.json'.format(commit)): 
+    for key_name in ('acceptance-test-nights.json', 'acceptance-test-nights-{:.0f}.json'.format(time.time())): 
         key = connection.get_bucket('chimecms-test-results').new_key(key_name)
         key.set_contents_from_string(string, policy='public-read', headers=headers)
         url = key.generate_url(expires_in=0, query_auth=False, force_http=True)
