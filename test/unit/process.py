@@ -339,7 +339,6 @@ class TestProcess (TestCase):
             # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
             args = 'Bobbing', 'Apples', 'Ninjas', 'Flipping Out', 'So Awesome'
             frances.add_branch_cat_subcat_article(*args)
-            frances.path
 
             # Erica: Start a new task, "Diving for Dollars", create a new category
             # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
@@ -402,6 +401,40 @@ class TestProcess (TestCase):
             frances.follow_link(href='/tree/{}'.format(f_branch_name))
             self.assertIsNone(frances.soup.find(text=repo_functions.UPSTREAM_EDIT_INFO_FLASH_MESSAGE),
                               'Should not see a warning about the conflict in the activity history.')
+
+    # in TestProcess
+    def test_editing_process_with_conflicting_edit_on_same_article(self):
+        ''' Two people editing the same article in the same branch get a useful error.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
+
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in('frances@example.com')
+
+            # Frances: Start a new task, topic, subtopic, article
+            args = 'Triassic', 'Artemia', 'Biological', 'Toxicity', 'Assays'
+            frances.add_branch_cat_subcat_article(*args)
+            branch_name = frances.get_branch_name()
+
+            # Frances and Erica load the same article
+            erica.open_link(frances.path)
+
+            # Erica edits the new article.
+            erica.edit_article(title_str='Assays', body_str='Broad leaf-like appendages')
+            # Frances fails to edit the same article
+            frances.edit_article_and_fail(title_str='Assays', body_str='Typical primitive arthropod', expected_status_code=500)
+
+            # Frances successfully browses elsewhere in the activity
+            frances.open_link(url='/tree/{}/'.format(branch_name))
+            # Frances successfully deletes the task
+            frances.open_link(url='/')
+            frances.delete_task(branch_name=branch_name)
+            # Frances successfully creates a new task
+            frances.start_task(description='Narrow Braincase', beneficiary='Larger Carnassials')
 
     # in TestProcess
     def test_task_not_marked_published_after_merge_conflict(self):
