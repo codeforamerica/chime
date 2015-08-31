@@ -433,7 +433,7 @@ def complete_branch(clone, default_branch_name, working_branch_name, comment_tex
 def abandon_branch(clone, default_branch_name, working_branch_name, comment_text=None):
     ''' Complete work on a branch by abandoning and deleting it.
     '''
-    message = u'Abandoned work from "%s"' % working_branch_name
+    message = u'Abandoned work from "{}"'.format(working_branch_name)
 
     #
     # Add an empty commit with abandonment note.
