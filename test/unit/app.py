@@ -1522,7 +1522,7 @@ class TestApp (TestCase):
             erica.add_branch_cat_subcat_article(*args)
 
             # Edit the new article and give it a non-roman character title
-            erica.edit_article('快速狐狸', 'Myrmeconema ੯ूᵕू ໒꒱ƶƵ Neotropicum')
+            erica.edit_article(u'快速狐狸', u'Myrmeconema ੯ूᵕू ໒꒱ƶƵ Neotropicum')
 
     # in TestApp
     def test_new_item_has_name_and_title(self):
