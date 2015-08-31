@@ -201,6 +201,13 @@ class TestApp (TestCase):
         else:
             return self.auth_csv_example_allowed(url, request)
 
+    def mock_persona_verify_non_roman(self, url, request):
+        if url.geturl() == 'https://verifier.login.persona.org/verify':
+            return response(200, '''{"status": "okay", "email": "੯ूᵕू ໒꒱ƶƵ@快速狐狸.com"}''', headers=dict(Link='<https://api.github.com/user/337792/repos?page=1>; rel="prev", <https://api.github.com/user/337792/repos?page=1>; rel="first"'))
+
+        else:
+            return self.auth_csv_example_allowed(url, request)
+
     def mock_persona_verify_frances(self, url, request):
         if url.geturl() == 'https://verifier.login.persona.org/verify':
             return response(200, '''{"status": "okay", "email": "frances@example.com"}''', headers=dict(Link='<https://api.github.com/user/337792/repos?page=1>; rel="prev", <https://api.github.com/user/337792/repos?page=1>; rel="first"'))
@@ -1507,6 +1514,31 @@ class TestApp (TestCase):
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format(u'articles-list') in response.data.decode('utf-8'))
             self.assertTrue(PATTERN_BRANCH_COMMENT.format(working_branch) in response.data.decode('utf-8'))
             self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": art_slug, "file_title": art_title, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data.decode('utf-8'))
+
+    # in TestApp
+    def test_save_non_roman_characters_to_article(self):
+        ''' Adding non-roman characters to an article's title and body raises no unicode errors.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
+
+            # Start a new task, topic, subtopic, article
+            args = 'Mermithergate', 'Ant Worker', 'Enoplia Nematode', 'Genus Mermis', 'Cephalotes Atratus'
+            erica.add_branch_cat_subcat_article(*args)
+
+            # Edit the new article and give it a non-roman character title
+            erica.edit_article(u'快速狐狸', u'Myrmeconema ੯ूᵕू ໒꒱ƶƵ Neotropicum')
+
+    # in TestApp
+    def test_sign_in_with_email_containing_non_roman_characters(self):
+        ''' Adding non-roman characters to the sign-in email raises no errors.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_non_roman):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('੯ूᵕू ໒꒱ƶƵ@快速狐狸.com')
 
     # in TestApp
     def test_new_item_has_name_and_title(self):

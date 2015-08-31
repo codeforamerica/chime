@@ -208,7 +208,7 @@ def ignore_task_metadata_on_merge(clone):
     if not exists(attributes_path):
         content = u'{} merge=ignored'.format(TASK_METADATA_FILENAME)
         with open(attributes_path, 'w') as file:
-            file.write(content.encode('utf8'))
+            file.write(content.encode('utf-8'))
 
     # set the config (it's okay to set redundantly)
     c_writer = clone.config_writer()
@@ -309,7 +309,7 @@ def get_file_contents_from_branch(clone, file_path, working_branch_name=None):
         except KeyError:
             return None
 
-        return blob.data_stream.read().decode('utf-8')
+        return blob.data_stream.read()
 
     return None
 
@@ -433,13 +433,13 @@ def complete_branch(clone, default_branch_name, working_branch_name, comment_tex
 def abandon_branch(clone, default_branch_name, working_branch_name, comment_text=None):
     ''' Complete work on a branch by abandoning and deleting it.
     '''
-    message = u'Abandoned work from "%s"' % working_branch_name
+    message = u'Abandoned work from "{}"'.format(working_branch_name)
 
     #
     # Add an empty commit with abandonment note.
     #
     clone.branches[default_branch_name].checkout()
-    clone.index.commit(message.encode('utf-8'))
+    clone.index.commit(message)
 
     #
     # Delete the old branch.
@@ -499,7 +499,7 @@ def save_local_working_file(clone, path, message):
     if exists(join(clone.working_dir, path)):
         clone.index.add([path])
 
-    clone.index.commit(message.encode('utf-8'))
+    clone.index.commit(message)
 
     return clone.active_branch.commit
 
@@ -518,7 +518,7 @@ def save_working_file(clone, path, message, base_sha, default_branch_name):
     if exists(join(clone.working_dir, path)):
         clone.index.add([path])
 
-    clone.index.commit(message.encode('utf-8'))
+    clone.index.commit(message)
     active_branch_name = clone.active_branch.name
 
     #
@@ -754,7 +754,7 @@ def make_commit_message(subject, body):
 def add_empty_commit(clone, subject, body, push=True):
     ''' Adds a new empty commit with the passed details
     '''
-    clone.index.commit(make_commit_message(subject=subject, body=body).encode('utf-8'))
+    clone.index.commit(make_commit_message(subject=subject, body=body))
     active_branch_name = clone.active_branch.name
 
     #

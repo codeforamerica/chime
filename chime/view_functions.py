@@ -504,7 +504,7 @@ def login_required(route_function):
     '''
     @wraps(route_function)
     def decorated_function(*args, **kwargs):
-        email = session.get('email', '').decode('utf-8')
+        email = session.get('email', '')
 
         if not email:
             redirect_url = '/not-allowed'
@@ -745,7 +745,7 @@ def make_activity_history(repo):
     history = []
     pattern = re.compile(r'\x00Name: (.*?)\tEmail: (.*?)\tDate: (.*?)\tSubject: (.*?)\tBody: (.*?)\x00', re.DOTALL)
     for log_details in pattern.findall(log):
-        name, email, date, subject, body = tuple([item.decode('utf-8') for item in log_details])
+        name, email, date, subject, body = tuple([item for item in log_details])
         commit_category, commit_type, commit_action = get_commit_classification(subject, body)
         log_item = dict(author_name=name, author_email=email, commit_date=date, commit_subject=subject,
                         commit_body=body, commit_category=commit_category, commit_type=commit_type,

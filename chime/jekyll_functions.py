@@ -73,7 +73,7 @@ def load_yaml_and_body(file):
 
             # Seek to the beginning, and load the complete content.
             file.seek(0)
-            chars = file.read().decode('utf8')
+            chars = file.read().decode('utf-8')
 
             # Load the front matter as a document.
             front_matter = yaml.safe_load(chars[:token.end_mark.index])
@@ -100,7 +100,7 @@ def load_jekyll_doc(file):
         return load_yaml_and_body(file)
     else:
         file.seek(0)
-        return {}, file.read().decode('utf8')
+        return {}, file.read().decode('utf-8')
 
 def dump_jekyll_doc(front_matter, content, file):
     ''' Dump jekyll front matter and content to a file.
@@ -131,7 +131,7 @@ def dump_jekyll_doc(front_matter, content, file):
     # Write content to the end of the file.
     content = content or u''
     file.write(_marker)
-    file.write(content.encode('utf8'))
+    file.write(content.encode('utf-8'))
 
 def build_jekyll_site(dirname):
     ''' Build the Jekyll site inside dirname, return path to the built site.

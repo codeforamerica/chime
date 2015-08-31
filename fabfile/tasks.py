@@ -212,7 +212,7 @@ def _send_results_to_cloud(filename, slack_webhook_url):
     headers = {'Content-Type': 'application/json'}
     
     # The first and last lines have the start and end times.
-    commit = subprocess.check_output('git rev-parse HEAD'.split()).decode('utf8')[:12]
+    commit = subprocess.check_output('git rev-parse HEAD'.split()).decode('utf-8')[:12]
     output = dict(results=results[1:-1], commit=commit)
     output.update(results[0])
     output.update(results[-1])

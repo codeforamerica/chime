@@ -78,7 +78,7 @@ def sign_in():
         else:
             Logger.info("Failed Persona auth (rejected by Persona)")
             return Response('Failed', status=400)
-    Logger.info("Logged in as '{}'".format(session['email']))
+    Logger.info(u'Logged in as "{}"'.format(session['email']))
     return 'OK'
 
 def _verify_persona_assertion(assertion):
