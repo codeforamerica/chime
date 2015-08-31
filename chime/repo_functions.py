@@ -208,7 +208,7 @@ def ignore_task_metadata_on_merge(clone):
     if not exists(attributes_path):
         content = u'{} merge=ignored'.format(TASK_METADATA_FILENAME)
         with open(attributes_path, 'w') as file:
-            file.write(content.encode('utf8'))
+            file.write(content.encode('utf-8'))
 
     # set the config (it's okay to set redundantly)
     c_writer = clone.config_writer()
