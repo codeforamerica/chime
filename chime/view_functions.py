@@ -78,6 +78,7 @@ LAYOUT_PLURAL_LOOKUP = {
 # error messages
 MESSAGE_ACTIVITY_DELETED = u'This activity has been deleted or never existed! Please start a new activity to make changes.'
 MESSAGE_ACTIVITY_PUBLISHED = u'This activity was published {published_date} by {published_by}! Please start a new activity to make changes.'
+MESSAGE_PAGE_EDITED = u'{published_by} edited this file while you were working, {published_date}! Your changes have been lost.'
 
 # files that match these regex patterns will not be shown in the file explorer
 FILE_FILTERS = [
@@ -1340,9 +1341,11 @@ def get_activity_action_and_authorized(branch_name, comment_text, action_list):
 def save_page(repo, default_branch_name, working_branch_name, file_path, new_values):
     ''' Save the page with the passed values
     '''
+    did_save = True
     working_branch_name = branch_var2name(working_branch_name)
     if get_activity_working_state(repo, default_branch_name, working_branch_name) != constants.WORKING_STATE_ACTIVE:
-        return file_path, False
+        did_save = False
+        return file_path, did_save
 
     existing_branch = get_existing_branch(repo, default_branch_name, working_branch_name)
 
@@ -1355,9 +1358,6 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
         possible_conflict = True
     
     else:
-        #
-        # Write changes.
-        #
         existing_branch.checkout()
         possible_conflict = False
     
@@ -1367,24 +1367,27 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
     except ValueError:
         order = 0
 
+    # populate the jekyll front matter
     front = {
         'layout': dos2unix(new_values.get('layout')),
         'order': order,
         'title': dos2unix(new_values.get('en-title', '')),
         'description': dos2unix(new_values.get('en-description', ''))
     }
-
     for iso in load_languages(repo.working_dir):
         if iso != constants.ISO_CODE_ENGLISH:
             front['title-' + iso] = dos2unix(new_values.get(iso + '-title', ''))
             front['description-' + iso] = dos2unix(new_values.get(iso + '-description', ''))
             front['body-' + iso] = dos2unix(new_values.get(iso + '-body', ''))
 
+    #
+    # Write changes.
+    #
     body = dos2unix(new_values.get('en-body', ''))
     update_page(repo, file_path, front, body)
     
     #
-    # Save local file.
+    # Commit the local file.
     #
     display_name = new_values.get('en-title')
     display_type = new_values.get('layout')
@@ -1393,14 +1396,24 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
     c2 = save_local_working_file(repo, file_path, commit_message)
 
     if possible_conflict:
-        repo.git.rebase(existing_branch.commit)
-        rebase_commit = tmp_branch.commit
-        
-        # Ditch the temporary branch now that rebase has worked.
-        existing_branch.checkout()
-        repo.git.reset(rebase_commit, hard=True)
-        repo.git.branch('-D', tmp_branch_name)
-    
+        try:
+            repo.git.rebase(existing_branch.commit)
+        except GitCommandError:
+            published_date = repo.git.show('--format=%ad', '--date=relative', existing_branch.commit.hexsha).split('\n')[0]
+            published_by = existing_branch.commit.committer.email
+            flash(MESSAGE_PAGE_EDITED.format(published_date=published_date, published_by=published_by), u'error')
+            did_save = False
+            # Ditch the temporary branch now that rebase has failed.
+            repo.git.reset(hard=True)
+            existing_branch.checkout()
+            repo.git.branch('-D', tmp_branch_name)
+        else:
+            rebase_commit = tmp_branch.commit
+            # Ditch the temporary branch now that rebase has worked.
+            existing_branch.checkout()
+            repo.git.reset(rebase_commit, hard=True)
+            repo.git.branch('-D', tmp_branch_name)
+
     sync_with_default_and_upstream_branches(repo, working_branch_name)
 
     repo.git.push('origin', working_branch_name)
@@ -1428,7 +1441,7 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
                     # let unexpected errors raise normally
                     if error_type:
                         flash(error_message, error_type)
-                        return file_path, True
+                        return file_path, did_save
                     else:
                         raise
 
@@ -1446,7 +1459,7 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
         Logger.debug('  {}'.format(repr(conflict.local_commit.tree[file_path].data_stream.read())))
         raise conflict
 
-    return file_path, True
+    return file_path, did_save
 
 def should_redirect():
     ''' Return True if the current flask.request should redirect.

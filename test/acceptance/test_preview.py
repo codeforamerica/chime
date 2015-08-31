@@ -40,7 +40,7 @@ class TestPreview(ChimeTestCase):
         if OUTPUT_FILE:
             self.browser = None
             self.started = time.time()
-            self.status = 'started'
+            self.status = dict(ok=True, status='started')
 
     def mutate_email(self, email):
         return email.replace('@', '+' + self.random_digits() + '@')
