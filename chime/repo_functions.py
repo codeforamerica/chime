@@ -499,7 +499,7 @@ def save_local_working_file(clone, path, message):
     if exists(join(clone.working_dir, path)):
         clone.index.add([path])
 
-    clone.index.commit(message.encode('utf-8'))
+    clone.index.commit(message)
 
     return clone.active_branch.commit
 
