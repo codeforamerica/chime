@@ -503,7 +503,7 @@ def login_required(route_function):
     '''
     @wraps(route_function)
     def decorated_function(*args, **kwargs):
-        email = session.get('email', '').decode('utf-8')
+        email = session.get('email', '')
 
         if not email:
             redirect_url = '/not-allowed'
