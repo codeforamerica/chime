@@ -309,7 +309,7 @@ def get_file_contents_from_branch(clone, file_path, working_branch_name=None):
         except KeyError:
             return None
 
-        return blob.data_stream.read().decode('utf-8')
+        return blob.data_stream.read()
 
     return None
 
