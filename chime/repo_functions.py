@@ -439,7 +439,7 @@ def abandon_branch(clone, default_branch_name, working_branch_name, comment_text
     # Add an empty commit with abandonment note.
     #
     clone.branches[default_branch_name].checkout()
-    clone.index.commit(message.encode('utf-8'))
+    clone.index.commit(message)
 
     #
     # Delete the old branch.
