@@ -1509,8 +1509,8 @@ class TestApp (TestCase):
             self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": art_slug, "file_title": art_title, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data.decode('utf-8'))
 
     # in TestApp
-    def test_change_article_title_to_non_roman_characters(self):
-        ''' Changing an article's title to non-roman characters and saving it raises no errors.
+    def test_save_non_roman_characters_to_article(self):
+        ''' Adding non-roman characters to an article's title and body raises no unicode errors.
         '''
         with HTTMock(self.auth_csv_example_allowed):
             with HTTMock(self.mock_persona_verify_erica):
@@ -1522,7 +1522,7 @@ class TestApp (TestCase):
             erica.add_branch_cat_subcat_article(*args)
 
             # Edit the new article and give it a non-roman character title
-            erica.edit_article('快速狐狸', 'Myrmeconema Neotropicum')
+            erica.edit_article('快速狐狸', 'Myrmeconema ੯ूᵕू ໒꒱ƶƵ Neotropicum')
 
     # in TestApp
     def test_new_item_has_name_and_title(self):
