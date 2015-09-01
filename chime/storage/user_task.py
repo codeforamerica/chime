@@ -31,6 +31,10 @@ class UserTask():
     def open(self, path, *args, **kwargs):
         return open(join(self.repo.working_dir, path), *args, **kwargs)
 
+    def commit(self, message):
+        self.repo.git.commit(m=message, a=True)
+        self.repo.git.push('origin', self.repo.active_branch.name)
+
     def cleanup(self):
         pass
 

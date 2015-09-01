@@ -61,3 +61,15 @@ class TestFirst(TestCase):
         with get_usertask("erica", "task-xyz", self.origin_dirname) as usertask:
             with usertask.open('parking.md') as file:
                 self.assertEqual(file.read(), '---\nold stuff')
+
+    def testCommitWorks(self):
+        with get_usertask("erica", "task-xyz", self.origin_dirname) as usertask:
+            with usertask.open('parking.md', 'w') as file:
+                file.write("---\nnew stuff")
+            usertask.commit('I wrote new things')
+        with get_usertask("frances", "task-xyz", self.origin_dirname) as usertask:
+            with usertask.open('parking.md') as file:
+                self.assertEqual(file.read(), '---\nnew stuff')
+
+# test empty commit
+# test create new files
