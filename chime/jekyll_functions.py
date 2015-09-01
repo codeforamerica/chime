@@ -144,7 +144,7 @@ def build_jekyll_site(dirname):
     project_dir = os.path.join(python_dir, "..")
     jekyll_script = os.path.realpath(os.path.join(project_dir, 'jekyll/run-jekyll.sh'))
 
-    call = [jekyll_script, 'build']
+    call = [jekyll_script, 'build', '--quiet']
     try:
         build = Popen(call, cwd=dirname)
         build.wait()

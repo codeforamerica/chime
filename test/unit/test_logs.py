@@ -225,8 +225,6 @@ class TestLogger(LogTestCase):
             erica.open_link_blindly(url='/fail')
 
         self.assertEqual(1, len(cm.output))
-        sys.stderr.write(cm.output[0])
-        sys.stderr.write("\n")
 
         self.assertTrue(hasattr(cm.records[0], 'request'))
         self.assertRegexpMatches(cm.output[0], '.*ERROR.*blow up.*')

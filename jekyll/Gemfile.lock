@@ -80,6 +80,3 @@ DEPENDENCIES
   directory-structure-generator!
   jekyll
   therubyracer
-
-BUNDLED WITH
-   1.10.6
