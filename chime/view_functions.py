@@ -961,9 +961,6 @@ def publish_commit(repo, publish_path):
 
         # http://stackoverflow.com/questions/4479960/git-checkout-to-a-specific-folder
         environ['GIT_WORK_TREE'], old_GWT = checkout_dir, environ.get('GIT_WORK_TREE')
-        sys.stderr.write("Git work tree is {}\n".format(environ['GIT_WORK_TREE']))
-        sys.stderr.write("Repo {}\n".format(repr(repo)))
-        sys.stderr.write("Hexsha {}\n".format(repo.commit().hexsha))
         repo.git.checkout(repo.commit().hexsha, '.')
 
         built_dir = build_jekyll_site(checkout_dir)
