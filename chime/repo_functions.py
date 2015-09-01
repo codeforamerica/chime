@@ -100,6 +100,14 @@ class ChimeRepo(Repo):
 
         return dirs
 
+def blap(unique_id):
+    import time
+    from random import randint
+    wait_time = randint(1, 10)
+    print u'--> called blap from thread {} – now waiting {} seconds'.format(unique_id, wait_time)
+    time.sleep(wait_time)
+    print u'<-- blap done waiting after {} seconds in thread {}'.format(wait_time, unique_id)
+
 def _origin(branch_name):
     ''' Format the branch name into a origin path and return it.
     '''

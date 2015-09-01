@@ -15,6 +15,7 @@ from slugify import slugify
 import json
 import logging
 import tempfile
+from threading import Thread
 logging.disable(logging.CRITICAL)
 
 repo_root = abspath(join(dirname(__file__), '..'))
@@ -862,6 +863,13 @@ class TestRepo (TestCase):
         preview_dir = jekyll_functions.build_jekyll_site(new_clone.working_dir)
         # the directory structure we built exists in the preview
         self.assertTrue(exists(join(preview_dir, view_functions.strip_index_file(art_path), u'index.html')))
+
+        # dummy test for threading
+        for step in range(10):
+            go_thread = Thread(target=repo_functions.blap, args=(unicode(uuid4()),))
+            go_thread.start()
+
+        # ;;;
 
     # in TestRepo
     def test_peer_review(self):
