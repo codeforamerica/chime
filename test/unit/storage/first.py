@@ -1,16 +1,15 @@
-from storage.user_task import UserTask
-from unit.test_logs import TestCase
-from subprocess import check_call, PIPE
+from subprocess import check_call
 from tempfile import mkdtemp
 from shutil import rmtree
 from os.path import join
 from os import mkdir
 
+from storage.user_task import get_usertask
+from unit.test_logs import TestCase
+
 
 class TestFirst(TestCase):
-
     def setUp(self):
-
         self.working_dirname = mkdtemp(prefix='storage-test-')
 
         #
@@ -33,7 +32,7 @@ class TestFirst(TestCase):
         check_call('git checkout -b task-xyz'.split(), **git_kwargs)
 
         with open(join(clone_dirname, 'parking.md'), 'w') as file:
-            file.write('---\nsome stuff.')
+            file.write('---\nold stuff')
 
         check_call('git add parking.md'.split(), **git_kwargs)
         check_call('git commit -m Second'.split(), **git_kwargs)
@@ -41,13 +40,24 @@ class TestFirst(TestCase):
         rmtree(clone_dirname)
 
     def tearDown(self):
-
         rmtree(self.working_dirname)
 
-
     def testReadsExistingRepo(self):
-        usertask = UserTask("erica", "task-xyz", self.origin_dirname)
-        with usertask.open('parking.md') as file:
-            self.assertEqual(file.read(3), '---')
+        with get_usertask("erica", "task-xyz", self.origin_dirname) as usertask:
+            with usertask.open('parking.md') as file:
+                self.assertEqual(file.read(3), '---')
 
+    def testWrite(self):
+        with get_usertask("erica", "task-xyz", self.origin_dirname) as usertask:
+            with usertask.open('parking.md', 'w') as file:
+                file.write("---\nnew stuff")
+            with usertask.open('parking.md') as file:
+                self.assertEqual(file.read(), '---\nnew stuff')
 
+    def testIsAlwaysClean(self):
+        with get_usertask("erica", "task-xyz", self.origin_dirname) as usertask:
+            with usertask.open('parking.md', 'w') as file:
+                file.write("---\nnew stuff")
+        with get_usertask("erica", "task-xyz", self.origin_dirname) as usertask:
+            with usertask.open('parking.md') as file:
+                self.assertEqual(file.read(), '---\nold stuff')
