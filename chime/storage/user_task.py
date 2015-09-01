@@ -28,14 +28,24 @@ class UserTask():
         self.repo.create_head(taskname, 'origin/' + taskname, force=True)
         self.repo.heads[taskname].checkout()
 
-    def open(self, path, *args, **kwargs):
+    def _open(self, path, *args, **kwargs):
         return open(join(self.repo.working_dir, path), *args, **kwargs)
+
+    def read(self, filename):
+        with self._open(filename, 'r') as file:
+            return file.read()
+
+    def write(self, filename, content):
+        with self._open(filename, 'w') as file:
+            file.write(content)
+        self.repo.git.add(filename)
 
     def commit(self, message):
         self.repo.git.commit(m=message, a=True)
         self.repo.git.push('origin', self.repo.active_branch.name)
 
     def cleanup(self):
+        # once we have locking, we will unlock here
         pass
 
     def __del__(self):

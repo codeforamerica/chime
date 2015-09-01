@@ -44,32 +44,36 @@ class TestFirst(TestCase):
 
     def testReadsExistingRepo(self):
         with get_usertask("erica", "task-xyz", self.origin_dirname) as usertask:
-            with usertask.open('parking.md') as file:
-                self.assertEqual(file.read(3), '---')
+            self.assertEqual(usertask.read('parking.md'), '---\nold stuff')
 
     def testWrite(self):
         with get_usertask("erica", "task-xyz", self.origin_dirname) as usertask:
-            with usertask.open('parking.md', 'w') as file:
-                file.write("---\nnew stuff")
-            with usertask.open('parking.md') as file:
-                self.assertEqual(file.read(), '---\nnew stuff')
+            usertask.write('parking.md', "---\nnew stuff")
+            self.assertEqual(usertask.read('parking.md'), '---\nnew stuff')
 
     def testIsAlwaysClean(self):
         with get_usertask("erica", "task-xyz", self.origin_dirname) as usertask:
-            with usertask.open('parking.md', 'w') as file:
-                file.write("---\nnew stuff")
+            usertask.write('parking.md', "---\nnew stuff")
         with get_usertask("erica", "task-xyz", self.origin_dirname) as usertask:
-            with usertask.open('parking.md') as file:
-                self.assertEqual(file.read(), '---\nold stuff')
+            self.assertEqual(usertask.read('parking.md'), '---\nold stuff')
 
-    def testCommitWorks(self):
+    def testCommitWrite(self):
         with get_usertask("erica", "task-xyz", self.origin_dirname) as usertask:
-            with usertask.open('parking.md', 'w') as file:
-                file.write("---\nnew stuff")
+            usertask.write('parking.md', "---\nnew stuff")
             usertask.commit('I wrote new things')
         with get_usertask("frances", "task-xyz", self.origin_dirname) as usertask:
-            with usertask.open('parking.md') as file:
-                self.assertEqual(file.read(), '---\nnew stuff')
+            self.assertEqual(usertask.read('parking.md'), '---\nnew stuff')
+
+    def testCommitNewFile(self):
+        with get_usertask("erica", "task-xyz", self.origin_dirname) as usertask:
+            usertask.write('jobs.md', "---\nnew stuff")
+            usertask.commit('I wrote new things')
+        with get_usertask("frances", "task-xyz", self.origin_dirname) as usertask:
+            self.assertEqual(usertask.read('jobs.md'), '---\nnew stuff')
 
 # test empty commit
 # test create new files
+# still needs locking
+# merge conflicts
+# task deletion
+#
