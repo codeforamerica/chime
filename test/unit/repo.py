@@ -792,6 +792,78 @@ class TestRepo (TestCase):
         self.assertTrue(self.clone2.commit().message.startswith('Abandoned work from'))
 
     # in TestRepo
+    def test_concurrent_edits_and_previews(self):
+        ''' Simulate someone switching between editing and previewing in separate windows
+        '''
+        # create a fresh ChimeRepo
+        erica_email = u'erica@example.com'
+        erica_name = u'Erica Example'
+
+        source_repo = self.origin
+        first_commit = list(source_repo.iter_commits())[-1].hexsha
+        dir_name = 'repo-{}-{}'.format(first_commit[:8], slugify(erica_email))
+        user_dir = realpath(join(self.work_path, quote(dir_name)))
+
+        if isdir(user_dir):
+            new_clone = ChimeRepo(user_dir)
+            new_clone.git.reset(hard=True)
+            new_clone.remotes.origin.fetch()
+        else:
+            new_clone = source_repo.clone(user_dir, bare=False)
+
+        # tell git to ignore merge conflicts on the task metadata file
+        repo_functions.ignore_task_metadata_on_merge(new_clone)
+
+        # get a fresh start branch
+        task_description, task_beneficiary = unicode(uuid4()), unicode(uuid4())
+        branch = repo_functions.get_start_branch(new_clone, 'master', task_description, task_beneficiary, erica_email)
+
+        # set up git environment
+        environ['GIT_AUTHOR_NAME'] = erica_name
+        environ['GIT_COMMITTER_NAME'] = erica_name
+        environ['GIT_AUTHOR_EMAIL'] = erica_email
+        environ['GIT_COMMITTER_EMAIL'] = erica_email
+
+        # create and commit a topic
+        topic_title = unicode(uuid4())
+        add_message, topic_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, u'', topic_title, view_functions.CATEGORY_LAYOUT)
+        self.assertEqual(True, do_save)
+        repo_functions.save_working_file(new_clone, topic_path, add_message, new_clone.commit().hexsha, 'master')
+
+        # create and commit a subtopic
+        subtopic_title = unicode(uuid4())
+        add_message, subtopic_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, redirect_path.rstrip('/'), subtopic_title, view_functions.CATEGORY_LAYOUT)
+        self.assertEqual(True, do_save)
+        repo_functions.save_working_file(new_clone, subtopic_path, add_message, new_clone.commit().hexsha, 'master')
+
+        # create and commit an article
+        art_title = unicode(uuid4())
+        add_message, art_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, redirect_path.rstrip('/'), art_title, view_functions.ARTICLE_LAYOUT)
+        self.assertEqual(True, do_save)
+        repo_functions.save_working_file(new_clone, art_path, add_message, new_clone.commit().hexsha, 'master')
+
+        # verify the values
+        index_path = join(new_clone.working_dir, art_path)
+        with open(index_path) as file:
+            front_matter, body = jekyll_functions.load_jekyll_doc(file)
+        self.assertEqual(front_matter['title'], art_title)
+        self.assertEqual(front_matter['description'], u'')
+        self.assertEqual(body, u'')
+
+        # edit and save the article
+        new_title, new_description = unicode(uuid4()), unicode(uuid4())
+        make_changes = {'en-title': new_title, 'en-description': new_description, 'en-body': u'', 'hexsha': new_clone.commit().hexsha}
+        new_values = dict(front_matter)
+        new_values.update(make_changes)
+        new_path, did_save = view_functions.save_page(repo=new_clone, default_branch_name='master', working_branch_name=branch.name, file_path=art_path, new_values=new_values)
+        self.assertEqual(True, do_save)
+
+        # build the jekyll site for preview
+        preview_dir = jekyll_functions.build_jekyll_site(new_clone.working_dir)
+        # the directory structure we built exists in the preview
+        self.assertTrue(exists(join(preview_dir, view_functions.strip_index_file(art_path), u'index.html')))
+
+    # in TestRepo
     def test_peer_review(self):
         ''' Exercise the review process
         '''
