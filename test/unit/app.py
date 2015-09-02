@@ -1886,8 +1886,8 @@ class TestApp (TestCase):
 
             # test that the contents match our expectations
             self.assertEqual(len(dir_columns), 4)
-            self.assertEqual(len(dir_columns[0]['files']), 5)
-            expected = {'hello': u'category', 'index.md': u'file', 'other': u'folder', 'other.md': u'file', 'sub': u'folder'}
+            self.assertEqual(len(dir_columns[0]['files']), 6)
+            expected = {'hello': u'category', 'img': u'folder', 'index.md': u'file', 'other': u'folder', 'other.md': u'file', 'sub': u'folder'}
             for item in dir_columns[0]['files']:
                 self.assertTrue(item['name'] in expected)
                 self.assertTrue(expected[item['name']] == item['display_type'])
