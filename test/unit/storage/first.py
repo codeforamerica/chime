@@ -4,8 +4,8 @@ from shutil import rmtree
 from os.path import join
 from os import mkdir
 
-from storage.user_task import get_usertask
-from unit.test_logs import TestCase
+from chime.storage.user_task import get_usertask
+from unittest import TestCase
 
 
 class TestFirst(TestCase):
