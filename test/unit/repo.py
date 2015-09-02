@@ -862,32 +862,24 @@ class TestRepo (TestCase):
 
         # set up an edit thread
         edit_thread = Thread(target=view_functions.save_page, kwargs=save_kwargs)
+        # start the edit thread
+        edit_thread.start()
 
-        # build the jekyll site for preview
-        preview_kwargs = dict(dirname=new_clone.working_dir)
-        # preview_dir = jekyll_functions.build_jekyll_site(**preview_kwargs)
-        # # the directory structure we built exists in the preview
-        # self.assertTrue(exists(join(preview_dir, view_functions.strip_index_file(art_path), u'index.html')))
-
-        # spin up some preview threads
+        # spin up and start some preview threads
         preview_threads = []
-        num_threads = 8
-        for thr in range(num_threads):
-            thread = Thread(target=jekyll_functions.build_jekyll_site, kwargs=preview_kwargs)
+        asset_path_list = [u'index.html', u'img/icon_search.svg', u'img/logo_merriweather.png', u'css/main.css']
+        for asset_path in asset_path_list:
+            preview_kwargs = dict(working_dir=new_clone.working_dir, path=asset_path)
+            thread = Thread(target=view_functions.get_preview_asset_response, kwargs=preview_kwargs)
             thread.start()
             preview_threads.append(thread)
 
-        edit_thread.start()
+        # join all the threads
         edit_thread.join()
         for thr in preview_threads:
             thr.join()
 
-        # ;;;
-
-        # dummy test for threading
-        # for step in range(10):
-        #     go_thread = Thread(target=repo_functions.blap, args=(unicode(uuid4()),))
-        #     go_thread.start()
+        # self.assertTrue(exists(join(preview_dir, view_functions.strip_index_file(art_path), u'index.html')))
 
         # ;;;
 
