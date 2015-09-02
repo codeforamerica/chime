@@ -856,18 +856,38 @@ class TestRepo (TestCase):
         make_changes = {'en-title': new_title, 'en-description': new_description, 'en-body': u'', 'hexsha': new_clone.commit().hexsha}
         new_values = dict(front_matter)
         new_values.update(make_changes)
-        new_path, did_save = view_functions.save_page(repo=new_clone, default_branch_name='master', working_branch_name=branch.name, file_path=art_path, new_values=new_values)
-        self.assertEqual(True, do_save)
+        save_kwargs = dict(repo=new_clone, default_branch_name='master', working_branch_name=branch.name, file_path=art_path, new_values=new_values)
+        # new_path, did_save = view_functions.save_page(**save_kwargs)
+        # self.assertEqual(True, did_save)
+
+        # set up an edit thread
+        edit_thread = Thread(target=view_functions.save_page, kwargs=save_kwargs)
 
         # build the jekyll site for preview
-        preview_dir = jekyll_functions.build_jekyll_site(new_clone.working_dir)
-        # the directory structure we built exists in the preview
-        self.assertTrue(exists(join(preview_dir, view_functions.strip_index_file(art_path), u'index.html')))
+        preview_kwargs = dict(dirname=new_clone.working_dir)
+        # preview_dir = jekyll_functions.build_jekyll_site(**preview_kwargs)
+        # # the directory structure we built exists in the preview
+        # self.assertTrue(exists(join(preview_dir, view_functions.strip_index_file(art_path), u'index.html')))
+
+        # spin up some preview threads
+        preview_threads = []
+        num_threads = 8
+        for thr in range(num_threads):
+            thread = Thread(target=jekyll_functions.build_jekyll_site, kwargs=preview_kwargs)
+            thread.start()
+            preview_threads.append(thread)
+
+        edit_thread.start()
+        edit_thread.join()
+        for thr in preview_threads:
+            thr.join()
+
+        # ;;;
 
         # dummy test for threading
-        for step in range(10):
-            go_thread = Thread(target=repo_functions.blap, args=(unicode(uuid4()),))
-            go_thread.start()
+        # for step in range(10):
+        #     go_thread = Thread(target=repo_functions.blap, args=(unicode(uuid4()),))
+        #     go_thread.start()
 
         # ;;;
 
