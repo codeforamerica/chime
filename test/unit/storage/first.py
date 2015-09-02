@@ -12,31 +12,27 @@ class TestFirst(TestCase):
     def setUp(self):
         self.working_dirname = mkdtemp(prefix='storage-test-')
 
-        #
         # Make a mostly-empty repo with parking.md file,
         # one master commit, and one branch called task-xyz.
-        #
-        git_kwargs = dict(stderr=open('/dev/null', 'w'), stdout=open('/dev/null', 'w'))
 
         self.origin_dirname = join(self.working_dirname, 'origin')
-        mkdir(self.origin_dirname)
-        check_call('git --bare init'.split(), cwd=self.origin_dirname, **git_kwargs)
-
         clone_dirname = join(self.working_dirname, 'clone')
-        check_call(('git', 'clone', self.origin_dirname, clone_dirname), **git_kwargs)
 
-        git_kwargs.update(dict(cwd=clone_dirname))
+        mkdir(self.origin_dirname)
+        call_git('--bare init', self.origin_dirname)
 
-        check_call('git commit -m First --allow-empty'.split(), **git_kwargs)
-        check_call('git push origin master'.split(), **git_kwargs)
-        check_call('git checkout -b task-xyz'.split(), **git_kwargs)
+        call_git(['clone', self.origin_dirname, clone_dirname])
+
+        call_git('commit -m First --allow-empty', clone_dirname)
+        call_git('push origin master', clone_dirname)
+        call_git('checkout -b task-xyz', clone_dirname)
 
         with open(join(clone_dirname, 'parking.md'), 'w') as file:
             file.write('---\nold stuff')
 
-        check_call('git add parking.md'.split(), **git_kwargs)
-        check_call('git commit -m Second'.split(), **git_kwargs)
-        check_call('git push origin task-xyz'.split(), **git_kwargs)
+        call_git('add parking.md', clone_dirname)
+        call_git('commit -m Second', clone_dirname)
+        call_git('push origin task-xyz', clone_dirname)
         rmtree(clone_dirname)
 
     def tearDown(self):
@@ -46,7 +42,7 @@ class TestFirst(TestCase):
         with get_usertask("erica", "task-xyz", self.origin_dirname) as usertask:
             self.assertEqual(usertask.read('parking.md'), '---\nold stuff')
 
-    def testWrite(self):
+    def testWriteWithImmediateRead(self):
         with get_usertask("erica", "task-xyz", self.origin_dirname) as usertask:
             usertask.write('parking.md', "---\nnew stuff")
             self.assertEqual(usertask.read('parking.md'), '---\nnew stuff')
@@ -70,6 +66,18 @@ class TestFirst(TestCase):
             usertask.commit('I wrote new things')
         with get_usertask("frances", "task-xyz", self.origin_dirname) as usertask:
             self.assertEqual(usertask.read('jobs.md'), '---\nnew stuff')
+
+
+def call_git(command, working_dir=None):
+    if type(command) is list:
+        command = ['git'] + command
+    elif type(command) is str:
+        command = ['git'] + command.split()
+    else:
+        raise ValueError("unknown type for {}".format(command))
+
+    check_call(command, cwd=working_dir,
+               stderr=open('/dev/null', 'w'), stdout=open('/dev/null', 'w'))
 
 # test empty commit
 # test create new files
