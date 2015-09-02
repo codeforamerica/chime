@@ -24,9 +24,9 @@ class UserTask():
         # Fetch all branches from origin.
         self.repo.git.fetch('origin')
 
-        # Check out local clone to origin taskname.
-        self.repo.create_head(taskname, 'origin/' + taskname, force=True)
-        self.repo.heads[taskname].checkout()
+        # Point local master to origin taskname.
+        self.repo.git.reset('origin/{}'.format(taskname), hard=True)
+        self.taskname = taskname
 
     def _open(self, path, *args, **kwargs):
         return open(join(self.repo.working_dir, path), *args, **kwargs)
@@ -41,8 +41,9 @@ class UserTask():
         self.repo.git.add(filename)
 
     def commit(self, message):
+        # Commit to local master, push to origin taskname.
         self.repo.git.commit(m=message, a=True)
-        self.repo.git.push('origin', self.repo.active_branch.name)
+        self.repo.git.push('origin', 'master:{}'.format(self.taskname))
 
     def cleanup(self):
         # once we have locking, we will unlock here
