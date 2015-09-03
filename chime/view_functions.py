@@ -500,8 +500,11 @@ def log_application_errors(route_function):
 
     return decorated_function
 
-
 def lock_on_user(route_function):
+    ''' Lock decorator for route functions.
+
+        Prevents conflicts with flock()
+    '''
     @wraps(route_function)
     def decorated_function(*args, **kwargs):
         safe_username = re.sub(r'\W+', '-', session.get('email', 'nobody'))
