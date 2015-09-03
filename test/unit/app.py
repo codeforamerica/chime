@@ -14,6 +14,8 @@ from datetime import date, timedelta, datetime
 import sys
 from chime.repo_functions import ChimeRepo
 from slugify import slugify
+from multiprocessing.pool import ThreadPool
+from multiprocessing import Pool
 import json
 import time
 import logging
@@ -2552,6 +2554,34 @@ class TestApp (TestCase):
             rendered_categories = [tag.text for tag in frances.soup.find_all('a', class_='category')]
             sorted_categories = sorted(rendered_categories)
             self.assertEqual(rendered_categories, sorted_categories)
+
+    # in TestApp
+    def test_overload_front_page(self):
+        ''' Load the front page multiple times.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in('frances@example.com')
+
+            # Start a new task
+            frances.start_task('Beating Crunches', 'Door-Spider Traps')
+
+            with self.app.test_request_context():
+                # hit the front page a bunch of times
+                times = 40
+                pool = Pool(processes=times)
+                threads = []
+                for blip in range(times):
+                    threads.append(pool.apply_async(view_functions.render_activities_list))
+
+                # wait until the threads are done
+                for thread in threads:
+                    thread.wait()
+
+                # verify that we got good responses
+                for thread in threads:
+                    self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('activities-list') in thread.get())
 
 class TestPublishApp (TestCase):
 

@@ -860,7 +860,7 @@ class TestRepo (TestCase):
         save_kwargs = dict(repo=new_clone, default_branch_name='master', working_branch_name=branch.name, file_path=art_path, new_values=new_values)
 
         # start an edit thread
-        pool = ThreadPool(processes=5)
+        pool = Pool(processes=5)
         edit_thread = pool.apply_async(view_functions.save_page, (), save_kwargs)
 
         # start some preview threads
