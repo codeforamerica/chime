@@ -1076,13 +1076,20 @@ def publish_or_destroy_activity(branch_name, action, comment_text=None):
 def render_activities_list(task_description=None, task_beneficiary=None):
     ''' Render the activities list page
     '''
+    uid = unicode(uuid.uuid4())[-5:]
+    start_time = time.time()
+    delta = round(time.time() - start_time, 2)
+    print u'*> [{}] start render_activities_list {}'.format(delta, uid)
     repo = ChimeRepo(current_app.config['REPO_PATH'])
     master_name = current_app.config['default_branch']
     branch_names = [b.name for b in repo.branches if b.name != master_name]
 
     activities = []
-
+    delta = round(time.time() - start_time, 2)
     for branch_name in branch_names:
+        if branch_name in ('body', 'title'):
+            continue
+
         safe_branch = branch_name2path(branch_name)
 
         try:
@@ -1090,6 +1097,9 @@ def render_activities_list(task_description=None, task_beneficiary=None):
         except GitCommandError:
             # Skip this branch if it looks to be an orphan. Just don't show it.
             continue
+
+        delta = round(time.time() - start_time, 2)
+        print u'-1- [{}] {}'.format(delta, uid)
 
         # contains 'author_email', 'task_description', 'task_beneficiary'
         activity = get_task_metadata_for_branch(repo, branch_name)
@@ -1102,6 +1112,9 @@ def render_activities_list(task_description=None, task_beneficiary=None):
             repo=repo, default_branch_name=current_app.config['default_branch'],
             working_branch_name=branch_name, actor_email=session.get('email', None)
         )
+
+        delta = round(time.time() - start_time, 2)
+        print u'-2- [{}] {}'.format(delta, uid)
 
         date_created = repo.git.log('--format=%ad', '--date=relative', '--', TASK_METADATA_FILENAME).split('\n')[-1]
         date_updated = repo.git.log('--format=%ad', '--date=relative').split('\n')[0]
@@ -1129,6 +1142,8 @@ def render_activities_list(task_description=None, task_beneficiary=None):
     if task_beneficiary:
         kwargs.update(task_beneficiary=task_beneficiary)
 
+    delta = round(time.time() - start_time, 2)
+    print u'*> [{}] end render_activities_list {}'.format(delta, uid)
     return render_template('activities-list.html', **kwargs)
 
 def make_kwargs_for_activity_files_page(repo, branch_name, path):
@@ -1352,6 +1367,7 @@ def get_activity_action_and_authorized(branch_name, comment_text, action_list):
 def get_preview_asset_response(working_dir, path):
     ''' Make sure a Jekyll preview is ready and return a response for the passed asset.
     '''
+    print u'*> start get_preview_asset_response'
     build_jekyll_site(working_dir)
 
     view_path = join(working_dir, '_site', path or '')
@@ -1375,11 +1391,13 @@ def get_preview_asset_response(working_dir, path):
     local_path = local_paths[0]
     mime_type, _ = guess_type(local_path)
 
+    print u'*> end get_preview_asset_response'
     return Response(open(local_path).read(), 200, {'Content-Type': mime_type})
 
 def save_page(repo, default_branch_name, working_branch_name, file_path, new_values):
     ''' Save the page with the passed values
     '''
+    print u'*> start save_page'
     did_save = True
     working_branch_name = branch_var2name(working_branch_name)
     if get_activity_working_state(repo, default_branch_name, working_branch_name) != constants.WORKING_STATE_ACTIVE:
@@ -1498,6 +1516,7 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
         Logger.debug('  {}'.format(repr(conflict.local_commit.tree[file_path].data_stream.read())))
         raise conflict
 
+    print u'*> end save_page'
     return file_path, did_save
 
 def should_redirect():
