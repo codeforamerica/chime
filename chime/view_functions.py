@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from logging import getLogger
-import sys
+
+from .simple_flock import SimpleFlock
 
 Logger = getLogger('chime.view_functions')
 
@@ -35,7 +36,7 @@ from .repo_functions import (
     get_existing_branch, get_branch_if_exists_locally, ignore_task_metadata_on_merge,
     get_commit_classification, ChimeRepo, get_task_metadata_for_branch, complete_branch,
     abandon_branch, clobber_default_branch, get_review_state_and_authorized,
-    save_working_file, update_review_state, provide_feedback, move_existing_file,
+    update_review_state, provide_feedback, move_existing_file,
     get_last_edited_email, mark_upstream_push_needed, MergeConflict,
     get_activity_working_state, ACTIVITY_CREATED_MESSAGE, TASK_METADATA_FILENAME,
     make_branch_name, save_local_working_file, sync_with_default_and_upstream_branches
@@ -494,6 +495,17 @@ def log_application_errors(route_function):
                 Logger.error(e, exc_info=True, extra=extras)
 
             raise
+
+    return decorated_function
+
+
+def lock_on_user(route_function):
+    @wraps(route_function)
+    def decorated_function(*args, **kwargs):
+        safe_username = re.sub(r'\W+', '-', session.get('email', 'nobody'))
+        lock_path = join(current_app.config['WORK_PATH'], "{}.lock".format(safe_username))
+        with SimpleFlock(lock_path):
+            return route_function(*args, **kwargs)
 
     return decorated_function
 
