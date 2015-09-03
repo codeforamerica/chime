@@ -859,9 +859,8 @@ class TestRepo (TestCase):
         new_values.update(make_changes)
         save_kwargs = dict(repo=new_clone, default_branch_name='master', working_branch_name=branch.name, file_path=art_path, new_values=new_values)
 
-        # start an edit thread
+        # set up the pool
         pool = Pool(processes=5)
-        edit_thread = pool.apply_async(view_functions.save_page, (), save_kwargs)
 
         # start some preview threads
         previews = []
@@ -871,14 +870,12 @@ class TestRepo (TestCase):
             thread = pool.apply_async(view_functions.get_preview_asset_response, (), preview_kwargs)
             previews.append(dict(path=asset_path, thread=thread))
 
-        # wait for all the threads to finish
-        edit_thread.wait()
+        # start an edit thread
+        edit_thread = pool.apply_async(view_functions.save_page, (), save_kwargs)
+
+        # wait for all the preview threads to finish
         for preview in previews:
             preview['thread'].wait()
-
-        # check the threads' return values
-        edit_return = edit_thread.get()
-        self.assertEqual(True, edit_return[1])
 
         # all the preview responses are good and the mime types are correct
         mimetype_lookup = dict(css='text/css', svg='image/svg+xml', html='text/html', png='image/png')
@@ -892,6 +889,13 @@ class TestRepo (TestCase):
         preview_dir = join(new_clone.working_dir, '_site')
         for path in asset_path_list:
             self.assertTrue(exists(join(preview_dir, path)))
+
+        # make sure the edit thread finishes
+        edit_thread.wait()
+
+        # check the edit thread return values
+        edit_return = edit_thread.get()
+        self.assertEqual(True, edit_return[1])
 
     # in TestRepo
     def test_peer_review(self):
