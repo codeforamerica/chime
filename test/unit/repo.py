@@ -15,7 +15,8 @@ from slugify import slugify
 import json
 import logging
 import tempfile
-from threading import Thread
+from multiprocessing.pool import ThreadPool
+from multiprocessing import Pool
 logging.disable(logging.CRITICAL)
 
 repo_root = abspath(join(dirname(__file__), '..'))
@@ -857,31 +858,40 @@ class TestRepo (TestCase):
         new_values = dict(front_matter)
         new_values.update(make_changes)
         save_kwargs = dict(repo=new_clone, default_branch_name='master', working_branch_name=branch.name, file_path=art_path, new_values=new_values)
-        # new_path, did_save = view_functions.save_page(**save_kwargs)
-        # self.assertEqual(True, did_save)
 
-        # set up an edit thread
-        edit_thread = Thread(target=view_functions.save_page, kwargs=save_kwargs)
-        # start the edit thread
-        edit_thread.start()
+        # start an edit thread
+        pool = ThreadPool(processes=5)
+        edit_thread = pool.apply_async(view_functions.save_page, (), save_kwargs)
 
-        # spin up and start some preview threads
-        preview_threads = []
+        # start some preview threads
+        previews = []
         asset_path_list = [u'index.html', u'img/icon_search.svg', u'img/logo_merriweather.png', u'css/main.css']
         for asset_path in asset_path_list:
             preview_kwargs = dict(working_dir=new_clone.working_dir, path=asset_path)
-            thread = Thread(target=view_functions.get_preview_asset_response, kwargs=preview_kwargs)
-            thread.start()
-            preview_threads.append(thread)
+            thread = pool.apply_async(view_functions.get_preview_asset_response, (), preview_kwargs)
+            previews.append(dict(path=asset_path, thread=thread))
 
-        # join all the threads
-        edit_thread.join()
-        for thr in preview_threads:
-            thr.join()
+        # wait for all the threads to finish
+        edit_thread.wait()
+        for preview in previews:
+            preview['thread'].wait()
 
-        # self.assertTrue(exists(join(preview_dir, view_functions.strip_index_file(art_path), u'index.html')))
+        # check the threads' return values
+        edit_return = edit_thread.get()
+        self.assertEqual(True, edit_return[1])
 
-        # ;;;
+        # all the preview responses are good and the mime types are correct
+        mimetype_lookup = dict(css='text/css', svg='image/svg+xml', html='text/html', png='image/png')
+        for preview in previews:
+            preview_response = preview['thread'].get()
+            self.assertEqual(200, preview_response.status_code)
+            ext = preview['path'].split('.')[1]
+            self.assertEqual(mimetype_lookup[ext], preview_response.mimetype)
+
+        # all the assets exist in the preview folder
+        preview_dir = join(new_clone.working_dir, '_site')
+        for path in asset_path_list:
+            self.assertTrue(exists(join(preview_dir, path)))
 
     # in TestRepo
     def test_peer_review(self):

@@ -1352,8 +1352,6 @@ def get_activity_action_and_authorized(branch_name, comment_text, action_list):
 def get_preview_asset_response(working_dir, path):
     ''' Make sure a Jekyll preview is ready and return a response for the passed asset.
     '''
-    print u'*> get_preview_asset_response / {} / {}'.format(working_dir, path)
-
     build_jekyll_site(working_dir)
 
     view_path = join(working_dir, '_site', path or '')
