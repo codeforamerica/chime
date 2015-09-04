@@ -1373,7 +1373,7 @@ def get_preview_asset_response(working_dir, path):
     print u'*> start get_preview_asset_response'
     build_jekyll_site(working_dir)
 
-    view_path = join(working_dir, '_site', path or '')
+    view_path = join(working_dir, constants.JEKYLL_BUILD_DIRECTORY_NAME, path or '')
 
     # make sure the path points to something that exists
     exists_path = strip_index_file(view_path.rstrip('/'))

@@ -881,7 +881,7 @@ class TestRepo (TestCase):
         mimetype_lookup = dict(css='text/css', svg='image/svg+xml', html='text/html', png='image/png')
         for preview in previews:
             from os import listdir
-            site_loc = join(new_clone.working_dir, '_site')
+            site_loc = join(new_clone.working_dir, constants.JEKYLL_BUILD_DIRECTORY_NAME)
             site_contents = u'{} does not exist!'.format(site_loc)
             img_contents = site_contents
             css_contents = site_contents
@@ -890,14 +890,14 @@ class TestRepo (TestCase):
                 img_contents = listdir(join(site_loc, 'img'))
                 css_contents = listdir(join(site_loc, 'css'))
 
-            self.assertTrue(preview['thread'].successful(), u'Unsuccessful preview for path: {}\n_site contents: {}\nin img: {}\nin css: {}'.format(join(new_clone.working_dir, '_site', preview['path']), site_contents, img_contents, css_contents))
+            self.assertTrue(preview['thread'].successful(), u'Unsuccessful preview for path: {}\n_site contents: {}\nin img: {}\nin css: {}'.format(join(new_clone.working_dir, constants.JEKYLL_BUILD_DIRECTORY_NAME, preview['path']), site_contents, img_contents, css_contents))
             preview_response = preview['thread'].get()
             self.assertEqual(200, preview_response.status_code)
             ext = preview['path'].split('.')[1]
             self.assertEqual(mimetype_lookup[ext], preview_response.mimetype)
 
         # all the assets exist in the preview folder
-        preview_dir = join(new_clone.working_dir, '_site')
+        preview_dir = join(new_clone.working_dir, constants.JEKYLL_BUILD_DIRECTORY_NAME)
         for path in asset_path_list:
             self.assertTrue(exists(join(preview_dir, path)))
 
