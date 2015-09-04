@@ -864,7 +864,7 @@ class TestRepo (TestCase):
 
         # start some preview threads
         previews = []
-        asset_path_list = [u'img/icon_search.svg', u'img/logo_merriweather.png', u'css/main.css', u'index.html']
+        asset_path_list = [u'index.html', u'img/icon_search.svg', u'img/logo_merriweather.png', u'css/main.css']
         for asset_path in asset_path_list:
             preview_kwargs = dict(working_dir=new_clone.working_dir, path=asset_path)
             thread = pool.apply_async(view_functions.get_preview_asset_response, (), preview_kwargs)
@@ -883,9 +883,14 @@ class TestRepo (TestCase):
             from os import listdir
             site_loc = join(new_clone.working_dir, '_site')
             site_contents = u'{} does not exist!'.format(site_loc)
+            img_contents = site_contents
+            css_contents = site_contents
             if exists(site_loc):
                 site_contents = listdir(site_loc)
-            self.assertTrue(preview['thread'].successful(), u'Unsuccessful preview for path {} - _site contents:\n{}'.format(preview['path'], site_contents))
+                img_contents = listdir(join(site_loc, 'img'))
+                css_contents = listdir(join(site_loc, 'css'))
+
+            self.assertTrue(preview['thread'].successful(), u'Unsuccessful preview for path: {}\n_site contents: {}\nin img: {}\nin css: {}'.format(join(new_clone.working_dir, '_site', preview['path']), site_contents, img_contents, css_contents))
             preview_response = preview['thread'].get()
             self.assertEqual(200, preview_response.status_code)
             ext = preview['path'].split('.')[1]
