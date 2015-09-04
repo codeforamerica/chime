@@ -1079,19 +1079,12 @@ def publish_or_destroy_activity(branch_name, action, comment_text=None):
 def render_activities_list(task_description=None, task_beneficiary=None):
     ''' Render the activities list page
     '''
-    uid = unicode(uuid.uuid4())[-5:]
-    start_time = time.time()
-    delta = round(time.time() - start_time, 2)
     repo = ChimeRepo(current_app.config['REPO_PATH'])
     master_name = current_app.config['default_branch']
     branch_names = [b.name for b in repo.branches if b.name != master_name]
 
     activities = []
-    delta = round(time.time() - start_time, 2)
     for branch_name in branch_names:
-        if branch_name in ('body', 'title'):
-            continue
-
         safe_branch = branch_name2path(branch_name)
 
         try:
@@ -1099,8 +1092,6 @@ def render_activities_list(task_description=None, task_beneficiary=None):
         except GitCommandError:
             # Skip this branch if it looks to be an orphan. Just don't show it.
             continue
-
-        delta = round(time.time() - start_time, 2)
 
         # contains 'author_email', 'task_description', 'task_beneficiary'
         activity = get_task_metadata_for_branch(repo, branch_name)
@@ -1113,8 +1104,6 @@ def render_activities_list(task_description=None, task_beneficiary=None):
             repo=repo, default_branch_name=current_app.config['default_branch'],
             working_branch_name=branch_name, actor_email=session.get('email', None)
         )
-
-        delta = round(time.time() - start_time, 2)
 
         date_created = repo.git.log('--format=%ad', '--date=relative', '--', TASK_METADATA_FILENAME).split('\n')[-1]
         date_updated = repo.git.log('--format=%ad', '--date=relative').split('\n')[0]

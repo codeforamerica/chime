@@ -15,8 +15,6 @@ from slugify import slugify
 import json
 import logging
 import tempfile
-from multiprocessing.pool import ThreadPool
-from multiprocessing import Pool
 logging.disable(logging.CRITICAL)
 
 repo_root = abspath(join(dirname(__file__), '..'))

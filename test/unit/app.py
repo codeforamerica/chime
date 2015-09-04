@@ -14,8 +14,7 @@ from datetime import date, timedelta, datetime
 import sys
 from chime.repo_functions import ChimeRepo
 from slugify import slugify
-from multiprocessing.pool import ThreadPool
-from multiprocessing import Pool, Process
+from multiprocessing import Process
 import json
 import time
 import logging
