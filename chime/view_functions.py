@@ -1131,7 +1131,6 @@ def render_activities_list(task_description=None, task_beneficiary=None):
     if task_beneficiary:
         kwargs.update(task_beneficiary=task_beneficiary)
 
-    delta = round(time.time() - start_time, 2)
     return render_template('activities-list.html', **kwargs)
 
 def make_kwargs_for_activity_files_page(repo, branch_name, path):
