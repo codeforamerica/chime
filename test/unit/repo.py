@@ -864,7 +864,7 @@ class TestRepo (TestCase):
 
         # start some preview threads
         previews = []
-        asset_path_list = [u'index.html', u'img/icon_search.svg', u'img/logo_merriweather.png', u'css/main.css']
+        asset_path_list = [u'img/icon_search.svg', u'img/logo_merriweather.png', u'css/main.css', u'index.html']
         for asset_path in asset_path_list:
             preview_kwargs = dict(working_dir=new_clone.working_dir, path=asset_path)
             thread = pool.apply_async(view_functions.get_preview_asset_response, (), preview_kwargs)
