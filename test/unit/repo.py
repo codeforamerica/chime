@@ -880,6 +880,7 @@ class TestRepo (TestCase):
         # all the preview responses are good and the mime types are correct
         mimetype_lookup = dict(css='text/css', svg='image/svg+xml', html='text/html', png='image/png')
         for preview in previews:
+            self.assertTrue(preview['thread'].successful(), u'Unsuccessful preview for path {}'.format(preview['path']))
             preview_response = preview['thread'].get()
             self.assertEqual(200, preview_response.status_code)
             ext = preview['path'].split('.')[1]
