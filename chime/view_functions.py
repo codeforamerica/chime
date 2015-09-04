@@ -1378,7 +1378,8 @@ def get_preview_asset_response(working_dir, path):
     # make sure the path points to something that exists
     exists_path = strip_index_file(view_path.rstrip('/'))
     if not exists(exists_path):
-        abort(404)
+        # abort(404)
+        pass
 
     local_base, _ = splitext(view_path)
 
