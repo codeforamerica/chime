@@ -2559,10 +2559,6 @@ class TestApp (TestCase):
     def test_overload_front_page(self):
         ''' Try to overload the front page with multiple simultaneous requests.
         '''
-        from chime.simple_flock import SimpleFlock
-        lock_dir = mkdtemp(prefix='simpleflocktest')
-        lock_file = join(lock_dir, 'lock')
-
         with HTTMock(self.auth_csv_example_allowed):
             with HTTMock(self.mock_persona_verify_frances):
                 frances = ChimeTestClient(self.app.test_client(), self)
@@ -2571,16 +2567,11 @@ class TestApp (TestCase):
             # Start a new task
             frances.start_task('Beating Crunches', 'Door-Spider Traps')
 
-            def locked_open_link(lf, tc, loc):
-                with SimpleFlock(lf):
-                    tc.open_link(loc)
-
             # hit the front page a bunch of times
-            times = 5
+            times = 20
             pros = []
             for blip in range(times):
-                # process = Process(target=frances.open_link, args=('/',))
-                process = Process(target=locked_open_link, args=(lock_file, frances, '/'))
+                process = Process(target=frances.open_link, args=('/',))
                 process.start()
                 pros.append(process)
 
