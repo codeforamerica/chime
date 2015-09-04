@@ -1390,7 +1390,7 @@ def get_preview_asset_response(working_dir, path):
 
     if not local_paths:
         flash_only(MESSAGE_ACTIVITY_DELETED, u'warning')
-        abort(500)
+        # abort(500)
 
     local_path = local_paths[0]
     mime_type, _ = guess_type(local_path)

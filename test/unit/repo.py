@@ -880,17 +880,7 @@ class TestRepo (TestCase):
         # all the preview responses are good and the mime types are correct
         mimetype_lookup = dict(css='text/css', svg='image/svg+xml', html='text/html', png='image/png')
         for preview in previews:
-            from os import listdir
-            site_loc = join(new_clone.working_dir, constants.JEKYLL_BUILD_DIRECTORY_NAME)
-            site_contents = u'{} does not exist!'.format(site_loc)
-            img_contents = site_contents
-            css_contents = site_contents
-            if exists(site_loc):
-                site_contents = listdir(site_loc)
-                img_contents = listdir(join(site_loc, 'img'))
-                css_contents = listdir(join(site_loc, 'css'))
-
-            self.assertTrue(preview['thread'].successful(), u'Unsuccessful preview for path: {}\n_site contents: {}\nin img: {}\nin css: {}'.format(join(new_clone.working_dir, constants.JEKYLL_BUILD_DIRECTORY_NAME, preview['path']), site_contents, img_contents, css_contents))
+            self.assertTrue(preview['thread'].successful(), u'Unsuccessful preview for path: {}'.format(join(new_clone.working_dir, constants.JEKYLL_BUILD_DIRECTORY_NAME, preview['path'])))
             preview_response = preview['thread'].get()
             self.assertEqual(200, preview_response.status_code)
             ext = preview['path'].split('.')[1]
