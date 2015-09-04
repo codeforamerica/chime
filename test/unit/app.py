@@ -2579,6 +2579,10 @@ class TestApp (TestCase):
             for process in pros:
                 process.join()
 
+            # raise if any errors were raised
+            for process in pros:
+                self.assertEqual(0, process.exitcode, u'A process that was trying to load the front page failed!')
+
 class TestPublishApp (TestCase):
 
     def setUp(self):
