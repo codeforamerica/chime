@@ -32,6 +32,7 @@ def after_request(response):
 @app.route('/', methods=['GET'])
 @log_application_errors
 @login_required
+@lock_on_user
 @synch_required
 def index():
     return render_activities_list()
@@ -201,6 +202,7 @@ def authorization_failed():
 @app.route('/start', methods=['POST'])
 @log_application_errors
 @login_required
+@lock_on_user
 @synch_required
 def start_branch():
     repo = get_repo(flask_app=current_app)
@@ -220,6 +222,7 @@ def start_branch():
 @app.route('/update', methods=['POST'])
 @log_application_errors
 @login_required
+@lock_on_user
 @synched_checkout_required
 def update_activity():
     ''' Update the activity review state or merge, abandon, or clobber the posted branch
@@ -232,6 +235,7 @@ def update_activity():
 @app.route('/checkouts/<ref>.zip')
 @log_application_errors
 @login_required
+@lock_on_user
 @synch_required
 def get_checkout(ref):
     '''
@@ -246,6 +250,7 @@ def get_checkout(ref):
 @app.route('/tree/<branch_name>/view/<path:path>', methods=['GET'])
 @log_application_errors
 @login_required
+@lock_on_user
 @synched_checkout_required
 def branch_view(branch_name, path=None):
     repo = get_repo(flask_app=current_app)
@@ -255,6 +260,7 @@ def branch_view(branch_name, path=None):
 @app.route('/tree/<branch_name>/edit/<path:path>', methods=['GET'])
 @log_application_errors
 @login_required
+@lock_on_user
 @synched_checkout_required
 def branch_edit(branch_name, path=None):
     repo = get_repo(flask_app=current_app)
@@ -293,6 +299,7 @@ def branch_edit(branch_name, path=None):
 @app.route('/tree/<branch_name>/modify/<path:path>', methods=['GET'])
 @log_application_errors
 @login_required
+@lock_on_user
 @synched_checkout_required
 def branch_show_category_form(branch_name, path=None):
     repo = get_repo(flask_app=current_app)
@@ -319,6 +326,7 @@ def branch_show_category_form(branch_name, path=None):
 @app.route('/tree/<branch_name>/modify/<path:path>', methods=['POST'])
 @log_application_errors
 @login_required
+@lock_on_user
 @synched_checkout_required
 def branch_modify_category(branch_name, path=u''):
     ''' Save edits to a category's title and description or delete a category and its contents.
@@ -395,6 +403,7 @@ def branch_modify_category(branch_name, path=u''):
 @app.route('/tree/<branch_name>/edit/<path:path>', methods=['POST'])
 @log_application_errors
 @login_required
+@lock_on_user
 @synched_checkout_required
 def branch_edit_file(branch_name, path=None):
     repo = get_repo(flask_app=current_app)
@@ -454,6 +463,7 @@ def branch_edit_file(branch_name, path=None):
 @app.route('/tree/<branch_name>/', methods=['GET'])
 @log_application_errors
 @login_required
+@lock_on_user
 @synched_checkout_required
 def show_activity_overview(branch_name):
     branch_name = branch_var2name(branch_name)
@@ -512,6 +522,7 @@ def show_activity_overview(branch_name):
 @app.route('/tree/<branch_name>/', methods=['POST'])
 @log_application_errors
 @login_required
+@lock_on_user
 @synched_checkout_required
 def edit_activity_overview(branch_name):
     ''' Handle a POST from a form on the activity overview page
@@ -525,6 +536,7 @@ def edit_activity_overview(branch_name):
 @app.route('/tree/<branch_name>/history/<path:path>', methods=['GET'])
 @log_application_errors
 @login_required
+@lock_on_user
 @synched_checkout_required
 def branch_history(branch_name, path=None):
     branch_name = branch_var2name(branch_name)
@@ -574,6 +586,7 @@ def branch_history(branch_name, path=None):
 @app.route('/tree/<branch_name>/save/<path:path>', methods=['POST'])
 @log_application_errors
 @login_required
+@lock_on_user
 @synch_required
 def branch_save(branch_name, path):
     ''' Handle a submission from the article-edit form.
