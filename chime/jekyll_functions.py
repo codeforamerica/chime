@@ -155,7 +155,7 @@ def build_jekyll_site(dirname):
         raise Exception(error_message)
 
     # By default Jekyll builds into dirname/_site
-    return join(dirname, '_site')
+    return join(dirname, constants.JEKYLL_BUILD_DIRECTORY_NAME)
 
 if __name__ == '__main__':
     import doctest

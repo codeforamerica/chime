@@ -1,10 +1,11 @@
 from __future__ import absolute_import
 from logging import getLogger
-import sys
+
+from .simple_flock import SimpleFlock
 
 Logger = getLogger('chime.view_functions')
 
-from os.path import join, isdir, realpath, basename, exists, sep, split
+from os.path import join, isdir, realpath, basename, exists, sep, split, splitext
 from datetime import datetime
 from os import listdir, environ, walk
 from urllib import quote, unquote
@@ -17,6 +18,7 @@ from collections import Counter
 from tempfile import mkdtemp
 from subprocess import Popen
 from git.cmd import GitCommandError
+from glob import glob
 import csv
 import re
 import json
@@ -25,7 +27,8 @@ import uuid
 
 from dateutil import parser, tz
 from dateutil.relativedelta import relativedelta
-from flask import request, session, current_app, redirect, flash, render_template, abort
+from flask import request, session, current_app, redirect, flash, render_template, abort, Response
+
 from requests import get
 
 from .edit_functions import create_new_page, delete_file, update_page
@@ -35,7 +38,7 @@ from .repo_functions import (
     get_existing_branch, get_branch_if_exists_locally, ignore_task_metadata_on_merge,
     get_commit_classification, ChimeRepo, get_task_metadata_for_branch, complete_branch,
     abandon_branch, clobber_default_branch, get_review_state_and_authorized,
-    save_working_file, update_review_state, provide_feedback, move_existing_file,
+    update_review_state, provide_feedback, move_existing_file,
     get_last_edited_email, mark_upstream_push_needed, MergeConflict,
     get_activity_working_state, ACTIVITY_CREATED_MESSAGE, TASK_METADATA_FILENAME,
     make_branch_name, save_local_working_file, sync_with_default_and_upstream_branches
@@ -494,6 +497,20 @@ def log_application_errors(route_function):
                 Logger.error(e, exc_info=True, extra=extras)
 
             raise
+
+    return decorated_function
+
+def lock_on_user(route_function):
+    ''' Lock decorator for route functions.
+
+        Prevents conflicts with flock()
+    '''
+    @wraps(route_function)
+    def decorated_function(*args, **kwargs):
+        safe_username = re.sub(r'\W+', '-', session.get('email', 'nobody'))
+        lock_path = join(current_app.config['WORK_PATH'], "{}.lock".format(safe_username))
+        with SimpleFlock(lock_path):
+            return route_function(*args, **kwargs)
 
     return decorated_function
 
@@ -1067,7 +1084,6 @@ def render_activities_list(task_description=None, task_beneficiary=None):
     branch_names = [b.name for b in repo.branches if b.name != master_name]
 
     activities = []
-
     for branch_name in branch_names:
         safe_branch = branch_name2path(branch_name)
 
@@ -1334,6 +1350,34 @@ def get_activity_action_and_authorized(branch_name, comment_text, action_list):
         action_authorized = False
 
     return action, action_authorized
+
+def get_preview_asset_response(working_dir, path):
+    ''' Make sure a Jekyll preview is ready and return a response for the passed asset.
+    '''
+    build_jekyll_site(working_dir)
+
+    view_path = join(working_dir, constants.JEKYLL_BUILD_DIRECTORY_NAME, path or '')
+
+    # make sure the path points to something that exists
+    exists_path = strip_index_file(view_path.rstrip('/'))
+    if not exists(exists_path):
+        abort(404)
+
+    local_base, _ = splitext(view_path)
+
+    if isdir(local_base):
+        local_base += '/index'
+
+    local_paths = glob(local_base + '.*')
+
+    if not local_paths:
+        flash_only(MESSAGE_ACTIVITY_DELETED, u'warning')
+        abort(500)
+
+    local_path = local_paths[0]
+    mime_type, _ = guess_type(local_path)
+
+    return Response(open(local_path).read(), 200, {'Content-Type': mime_type})
 
 def save_page(repo, default_branch_name, working_branch_name, file_path, new_values):
     ''' Save the page with the passed values

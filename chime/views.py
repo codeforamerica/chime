@@ -2,10 +2,8 @@ from __future__ import absolute_import
 from logging import getLogger
 Logger = getLogger('chime.views')
 
-from os.path import join, isdir, splitext, exists
+from os.path import join, isdir, exists
 from re import compile, MULTILINE, sub, search
-from mimetypes import guess_type
-from glob import glob
 
 from requests import post
 from slugify import slugify
@@ -15,9 +13,9 @@ from flask import current_app, flash, render_template, redirect, request, Respon
 from . import chime as app
 from . import repo_functions, edit_functions
 from . import publish
-from .jekyll_functions import load_jekyll_doc, build_jekyll_site, load_languages
+from .jekyll_functions import load_jekyll_doc, load_languages
 
-from .view_functions import branch_name2path, branch_var2name, get_repo, login_required, browserid_hostname_required, synch_required, synched_checkout_required, should_redirect, make_redirect, get_auth_data_file, is_allowed_email, common_template_args, log_application_errors, is_article_dir, is_category_dir, make_activity_history, summarize_activity_history, render_edit_view, render_modify_dir, render_list_dir, add_article_or_category, strip_index_file, delete_page, save_page, render_activities_list, update_activity_review_state, flash_only, flash_unique, file_display_name, get_redirect_path_for_solo_directory, CONTENT_FILE_EXTENSION, ARTICLE_LAYOUT, CATEGORY_LAYOUT, MESSAGE_ACTIVITY_DELETED, publish_commit
+from .view_functions import branch_name2path, branch_var2name, get_repo, login_required, lock_on_user, browserid_hostname_required, synch_required, synched_checkout_required, should_redirect, make_redirect, get_auth_data_file, is_allowed_email, common_template_args, log_application_errors, is_article_dir, is_category_dir, make_activity_history, summarize_activity_history, render_edit_view, render_modify_dir, render_list_dir, add_article_or_category, strip_index_file, delete_page, save_page, render_activities_list, update_activity_review_state, flash_only, flash_unique, file_display_name, get_redirect_path_for_solo_directory, get_preview_asset_response, CONTENT_FILE_EXTENSION, ARTICLE_LAYOUT, CATEGORY_LAYOUT, MESSAGE_ACTIVITY_DELETED, publish_commit
 
 from .google_api_functions import read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens, authorize_google, get_google_personal_info, get_google_analytics_properties
 
@@ -34,6 +32,7 @@ def after_request(response):
 @app.route('/', methods=['GET'])
 @log_application_errors
 @login_required
+@lock_on_user
 @synch_required
 def index():
     return render_activities_list()
@@ -203,6 +202,7 @@ def authorization_failed():
 @app.route('/start', methods=['POST'])
 @log_application_errors
 @login_required
+@lock_on_user
 @synch_required
 def start_branch():
     repo = get_repo(flask_app=current_app)
@@ -222,6 +222,7 @@ def start_branch():
 @app.route('/update', methods=['POST'])
 @log_application_errors
 @login_required
+@lock_on_user
 @synched_checkout_required
 def update_activity():
     ''' Update the activity review state or merge, abandon, or clobber the posted branch
@@ -234,6 +235,7 @@ def update_activity():
 @app.route('/checkouts/<ref>.zip')
 @log_application_errors
 @login_required
+@lock_on_user
 @synch_required
 def get_checkout(ref):
     '''
@@ -248,39 +250,17 @@ def get_checkout(ref):
 @app.route('/tree/<branch_name>/view/<path:path>', methods=['GET'])
 @log_application_errors
 @login_required
+@lock_on_user
 @synched_checkout_required
 def branch_view(branch_name, path=None):
     repo = get_repo(flask_app=current_app)
-
-    build_jekyll_site(repo.working_dir)
-
-    view_path = join(repo.working_dir, '_site', path or '')
-
-    # make sure the path points to something that exists
-    exists_path = strip_index_file(view_path.rstrip('/'))
-    if not exists(exists_path):
-        abort(404)
-
-    local_base, _ = splitext(view_path)
-
-    if isdir(local_base):
-        local_base += '/index'
-
-    local_paths = glob(local_base + '.*')
-
-    if not local_paths:
-        flash_only(MESSAGE_ACTIVITY_DELETED, u'warning')
-        abort(500)
-
-    local_path = local_paths[0]
-    mime_type, _ = guess_type(local_path)
-
-    return Response(open(local_path).read(), 200, {'Content-Type': mime_type})
+    return get_preview_asset_response(repo.working_dir, path)
 
 @app.route('/tree/<branch_name>/edit/', methods=['GET'])
 @app.route('/tree/<branch_name>/edit/<path:path>', methods=['GET'])
 @log_application_errors
 @login_required
+@lock_on_user
 @synched_checkout_required
 def branch_edit(branch_name, path=None):
     repo = get_repo(flask_app=current_app)
@@ -319,6 +299,7 @@ def branch_edit(branch_name, path=None):
 @app.route('/tree/<branch_name>/modify/<path:path>', methods=['GET'])
 @log_application_errors
 @login_required
+@lock_on_user
 @synched_checkout_required
 def branch_show_category_form(branch_name, path=None):
     repo = get_repo(flask_app=current_app)
@@ -345,6 +326,7 @@ def branch_show_category_form(branch_name, path=None):
 @app.route('/tree/<branch_name>/modify/<path:path>', methods=['POST'])
 @log_application_errors
 @login_required
+@lock_on_user
 @synched_checkout_required
 def branch_modify_category(branch_name, path=u''):
     ''' Save edits to a category's title and description or delete a category and its contents.
@@ -421,6 +403,7 @@ def branch_modify_category(branch_name, path=u''):
 @app.route('/tree/<branch_name>/edit/<path:path>', methods=['POST'])
 @log_application_errors
 @login_required
+@lock_on_user
 @synched_checkout_required
 def branch_edit_file(branch_name, path=None):
     repo = get_repo(flask_app=current_app)
@@ -480,6 +463,7 @@ def branch_edit_file(branch_name, path=None):
 @app.route('/tree/<branch_name>/', methods=['GET'])
 @log_application_errors
 @login_required
+@lock_on_user
 @synched_checkout_required
 def show_activity_overview(branch_name):
     branch_name = branch_var2name(branch_name)
@@ -538,6 +522,7 @@ def show_activity_overview(branch_name):
 @app.route('/tree/<branch_name>/', methods=['POST'])
 @log_application_errors
 @login_required
+@lock_on_user
 @synched_checkout_required
 def edit_activity_overview(branch_name):
     ''' Handle a POST from a form on the activity overview page
@@ -551,6 +536,7 @@ def edit_activity_overview(branch_name):
 @app.route('/tree/<branch_name>/history/<path:path>', methods=['GET'])
 @log_application_errors
 @login_required
+@lock_on_user
 @synched_checkout_required
 def branch_history(branch_name, path=None):
     branch_name = branch_var2name(branch_name)
@@ -600,6 +586,7 @@ def branch_history(branch_name, path=None):
 @app.route('/tree/<branch_name>/save/<path:path>', methods=['POST'])
 @log_application_errors
 @login_required
+@lock_on_user
 @synch_required
 def branch_save(branch_name, path):
     ''' Handle a submission from the article-edit form.

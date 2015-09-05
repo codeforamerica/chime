@@ -34,3 +34,6 @@ COMMIT_TYPE_COMMENT = u'comment'
 # ISO language codes
 ISO_CODE_ENGLISH = 'en'
 ISO_NAME_ENGLISH = 'English'
+
+# the name of the directory where Jekyll builds its site
+JEKYLL_BUILD_DIRECTORY_NAME = '_site'

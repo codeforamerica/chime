@@ -14,6 +14,7 @@ from datetime import date, timedelta, datetime
 import sys
 from chime.repo_functions import ChimeRepo
 from slugify import slugify
+from multiprocessing import Process
 import json
 import time
 import logging
@@ -1886,8 +1887,8 @@ class TestApp (TestCase):
 
             # test that the contents match our expectations
             self.assertEqual(len(dir_columns), 4)
-            self.assertEqual(len(dir_columns[0]['files']), 5)
-            expected = {'hello': u'category', 'index.md': u'file', 'other': u'folder', 'other.md': u'file', 'sub': u'folder'}
+            self.assertEqual(len(dir_columns[0]['files']), 6)
+            expected = {'hello': u'category', 'img': u'folder', 'index.md': u'file', 'other': u'folder', 'other.md': u'file', 'sub': u'folder'}
             for item in dir_columns[0]['files']:
                 self.assertTrue(item['name'] in expected)
                 self.assertTrue(expected[item['name']] == item['display_type'])
@@ -2552,6 +2553,34 @@ class TestApp (TestCase):
             rendered_categories = [tag.text for tag in frances.soup.find_all('a', class_='category')]
             sorted_categories = sorted(rendered_categories)
             self.assertEqual(rendered_categories, sorted_categories)
+
+    # in TestApp
+    def test_overload_front_page(self):
+        ''' Try to overload the front page with multiple simultaneous requests.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in('frances@example.com')
+
+            # Start a new task
+            frances.start_task('Beating Crunches', 'Door-Spider Traps')
+
+            # hit the front page a bunch of times
+            times = 20
+            pros = []
+            for blip in range(times):
+                process = Process(target=frances.open_link, args=('/',))
+                process.start()
+                pros.append(process)
+
+            # wait until the processes are done
+            for process in pros:
+                process.join()
+
+            # raise if any errors were raised
+            for process in pros:
+                self.assertEqual(0, process.exitcode, u'A process that was trying to load the front page failed!')
 
 class TestPublishApp (TestCase):
 
