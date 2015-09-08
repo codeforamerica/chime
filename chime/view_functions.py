@@ -1076,7 +1076,7 @@ def publish_or_destroy_activity(branch_name, action, comment_text=None):
 
         return redirect('/', code=303)
 
-def render_activities_list(task_description=None, task_beneficiary=None):
+def render_activities_list(task_description=None):
     ''' Render the activities list page
     '''
     repo = ChimeRepo(current_app.config['REPO_PATH'])
@@ -1093,11 +1093,10 @@ def render_activities_list(task_description=None, task_beneficiary=None):
             # Skip this branch if it looks to be an orphan. Just don't show it.
             continue
 
-        # contains 'author_email', 'task_description', 'task_beneficiary'
+        # contains 'author_email', 'task_description'
         activity = get_task_metadata_for_branch(repo, branch_name)
         activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
         activity['task_description'] = activity['task_description'] if 'task_description' in activity else branch_name
-        activity['task_beneficiary'] = activity['task_beneficiary'] if 'task_beneficiary' in activity else u''
 
         # get the current review state and authorized status
         review_state, review_authorized = get_review_state_and_authorized(
@@ -1125,11 +1124,9 @@ def render_activities_list(task_description=None, task_beneficiary=None):
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(activities=activities)
 
-    # pre-populate the new activity form with description and/or beneficiary values if they were passed
+    # pre-populate the new activity form with description value if it was passed
     if task_description:
         kwargs.update(task_description=task_description)
-    if task_beneficiary:
-        kwargs.update(task_beneficiary=task_beneficiary)
 
     return render_template('activities-list.html', **kwargs)
 
