@@ -48,11 +48,14 @@
         </div>
         <div class="new-task grid__item width-one-third end-row">
           <h2 class="new-task__title">Start a new activity</h2>
-          <p class="new-task__description">Describe the new activity in terms of a public need.</p>
           <form action="/start" method="POST" class="new-task__form">
-            <p>I am<input name="task_description" placeholder="clarifying the permitting application process for business owners" type="text" class="need"{% if task_description %} value="{{ task_description }}"{% endif %} /></p>
-            <p><button type="submit" class="create button button--green">Create Activity</button></p>
-          </form>  
+            <p class="new-task__description">Let teammates know what public need you are addressing.</p>
+            <textarea name="task_description" placeholder="clarifying the permitting application process for business owners" class="new-task__textarea" {% if task_description %} value="{{ task_description }}"{% endif %}></textarea>
+            <div class="row new-task__actions">
+              <button type="submit" class="button button--green button--medium">Create</button>
+            </div>
+          </form> 
+          <p class="text-detail">Starting an activity gives you your own copy of the site to work in. Changes in an activity need to be reviewed by someone else in order to go live.</p>
         </div>
     </div>
 {% endblock %}
