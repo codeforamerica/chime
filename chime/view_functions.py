@@ -774,6 +774,19 @@ def make_activity_history(repo):
 
     return history
 
+def make_list_of_published_activities(repo, limit=10):
+    ''' Make a list of recently published activities.
+    '''
+    # ;;;
+
+    # something like this...?
+    # http://git-scm.com/docs/git-for-each-ref
+    # git for-each-ref --format="%(refname:short) %(*authoremail) %(taggerdate:relative) %(subject)" --sort=-taggerdate refs/tags
+
+    published = []
+
+    return published
+
 def summarize_activity_history(repo=None, history=None, branch_name=u''):
     ''' Make an object that summarizes an activity's history. If no history is passed, will get a new one from make_activity_history()
 
