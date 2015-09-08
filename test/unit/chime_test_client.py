@@ -96,10 +96,10 @@ class ChimeTestClient:
 
         return branch_name
 
-    def start_task(self, description, beneficiary):
+    def start_task(self, description):
         ''' Start a new task.
         '''
-        data = {'task_description': description, 'task_beneficiary': beneficiary}
+        data = {'task_description': description}
         response = self.client.post('/start', data=data)
 
         if response.status_code == 200:
@@ -179,11 +179,11 @@ class ChimeTestClient:
         # View the new article.
         self.follow_redirect(response, 303)
     
-    def add_branch_cat_subcat_article(self, desc, benef, cat, subcat, title):
+    def add_branch_cat_subcat_article(self, desc, cat, subcat, title):
         '''
         '''
-        # Start a new task, "Diving for Dollars".
-        self.start_task(description=desc, beneficiary=benef)
+        # Start a new task
+        self.start_task(description=desc)
         branch_name = self.get_branch_name()
 
         # Look for an "other" link that we know about - is it a category?

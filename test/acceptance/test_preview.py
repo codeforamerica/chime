@@ -135,7 +135,6 @@ class TestPreview(ChimeTestCase):
         # start a new task
         task_description = self.marked_string('task_description')
         self.driver.find_element_by_name('task_description').send_keys(task_description)
-        self.driver.find_element_by_name('task_beneficiary').send_keys(self.marked_string('task_beneficiary'))
         main_window = self.driver.current_window_handle
         self.driver.find_element_by_class_name('create').click()
 

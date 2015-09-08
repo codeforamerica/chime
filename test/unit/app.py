@@ -43,14 +43,13 @@ codecs.register(RotUnicode.search_function)
 PATTERN_BRANCH_COMMENT = u'<!-- branch: {} -->'
 PATTERN_AUTHOR_COMMENT = u'<!-- author: {} -->'
 PATTERN_TASK_COMMENT = u'<!-- task: {} -->'
-PATTERN_BENEFICIARY_COMMENT = u'<!-- beneficiary: {} -->'
 PATTERN_TEMPLATE_COMMENT = u'<!-- template name: {} -->'
 PATTERN_FILE_COMMENT = u'<!-- file type: {file_type}, file name: {file_name}, file title: {file_title} -->'
 PATTERN_OVERVIEW_ITEM_CREATED = u'<p>The "{created_name}" {created_type} was created by {author_email}.</p>'
 PATTERN_OVERVIEW_ACTIVITY_STARTED = u'<p>The "{activity_name}" activity was started by {author_email}.</p>'
 PATTERN_OVERVIEW_COMMENT_BODY = u'<div class="comment__body">{comment_body}</div>'
 PATTERN_OVERVIEW_ITEM_DELETED = u'<p>The "{deleted_name}" {deleted_type} {deleted_also}was deleted by {author_email}.</p>'
-PATTERN_FLASH_TASK_DELETED = u'You deleted the "{description}" activity for {beneficiary}!'
+PATTERN_FLASH_TASK_DELETED = u'You deleted the "{description}" activity!'
 
 PATTERN_FLASH_SAVED_CATEGORY = u'<li class="flash flash--notice">Saved changes to the {title} topic! Remember to submit this change for feedback when you\'re ready to go live.</li>'
 PATTERN_FLASH_CREATED_CATEGORY = u'Created a new topic named {title}! Remember to submit this change for feedback when you\'re ready to go live.'
@@ -419,24 +418,13 @@ class TestApp (TestCase):
             pattern_template_comment_stripped = sub(ur'<!--|-->', u'', PATTERN_TEMPLATE_COMMENT)
             flash_message_text = u'Please describe what you\'re doing when you start a new activity!'
 
-            # start a new task without a description or beneficiary
-            erica.start_task(description=u'', beneficiary=u'')
+            # start a new task without a description
+            erica.start_task(description=u'')
             # the activities-list template reloaded
             comments = erica.soup.findAll(text=lambda text: isinstance(text, Comment))
             self.assertTrue(pattern_template_comment_stripped.format(u'activities-list') in comments)
             # verify that there's a flash message warning about submitting an empty description
             self.assertEqual(flash_message_text, erica.soup.find('li', class_='flash').text)
-
-            # start a new task with no description but with a beneficiary
-            fake_task_beneficiary = u'Scary Ghosts'
-            erica.start_task(description=u'', beneficiary=fake_task_beneficiary)
-            # the activities-list template reloaded
-            comments = erica.soup.findAll(text=lambda text: isinstance(text, Comment))
-            self.assertTrue(pattern_template_comment_stripped.format(u'activities-list') in comments)
-            # verify that there's a flash message warning about submitting an empty description
-            self.assertEqual(flash_message_text, erica.soup.find('li', class_='flash').text)
-            # verify that the entered beneficiary text has been pre-filled in the form
-            self.assertEqual(fake_task_beneficiary, erica.soup.find('input', attrs={'name': u'task_beneficiary'}).attrs['value'])
 
     # in TestApp
     def test_notification_on_create_category(self):
@@ -448,7 +436,7 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task
-            erica.start_task(description=u'Lick Water Droplets From Leaves', beneficiary=u'Leopard Geckos')
+            erica.start_task(description=u'Lick Water Droplets From Leaves for Leopard Geckos')
             # Get the branch name
             branch_name = erica.get_branch_name()
             # Enter the "other" folder
@@ -475,7 +463,7 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task
-            erica.start_task(description=u'Lick Water Droplets From Leaves', beneficiary=u'Leopard Geckos')
+            erica.start_task(description=u'Lick Water Droplets From Leaves for Leopard Geckos')
             # Get the branch name
             branch_name = erica.get_branch_name()
 
@@ -511,8 +499,7 @@ class TestApp (TestCase):
     def test_branches(self):
         ''' Check basic branching functionality.
         '''
-        fake_task_description = u'do things'
-        fake_task_beneficiary = u'somebody else'
+        fake_task_description = u'do things for somebody else'
         fake_author_email = u'erica@example.com'
         fake_endorser_email = u'frances@example.com'
         fake_page_slug = u'hello'
@@ -523,10 +510,9 @@ class TestApp (TestCase):
 
         with HTTMock(self.auth_csv_example_allowed):
             # create a new branch
-            response = self.test_client.post('/start', data={'task_description': fake_task_description, 'task_beneficiary': fake_task_beneficiary}, follow_redirects=True)
+            response = self.test_client.post('/start', data={'task_description': fake_task_description}, follow_redirects=True)
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('articles-list') in response.data)
             self.assertTrue(PATTERN_TASK_COMMENT.format(fake_task_description) in response.data)
-            self.assertTrue(PATTERN_BENEFICIARY_COMMENT.format(fake_task_beneficiary) in response.data)
             self.assertTrue(PATTERN_AUTHOR_COMMENT.format(fake_author_email) in response.data)
 
             # extract the generated branch name from the returned HTML
@@ -618,13 +604,11 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            disposable_task_description = u'unimportant task'
-            disposable_task_beneficiary = u'unimportant person'
-            response = self.test_client.post('/start', data={'task_description': disposable_task_description, 'task_beneficiary': disposable_task_beneficiary}, follow_redirects=True)
+            disposable_task_description = u'unimportant task for unimportant person'
+            response = self.test_client.post('/start', data={'task_description': disposable_task_description}, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('articles-list') in response.data)
             self.assertTrue(PATTERN_TASK_COMMENT.format(disposable_task_description) in response.data)
-            self.assertTrue(PATTERN_BENEFICIARY_COMMENT.format(disposable_task_beneficiary) in response.data)
 
             # create a branch programmatically on our pre-made clone
             check_task_description = u'Creating a Star Child for Ancient Aliens'
@@ -653,8 +637,7 @@ class TestApp (TestCase):
     def test_review_process(self):
         ''' Check the review process
         '''
-        fake_task_description = u'groom pets'
-        fake_task_beneficiary = u'pet owners'
+        fake_task_description = u'groom pets for pet owners'
         fake_author_email = u'erica@example.com'
         fake_endorser_email = u'frances@example.com'
         fake_page_slug = u'hello'
@@ -665,7 +648,7 @@ class TestApp (TestCase):
 
         with HTTMock(self.auth_csv_example_allowed):
             # create a new branch
-            response = self.test_client.post('/start', data={'task_description': fake_task_description, 'task_beneficiary': fake_task_beneficiary}, follow_redirects=True)
+            response = self.test_client.post('/start', data={'task_description': fake_task_description}, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('articles-list') in response.data)
 
@@ -836,14 +819,12 @@ class TestApp (TestCase):
             #
             # create a branch then delete it right before a POSTing a save command
             #
-            fake_task_description = u'Doing fake stuff'
-            fake_task_beneficiary = u'Nobody'
-            response = self.test_client.post('/start', data={'task_description': fake_task_description, 'task_beneficiary': fake_task_beneficiary}, follow_redirects=True)
+            fake_task_description = u'Doing fake stuff for Nobody'
+            response = self.test_client.post('/start', data={'task_description': fake_task_description}, follow_redirects=True)
             # we should be on the new task's edit page
             self.assertEqual(response.status_code, 200)
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('articles-list') in response.data)
             self.assertTrue(PATTERN_TASK_COMMENT.format(fake_task_description) in response.data)
-            self.assertTrue(PATTERN_BENEFICIARY_COMMENT.format(fake_task_beneficiary) in response.data)
 
             # extract the generated branch name from the returned HTML
             generated_branch_search = search(r'<!-- branch: (.{{{}}}) -->'.format(repo_functions.BRANCH_NAME_LENGTH), response.data)
@@ -896,13 +877,11 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            disposable_task_description = u'unimportant task'
-            disposable_task_beneficiary = u'unimportant person'
-            response = self.test_client.post('/start', data={'task_description': disposable_task_description, 'task_beneficiary': disposable_task_beneficiary}, follow_redirects=True)
+            disposable_task_description = u'unimportant task for unimportant person'
+            response = self.test_client.post('/start', data={'task_description': disposable_task_description}, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('articles-list') in response.data)
             self.assertTrue(PATTERN_TASK_COMMENT.format(disposable_task_description) in response.data)
-            self.assertTrue(PATTERN_BENEFICIARY_COMMENT.format(disposable_task_beneficiary) in response.data)
 
             # create a branch programmatically on our pre-made clone
             check_task_description = u'the branch we are checking for for just me'
@@ -1146,7 +1125,7 @@ class TestApp (TestCase):
                 erica.sign_in(email='erica@example.com')
 
             # Start a new task
-            erica.start_task(description=u'Be Shot Hundreds Of Feet Into The Air', beneficiary=u'A Geyser Of Highly Pressurized Water')
+            erica.start_task(description=u'Be Shot Hundreds Of Feet Into The Air for A Geyser Of Highly Pressurized Water')
             # Get the branch name
             branch_name = erica.get_branch_name()
 
@@ -1180,7 +1159,7 @@ class TestApp (TestCase):
             pattern_template_comment_stripped = sub(ur'<!--|-->', u'', PATTERN_TEMPLATE_COMMENT)
 
             # Start a new task
-            erica.start_task(description=u'Deep-Fry a Buffalo in Forty Seconds', beneficiary=u'Moe')
+            erica.start_task(description=u'Deep-Fry a Buffalo in Forty Seconds for Moe')
             # Get the branch name
             branch_name = erica.get_branch_name()
 
@@ -1356,7 +1335,7 @@ class TestApp (TestCase):
                 erica.sign_in(email='erica@example.com')
 
             # Start a new task
-            erica.start_task(description=u'Ferment Tuber Fibres Using Symbiotic Bacteria in the Intestines', beneficiary=u'Naked Mole Rats')
+            erica.start_task(description=u'Ferment Tuber Fibres Using Symbiotic Bacteria in the Intestines for Naked Mole Rats')
             # Get the branch name
             branch_name = erica.get_branch_name()
 
@@ -1517,7 +1496,7 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task, topic, subtopic, article
-            args = 'Mermithergate', 'Ant Worker', 'Enoplia Nematode', 'Genus Mermis', 'Cephalotes Atratus'
+            args = 'Mermithergate for Ant Worker', 'Enoplia Nematode', 'Genus Mermis', 'Cephalotes Atratus'
             erica.add_branch_cat_subcat_article(*args)
 
             # Edit the new article and give it a non-roman character title
@@ -1957,7 +1936,7 @@ class TestApp (TestCase):
                 erica.sign_in(email='erica@example.com')
 
             # Start a new task
-            erica.start_task(description=u'Parasitize with Ichneumonidae', beneficiary=u'Moth Larvae')
+            erica.start_task(description=u'Parasitize with Ichneumonidae for Moth Larvae')
             # Get the branch name
             branch_name = erica.get_branch_name()
 
@@ -2256,7 +2235,7 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task
-            erica.start_task(description=u'Take Malarone', beneficiary=u'People Susceptible to Malaria')
+            erica.start_task(description=u'Take Malarone for People Susceptible to Malaria')
             # Get the branch name
             branch_name = erica.get_branch_name()
             # Enter the "other" folder
@@ -2281,7 +2260,7 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task
-            erica.start_task(description=u'Chew Mulberry Leaves', beneficiary=u'Silkworms')
+            erica.start_task(description=u'Chew Mulberry Leaves for Silkworms')
             # Get the branch name
             branch_name = erica.get_branch_name()
 
@@ -2329,10 +2308,8 @@ class TestApp (TestCase):
     def test_merge_conflict_error(self):
         ''' We get a merge conflict error page when there's a merge conflict
         '''
-        fake_task_description_1 = u'do things'
-        fake_task_beneficiary_1 = u'somebody else'
-        fake_task_description_2 = u'do other things'
-        fake_task_beneficiary_2 = u'somebody even else'
+        fake_task_description_1 = u'do things for somebody else'
+        fake_task_description_2 = u'do other things for somebody even else'
         fake_email_1 = u'erica@example.com'
         fake_email_2 = u'frances@example.com'
         fake_page_slug = u'hello'
@@ -2347,7 +2324,7 @@ class TestApp (TestCase):
 
         with HTTMock(self.auth_csv_example_allowed):
             # create a new branch
-            response = self.test_client.post('/start', data={'task_description': fake_task_description_1, 'task_beneficiary': fake_task_beneficiary_1}, follow_redirects=True)
+            response = self.test_client.post('/start', data={'task_description': fake_task_description_1}, follow_redirects=True)
             # extract the generated branch name from the returned HTML
             generated_branch_search = search(r'<!-- branch: (.{{{}}}) -->'.format(repo_functions.BRANCH_NAME_LENGTH), response.data)
             self.assertIsNotNone(generated_branch_search)
@@ -2384,7 +2361,7 @@ class TestApp (TestCase):
 
         with HTTMock(self.auth_csv_example_allowed):
             # create a new branch
-            response = self.test_client.post('/start', data={'task_description': fake_task_description_2, 'task_beneficiary': fake_task_beneficiary_2}, follow_redirects=True)
+            response = self.test_client.post('/start', data={'task_description': fake_task_description_2}, follow_redirects=True)
             # extract the generated branch name from the returned HTML
             generated_branch_search = search(r'<!-- branch: (.{{{}}}) -->'.format(repo_functions.BRANCH_NAME_LENGTH), response.data)
             try:
@@ -2459,7 +2436,7 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task
-            erica.start_task(description=u'Be Shot Hundreds Of Feet Into The Air', beneficiary=u'A Geyser Of Highly Pressurized Water')
+            erica.start_task(description=u'Be Shot Hundreds Of Feet Into The Air for A Geyser Of Highly Pressurized Water')
             # Get the branch name
             branch_name = erica.get_branch_name()
 
@@ -2487,7 +2464,7 @@ class TestApp (TestCase):
                 frances.sign_in('frances@example.com')
             
             # Start a new task, "Diving for Dollars".
-            frances.start_task('Diving', 'Dollars')
+            frances.start_task(description=u'Diving for Dollars')
             branch_name = frances.get_branch_name()
             
             # Look for an "other" link that we know about - is it a category?
@@ -2520,7 +2497,7 @@ class TestApp (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task
-            frances.start_task('Crunching Beetles', 'Trap-Door Spiders')
+            frances.start_task(description=u'Crunching Beetles for Trap-Door Spiders')
             branch_name = frances.get_branch_name()
 
             # Look for an "other" link that we know about - is it a category?
@@ -2544,7 +2521,7 @@ class TestApp (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task
-            frances.start_task('Beating Crunches', 'Door-Spider Traps')
+            frances.start_task(description=u'Beating Crunches for Door-Spider Traps')
 
             # hit the front page a bunch of times
             times = 20

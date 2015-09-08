@@ -1041,11 +1041,10 @@ def publish_or_destroy_activity(branch_name, action, comment_text=None):
     repo = get_repo(flask_app=current_app)
     master_name = current_app.config['default_branch']
 
-    # contains 'author_email', 'task_description', 'task_beneficiary'
+    # contains 'author_email', 'task_description'
     activity = get_task_metadata_for_branch(repo, branch_name)
     activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
     activity['task_description'] = activity['task_description'] if 'task_description' in activity else u''
-    activity['task_beneficiary'] = activity['task_beneficiary'] if 'task_beneficiary' in activity else u''
 
     try:
         args = repo, master_name, branch_name, comment_text
@@ -1066,7 +1065,7 @@ def publish_or_destroy_activity(branch_name, action, comment_text=None):
         raise conflict
 
     else:
-        activity_blurb = u'"{task_description}" activity for {task_beneficiary}'.format(task_description=activity['task_description'], task_beneficiary=activity['task_beneficiary'])
+        activity_blurb = u'"{task_description}" activity'.format(task_description=activity['task_description'])
         if action == 'merge':
             flash(u'You published the {activity_blurb}!'.format(activity_blurb=activity_blurb), u'notice')
         elif action == 'abandon':
@@ -1136,11 +1135,10 @@ def make_kwargs_for_activity_files_page(repo, branch_name, path):
     # :NOTE: temporarily turning off filtering if 'showallfiles=true' is in the request
     showallfiles = request.args.get('showallfiles') == u'true'
 
-    # contains 'author_email', 'task_description', 'task_beneficiary'
+    # contains 'author_email', 'task_description'
     activity = get_task_metadata_for_branch(repo, branch_name)
     activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
     activity['task_description'] = activity['task_description'] if 'task_description' in activity else u''
-    activity['task_beneficiary'] = activity['task_beneficiary'] if 'task_beneficiary' in activity else u''
 
     # get created and modified dates via git logs (relative dates for now)
     date_created = repo.git.log('--format=%ad', '--date=relative', '--', TASK_METADATA_FILENAME).split('\n')[-1]
@@ -1219,11 +1217,10 @@ def render_edit_view(repo, branch_name, path, file):
         analytics_dict = fetch_google_analytics_for_page(current_app.config, path, ga_config.get('access_token'))
     commit = repo.commit()
 
-    # contains 'author_email', 'task_description', 'task_beneficiary'
+    # contains 'author_email', 'task_description'
     activity = get_task_metadata_for_branch(repo, branch_name)
     activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
     activity['task_description'] = activity['task_description'] if 'task_description' in activity else u''
-    activity['task_beneficiary'] = activity['task_beneficiary'] if 'task_beneficiary' in activity else u''
 
     # get the current review state and authorized status
     review_state, review_authorized = get_review_state_and_authorized(

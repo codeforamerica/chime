@@ -33,14 +33,13 @@ codecs.register(RotUnicode.search_function)
 PATTERN_BRANCH_COMMENT = u'<!-- branch: {} -->'
 PATTERN_AUTHOR_COMMENT = u'<!-- author: {} -->'
 PATTERN_TASK_COMMENT = u'<!-- task: {} -->'
-PATTERN_BENEFICIARY_COMMENT = u'<!-- beneficiary: {} -->'
 PATTERN_TEMPLATE_COMMENT = u'<!-- template name: {} -->'
 PATTERN_FILE_COMMENT = u'<!-- file type: {file_type}, file name: {file_name}, file title: {file_title} -->'
 PATTERN_OVERVIEW_ITEM_CREATED = u'<p>The "{created_name}" {created_type} was created by {author_email}.</p>'
 PATTERN_OVERVIEW_ACTIVITY_STARTED = u'<p>The "{activity_name}" activity was started by {author_email}.</p>'
 PATTERN_OVERVIEW_COMMENT_BODY = u'<div class="comment__body">{comment_body}</div>'
 PATTERN_OVERVIEW_ITEM_DELETED = u'<p>The "{deleted_name}" {deleted_type} {deleted_also}was deleted by {author_email}.</p>'
-PATTERN_FLASH_TASK_DELETED = u'You deleted the "{description}" activity for {beneficiary}!'
+PATTERN_FLASH_TASK_DELETED = u'You deleted the "{description}" activity!'
 
 PATTERN_FLASH_SAVED_CATEGORY = u'<li class="flash flash--notice">Saved changes to the {title} topic! Remember to submit this change for feedback when you\'re ready to go live.</li>'
 PATTERN_FLASH_CREATED_CATEGORY = u'Created a new topic named {title}! Remember to submit this change for feedback when you\'re ready to go live.'
@@ -98,8 +97,8 @@ class TestRepo (TestCase):
     def test_get_start_branch(self):
         ''' Make a simple edit in a clone, verify that it appears in the other.
         '''
-        task_description, task_beneficiary = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, u'erica@example.com')
+        task_description = str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, u'erica@example.com')
 
         self.assertTrue(branch1.name in self.clone1.branches)
         self.assertTrue(branch1.name in self.origin.branches)
@@ -129,7 +128,7 @@ class TestRepo (TestCase):
     def test_get_start_branch_2(self):
         ''' Make a simple edit in a clone, verify that it appears in the other.
         '''
-        task_description, task_beneficiary = str(uuid4()), str(uuid4())
+        task_description = str(uuid4())
 
         #
         # Check out both clones.
@@ -159,7 +158,7 @@ class TestRepo (TestCase):
         #
         # Now start a new branch from the second clone, and look for the new master commit.
         #
-        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_description, task_beneficiary, self.session['email'])
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_description, self.session['email'])
 
         self.assertTrue(branch2.name in self.clone2.branches)
         # compare the second-to-last commit on branch2 (by adding ".parents[0]", as
@@ -170,9 +169,9 @@ class TestRepo (TestCase):
     def test_delete_missing_branch(self):
         ''' Delete a branch in a clone that's still in origin, see if it can be deleted anyway.
         '''
-        task_description, task_beneficiary = str(uuid4()), str(uuid4())
+        task_description = str(uuid4())
 
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, u'erica@example.com')
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, u'erica@example.com')
 
         self.assertTrue(branch1.name in self.origin.branches)
 
@@ -191,8 +190,8 @@ class TestRepo (TestCase):
     def test_new_file(self):
         ''' Make a new file and delete an old file in a clone, verify that the changes appear in the other.
         '''
-        task_description, task_beneficiary = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, self.session['email'])
+        task_description = str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, self.session['email'])
 
         self.assertTrue(branch1.name in self.clone1.branches)
         self.assertTrue(branch1.name in self.origin.branches)
@@ -298,8 +297,8 @@ class TestRepo (TestCase):
     def test_delete_directory(self):
         ''' Make a new file and directory and delete them.
         '''
-        task_description, task_beneficiary = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, u'erica@example.com')
+        task_description = str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, u'erica@example.com')
 
         self.assertTrue(branch1.name in self.clone1.branches)
         self.assertTrue(branch1.name in self.origin.branches)
@@ -335,8 +334,8 @@ class TestRepo (TestCase):
     def test_move_file(self):
         ''' Change the path of a file.
         '''
-        task_description, task_beneficiary = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, u'erica@example.com')
+        task_description = str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, u'erica@example.com')
 
         self.assertTrue(branch1.name in self.clone1.branches)
         self.assertTrue(branch1.name in self.origin.branches)
@@ -458,9 +457,9 @@ class TestRepo (TestCase):
         ''' Test that two non-conflicting new files merge cleanly.
         '''
         fake_author_email = u'erica@example.com'
-        task_description, task_beneficiary = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
-        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_description, task_beneficiary, fake_author_email)
+        task_description = str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_description, fake_author_email)
         branch1_name, branch2_name = branch1.name, branch2.name
 
         #
@@ -511,8 +510,8 @@ class TestRepo (TestCase):
         ''' Test that a conflict in two branches appears at the right spot.
         '''
         fake_author_email = u'erica@example.com'
-        task_description, task_beneficiary = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+        task_description = str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
         branch2 = repo_functions.get_existing_branch(self.clone2, 'master', branch1.name)
         branch1_name = branch1.name
         self.assertIsNotNone(branch2)
@@ -560,9 +559,8 @@ class TestRepo (TestCase):
         '''
         fake_author_email = u'erica@example.com'
         task_description1, task_description2 = str(uuid4()), str(uuid4())
-        task_beneficiary1, task_beneficiary2 = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description1, task_beneficiary1, fake_author_email)
-        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_description2, task_beneficiary2, fake_author_email)
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description1, fake_author_email)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_description2, fake_author_email)
         branch1_name = branch1.name
 
         #
@@ -620,9 +618,8 @@ class TestRepo (TestCase):
         '''
         fake_author_email = u'erica@example.com'
         task_description1, task_description2 = str(uuid4()), str(uuid4())
-        task_beneficiary1, task_beneficiary2 = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description1, task_beneficiary1, fake_author_email)
-        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_description2, task_beneficiary2, fake_author_email)
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description1, fake_author_email)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_description2, fake_author_email)
         branch1_name, branch2_name = branch1.name, branch2.name
 
         #
@@ -669,9 +666,9 @@ class TestRepo (TestCase):
         ''' Test that a conflict in two branches can be clobbered.
         '''
         fake_author_email = u'erica@example.com'
-        task_description, task_beneficiary = str(uuid4()), str(uuid4())
+        task_description = str(uuid4())
         title_branch = repo_functions.get_existing_branch(self.clone1, 'master', 'title')
-        compare_branch = repo_functions.get_start_branch(self.clone2, 'master', task_description, task_beneficiary, fake_author_email)
+        compare_branch = repo_functions.get_start_branch(self.clone2, 'master', task_description, fake_author_email)
         title_branch_name, compare_branch_name = title_branch.name, compare_branch.name
 
         #
@@ -735,10 +732,10 @@ class TestRepo (TestCase):
         ''' Test that a conflict in two branches can be abandoned.
         '''
         fake_author_email = u'erica@example.com'
-        task_description, task_beneficiary = str(uuid4()), str(uuid4())
+        task_description = str(uuid4())
         title_branch_name = 'title'
         repo_functions.get_existing_branch(self.clone1, 'master', title_branch_name)
-        compare_branch = repo_functions.get_start_branch(self.clone2, 'master', task_description, task_beneficiary, fake_author_email)
+        compare_branch = repo_functions.get_start_branch(self.clone2, 'master', task_description, fake_author_email)
         compare_branch_name = compare_branch.name
 
         #
@@ -796,8 +793,8 @@ class TestRepo (TestCase):
         ''' Exercise the review process
         '''
         fake_author_email = u'erica@example.com'
-        task_description, task_beneficiary = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+        task_description = str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
         branch1_name = branch1.name
 
         #
@@ -901,8 +898,7 @@ class TestRepo (TestCase):
         '''
         # start a new branch
         fake_author_email = u'erica@example.com'
-        task_description = u'suck blood from a mammal'
-        task_beneficiary = u'mosquito larvae'
+        task_description = u'suck blood from a mammal for mosquito larvae'
 
         source_repo = self.origin
         first_commit = list(source_repo.iter_commits())[-1].hexsha
@@ -919,7 +915,7 @@ class TestRepo (TestCase):
         # tell git to ignore merge conflicts on the task metadata file
         repo_functions.ignore_task_metadata_on_merge(new_clone)
 
-        working_branch = repo_functions.get_start_branch(new_clone, 'master', task_description, task_beneficiary, fake_author_email)
+        working_branch = repo_functions.get_start_branch(new_clone, 'master', task_description, fake_author_email)
         self.assertTrue(working_branch.name in new_clone.branches)
         self.assertTrue(working_branch.name in self.origin.branches)
         working_branch.checkout()
@@ -941,8 +937,7 @@ class TestRepo (TestCase):
         '''
         # start a new branch
         fake_author_email = u'erica@example.com'
-        task_description = u'squeezing lemons'
-        task_beneficiary = u'lemonade lovers'
+        task_description = u'squeezing lemons for lemonade lovers'
 
         source_repo = self.origin
         first_commit = list(source_repo.iter_commits())[-1].hexsha
@@ -959,7 +954,7 @@ class TestRepo (TestCase):
         # tell git to ignore merge conflicts on the task metadata file
         repo_functions.ignore_task_metadata_on_merge(new_clone)
 
-        working_branch = repo_functions.get_start_branch(new_clone, 'master', task_description, task_beneficiary, fake_author_email)
+        working_branch = repo_functions.get_start_branch(new_clone, 'master', task_description, fake_author_email)
         self.assertTrue(working_branch.name in new_clone.branches)
         self.assertTrue(working_branch.name in self.origin.branches)
         working_branch.checkout()
@@ -1003,8 +998,7 @@ class TestRepo (TestCase):
         '''
         # start a new branch
         fake_author_email = u'erica@example.com'
-        task_description = u'grating lemons'
-        task_beneficiary = u'zest lovers'
+        task_description = u'grating lemons for zest lovers'
 
         source_repo = self.origin
         first_commit = list(source_repo.iter_commits())[-1].hexsha
@@ -1021,7 +1015,7 @@ class TestRepo (TestCase):
         # tell git to ignore merge conflicts on the task metadata file
         repo_functions.ignore_task_metadata_on_merge(new_clone)
 
-        working_branch = repo_functions.get_start_branch(new_clone, 'master', task_description, task_beneficiary, fake_author_email)
+        working_branch = repo_functions.get_start_branch(new_clone, 'master', task_description, fake_author_email)
         self.assertTrue(working_branch.name in new_clone.branches)
         self.assertTrue(working_branch.name in self.origin.branches)
         working_branch.checkout()
@@ -1096,8 +1090,7 @@ class TestRepo (TestCase):
         '''
         # start a new branch
         fake_author_email = u'erica@example.com'
-        task_description = u'shake trees until coconuts fall off'
-        task_beneficiary = u'castaways'
+        task_description = u'shake trees until coconuts fall off for castaways'
 
         source_repo = self.origin
         first_commit = list(source_repo.iter_commits())[-1].hexsha
@@ -1114,7 +1107,7 @@ class TestRepo (TestCase):
         # tell git to ignore merge conflicts on the task metadata file
         repo_functions.ignore_task_metadata_on_merge(new_clone)
 
-        working_branch = repo_functions.get_start_branch(new_clone, 'master', task_description, task_beneficiary, fake_author_email)
+        working_branch = repo_functions.get_start_branch(new_clone, 'master', task_description, fake_author_email)
         self.assertTrue(working_branch.name in new_clone.branches)
         self.assertTrue(working_branch.name in self.origin.branches)
         working_branch.checkout()
@@ -1158,7 +1151,7 @@ class TestRepo (TestCase):
         # check the creation of the activity
         check_item = activity_history.pop()
         self.assertEqual(u'The "{}" activity was started'.format(task_description), check_item['commit_subject'])
-        self.assertEqual(u'Created task metadata file "{}"\nSet author_email to {}\nSet task_description to {}\nSet task_beneficiary to {}'.format(repo_functions.TASK_METADATA_FILENAME, fake_author_email, task_description, task_beneficiary), check_item['commit_body'])
+        self.assertEqual(u'Created task metadata file "{}"\nSet author_email to {}\nSet task_description to {}'.format(repo_functions.TASK_METADATA_FILENAME, fake_author_email, task_description), check_item['commit_body'])
         self.assertEqual(constants.COMMIT_TYPE_ACTIVITY_UPDATE, check_item['commit_type'])
 
         # check the delete
@@ -1191,8 +1184,7 @@ class TestRepo (TestCase):
         '''
         # start a new branch
         fake_author_email = u'erica@example.com'
-        task_description = u'cling to a rock and scrape bacteria and algae off of it with a radula'
-        task_beneficiary = u'mollusks'
+        task_description = u'cling to a rock and scrape bacteria and algae off of it with a radula for mollusks'
 
         source_repo = self.origin
         first_commit = list(source_repo.iter_commits())[-1].hexsha
@@ -1209,7 +1201,7 @@ class TestRepo (TestCase):
         # tell git to ignore merge conflicts on the task metadata file
         repo_functions.ignore_task_metadata_on_merge(new_clone)
 
-        working_branch = repo_functions.get_start_branch(new_clone, 'master', task_description, task_beneficiary, fake_author_email)
+        working_branch = repo_functions.get_start_branch(new_clone, 'master', task_description, fake_author_email)
         self.assertTrue(working_branch.name in new_clone.branches)
         self.assertTrue(working_branch.name in self.origin.branches)
         working_branch.checkout()
@@ -1281,8 +1273,8 @@ class TestRepo (TestCase):
         ''' The task metadata file is created when a branch is started, and contains the expected information.
         '''
         fake_author_email = u'erica@example.com'
-        task_description, task_beneficiary = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+        task_description = str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
         branch1_name = branch1.name
         branch1.checkout()
 
@@ -1298,16 +1290,14 @@ class TestRepo (TestCase):
         # validate the contents of the task metadata file
         self.assertEqual(task_metadata['author_email'], fake_author_email)
         self.assertEqual(task_metadata['task_description'], task_description)
-        self.assertEqual(task_metadata['task_beneficiary'], task_beneficiary)
 
     # in TestRepo
     def test_task_metadata_creation_with_unicode(self):
         ''' The task metadata file is created when a branch is started, and contains the expected information.
         '''
         fake_author_email = u'¯\_(ツ)_/¯@快速狐狸.com'
-        task_description = u'(╯°□°）╯︵ ┻━┻'
-        task_beneficiary = u'૮(꒦ິ ˙̫̮ ꒦ິ)ა'
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+        task_description = u'(╯°□°）╯︵ ┻━┻ for ૮(꒦ິ ˙̫̮ ꒦ິ)ა'
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
         branch1_name = branch1.name
         branch1.checkout()
 
@@ -1323,15 +1313,14 @@ class TestRepo (TestCase):
         # validate the contents of the task metadata file
         self.assertEqual(task_metadata['author_email'], fake_author_email)
         self.assertEqual(task_metadata['task_description'], task_description)
-        self.assertEqual(task_metadata['task_beneficiary'], task_beneficiary)
 
     # in TestRepo
     def test_task_metadata_update(self):
         ''' The task metadata file can be updated
         '''
         fake_author_email = u'erica@example.com'
-        task_description, task_beneficiary = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+        task_description = str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
         branch1_name = branch1.name
         branch1.checkout()
 
@@ -1347,7 +1336,6 @@ class TestRepo (TestCase):
         # validate the contents of the task metadata file
         self.assertEqual(task_metadata['author_email'], fake_author_email)
         self.assertEqual(task_metadata['task_description'], task_description)
-        self.assertEqual(task_metadata['task_beneficiary'], task_beneficiary)
 
         # write a new task name and some other arbitrary data
         metadata_update = {'task_description': u'Changed my mind', 'lead_singer': u'Johnny Rotten'}
@@ -1365,8 +1353,8 @@ class TestRepo (TestCase):
         ''' The task metadata file is deleted when a branch is completed, and isn't merged.
         '''
         fake_author_email = u'erica@example.com'
-        task_description, task_beneficiary = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+        task_description = str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
         branch1_name = branch1.name
         branch1.checkout()
 
@@ -1394,9 +1382,8 @@ class TestRepo (TestCase):
         '''
         # start an activity on clone1
         erica_email = u'erica@example.com'
-        task_description = u'Attract Insects With Anthocyanin Pigments To The Cavity Formed By A Cupped Leaf'
-        task_beneficiary = u'Nepenthes'
-        clone1_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, erica_email)
+        task_description = u'Attract Insects With Anthocyanin Pigments To The Cavity Formed By A Cupped Leaf for Nepenthes'
+        clone1_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, erica_email)
         branch_name = clone1_branch.name
         clone1_branch.checkout()
         clone1_branch_task_metadata = repo_functions.get_task_metadata_for_branch(self.clone1, branch_name)
@@ -1468,9 +1455,8 @@ class TestRepo (TestCase):
         fake_author_email1 = u'erica@example.com'
         fake_author_email2 = u'nobody@example.com'
         task_description1, task_description2 = str(uuid4()), str(uuid4())
-        task_beneficiary1, task_beneficiary2 = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description1, task_beneficiary1, fake_author_email1)
-        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_description2, task_beneficiary2, fake_author_email2)
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description1, fake_author_email1)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_description2, fake_author_email2)
         branch1_name = branch1.name
 
         # Check out the branches

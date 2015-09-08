@@ -472,11 +472,10 @@ def show_activity_overview(branch_name):
     if repo_functions.get_conflict(repo, current_app.config['default_branch']):
         flash_unique(repo_functions.MERGE_CONFLICT_WARNING_FLASH_MESSAGE, u'warning')
 
-    # contains 'author_email', 'task_description', 'task_beneficiary'
+    # contains 'author_email', 'task_description'
     activity = repo_functions.get_task_metadata_for_branch(repo, branch_name)
     activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
     activity['task_description'] = activity['task_description'] if 'task_description' in activity else u''
-    activity['task_beneficiary'] = activity['task_beneficiary'] if 'task_beneficiary' in activity else u''
 
     kwargs = common_template_args(current_app.config, session)
 
@@ -544,11 +543,10 @@ def branch_history(branch_name, path=None):
 
     safe_branch = branch_name2path(branch_name)
 
-    # contains 'author_email', 'task_description', 'task_beneficiary'
+    # contains 'author_email', 'task_description'
     activity = repo_functions.get_task_metadata_for_branch(repo, branch_name)
     activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
     activity['task_description'] = activity['task_description'] if 'task_description' in activity else u''
-    activity['task_beneficiary'] = activity['task_beneficiary'] if 'task_beneficiary' in activity else u''
 
     article_edit_path = join('/tree/{}/edit'.format(branch_name2path(branch_name)), path)
 
