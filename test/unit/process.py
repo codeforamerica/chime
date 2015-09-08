@@ -148,7 +148,7 @@ class TestProcess (TestCase):
             # Start a new task, "Diving for Dollars", create a new category
             # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
             args = 'Diving for Dollars', 'Ninjas', 'Flipping Out', 'So Awesome'
-            branch_name = erica.add_branch_cat_subcat_article(*args)
+            branch_name = erica.quick_activity_setup(*args)
             
             # Edit the new article.
             erica.edit_article('So, So Awesome', 'It was the best of times.')
@@ -238,7 +238,7 @@ class TestProcess (TestCase):
             # Start a new task, "Diving for Dollars", create a new category
             # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
             args = 'Diving for Dollars', 'Ninjas', 'Flipping Out', 'So Awesome'
-            branch_name = erica.add_branch_cat_subcat_article(*args)
+            branch_name = erica.quick_activity_setup(*args)
 
             # Edit the new article.
             erica.edit_article(title_str='So, So Awesome', body_str='It was the best of times.')
@@ -285,13 +285,13 @@ class TestProcess (TestCase):
             # Start a new task, "Bobbing for Apples", create a new category
             # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
             args = 'Bobbing for Apples', 'Ninjas', 'Flipping Out', 'So Awesome'
-            f_branch_name = frances.add_branch_cat_subcat_article(*args)
+            f_branch_name = frances.quick_activity_setup(*args)
             f_article_path = frances.path
 
             # Start a new task, "Diving for Dollars", create a new category
             # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
             args = 'Diving for Dollars', 'Ninjas', 'Flipping Out', 'So Awesome'
-            e_branch_name = erica.add_branch_cat_subcat_article(*args)
+            e_branch_name = erica.quick_activity_setup(*args)
 
             # Edit the new article.
             erica.edit_article(title_str='So, So Awesome', body_str='It was the best of times.')
@@ -337,12 +337,12 @@ class TestProcess (TestCase):
             # Frances: Start a new task, "Bobbing for Apples", create a new category
             # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
             args = 'Bobbing for Apples', 'Ninjas', 'Flipping Out', 'So Awesome'
-            frances.add_branch_cat_subcat_article(*args)
+            frances.quick_activity_setup(*args)
 
             # Erica: Start a new task, "Diving for Dollars", create a new category
             # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
             args = 'Diving for Dollars', 'Ninjas', 'Flipping Out', 'So Awesome'
-            erica.add_branch_cat_subcat_article(*args)
+            erica.quick_activity_setup(*args)
 
             # Erica edits the new article.
             erica.edit_article(title_str='So, So Awesome', body_str='It was the best of times.')
@@ -365,13 +365,13 @@ class TestProcess (TestCase):
             # Start a new task, "Bobbing for Apples", create a new category
             # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
             args = 'Bobbing for Apples', 'Ninjas', 'Flipping Out', 'So Awesome'
-            f_branch_name = frances.add_branch_cat_subcat_article(*args)
+            f_branch_name = frances.quick_activity_setup(*args)
             f_article_path = frances.path
 
             # Start a new task, "Diving for Dollars", create a new category
             # "Samurai", subcategory "Flipping Out", and article "So Awesome".
             args = 'Diving for Dollars', 'Samurai', 'Flipping Out', 'So Awesome'
-            e_branch_name = erica.add_branch_cat_subcat_article(*args)
+            e_branch_name = erica.quick_activity_setup(*args)
 
             # Edit the new article.
             erica.edit_article(title_str='So, So Awesome', body_str='It was the best of times.')
@@ -418,7 +418,7 @@ class TestProcess (TestCase):
 
             # Frances: Start a new task, topic, subtopic, article
             args = 'Triassic for Artemia', 'Biological', 'Toxicity', 'Assays'
-            frances.add_branch_cat_subcat_article(*args)
+            frances.quick_activity_setup(*args)
             branch_name = frances.get_branch_name()
 
             # Frances and Erica load the same article
@@ -1024,7 +1024,7 @@ class TestProcess (TestCase):
             # Start a new task, "Bobbing for Apples", create a new category
             # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
             args = 'Bobbing for Apples', 'Ninjas', 'Flipping Out', 'So Awesome'
-            frances.add_branch_cat_subcat_article(*args)
+            frances.quick_activity_setup(*args)
             frances.edit_article(title_str='So, So Awesome', body_str='It was the best of times.')
             
             # Erica now opens the article that Frances started.

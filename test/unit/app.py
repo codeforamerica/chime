@@ -1497,7 +1497,7 @@ class TestApp (TestCase):
 
             # Start a new task, topic, subtopic, article
             args = 'Mermithergate for Ant Worker', 'Enoplia Nematode', 'Genus Mermis', 'Cephalotes Atratus'
-            erica.add_branch_cat_subcat_article(*args)
+            erica.quick_activity_setup(*args)
 
             # Edit the new article and give it a non-roman character title
             erica.edit_article(u'快速狐狸', u'Myrmeconema ੯ूᵕू ໒꒱ƶƵ Neotropicum')
