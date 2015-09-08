@@ -627,9 +627,8 @@ class TestApp (TestCase):
             self.assertTrue(PATTERN_BENEFICIARY_COMMENT.format(disposable_task_beneficiary) in response.data)
 
             # create a branch programmatically on our pre-made clone
-            check_task_description = u'Creating a Star Child'
-            check_task_beneficiary = u'Ancient Aliens'
-            check_branch = repo_functions.get_start_branch(self.clone1, 'master', check_task_description, check_task_beneficiary, fake_author_email)
+            check_task_description = u'Creating a Star Child for Ancient Aliens'
+            check_branch = repo_functions.get_start_branch(self.clone1, 'master', check_task_description, fake_author_email)
             self.assertTrue(check_branch.name in self.clone1.branches)
             self.assertTrue(check_branch.name in self.origin.branches)
             # verify that the branch doesn't exist in our new clone
@@ -906,9 +905,8 @@ class TestApp (TestCase):
             self.assertTrue(PATTERN_BENEFICIARY_COMMENT.format(disposable_task_beneficiary) in response.data)
 
             # create a branch programmatically on our pre-made clone
-            check_task_description = u'the branch we are checking for'
-            check_task_beneficiary = u'just me'
-            check_branch = repo_functions.get_start_branch(self.clone1, 'master', check_task_description, check_task_beneficiary, fake_author_email)
+            check_task_description = u'the branch we are checking for for just me'
+            check_branch = repo_functions.get_start_branch(self.clone1, 'master', check_task_description, fake_author_email)
             self.assertTrue(check_branch.name in self.clone1.branches)
             self.assertTrue(check_branch.name in self.origin.branches)
             # verify that the branch doesn't exist in our new clone
@@ -925,7 +923,6 @@ class TestApp (TestCase):
             # the task description should be in the returned HTML
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('articles-list') in response.data)
             self.assertTrue(PATTERN_TASK_COMMENT.format(check_task_description) in response.data)
-            self.assertTrue(PATTERN_BENEFICIARY_COMMENT.format(check_task_beneficiary) in response.data)
 
             # the branch name should now be in the original repo's branches list
             self.assertTrue(check_branch.name in new_clone.branches)
@@ -964,9 +961,8 @@ class TestApp (TestCase):
         with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'assertion': fake_author_email})
 
-        fake_task_description = u'unimportant task'
-        fake_task_beneficiary = u'unimportant person'
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', fake_task_description, fake_task_beneficiary, fake_author_email)
+        fake_task_description = u'unimportant task for unimportant person'
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', fake_task_description, fake_author_email)
         branch1_name = branch1.name
         branch1.checkout()
 
@@ -1113,10 +1109,9 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            task_description = u'force a clam shell open'
-            task_beneficiary = u'starfish'
+            task_description = u'force a clam shell open for starfish'
 
-            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
             self.assertTrue(working_branch.name in self.clone1.branches)
             self.assertTrue(working_branch.name in self.origin.branches)
             working_branch_name = working_branch.name
@@ -1248,8 +1243,7 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            working_branch = repo_functions.get_start_branch(self.clone1, 'master', u'force a clam shell open',
-                                                             u'starfish', fake_author_email)
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', u'force a clam shell open for starfish', fake_author_email)
             working_branch.checkout()
 
             # create a new category
@@ -1290,10 +1284,9 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            task_description = u'vomit digestive fluid onto rotting flesh'
-            task_beneficiary = u'flies'
+            task_description = u'vomit digestive fluid onto rotting flesh for flies'
 
-            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
             self.assertTrue(working_branch.name in self.clone1.branches)
             self.assertTrue(working_branch.name in self.origin.branches)
             working_branch_name = working_branch.name
@@ -1431,10 +1424,9 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            task_description = u'Remove Small Organic Particles From Seawater Passing Over Outspread Tentacles'
-            task_beneficiary = u'Sea Anemones'
+            task_description = u'Remove Small Organic Particles From Seawater Passing Over Outspread Tentacles for Sea Anemones'
 
-            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
             self.assertTrue(working_branch.name in self.clone1.branches)
             self.assertTrue(working_branch.name in self.origin.branches)
             working_branch_name = working_branch.name
@@ -1479,10 +1471,9 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            task_description = u'eviscerate a salmon'
-            task_beneficiary = u'baby grizzly bears'
+            task_description = u'eviscerate a salmon for baby grizzly bears'
 
-            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
             self.assertTrue(working_branch.name in self.clone1.branches)
             self.assertTrue(working_branch.name in self.origin.branches)
             working_branch_name = working_branch.name
@@ -1552,10 +1543,9 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            task_description = u'eviscerate a salmon'
-            task_beneficiary = u'baby grizzly bears'
+            task_description = u'eviscerate a salmon for baby grizzly bears'
 
-            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
             self.assertTrue(working_branch.name in self.clone1.branches)
             self.assertTrue(working_branch.name in self.origin.branches)
             working_branch_name = working_branch.name
@@ -1626,10 +1616,9 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            task_description = u'rapidly discharge black ink into the mantle cavity'
-            task_beneficiary = u'squids'
+            task_description = u'rapidly discharge black ink into the mantle cavity for squids'
 
-            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
             self.assertTrue(working_branch.name in self.clone1.branches)
             self.assertTrue(working_branch.name in self.origin.branches)
             working_branch_name = working_branch.name
@@ -1706,10 +1695,9 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            task_description = u'clasp with front legs and draw up the hind end'
-            task_beneficiary = u'geometridae'
+            task_description = u'clasp with front legs and draw up the hind end for geometridae'
 
-            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
             self.assertTrue(working_branch.name in self.clone1.branches)
             self.assertTrue(working_branch.name in self.origin.branches)
             working_branch_name = working_branch.name
@@ -1769,10 +1757,9 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            task_description = u'regurgitate partially digested worms and grubs'
-            task_beneficiary = u'baby birds'
+            task_description = u'regurgitate partially digested worms and grubs for baby birds'
 
-            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
             self.assertTrue(working_branch.name in self.clone1.branches)
             self.assertTrue(working_branch.name in self.origin.branches)
             working_branch_name = working_branch.name
@@ -1845,10 +1832,9 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            task_description = u'force a clam shell open'
-            task_beneficiary = u'starfish'
+            task_description = u'force a clam shell open for starfish'
 
-            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
             self.assertTrue(working_branch.name in self.clone1.branches)
             self.assertTrue(working_branch.name in self.origin.branches)
             working_branch_name = working_branch.name
@@ -1907,10 +1893,9 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            task_description = u'deposit eggs in a syconium'
-            task_beneficiary = u'fig wasp larvae'
+            task_description = u'deposit eggs in a syconium for fig wasp larvae'
 
-            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
             self.assertTrue(working_branch.name in self.clone1.branches)
             self.assertTrue(working_branch.name in self.origin.branches)
             working_branch_name = working_branch.name
@@ -2055,10 +2040,9 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            task_description = u'filter plankton from sea water'
-            task_beneficiary = u'humpback whales'
+            task_description = u'filter plankton from sea water for humpback whales'
 
-            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
             self.assertTrue(working_branch.name in self.clone1.branches)
             self.assertTrue(working_branch.name in self.origin.branches)
             working_branch_name = working_branch.name
@@ -2096,10 +2080,9 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            task_description = u'filter plankton from sea water'
-            task_beneficiary = u'humpback whales'
+            task_description = u'filter plankton from sea water for humpback whales'
 
-            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
             self.assertTrue(working_branch.name in self.clone1.branches)
             self.assertTrue(working_branch.name in self.origin.branches)
             working_branch_name = working_branch.name
@@ -2156,10 +2139,9 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            task_description = u'filter plankton from sea water'
-            task_beneficiary = u'humpback whales'
+            task_description = u'filter plankton from sea water for humpback whales'
 
-            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
             self.assertTrue(working_branch.name in self.clone1.branches)
             self.assertTrue(working_branch.name in self.origin.branches)
             working_branch_name = working_branch.name
@@ -2214,10 +2196,9 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            task_description = u'filter plankton from sea water'
-            task_beneficiary = u'humpback whales'
+            task_description = u'filter plankton from sea water for humpback whales'
 
-            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
             self.assertTrue(working_branch.name in self.clone1.branches)
             self.assertTrue(working_branch.name in self.origin.branches)
             working_branch_name = working_branch.name
@@ -2250,10 +2231,9 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            task_description = u'drink quinine'
-            task_beneficiary = u'mosquitos'
+            task_description = u'drink quinine for mosquitos'
 
-            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
             self.assertTrue(working_branch.name in self.clone1.branches)
             self.assertTrue(working_branch.name in self.origin.branches)
             working_branch_name = working_branch.name

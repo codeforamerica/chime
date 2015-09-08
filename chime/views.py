@@ -215,7 +215,7 @@ def start_branch():
         flash(u'Please describe what you\'re doing when you start a new activity!', u'warning')
         return render_activities_list(task_beneficiary=task_beneficiary)
 
-    branch = repo_functions.get_start_branch(repo, master_name, task_description, task_beneficiary, session['email'])
+    branch = repo_functions.get_start_branch(repo, master_name, task_description, session['email'])
     safe_branch = branch_name2path(branch.name)
     return redirect('/tree/{}/edit/'.format(safe_branch), code=303)
 
