@@ -427,6 +427,30 @@ class TestApp (TestCase):
             self.assertEqual(flash_message_text, erica.soup.find('li', class_='flash').text)
 
     # in TestApp
+    def test_whitespace_stripped_from_description(self):
+        ''' Carriage returns, tabs, spaces are stripped from task descriptions before they're saved.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.test_client, self)
+                erica.sign_in(email='erica@example.com')
+
+            # start a new task with a lot of random whitespace
+            task_description = u'I think\n\r\n\rI am      so   \t\t\t   coool!!\n\n\nYeah.\n\nOK\n\rERWEREW      dkkdk'
+            task_description_stripped = u'I think I am so coool!! Yeah. OK ERWEREW dkkdk'
+            erica.start_task(description=task_description)
+
+            # the stripped comment is in the HTML
+            pattern_task_comment_stripped = sub(ur'<!--|-->', u'', PATTERN_TASK_COMMENT)
+            comments = erica.soup.findAll(text=lambda text: isinstance(text, Comment))
+            self.assertTrue(pattern_task_comment_stripped.format(task_description_stripped) in comments)
+
+            # the stripped comment is in the task metadata
+            repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email='erica@example.com')
+            task_metadata = repo_functions.get_task_metadata_for_branch(repo, erica.get_branch_name())
+            self.assertEqual(task_description_stripped, task_metadata['task_description'])
+
+    # in TestApp
     def test_notification_on_create_category(self):
         ''' You get a flash notification when you create a category
         '''
