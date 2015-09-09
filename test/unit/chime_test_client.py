@@ -295,8 +295,6 @@ class ChimeTestClient:
         data = {i['name']: i.get('value', u'')
                 for i in del_form.find_all(['input', 'button', 'textarea'])}
 
-        print data
-
         delete_article_path = urlparse(urljoin(self.path, del_form['action'])).path
         response = self.client.post(delete_article_path, data=data)
 
