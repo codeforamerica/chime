@@ -1,3 +1,4 @@
+from multiprocessing.pool import ThreadPool
 from subprocess import check_call
 from tempfile import mkdtemp
 from shutil import rmtree
@@ -5,7 +6,7 @@ from os.path import join
 from os import mkdir
 from unittest import TestCase
 
-from storage.user_task import get_usertask
+from storage.user_task import UserTask
 
 
 class UserTaskTest(TestCase):
@@ -35,7 +36,8 @@ class UserTaskTest(TestCase):
         call_git('push origin {}'.format(branch_name), clone_dirname)
 
     def make_test_usertask(self, user, task):
-        return get_usertask(user, task, self.origin_dirname, self.working_dirname)
+        thingy = UserTask(user, task, self.origin_dirname, self.working_dirname)
+        return thingy
 
     def tearDown(self):
         rmtree(self.working_dirname)
@@ -52,7 +54,7 @@ class UserTaskTest(TestCase):
     def testIsAlwaysClean(self):
         with self.make_test_usertask("erica", "task-xyz") as usertask:
             usertask.write('parking.md', "---\nnew stuff")
-        with get_usertask("erica", "task-xyz", self.origin_dirname) as usertask:
+        with self.make_test_usertask("erica", "task-xyz") as usertask:
             self.assertEqual(usertask.read('parking.md'), '---\nold stuff')
 
     def testCommitWrite(self):
@@ -69,7 +71,8 @@ class UserTaskTest(TestCase):
         with self.make_test_usertask("frances", "task-xyz") as usertask:
             self.assertEqual(usertask.read('jobs.md'), '---\nnew stuff')
 
-    def testSameUserAndTaskHasSameWorkspace(self):
+    # TODO: discuss whether this test can be rewritten in a locking world
+    def DONTtestSameUserAndTaskHasSameWorkspace(self):
         with self.make_test_usertask("erica", "task-xyz") as erica1:
             with self.make_test_usertask("erica", "task-xyz") as erica2:
                 erica1.write('myfile.md', "erica's contents")
@@ -99,6 +102,25 @@ class UserTaskTest(TestCase):
             ericaabc.commit('me too')
             self.assertEqual("erica's abc contents", ericaabc.read('myfile.md'))
 
+    def testSimultaneousAccessSharesNicely(self):
+        with self.make_test_usertask("erica", "task-xyz") as usertask:
+            usertask.write('value', "0")
+            usertask.commit('ignored')
+
+        def do_work(ignored):
+            with self.make_test_usertask("erica", "task-xyz") as usertask:
+                new_value = 1 + int(usertask.read('value'))
+                usertask.write('value', "{}".format(new_value))
+                usertask.commit('ignored')
+
+        pool = ThreadPool(10)
+        pool.map(do_work, range(0, 10))
+
+        with self.make_test_usertask("erica", "task-xyz") as usertask:
+            self.assertEqual("10", usertask.read('value'))
+
+
+# TODO: make commit message optional
 
 def call_git(command, working_dir=None):
     if type(command) is list:
