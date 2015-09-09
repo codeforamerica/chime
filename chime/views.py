@@ -206,7 +206,7 @@ def authorization_failed():
 @synch_required
 def start_branch():
     repo = get_repo(flask_app=current_app)
-    task_description = request.form.get('task_description').strip()
+    task_description = sub(r'\s+', ' ', request.form.get('task_description')).strip()
     master_name = current_app.config['default_branch']
 
     # require a task description
