@@ -60,14 +60,14 @@ class UserTaskTest(TestCase):
     def testCommitWrite(self):
         with self.make_test_usertask("erica", "task-xyz") as usertask:
             usertask.write('parking.md', "---\nnew stuff")
-            usertask.commit('I wrote new things')
+            usertask.commit()
         with self.make_test_usertask("frances", "task-xyz") as usertask:
             self.assertEqual(usertask.read('parking.md'), '---\nnew stuff')
 
     def testCommitNewFile(self):
         with self.make_test_usertask("erica", "task-xyz") as usertask:
             usertask.write('jobs.md', "---\nnew stuff")
-            usertask.commit('I wrote new things')
+            usertask.commit()
         with self.make_test_usertask("frances", "task-xyz") as usertask:
             self.assertEqual(usertask.read('jobs.md'), '---\nnew stuff')
 
@@ -90,37 +90,35 @@ class UserTaskTest(TestCase):
             self.assertEqual("frances's contents", frances.read('myfile.md'))
 
     def testUserCanSwitchBetweenDifferentTasks(self):
-        with self.make_test_usertask("erica", "task-xyz") as ericaxyz:
-            ericaxyz.write('myfile.md', "erica's xyz contents")
-            ericaxyz.commit('committing my stuff')
-            self.assertEqual("erica's xyz contents", ericaxyz.read('myfile.md'))
+        with self.make_test_usertask("erica", "task-xyz") as xyz:
+            xyz.write('myfile.md', "xyz contents")
+            xyz.commit()
+            self.assertEqual("xyz contents", xyz.read('myfile.md'))
 
         self.setup_task("task-abc", self.clone_dirname, 'new stuff')
 
-        with self.make_test_usertask("erica", "task-abc") as ericaabc:
-            ericaabc.write('myfile.md', "erica's abc contents")
-            ericaabc.commit('me too')
-            self.assertEqual("erica's abc contents", ericaabc.read('myfile.md'))
+        with self.make_test_usertask("erica", "task-abc") as abc:
+            abc.write('myfile.md', "abc contents")
+            abc.commit()
+            self.assertEqual("abc contents", abc.read('myfile.md'))
 
     def testSimultaneousAccessSharesNicely(self):
         with self.make_test_usertask("erica", "task-xyz") as usertask:
             usertask.write('value', "0")
-            usertask.commit('ignored')
+            usertask.commit()
 
-        def do_work(ignored):
+        def update_file(ignored):
             with self.make_test_usertask("erica", "task-xyz") as usertask:
                 new_value = 1 + int(usertask.read('value'))
                 usertask.write('value', "{}".format(new_value))
-                usertask.commit('ignored')
+                usertask.commit()
 
         pool = ThreadPool(10)
-        pool.map(do_work, range(0, 10))
+        pool.map(update_file, range(0, 10))
 
         with self.make_test_usertask("erica", "task-xyz") as usertask:
             self.assertEqual("10", usertask.read('value'))
 
-
-# TODO: make commit message optional
 
 def call_git(command, working_dir=None):
     if type(command) is list:
