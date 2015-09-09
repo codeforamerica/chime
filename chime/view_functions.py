@@ -788,6 +788,10 @@ def make_list_of_published_activities(repo, limit=10):
     published = []
     for ref in ref_list:
         ref_split = ref.split('\t')
+        # skip if we didn't get a fully formed line of data
+        if len(ref_split) < 4:
+            continue
+
         safe_branch = branch_name2path(ref_split[0])
 
         # if there's no parsable task metadata in the tag's subject, this isn't a viable published activity
