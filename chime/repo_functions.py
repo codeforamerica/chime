@@ -172,7 +172,7 @@ def get_branch_if_exists_at_origin(clone, default_branch_name, new_branch_name):
     except GitCommandError:
         return None
 
-def get_start_branch(clone, default_branch_name, task_description, task_beneficiary, author_email):
+def get_start_branch(clone, default_branch_name, task_description, author_email):
     ''' Start a new repository branch, push it to origin and return it.
 
         Don't touch the working directory. If an existing branch is found
@@ -194,7 +194,7 @@ def get_start_branch(clone, default_branch_name, task_description, task_benefici
     # create the task metadata file in the new branch
     active_branch_name = clone.active_branch.name
     clone.git.checkout(new_branch_name)
-    metadata_values = {"author_email": author_email, "task_description": task_description, "task_beneficiary": task_beneficiary}
+    metadata_values = {"author_email": author_email, "task_description": task_description}
     save_task_metadata_for_branch(clone, default_branch_name, metadata_values)
     clone.git.checkout(active_branch_name)
 

@@ -96,10 +96,10 @@ class ChimeTestClient:
 
         return branch_name
 
-    def start_task(self, description, beneficiary):
+    def start_task(self, description):
         ''' Start a new task.
         '''
-        data = {'task_description': description, 'task_beneficiary': beneficiary}
+        data = {'task_description': description}
         response = self.client.post('/start', data=data)
 
         if response.status_code == 200:
@@ -178,22 +178,27 @@ class ChimeTestClient:
 
         # View the new article.
         self.follow_redirect(response, 303)
-    
-    def add_branch_cat_subcat_article(self, desc, benef, cat, subcat, title):
+
+    def quick_activity_setup(self, description, category_name=u'', subcategory_name=u'', article_name=u''):
+        ''' Set up an activity quickly, with topic, sub-topic, and article if requested.
         '''
-        '''
-        # Start a new task, "Diving for Dollars".
-        self.start_task(description=desc, beneficiary=benef)
+        # Start a new task
+        self.start_task(description=description)
         branch_name = self.get_branch_name()
 
         # Look for an "other" link that we know about - is it a category?
         self.follow_link(href='/tree/{}/edit/other/'.format(branch_name))
 
         # Create a new category, subcategory, and article.
-        self.add_category(category_name=cat)
-        self.add_subcategory(subcategory_name=subcat)
-        self.add_article(article_name=title)
-        
+        if category_name:
+            self.add_category(category_name=category_name)
+
+        if subcategory_name:
+            self.add_subcategory(subcategory_name=subcategory_name)
+
+        if article_name:
+            self.add_article(article_name=article_name)
+
         return branch_name
 
     def submit_edit_article_form(self, title_str, body_str):

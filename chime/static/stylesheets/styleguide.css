@@ -467,6 +467,7 @@ th {
 /* line 54, ../sass/core/_utilities.scss */
 .text-detail {
   font-size: 14px;
+  font-weight: 400;
 }
 
 /* line 21, ../sass/core/_layout.scss */

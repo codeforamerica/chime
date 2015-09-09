@@ -467,6 +467,7 @@ th {
 /* line 54, ../sass/core/_utilities.scss */
 .text-detail {
   font-size: 14px;
+  font-weight: 400;
 }
 
 /* line 21, ../sass/core/_layout.scss */
@@ -2026,11 +2027,28 @@ input[type="submit"]:disabled:hover {
 }
 
 /* line 73, ../sass/templates/_activities-list.scss */
+.new-task__description {
+  margin-top: 0;
+  font-weight: bold;
+}
+
+/* line 78, ../sass/templates/_activities-list.scss */
 .new-task__form {
-  margin-top: 2em;
+  margin-top: 5em;
   background-color: #f5f5f5;
   border: 1px solid #e0e0e0;
   padding: 1em;
+}
+
+/* line 85, ../sass/templates/_activities-list.scss */
+.new-task__textarea {
+  resize: none;
+  padding: .5em;
+}
+
+/* line 90, ../sass/templates/_activities-list.scss */
+.new-task__actions {
+  margin-top: 1em;
 }
 
 /* line 1, ../sass/templates/_activity-overview.scss */

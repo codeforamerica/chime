@@ -70,10 +70,24 @@
 	}
 }
 
+.new-task__description {
+	margin-top: 0;
+	font-weight: bold;
+}
+
 .new-task__form {
-	margin-top: 2em;
+	margin-top: 5em;
 	background-color: $color-grey-100;
 	border: 1px solid $color-grey-300;
 	padding: 1em;
+}
+
+.new-task__textarea {
+	resize: none;
+	padding: .5em;
+}
+
+.new-task__actions {
+	margin-top: 1em;
 }
 

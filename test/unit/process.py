@@ -34,14 +34,13 @@ codecs.register(RotUnicode.search_function)
 PATTERN_BRANCH_COMMENT = u'<!-- branch: {} -->'
 PATTERN_AUTHOR_COMMENT = u'<!-- author: {} -->'
 PATTERN_TASK_COMMENT = u'<!-- task: {} -->'
-PATTERN_BENEFICIARY_COMMENT = u'<!-- beneficiary: {} -->'
 PATTERN_TEMPLATE_COMMENT = u'<!-- template name: {} -->'
 PATTERN_FILE_COMMENT = u'<!-- file type: {file_type}, file name: {file_name}, file title: {file_title} -->'
 PATTERN_OVERVIEW_ITEM_CREATED = u'<p>The "{created_name}" {created_type} was created by {author_email}.</p>'
 PATTERN_OVERVIEW_ACTIVITY_STARTED = u'<p>The "{activity_name}" activity was started by {author_email}.</p>'
 PATTERN_OVERVIEW_COMMENT_BODY = u'<div class="comment__body">{comment_body}</div>'
 PATTERN_OVERVIEW_ITEM_DELETED = u'<p>The "{deleted_name}" {deleted_type} {deleted_also}was deleted by {author_email}.</p>'
-PATTERN_FLASH_TASK_DELETED = u'You deleted the "{description}" activity for {beneficiary}!'
+PATTERN_FLASH_TASK_DELETED = u'You deleted the "{description}" activity!'
 
 PATTERN_FLASH_SAVED_CATEGORY = u'<li class="flash flash--notice">Saved changes to the {title} topic! Remember to submit this change for feedback when you\'re ready to go live.</li>'
 PATTERN_FLASH_CREATED_CATEGORY = u'Created a new topic named {title}! Remember to submit this change for feedback when you\'re ready to go live.'
@@ -148,8 +147,8 @@ class TestProcess (TestCase):
             
             # Start a new task, "Diving for Dollars", create a new category
             # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
-            args = 'Diving', 'Dollars', 'Ninjas', 'Flipping Out', 'So Awesome'
-            branch_name = erica.add_branch_cat_subcat_article(*args)
+            args = 'Diving for Dollars', 'Ninjas', 'Flipping Out', 'So Awesome'
+            branch_name = erica.quick_activity_setup(*args)
             
             # Edit the new article.
             erica.edit_article('So, So Awesome', 'It was the best of times.')
@@ -187,7 +186,7 @@ class TestProcess (TestCase):
                 frances.sign_in('frances@example.com')
             
             # Erica starts a new task, "Diving for Dollars".
-            erica.start_task('Diving', 'Dollars')
+            erica.start_task('Diving for Dollars')
             erica_branchname = erica.get_branch_name()
             
             # Erica creates a new category and asks for feedback.
@@ -197,7 +196,7 @@ class TestProcess (TestCase):
             erica.request_feedback('Is this okay?')
             
             # Frances starts a new task, "Bobbing for Apples".
-            frances.start_task('Bobbing', 'Apples')
+            frances.start_task('Bobbing for Apples')
             frances_branchname = frances.get_branch_name()
             
             # Frances creates a new category.
@@ -211,7 +210,7 @@ class TestProcess (TestCase):
             frances.publish_activity()
             
             # Erica should now expect to see her own new category.
-            erica.start_task('Canticle', 'Leibowitz')
+            erica.start_task('Canticle for Leibowitz')
             erica_branchname2 = erica.get_branch_name()
             erica.follow_link('/tree/{}/edit/other/'.format(erica_branchname2))
             self.assertIsNotNone(erica.soup.find(text='Dollars'), 'Should see first published category')
@@ -238,8 +237,8 @@ class TestProcess (TestCase):
 
             # Start a new task, "Diving for Dollars", create a new category
             # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
-            args = 'Diving', 'Dollars', 'Ninjas', 'Flipping Out', 'So Awesome'
-            branch_name = erica.add_branch_cat_subcat_article(*args)
+            args = 'Diving for Dollars', 'Ninjas', 'Flipping Out', 'So Awesome'
+            branch_name = erica.quick_activity_setup(*args)
 
             # Edit the new article.
             erica.edit_article(title_str='So, So Awesome', body_str='It was the best of times.')
@@ -285,14 +284,14 @@ class TestProcess (TestCase):
 
             # Start a new task, "Bobbing for Apples", create a new category
             # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
-            args = 'Bobbing', 'Apples', 'Ninjas', 'Flipping Out', 'So Awesome'
-            f_branch_name = frances.add_branch_cat_subcat_article(*args)
+            args = 'Bobbing for Apples', 'Ninjas', 'Flipping Out', 'So Awesome'
+            f_branch_name = frances.quick_activity_setup(*args)
             f_article_path = frances.path
 
             # Start a new task, "Diving for Dollars", create a new category
             # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
-            args = 'Diving', 'Dollars', 'Ninjas', 'Flipping Out', 'So Awesome'
-            e_branch_name = erica.add_branch_cat_subcat_article(*args)
+            args = 'Diving for Dollars', 'Ninjas', 'Flipping Out', 'So Awesome'
+            e_branch_name = erica.quick_activity_setup(*args)
 
             # Edit the new article.
             erica.edit_article(title_str='So, So Awesome', body_str='It was the best of times.')
@@ -337,13 +336,13 @@ class TestProcess (TestCase):
 
             # Frances: Start a new task, "Bobbing for Apples", create a new category
             # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
-            args = 'Bobbing', 'Apples', 'Ninjas', 'Flipping Out', 'So Awesome'
-            frances.add_branch_cat_subcat_article(*args)
+            args = 'Bobbing for Apples', 'Ninjas', 'Flipping Out', 'So Awesome'
+            frances.quick_activity_setup(*args)
 
             # Erica: Start a new task, "Diving for Dollars", create a new category
             # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
-            args = 'Diving', 'Dollars', 'Ninjas', 'Flipping Out', 'So Awesome'
-            erica.add_branch_cat_subcat_article(*args)
+            args = 'Diving for Dollars', 'Ninjas', 'Flipping Out', 'So Awesome'
+            erica.quick_activity_setup(*args)
 
             # Erica edits the new article.
             erica.edit_article(title_str='So, So Awesome', body_str='It was the best of times.')
@@ -365,14 +364,14 @@ class TestProcess (TestCase):
 
             # Start a new task, "Bobbing for Apples", create a new category
             # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
-            args = 'Bobbing', 'Apples', 'Ninjas', 'Flipping Out', 'So Awesome'
-            f_branch_name = frances.add_branch_cat_subcat_article(*args)
+            args = 'Bobbing for Apples', 'Ninjas', 'Flipping Out', 'So Awesome'
+            f_branch_name = frances.quick_activity_setup(*args)
             f_article_path = frances.path
 
             # Start a new task, "Diving for Dollars", create a new category
             # "Samurai", subcategory "Flipping Out", and article "So Awesome".
-            args = 'Diving', 'Dollars', 'Samurai', 'Flipping Out', 'So Awesome'
-            e_branch_name = erica.add_branch_cat_subcat_article(*args)
+            args = 'Diving for Dollars', 'Samurai', 'Flipping Out', 'So Awesome'
+            e_branch_name = erica.quick_activity_setup(*args)
 
             # Edit the new article.
             erica.edit_article(title_str='So, So Awesome', body_str='It was the best of times.')
@@ -418,8 +417,8 @@ class TestProcess (TestCase):
                 frances.sign_in(frances_email)
 
             # Frances: Start a new task, topic, subtopic, article
-            args = 'Triassic', 'Artemia', 'Biological', 'Toxicity', 'Assays'
-            frances.add_branch_cat_subcat_article(*args)
+            args = 'Triassic for Artemia', 'Biological', 'Toxicity', 'Assays'
+            frances.quick_activity_setup(*args)
             branch_name = frances.get_branch_name()
 
             # Frances and Erica load the same article
@@ -441,7 +440,7 @@ class TestProcess (TestCase):
             frances.open_link(url='/')
             frances.delete_task(branch_name=branch_name)
             # Frances successfully creates a new task
-            frances.start_task(description='Narrow Braincase', beneficiary='Larger Carnassials')
+            frances.start_task(description='Narrow Braincase for Larger Carnassials')
 
     # in TestProcess
     def test_task_not_marked_published_after_merge_conflict(self):
@@ -457,7 +456,7 @@ class TestProcess (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task
-            erica.start_task(description='Eating Carrion', beneficiary='Vultures')
+            erica.start_task(description='Eating Carrion for Vultures')
             erica_branch_name = erica.get_branch_name()
 
             # Look for an "other" link that we know about - is it a category?
@@ -479,7 +478,7 @@ class TestProcess (TestCase):
             # Switch users
             #
             # Start a new task
-            frances.start_task(description='Flying in Circles', beneficiary='Vultures')
+            frances.start_task(description='Flying in Circles for Vultures')
             frances_branch_name = frances.get_branch_name()
 
             # Look for an "other" link that we know about - is it a category?
@@ -537,7 +536,7 @@ class TestProcess (TestCase):
                 frances.sign_in(frances_email)
 
             # Start a new task
-            erica.start_task(description='Eating Carrion', beneficiary='Vultures')
+            erica.start_task(description='Eating Carrion for Vultures')
             erica_branch_name = erica.get_branch_name()
 
             # Enter the "other" folder
@@ -589,7 +588,7 @@ class TestProcess (TestCase):
                 frances.sign_in(frances_email)
 
             # Start a new task
-            erica.start_task(description='Eating Carrion', beneficiary='Vultures')
+            erica.start_task(description='Eating Carrion for Vultures')
             erica_branch_name = erica.get_branch_name()
 
             # Enter the "other" folder
@@ -652,9 +651,8 @@ class TestProcess (TestCase):
                 frances.sign_in(frances_email)
 
             # Start a new task
-            task_description = u'Squeeze A School Of Fish Into A Bait Ball'
-            task_beneficiary = u'Dolphins'
-            erica.start_task(description=task_description, beneficiary=task_beneficiary)
+            task_description = u'Squeeze A School Of Fish Into A Bait Ball for Dolphins'
+            erica.start_task(description=task_description)
             erica_branch_name = erica.get_branch_name()
 
             # Enter the "other" folder
@@ -722,9 +720,8 @@ class TestProcess (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task
-            task_description = u'Eating Carrion'
-            task_beneficiary = u'Vultures'
-            erica.start_task(description=task_description, beneficiary=task_beneficiary)
+            task_description = u'Eating Carrion for Vultures'
+            erica.start_task(description=task_description)
             erica_branch_name = erica.get_branch_name()
 
             # Enter the "other" folder
@@ -736,7 +733,7 @@ class TestProcess (TestCase):
             # delete erica's task
             frances.open_link(url='/')
             frances.delete_task(branch_name=erica_branch_name)
-            self.assertEqual(PATTERN_FLASH_TASK_DELETED.format(description=task_description, beneficiary=task_beneficiary), frances.soup.find('li', class_='flash').text)
+            self.assertEqual(PATTERN_FLASH_TASK_DELETED.format(description=task_description), frances.soup.find('li', class_='flash').text)
 
             #
             # Switch users
@@ -760,9 +757,8 @@ class TestProcess (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task
-            task_description = u'Eating Carrion'
-            task_beneficiary = u'Vultures'
-            erica.start_task(description=task_description, beneficiary=task_beneficiary)
+            task_description = u'Eating Carrion for Vultures'
+            erica.start_task(description=task_description)
             erica_branch_name = erica.get_branch_name()
 
             # Enter the "other" folder
@@ -774,7 +770,7 @@ class TestProcess (TestCase):
             # delete erica's task
             frances.open_link(url='/')
             frances.delete_task(branch_name=erica_branch_name)
-            self.assertEqual(PATTERN_FLASH_TASK_DELETED.format(description=task_description, beneficiary=task_beneficiary), frances.soup.find('li', class_='flash').text)
+            self.assertEqual(PATTERN_FLASH_TASK_DELETED.format(description=task_description), frances.soup.find('li', class_='flash').text)
 
             # delete all trace of the branch locally
             repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email='erica@example.com')
@@ -808,9 +804,8 @@ class TestProcess (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task
-            task_description = u'Squeeze A School Of Fish Into A Bait Ball'
-            task_beneficiary = u'Dolphins'
-            erica.start_task(description=task_description, beneficiary=task_beneficiary)
+            task_description = u'Squeeze A School Of Fish Into A Bait Ball for Dolphins'
+            erica.start_task(description=task_description)
             erica_branch_name = erica.get_branch_name()
 
             # Enter the "other" folder
@@ -834,7 +829,7 @@ class TestProcess (TestCase):
             # delete erica's task
             frances.open_link(url='/')
             frances.delete_task(branch_name=erica_branch_name)
-            self.assertEqual(PATTERN_FLASH_TASK_DELETED.format(description=task_description, beneficiary=task_beneficiary), frances.soup.find('li', class_='flash').text)
+            self.assertEqual(PATTERN_FLASH_TASK_DELETED.format(description=task_description), frances.soup.find('li', class_='flash').text)
 
             #
             # Switch users
@@ -872,9 +867,8 @@ class TestProcess (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task
-            task_description = u'Eating Carrion'
-            task_beneficiary = u'Vultures'
-            erica.start_task(description=task_description, beneficiary=task_beneficiary)
+            task_description = u'Eating Carrion for Vultures'
+            erica.start_task(description=task_description)
             erica_branch_name = erica.get_branch_name()
 
             # Enter the "other" folder
@@ -948,9 +942,8 @@ class TestProcess (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task
-            task_description = u'Eating Carrion'
-            task_beneficiary = u'Vultures'
-            erica.start_task(description=task_description, beneficiary=task_beneficiary)
+            task_description = u'Eating Carrion for Vultures'
+            erica.start_task(description=task_description)
             erica_branch_name = erica.get_branch_name()
 
             # Enter the "other" folder
@@ -973,7 +966,7 @@ class TestProcess (TestCase):
             # delete erica's task
             frances.open_link(url='/')
             frances.delete_task(branch_name=erica_branch_name)
-            self.assertEqual(PATTERN_FLASH_TASK_DELETED.format(description=task_description, beneficiary=task_beneficiary), frances.soup.find('li', class_='flash').text)
+            self.assertEqual(PATTERN_FLASH_TASK_DELETED.format(description=task_description), frances.soup.find('li', class_='flash').text)
 
             #
             # Switch users
@@ -1030,8 +1023,8 @@ class TestProcess (TestCase):
 
             # Start a new task, "Bobbing for Apples", create a new category
             # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
-            args = 'Bobbing', 'Apples', 'Ninjas', 'Flipping Out', 'So Awesome'
-            frances.add_branch_cat_subcat_article(*args)
+            args = 'Bobbing for Apples', 'Ninjas', 'Flipping Out', 'So Awesome'
+            frances.quick_activity_setup(*args)
             frances.edit_article(title_str='So, So Awesome', body_str='It was the best of times.')
             
             # Erica now opens the article that Frances started.

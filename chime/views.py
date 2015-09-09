@@ -207,15 +207,14 @@ def authorization_failed():
 def start_branch():
     repo = get_repo(flask_app=current_app)
     task_description = request.form.get('task_description').strip()
-    task_beneficiary = request.form.get('task_beneficiary').strip()
     master_name = current_app.config['default_branch']
 
     # require a task description
     if len(task_description) == 0:
         flash(u'Please describe what you\'re doing when you start a new activity!', u'warning')
-        return render_activities_list(task_beneficiary=task_beneficiary)
+        return render_activities_list()
 
-    branch = repo_functions.get_start_branch(repo, master_name, task_description, task_beneficiary, session['email'])
+    branch = repo_functions.get_start_branch(repo, master_name, task_description, session['email'])
     safe_branch = branch_name2path(branch.name)
     return redirect('/tree/{}/edit/'.format(safe_branch), code=303)
 
@@ -473,11 +472,10 @@ def show_activity_overview(branch_name):
     if repo_functions.get_conflict(repo, current_app.config['default_branch']):
         flash_unique(repo_functions.MERGE_CONFLICT_WARNING_FLASH_MESSAGE, u'warning')
 
-    # contains 'author_email', 'task_description', 'task_beneficiary'
+    # contains 'author_email', 'task_description'
     activity = repo_functions.get_task_metadata_for_branch(repo, branch_name)
     activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
     activity['task_description'] = activity['task_description'] if 'task_description' in activity else u''
-    activity['task_beneficiary'] = activity['task_beneficiary'] if 'task_beneficiary' in activity else u''
 
     kwargs = common_template_args(current_app.config, session)
 
@@ -545,11 +543,10 @@ def branch_history(branch_name, path=None):
 
     safe_branch = branch_name2path(branch_name)
 
-    # contains 'author_email', 'task_description', 'task_beneficiary'
+    # contains 'author_email', 'task_description'
     activity = repo_functions.get_task_metadata_for_branch(repo, branch_name)
     activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
     activity['task_description'] = activity['task_description'] if 'task_description' in activity else u''
-    activity['task_beneficiary'] = activity['task_beneficiary'] if 'task_beneficiary' in activity else u''
 
     article_edit_path = join('/tree/{}/edit'.format(branch_name2path(branch_name)), path)
 
