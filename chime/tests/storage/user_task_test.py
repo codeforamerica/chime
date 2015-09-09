@@ -3,13 +3,12 @@ from tempfile import mkdtemp
 from shutil import rmtree
 from os.path import join
 from os import mkdir
-
-# from ...storage.user_task import get_usertask
-from storage.user_task import get_usertask
 from unittest import TestCase
 
+from storage.user_task import get_usertask
 
-class TestFirst(TestCase):
+
+class UserTaskTest(TestCase):
     def setUp(self):
         self.working_dirname = mkdtemp(prefix='storage-test-')
 
@@ -22,9 +21,9 @@ class TestFirst(TestCase):
         call_git('--bare init', self.origin_dirname)
 
         call_git(['clone', self.origin_dirname, (self.clone_dirname)])
-
         call_git('commit -m First --allow-empty', self.clone_dirname)
         call_git('push origin master', self.clone_dirname)
+
         self.setup_task("task-xyz", self.clone_dirname)
 
     def setup_task(self, branch_name, clone_dirname, contents='old stuff'):
@@ -79,13 +78,13 @@ class TestFirst(TestCase):
                 self.assertEqual("erica's contents", erica2.read('myfile.md'))
 
     def testDifferentUsersHaveSeparateWorkspaces(self):
-        with self.make_test_usertask("erica", "task-xyz") as erica:
-            with self.make_test_usertask("frances", "task-xyz") as frances:
-                erica.write('myfile.md', "erica's contents")
-                frances.write('myfile.md', "frances's contents")
+        with self.make_test_usertask("erica", "task-xyz") as erica, \
+                self.make_test_usertask("frances", "task-xyz")as frances:
+            erica.write('myfile.md', "erica's contents")
+            frances.write('myfile.md', "frances's contents")
 
-                self.assertEqual("erica's contents", erica.read('myfile.md'))
-                self.assertEqual("frances's contents", frances.read('myfile.md'))
+            self.assertEqual("erica's contents", erica.read('myfile.md'))
+            self.assertEqual("frances's contents", frances.read('myfile.md'))
 
     def testUserCanSwitchBetweenDifferentTasks(self):
         with self.make_test_usertask("erica", "task-xyz") as ericaxyz:
@@ -94,6 +93,7 @@ class TestFirst(TestCase):
             self.assertEqual("erica's xyz contents", ericaxyz.read('myfile.md'))
 
         self.setup_task("task-abc", self.clone_dirname, 'new stuff')
+
         with self.make_test_usertask("erica", "task-abc") as ericaabc:
             ericaabc.write('myfile.md', "erica's abc contents")
             ericaabc.commit('me too')
