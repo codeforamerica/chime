@@ -43,6 +43,10 @@
               </div>
             </li>
           {% endfor %}
+          </ul>
+        {% endif %}
+        {% if published_activities | length > 0 %}
+          <ul class="current-tasks__list">
         <h2 class="current-tasks__title">Recently Published Activities</h2>
           {% for activity in published_activities %}
            <li class="current-task">
@@ -56,7 +60,7 @@
             </li>
           {% endfor %}
           </ul>
-         {% endif %}
+        {% endif %}
         </div>
         <div class="new-task grid__item width-one-third end-row">
           <h2 class="new-task__title">Start a new activity</h2>
