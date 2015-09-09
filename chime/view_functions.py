@@ -777,13 +777,50 @@ def make_activity_history(repo):
 def make_list_of_published_activities(repo, limit=10):
     ''' Make a list of recently published activities.
     '''
-    # ;;;
-
-    # something like this...?
-    # http://git-scm.com/docs/git-for-each-ref
-    # git for-each-ref --format="%(refname:short) %(*authoremail) %(taggerdate:relative) %(subject)" --sort=-taggerdate refs/tags
+    # get a list of tags in the repo with associated metadata
+    # see: http://git-scm.com/docs/git-for-each-ref
+    #   rename:short = branch name
+    #   subject = task metadata json
+    #   taggerdate:relative = published date in relative format
+    #   *authoremail = the email of the person who published the activity
+    ref_list = repo.git.for_each_ref('--count={}'.format(limit), '--format=%(refname:short)\t%(subject)\t%(taggerdate:relative)\t%(*authoremail)', '--sort=-taggerdate', 'refs/tags').split('\n')
 
     published = []
+    for ref in ref_list:
+        ref_split = ref.split('\t')
+        safe_branch = branch_name2path(ref_split[0])
+
+        # if there's no parsable task metadata in the tag's subject, this isn't a viable published activity
+        try:
+            # contains 'author_email', 'task_description'
+            activity = json.loads(ref_split[1])
+        except ValueError:
+            continue
+        activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
+        activity['task_description'] = activity['task_description'] if 'task_description' in activity else safe_branch
+        # add the beneficiary to the description if it's there
+        try:
+            activity['task_description'] = u'{} for {}'.format(activity['task_description'], activity['task_beneficiary'])
+        except KeyError:
+            pass
+
+        # we know the current review state and authorized status
+        review_state = constants.WORKING_STATE_PUBLISHED
+        review_authorized = False
+
+        # set date created and updated the same for now
+        date_updated = ref_split[2]
+        date_created = date_updated
+
+        # the email of the person who published the activity
+        last_edited_email = ref_split[3]
+
+        activity.update(date_created=date_created, date_updated=date_updated,
+                        edit_path=u'#', overview_path=u'#',
+                        safe_branch=safe_branch, review_state=review_state,
+                        review_authorized=review_authorized, last_edited_email=last_edited_email)
+
+        published.append(activity)
 
     return published
 
@@ -1133,8 +1170,10 @@ def render_activities_list(task_description=None):
 
         activities.append(activity)
 
+    published_activities = make_list_of_published_activities(repo=repo, limit=10)
+
     kwargs = common_template_args(current_app.config, session)
-    kwargs.update(activities=activities)
+    kwargs.update(activities=activities, published_activities=published_activities)
 
     # pre-populate the new activity form with description value if it was passed
     if task_description:
