@@ -2565,6 +2565,50 @@ class TestApp (TestCase):
             for process in pros:
                 self.assertEqual(0, process.exitcode, u'A process that was trying to load the front page failed!')
 
+    # in TestApp
+    def test_published_activities_displayed(self):
+        ''' Published activities are displayed on the activities list page.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            frances_email = u'frances@example.com'
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in(erica_email)
+
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in(frances_email)
+
+            # Start a new task and create a topic, subtopic and article
+            activity_title = u'Flicking Ants Off My Laptop'
+            args = activity_title, u'Flying', u'Through The Air', u'Goodbye'
+            branch_name = erica.quick_activity_setup(*args)
+
+            # Ask for feedback
+            erica.follow_link(href='/tree/{}'.format(branch_name))
+            erica.request_feedback()
+
+            #
+            # Switch users and publish the article.
+            #
+            frances.open_link(url=erica.path)
+            frances.approve_activity()
+            frances.publish_activity()
+
+            #
+            # Load the front page and make sure the activity is listed as published
+            #
+            erica.open_link('/')
+            pub_header = erica.soup.find(lambda tag: bool(tag.name == 'h2' and tag.text == u'Recently Published Activities'))
+            pub_ul = pub_header.find_parent('ul')
+            # there should be an HTML comment with the branch name
+            comment = pub_ul.findAll(text=lambda text: isinstance(text, Comment))[0]
+            self.assertTrue(branch_name in comment)
+            pub_li = comment.find_parent('li')
+            # and the activity title wrapped in a p tag
+            self.assertIsNotNone(pub_li.find('p', text=activity_title))
+
 class TestPublishApp (TestCase):
 
     def setUp(self):
