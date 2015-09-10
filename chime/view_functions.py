@@ -1174,7 +1174,10 @@ def render_activities_list(task_description=None):
 
         activities.append(activity)
 
-    published_activities = make_list_of_published_activities(repo=repo, limit=10)
+    published_activities = dict(activities=make_list_of_published_activities(repo=repo, limit=10))
+    published_count = len(published_activities['activities'])
+    published_activities['count'] = published_count
+    published_activities['description'] = u'activity' if published_count < 2 else u'{} activities'.format(published_count)
 
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(activities=activities, published_activities=published_activities)

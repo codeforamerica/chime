@@ -45,10 +45,11 @@
           {% endfor %}
           </ul>
         {% endif %}
-        {% if published_activities | length > 0 %}
+        {% if published_activities.count > 0 %}
+          <h2 class="current-tasks__title">Recently Published Activities</h2>
+          <p class="current-tasks__description">The {{ published_activities.description }} most recently published to the live site.</p>
           <ul class="current-tasks__list">
-        <h2 class="current-tasks__title">Recently Published Activities</h2>
-          {% for activity in published_activities %}
+          {% for activity in published_activities.activities %}
            <li class="current-task">
             <!-- branch: {{ activity.safe_branch }} -->
             <p class="current-task__title">{{ activity.task_description }}</p>
