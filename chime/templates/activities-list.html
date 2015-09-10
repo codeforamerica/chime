@@ -54,7 +54,7 @@
             <!-- branch: {{ activity.safe_branch }} -->
             <p class="current-task__title">{{ activity.task_description }}</p>
             <div class="current-task__details row">
-              <p class="current-task__author row__left">Created by {{ activity.author_email }}, published {{ activity.date_updated }} by {{ activity.last_edited_email }}</p>
+              <p class="current-task__author row__left">Published {{ activity.date_updated }} by {{ activity.last_edited_email }}</p>
               <div class="current-task__actions row__right toolbar--right">
                   <a href="{{ activity.overview_path }}" class="toolbar__item button">Published</a>
               </div>
