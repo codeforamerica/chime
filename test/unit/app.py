@@ -610,8 +610,9 @@ class TestApp (TestCase):
         self.assertEqual(response.status_code, 200)
         # should've been redirected to the front page
         self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('activities-list') in response.data)
-        # the activity we just published shouldn't be listed on the page
-        self.assertTrue(generated_branch_name not in response.data)
+        # the activity we just published should be listed under 'recently published activities'
+        self.assertTrue(generated_branch_name in response.data)
+        self.assertTrue(response.data.find(generated_branch_name) > response.data.find(u'Recently Published Activities'))
 
         # Look in the published directory and see if the words are there.
         with open(join(self.publish_path, fake_page_slug, 'index.html')) as file:
@@ -774,8 +775,9 @@ class TestApp (TestCase):
         self.assertEqual(response.status_code, 200)
         # should've been redirected to the front page
         self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('activities-list') in response.data)
-        # the activity we just published shouldn't be listed on the page
-        self.assertTrue(generated_branch_name not in response.data)
+        # the activity we just published should be listed under 'recently published activities'
+        self.assertTrue(generated_branch_name in response.data)
+        self.assertTrue(response.data.find(generated_branch_name) > response.data.find(u'Recently Published Activities'))
 
     # in TestApp
     def test_get_request_does_not_create_branch(self):
