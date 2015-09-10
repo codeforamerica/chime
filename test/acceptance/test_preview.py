@@ -136,7 +136,7 @@ class TestPreview(ChimeTestCase):
         task_description = self.marked_string('task_description')
         self.driver.find_element_by_name('task_description').send_keys(task_description)
         main_window = self.driver.current_window_handle
-        self.driver.find_element_by_class_name('create').click()
+        self.driver.find_element_by_id("create-activity-button").click()
 
         # create a new page
         self.driver.find_element_by_id("create-category-name").send_keys(self.marked_string('category'))
