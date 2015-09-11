@@ -36,12 +36,11 @@ from .jekyll_functions import load_jekyll_doc, load_languages, build_jekyll_site
 from .google_api_functions import read_ga_config, fetch_google_analytics_for_page
 from .repo_functions import (
     get_existing_branch, get_branch_if_exists_locally, ignore_task_metadata_on_merge,
-    get_commit_classification, ChimeRepo, get_task_metadata_for_branch, complete_branch,
-    abandon_branch, clobber_default_branch, get_review_state_and_authorized,
-    update_review_state, provide_feedback, move_existing_file,
-    get_last_edited_email, mark_upstream_push_needed, MergeConflict,
-    get_activity_working_state, ACTIVITY_CREATED_MESSAGE, TASK_METADATA_FILENAME,
-    make_branch_name, save_local_working_file, sync_with_default_and_upstream_branches
+    ChimeRepo, get_task_metadata_for_branch, complete_branch, abandon_branch,
+    clobber_default_branch, get_review_state_and_authorized, update_review_state,
+    provide_feedback, move_existing_file, mark_upstream_push_needed, MergeConflict,
+    get_activity_working_state, make_branch_name, save_local_working_file,
+    sync_with_default_and_upstream_branches, strip_index_file
 )
 from . import constants
 
@@ -50,33 +49,8 @@ from .href import needs_redirect, get_redirect
 # Maximum age of an authentication check in seconds.
 AUTH_CHECK_LIFESPAN = 300.0
 
-# when creating a content file, what extension should it have?
-CONTENT_FILE_EXTENSION = u'markdown'
-
 # Name of default AUTH_DATA_HREF value
 AUTH_DATA_HREF_DEFAULT = 'data/authentication.csv'
-
-# the names of layouts, used in jekyll front matter and also in interface text
-CATEGORY_LAYOUT = 'category'
-ARTICLE_LAYOUT = 'article'
-FOLDER_FILE_TYPE = 'folder'
-FILE_FILE_TYPE = 'file'
-IMAGE_FILE_TYPE = 'image'
-# how we describe items based on their layout
-LAYOUT_DISPLAY_LOOKUP = {
-    CATEGORY_LAYOUT: 'topic',
-    ARTICLE_LAYOUT: 'article',
-    FOLDER_FILE_TYPE: 'folder',
-    FILE_FILE_TYPE: 'file',
-    IMAGE_FILE_TYPE: 'image'
-}
-LAYOUT_PLURAL_LOOKUP = {
-    CATEGORY_LAYOUT: 'topics',
-    ARTICLE_LAYOUT: 'articles',
-    FOLDER_FILE_TYPE: 'folders',
-    FILE_FILE_TYPE: 'files',
-    IMAGE_FILE_TYPE: 'images'
-}
 
 # error messages
 MESSAGE_ACTIVITY_DELETED = u'This activity has been deleted or never existed! Please start a new activity to make changes.'
@@ -90,7 +64,7 @@ FILE_FILTERS = [
     r'\.lock$',
     r'Gemfile',
     r'LICENSE',
-    r'index\.{}'.format(CONTENT_FILE_EXTENSION),
+    r'index\.{}'.format(constants.CONTENT_FILE_EXTENSION),
     # below filters were added by norris to focus bootcamp UI on articles
     r'^css',
     r'\.xml',
@@ -170,21 +144,21 @@ def path_type(file_path):
     ''' Returns the type of file at the passed path
     '''
     if isdir(file_path):
-        return FOLDER_FILE_TYPE
+        return constants.FOLDER_FILE_TYPE
 
     if str(guess_type(file_path)[0]).startswith('image/'):
-        return IMAGE_FILE_TYPE
+        return constants.IMAGE_FILE_TYPE
 
-    return FILE_FILE_TYPE
+    return constants.FILE_FILE_TYPE
 
 def path_display_type(file_path):
     ''' Returns a type matching how the file at the passed path should be displayed
     '''
     if is_article_dir(file_path):
-        return ARTICLE_LAYOUT
+        return constants.ARTICLE_LAYOUT
 
     if is_category_dir(file_path):
-        return CATEGORY_LAYOUT
+        return constants.CATEGORY_LAYOUT
 
     return path_type(file_path)
 
@@ -193,21 +167,21 @@ def index_path_display_type_and_title(file_path):
         it checks the containing directory. Also returns an article or category title if
         appropriate.
     '''
-    index_filename = u'index.{}'.format(CONTENT_FILE_EXTENSION)
+    index_filename = u'index.{}'.format(constants.CONTENT_FILE_EXTENSION)
     path_split = split(file_path)
     if path_split[1] == index_filename:
         folder_type = path_display_type(path_split[0])
         # if the enclosing folder is just a folder (and not an article or category)
         # return the type of the index file instead
-        if folder_type == FOLDER_FILE_TYPE:
-            return FILE_FILE_TYPE, u''
+        if folder_type == constants.FOLDER_FILE_TYPE:
+            return constants.FILE_FILE_TYPE, u''
 
         # the enclosing folder is an article or category
         return folder_type, get_value_from_front_matter('title', file_path)
 
     # the path was to something other than an index file
     path_type = path_display_type(file_path)
-    if path_type in (ARTICLE_LAYOUT, CATEGORY_LAYOUT):
+    if path_type in (constants.ARTICLE_LAYOUT, constants.CATEGORY_LAYOUT):
         return path_type, get_value_from_front_matter('title', join(file_path, index_filename))
 
     return path_type, u''
@@ -215,16 +189,16 @@ def index_path_display_type_and_title(file_path):
 def file_display_name(file_type):
     ''' Get the display name of the passed file type
     '''
-    if file_type in LAYOUT_DISPLAY_LOOKUP:
-        return LAYOUT_DISPLAY_LOOKUP[file_type]
+    if file_type in constants.LAYOUT_DISPLAY_LOOKUP:
+        return constants.LAYOUT_DISPLAY_LOOKUP[file_type]
 
     return file_type
 
 def file_type_plural(file_type):
     ''' Get the plural of the passed file type
     '''
-    if file_type in LAYOUT_PLURAL_LOOKUP:
-        return LAYOUT_PLURAL_LOOKUP[file_type]
+    if file_type in constants.LAYOUT_PLURAL_LOOKUP:
+        return constants.LAYOUT_PLURAL_LOOKUP[file_type]
 
     return file_type
 
@@ -238,12 +212,12 @@ def is_display_editable(file_path):
 def is_article_dir(file_path):
     ''' Returns True if the file at the passed path is a directory containing only an index file with an article jekyll layout.
     '''
-    return is_dir_with_layout(file_path, ARTICLE_LAYOUT, True)
+    return is_dir_with_layout(file_path, constants.ARTICLE_LAYOUT, True)
 
 def is_category_dir(file_path):
     ''' Returns True if the file at the passed path is a directory containing an index file with a category jekyll layout.
     '''
-    return is_dir_with_layout(file_path, CATEGORY_LAYOUT, False)
+    return is_dir_with_layout(file_path, constants.CATEGORY_LAYOUT, False)
 
 def is_editable(file_path, layout=None):
     ''' Returns True if the file at the passed path is not a directory, and has jekyll
@@ -310,7 +284,7 @@ def is_dir_with_layout(file_path, layout, only=True):
     '''
     if isdir(file_path):
         # it's a directory
-        index_path = join(file_path or u'', u'index.{}'.format(CONTENT_FILE_EXTENSION))
+        index_path = join(file_path or u'', u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
         if not exists(index_path) or not is_editable(index_path, layout):
             # there's no index file in the directory or it's not editable
             return False
@@ -332,7 +306,7 @@ def get_solo_directory_name(repo, branch_name, path):
         that's the only visible object in the hierarchy, return its name.
     '''
     directory_contents = sorted_paths(repo=repo, branch_name=branch_name, path=path)
-    if len(directory_contents) == 1 and directory_contents[0]['display_type'] == FOLDER_FILE_TYPE:
+    if len(directory_contents) == 1 and directory_contents[0]['display_type'] == constants.FOLDER_FILE_TYPE:
         return directory_contents[0]['name']
 
     return None
@@ -937,10 +911,10 @@ def sorted_paths(repo, branch_name, path=None, showallfiles=False):
             info = {}
             info['name'] = basename(edit_path)
             info['display_type'] = path_display_type(edit_path)
-            info['link_name'] = u'{}/'.format(info['name']) if info['display_type'] in (FOLDER_FILE_TYPE, CATEGORY_LAYOUT, ARTICLE_LAYOUT) else info['name']
-            file_title = get_value_from_front_matter('title', join(edit_path, u'index.{}'.format(CONTENT_FILE_EXTENSION)))
+            info['link_name'] = u'{}/'.format(info['name']) if info['display_type'] in (constants.FOLDER_FILE_TYPE, constants.CATEGORY_LAYOUT, constants.ARTICLE_LAYOUT) else info['name']
+            file_title = get_value_from_front_matter('title', join(edit_path, u'index.{}'.format(constants.CONTENT_FILE_EXTENSION)))
             if not file_title:
-                if info['display_type'] in (FOLDER_FILE_TYPE, IMAGE_FILE_TYPE, FILE_FILE_TYPE):
+                if info['display_type'] in (constants.FOLDER_FILE_TYPE, constants.IMAGE_FILE_TYPE, constants.FILE_FILE_TYPE):
                     file_title = info['name']
                 else:
                     file_title = re.sub('-', ' ', info['name']).title()
@@ -1236,13 +1210,13 @@ def render_modify_dir(repo, branch_name, path):
     '''
     path = path or '.'
     full_path = join(repo.working_dir, path).rstrip('/')
-    full_index_path = join(full_path, u'index.{}'.format(CONTENT_FILE_EXTENSION))
+    full_index_path = join(full_path, u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
     # init a category object with the contents of the category's front matter
     category = get_front_matter(full_index_path)
 
     if 'layout' not in category:
         raise Exception(u'No layout found for {}.'.format(full_path))
-    if category['layout'] != CATEGORY_LAYOUT:
+    if category['layout'] != constants.CATEGORY_LAYOUT:
         raise Exception(u'Can\'t modify {}s, only categories.'.format(category['layout']))
 
     languages = load_languages(repo.working_dir)
@@ -1250,7 +1224,7 @@ def render_modify_dir(repo, branch_name, path):
     kwargs = make_kwargs_for_activity_files_page(repo, branch_name, path)
     # cancel redirects to the edit page for that category
     category['edit_path'] = join(kwargs['activity']['edit_path'], path)
-    url_slug = re.sub(ur'index.{}$'.format(CONTENT_FILE_EXTENSION), u'', path)
+    url_slug = re.sub(ur'index.{}$'.format(constants.CONTENT_FILE_EXTENSION), u'', path)
 
     kwargs.update(category=category, languages=languages, hexsha=repo.commit().hexsha, url_slug=url_slug)
 
@@ -1263,7 +1237,7 @@ def render_edit_view(repo, branch_name, path, file):
     languages = load_languages(repo.working_dir)
     url_slug = path
     # strip the index file from the slug if appropriate
-    url_slug = re.sub(ur'index.{}$'.format(CONTENT_FILE_EXTENSION), u'', url_slug)
+    url_slug = re.sub(ur'index.{}$'.format(constants.CONTENT_FILE_EXTENSION), u'', url_slug)
     view_path = join('/tree/{}/view'.format(branch_name2path(branch_name)), path)
     history_path = join('/tree/{}/history'.format(branch_name2path(branch_name)), path)
     save_path = join('/tree/{}/save'.format(branch_name2path(branch_name)), path)
@@ -1307,7 +1281,7 @@ def render_edit_view(repo, branch_name, path, file):
 def add_article_or_category(repo, dir_path, request_path, create_what):
     ''' Add an article or category
     '''
-    if create_what not in (ARTICLE_LAYOUT, CATEGORY_LAYOUT):
+    if create_what not in (constants.ARTICLE_LAYOUT, constants.CATEGORY_LAYOUT):
         raise ValueError(u'Can\'t create {} in {}.'.format(create_what, join(dir_path, request_path)))
 
     request_path = request_path.rstrip('/')
@@ -1315,15 +1289,15 @@ def add_article_or_category(repo, dir_path, request_path, create_what):
     # create the article or category
     display_name = request_path
     slug_name = slugify(request_path)
-    name = u'{}/index.{}'.format(slug_name, CONTENT_FILE_EXTENSION)
+    name = u'{}/index.{}'.format(slug_name, constants.CONTENT_FILE_EXTENSION)
     file_path = repo.canonicalize_path(dir_path, name)
 
-    if create_what == ARTICLE_LAYOUT:
+    if create_what == constants.ARTICLE_LAYOUT:
         redirect_path = file_path
-        create_front = dict(title=display_name, description=u'', order=0, layout=ARTICLE_LAYOUT)
-    elif create_what == CATEGORY_LAYOUT:
+        create_front = dict(title=display_name, description=u'', order=0, layout=constants.ARTICLE_LAYOUT)
+    elif create_what == constants.CATEGORY_LAYOUT:
         redirect_path = strip_index_file(file_path)
-        create_front = dict(title=display_name, description=u'', order=0, layout=CATEGORY_LAYOUT)
+        create_front = dict(title=display_name, description=u'', order=0, layout=constants.CATEGORY_LAYOUT)
 
     display_what = file_display_name(create_what)
     if repo.exists(file_path):
@@ -1334,9 +1308,6 @@ def add_article_or_category(repo, dir_path, request_path, create_what):
     commit_message = u'The "{}" {} was created\n\n{}'.format(display_name, display_what, json.dumps(action_descriptions, ensure_ascii=False))
 
     return commit_message, file_path, redirect_path, True
-
-def strip_index_file(file_path):
-    return re.sub(r'index.{}$'.format(CONTENT_FILE_EXTENSION), '', file_path)
 
 def delete_page(repo, browse_path, target_path):
     ''' Delete a category or article.
@@ -1518,8 +1489,8 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
     try:
         # they may've renamed the page by editing the URL slug
         original_slug = file_path
-        if re.search(r'\/index.{}$'.format(CONTENT_FILE_EXTENSION), file_path):
-            original_slug = re.sub(ur'index.{}$'.format(CONTENT_FILE_EXTENSION), u'', file_path)
+        if re.search(r'\/index.{}$'.format(constants.CONTENT_FILE_EXTENSION), file_path):
+            original_slug = re.sub(ur'index.{}$'.format(constants.CONTENT_FILE_EXTENSION), u'', file_path)
 
         # do some simple input cleaning
         new_slug = new_values.get('url-slug')
@@ -1542,7 +1513,7 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
                 file_path = new_slug
                 # append the index file if it's an editable directory
                 if is_article_dir(join(repo.working_dir, new_slug)):
-                    file_path = join(new_slug, u'index.{}'.format(CONTENT_FILE_EXTENSION))
+                    file_path = join(new_slug, u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
 
     except MergeConflict as conflict:
         repo.git.reset(commit.hexsha, hard=True)

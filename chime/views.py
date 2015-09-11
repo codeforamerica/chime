@@ -11,15 +11,13 @@ from datetime import datetime
 from flask import current_app, flash, render_template, redirect, request, Response, session, abort
 
 from . import chime as app
-from . import repo_functions, edit_functions
+from . import constants, repo_functions, edit_functions, chime_activity
 from . import publish
 from .jekyll_functions import load_jekyll_doc, load_languages
 
-from .view_functions import branch_name2path, branch_var2name, get_repo, login_required, lock_on_user, browserid_hostname_required, synch_required, synched_checkout_required, should_redirect, make_redirect, get_auth_data_file, is_allowed_email, common_template_args, log_application_errors, is_article_dir, is_category_dir, make_activity_history, summarize_activity_history, render_edit_view, render_modify_dir, render_list_dir, add_article_or_category, strip_index_file, delete_page, save_page, render_activities_list, update_activity_review_state, flash_only, flash_unique, file_display_name, get_redirect_path_for_solo_directory, get_preview_asset_response, CONTENT_FILE_EXTENSION, ARTICLE_LAYOUT, CATEGORY_LAYOUT, MESSAGE_ACTIVITY_DELETED, publish_commit
+from .view_functions import branch_name2path, branch_var2name, get_repo, login_required, lock_on_user, browserid_hostname_required, synch_required, synched_checkout_required, should_redirect, make_redirect, get_auth_data_file, is_allowed_email, common_template_args, log_application_errors, is_article_dir, is_category_dir, render_edit_view, render_modify_dir, render_list_dir, add_article_or_category, delete_page, save_page, render_activities_list, update_activity_review_state, flash_unique, file_display_name, get_redirect_path_for_solo_directory, get_preview_asset_response, publish_commit, AUTH_DATA_HREF_DEFAULT
 
 from .google_api_functions import read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens, authorize_google, get_google_personal_info, get_google_analytics_properties
-
-from . import view_functions
 
 @app.after_request
 def after_request(response):
@@ -43,7 +41,7 @@ def index():
 def not_allowed():
     email = session.get('email', None)
     auth_data_href = current_app.config['AUTH_DATA_HREF']
-    is_auth_data_default = bool(auth_data_href == view_functions.AUTH_DATA_HREF_DEFAULT)
+    is_auth_data_default = bool(auth_data_href == AUTH_DATA_HREF_DEFAULT)
 
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(auth_url=auth_data_href, is_auth_data_default=is_auth_data_default)
@@ -276,7 +274,7 @@ def branch_edit(branch_name, path=None):
     if isdir(full_path):
         # if this is a directory representing an article, redirect to edit
         if is_article_dir(full_path):
-            index_path = join(path or u'', u'index.{}'.format(CONTENT_FILE_EXTENSION))
+            index_path = join(path or u'', u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
             return redirect('/tree/{}/edit/{}'.format(branch_name2path(branch_name), index_path))
 
         # if the directory path didn't end with a slash, add it and redirect
@@ -315,7 +313,7 @@ def branch_show_category_form(branch_name, path=None):
 
     # if this is an article directory, redirect to edit
     if is_article_dir(full_path):
-        index_path = join(path or u'', u'index.{}'.format(CONTENT_FILE_EXTENSION))
+        index_path = join(path or u'', u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
         return redirect('/tree/{}/edit/{}'.format(branch_name2path(branch_name), index_path))
 
     # this is not a category or article directory; redirect to edit
@@ -336,9 +334,9 @@ def branch_modify_category(branch_name, path=u''):
     index_slug = path
     dir_path = join(repo.working_dir, index_slug)
     index_path = dir_path
-    if not search(r'\/index.{}$'.format(CONTENT_FILE_EXTENSION), path):
-        index_slug = join(path, u'index.{}'.format(CONTENT_FILE_EXTENSION))
-        index_path = join(dir_path, u'index.{}'.format(CONTENT_FILE_EXTENSION))
+    if not search(r'\/index.{}$'.format(constants.CONTENT_FILE_EXTENSION), path):
+        index_slug = join(path, u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
+        index_path = join(dir_path, u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
 
     # delete the passed category
     if 'delete' in request.form:
@@ -393,7 +391,7 @@ def branch_modify_category(branch_name, path=u''):
             else:
                 flash(u'Saved changes to the {} topic! Remember to submit this change for feedback when you\'re ready to go live.'.format(front_matter['en-title']), u'notice')
 
-        return redirect('/tree/{}/modify/{}'.format(safe_branch, strip_index_file(new_path)), code=303)
+        return redirect('/tree/{}/modify/{}'.format(safe_branch, repo_functions.strip_index_file(new_path)), code=303)
 
     else:
         raise Exception(u'Tried to modify a category, but received an unfamiliar command.')
@@ -422,7 +420,7 @@ def branch_edit_file(branch_name, path=None):
         redirect_path = path
         commit_message = u'Uploaded file "{}"'.format(file_path)
 
-    elif action == 'create' and (create_what == ARTICLE_LAYOUT or create_what == CATEGORY_LAYOUT) and create_path is not None:
+    elif action == 'create' and (create_what == constants.ARTICLE_LAYOUT or create_what == constants.CATEGORY_LAYOUT) and create_path is not None:
         # don't allow empty names for categories or articles
         request_path = request.form['request_path'].strip()
         if len(request_path) == 0 or len(slugify(request_path)) == 0:

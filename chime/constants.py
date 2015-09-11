@@ -37,3 +37,28 @@ ISO_NAME_ENGLISH = 'English'
 
 # the name of the directory where Jekyll builds its site
 JEKYLL_BUILD_DIRECTORY_NAME = '_site'
+
+# when creating a content file, what extension should it have?
+CONTENT_FILE_EXTENSION = u'markdown'
+
+# the names of layouts, used in jekyll front matter and also in interface text
+CATEGORY_LAYOUT = 'category'
+ARTICLE_LAYOUT = 'article'
+FOLDER_FILE_TYPE = 'folder'
+FILE_FILE_TYPE = 'file'
+IMAGE_FILE_TYPE = 'image'
+# how we describe items based on their layout
+LAYOUT_DISPLAY_LOOKUP = {
+    CATEGORY_LAYOUT: 'topic',
+    ARTICLE_LAYOUT: 'article',
+    FOLDER_FILE_TYPE: 'folder',
+    FILE_FILE_TYPE: 'file',
+    IMAGE_FILE_TYPE: 'image'
+}
+LAYOUT_PLURAL_LOOKUP = {
+    CATEGORY_LAYOUT: 'topics',
+    ARTICLE_LAYOUT: 'articles',
+    FOLDER_FILE_TYPE: 'folders',
+    FILE_FILE_TYPE: 'files',
+    IMAGE_FILE_TYPE: 'images'
+}
