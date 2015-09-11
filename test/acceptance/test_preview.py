@@ -19,13 +19,14 @@ from selenium.common.exceptions import WebDriverException
 from acceptance.browser import Browser
 
 from datetime import datetime
+from re import search
 
 from acceptance.chime_test_case import ChimeTestCase, rewrite_for_all_browsers
 
 # All of this test magic should move somewhere else, but I'm not sure where the somewhere else is yet.
 BROWSERS_TO_TRY = Browser.from_string(os.environ.get('BROWSERS_TO_TEST', "").strip().lower())
-TEST_REPETITIONS = int(os.environ.get('TEST_REPETITIONS',"1"))
-TEST_RETRY_COUNT = int(os.environ.get('TEST_RETRY_COUNT',"1"))
+TEST_REPETITIONS = int(os.environ.get('TEST_REPETITIONS', "1"))
+TEST_RETRY_COUNT = int(os.environ.get('TEST_RETRY_COUNT', "1"))
 
 OUTPUT_FILE = os.environ.get('OUTPUT_FILE')
 
@@ -53,7 +54,7 @@ class TestPreview(ChimeTestCase):
         if browser:
             sys.stderr.write("Setting up for browser %s\n" % browser)
             mode = 'browserstack'
-            if mode=='browserstack':
+            if mode == 'browserstack':
                 capabilities = browser.as_browserstack_capabilities({'browserstack.debug': True, 'project': 'chime'})
 
                 if browser.browser == 'IE':
@@ -61,7 +62,7 @@ class TestPreview(ChimeTestCase):
                 self.driver = webdriver.Remote(
                     command_executor='http://chimetests1:AxRS34k3vrf7mu9zZ2hE@hub.browserstack.com:80/wd/hub',
                     desired_capabilities=capabilities)
-            elif mode=='saucelabs':
+            elif mode == 'saucelabs':
                 self.driver = webdriver.Remote(
                     command_executor="http://wpietri:42e45709-70f3-4eb8-9ebd-c85be6dfec7a@ondemand.saucelabs.com:80/wd/hub",
                     desired_capabilities=browser.as_saucelabs_capabilities())
@@ -96,23 +97,21 @@ class TestPreview(ChimeTestCase):
 
         return predicate
 
-
-
     def test_create_page_and_preview(self, browser=None):
         self.use_driver(browser)
         if OUTPUT_FILE:
             self.browser = ' '.join([browser.os, browser.os_version, browser.browser, browser.browser_version])
 
         signin_method = "stubby_js"
-        if signin_method=='magic_url':
+        if signin_method == 'magic_url':
             signin_link = self.live_site + '/sign-in?assertion={}\n'.format(urllib.quote_plus(self.email))
             sys.stderr.write("connecting to {}".format(signin_link))
             self.driver.get(signin_link)
             time.sleep(1)
-        elif signin_method=='stubby_js':
+        elif signin_method == 'stubby_js':
             self.driver.get(self.live_site)
             self.driver.execute_script('window.navigator.id.stubby.setPersonaState("{}")'.format(self.email))
-        elif signin_method=='stubby_ui':
+        elif signin_method == 'stubby_ui':
             self.driver.get(self.live_site)
             main_window = self.driver.current_window_handle
             self.driver.find_element_by_id('signin').click()
@@ -231,7 +230,6 @@ class TestPreview(ChimeTestCase):
 
     def marked_string(self, base='string'):
         return "{}-{}".format(base, self.random_digits())
-
 
     def log_in_to_persona(self, main_window):
         self.driver.find_element_by_id('signin').click()
