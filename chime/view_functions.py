@@ -14,7 +14,6 @@ from mimetypes import guess_type
 from functools import wraps
 from io import BytesIO
 from slugify import slugify
-from collections import Counter
 from tempfile import mkdtemp
 from subprocess import Popen
 from git.cmd import GitCommandError
@@ -45,6 +44,8 @@ from .repo_functions import (
 from . import constants
 
 from .href import needs_redirect, get_redirect
+
+from . import chime_activity
 
 # Maximum age of an authentication check in seconds.
 AUTH_CHECK_LIFESPAN = 300.0
@@ -726,28 +727,6 @@ def make_delete_display_commit_message(repo, request_path):
 
     return commit_message
 
-def make_activity_history(repo):
-    ''' Make an easily-parsable history of an activity since it was created.
-    '''
-    # see <http://git-scm.com/docs/git-log> for placeholders
-    log_format = '%x00Name: %an\tEmail: %ae\tDate: %ad\tSubject: %s\tBody: %b%x00'
-    log = repo.git.log('--format={}'.format(log_format), '--date=relative')
-
-    history = []
-    pattern = re.compile(r'\x00Name: (.*?)\tEmail: (.*?)\tDate: (.*?)\tSubject: (.*?)\tBody: (.*?)\x00', re.DOTALL)
-    for log_details in pattern.findall(log):
-        name, email, date, subject, body = tuple([item for item in log_details])
-        commit_category, commit_type, commit_action = get_commit_classification(subject, body)
-        log_item = dict(author_name=name, author_email=email, commit_date=date, commit_subject=subject,
-                        commit_body=body, commit_category=commit_category, commit_type=commit_type,
-                        commit_action=commit_action)
-        history.append(log_item)
-        # don't get any history beyond the creation of the task metadata file, which is the beginning of the activity
-        if re.search(r'{}$'.format(ACTIVITY_CREATED_MESSAGE), subject):
-            break
-
-    return history
-
 def make_list_of_published_activities(repo, limit=10):
     ''' Make a list of recently published activities.
     '''
@@ -801,94 +780,6 @@ def make_list_of_published_activities(repo, limit=10):
         published.append(activity)
 
     return published
-
-def summarize_activity_history(repo=None, history=None, branch_name=u''):
-    ''' Make an object that summarizes an activity's history. If no history is passed, will get a new one from make_activity_history()
-
-        The object looks like this:
-        {
-            'summary': u'3 articles and 1 category have been changed',
-            'changes': [
-                {'edit_path': u'', 'display_type': u'Article', 'actions': u'Created, Edited, Deleted', 'title': u'How to Find Us'},
-                {'edit_path': u'/tree/34246e3/edit/contact/hours-of-operation/', 'display_type': u'Article', 'actions': u'Created, Edited', 'title': u'Hours of Operation'},
-                {'edit_path': u'/tree/34246e3/edit/contact/driving-directions/', 'display_type': u'Article', 'actions': u'Created, Edited', 'title': u'Driving Directions'},
-                {'edit_path': u'/tree/34246e3/edit/contact/', 'display_type': u'Category', 'actions': u'Created', 'title': u'Contact'}
-            ]
-        }
-    '''
-    # an empty summary object
-    summary = dict(summary=u'', changes=[])
-
-    # make sure we've got what we need
-    if not history:
-        try:
-            history = make_activity_history(repo=repo)
-        except:
-            # we weren't given what we need, return an empty summary
-            return summary
-
-    ed_lookup = {'create': u'created', 'edit': u'edited', 'delete': u'deleted'}
-    change_lookup = {}
-    display_types_encountered = []
-    # we only care about edits
-    edit_history = [action for action in reversed(history) if action['commit_category'] == constants.COMMIT_CATEGORY_EDIT]
-    for action in edit_history:
-        # get the list of changed files from the commit body
-        try:
-            commit_body = json.loads(action['commit_body'])
-        except:
-            # could't parse json in the commit body, keep moving
-            continue
-
-        # step through the changed files
-        for file_change in commit_body:
-            # the passed title or the filename if no title is there
-            title = file_change['title'] or file_change['file_path'].split('/')[-1]
-            # the passed display type or Unknown if no type is there
-            display_type = file_change['display_type'].title() or u'Unknown'
-            try:
-                action = ed_lookup[file_change['action']].title()
-            except:
-                action = file_change['action'].title()
-            file_path = file_change['file_path']
-            # if the last action is delete, we don't want an edit_path to a file that no longer exists
-            edit_path = join(u'/tree/{}/edit/'.format(branch_name), strip_index_file(file_path)) if action != u'Deleted' else u''
-            sort_time = datetime.now()
-            if file_path in change_lookup:
-                change_lookup[file_path]['sort_time'] = sort_time
-                # add the action to the end of the list if it's different from the last action added
-                if not re.search(r'{}$'.format(action), change_lookup[file_path]['actions']):
-                    change_lookup[file_path]['actions'] = change_lookup[file_path]['actions'] + u', {}'.format(action)
-                # add the other variables, which may've changed
-                change_lookup[file_path]['edit_path'] = edit_path
-                change_lookup[file_path]['title'] = title
-                change_lookup[file_path]['display_type'] = display_type
-            else:
-                change_lookup[file_path] = dict(title=title, display_type=display_type, actions=action, edit_path=edit_path, sort_time=sort_time)
-                display_types_encountered.append(display_type)
-
-    # flatten and sort the changes
-    changes = [change_lookup[item] for item in change_lookup]
-    if len(changes):
-        changes.sort(key=lambda k: k['sort_time'], reverse=True)
-        summary['changes'] = changes
-
-        # now construct the summary sentence
-        summary_sentence_parts = []
-        display_type_tally = Counter(display_types_encountered)
-        display_lookup = (
-            (display_type_tally[ARTICLE_LAYOUT.title()], unicode(ARTICLE_LAYOUT), unicode(file_type_plural(ARTICLE_LAYOUT))),
-            (display_type_tally[CATEGORY_LAYOUT.title()], unicode(CATEGORY_LAYOUT), unicode(file_type_plural(CATEGORY_LAYOUT)))
-        )
-        for tally, singular, plural in display_lookup:
-            if tally:
-                summary_sentence_parts.append("{} {}".format(tally, singular if tally == 1 else plural))
-        has_have = u''
-        has_have = u'have' if len(changes) > 1 else u'has'
-        summary_sentence = u'{} {} been changed'.format(u', '.join(summary_sentence_parts[:-2] + [u' and '.join(summary_sentence_parts[-2:])]), has_have)
-        summary['summary'] = summary_sentence
-
-    return summary
 
 def sorted_paths(repo, branch_name, path=None, showallfiles=False):
     ''' Returns a list of files and their attributes in the passed directory.
@@ -1120,31 +1011,7 @@ def render_activities_list(task_description=None):
             # Skip this branch if it looks to be an orphan. Just don't show it.
             continue
 
-        # contains 'author_email', 'task_description'
-        activity = get_task_metadata_for_branch(repo, branch_name)
-        activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
-        activity['task_description'] = activity['task_description'] if 'task_description' in activity else branch_name
-
-        # get the current review state and authorized status
-        review_state, review_authorized = get_review_state_and_authorized(
-            repo=repo, default_branch_name=current_app.config['default_branch'],
-            working_branch_name=branch_name, actor_email=session.get('email', None)
-        )
-
-        date_created = repo.git.log('--format=%ad', '--date=relative', '--', TASK_METADATA_FILENAME).split('\n')[-1]
-        date_updated = repo.git.log('--format=%ad', '--date=relative').split('\n')[0]
-
-        # the email of the last person who edited the activity
-        last_edited_email = get_last_edited_email(
-            repo=repo, default_branch_name=current_app.config['default_branch'],
-            working_branch_name=branch_name
-        )
-
-        activity.update(date_created=date_created, date_updated=date_updated,
-                        edit_path=u'/tree/{}/edit/'.format(branch_name2path(branch_name)),
-                        overview_path=u'/tree/{}/'.format(branch_name2path(branch_name)),
-                        safe_branch=safe_branch, review_state=review_state,
-                        review_authorized=review_authorized, last_edited_email=last_edited_email)
+        activity = chime_activity.ChimeActivity(repo=repo, branch_name=safe_branch, default_branch_name=current_app.config['default_branch'], actor_email=session.get('email', None))
 
         activities.append(activity)
 
@@ -1168,28 +1035,7 @@ def make_kwargs_for_activity_files_page(repo, branch_name, path):
     # :NOTE: temporarily turning off filtering if 'showallfiles=true' is in the request
     showallfiles = request.args.get('showallfiles') == u'true'
 
-    # contains 'author_email', 'task_description'
-    activity = get_task_metadata_for_branch(repo, branch_name)
-    activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
-    activity['task_description'] = activity['task_description'] if 'task_description' in activity else u''
-
-    # get created and modified dates via git logs (relative dates for now)
-    date_created = repo.git.log('--format=%ad', '--date=relative', '--', TASK_METADATA_FILENAME).split('\n')[-1]
-    date_updated = repo.git.log('--format=%ad', '--date=relative').split('\n')[0]
-
-    # get the current review state and authorized status
-    review_state, review_authorized = get_review_state_and_authorized(
-        repo=repo, default_branch_name=current_app.config['default_branch'],
-        working_branch_name=branch_name, actor_email=session.get('email', None)
-    )
-
-    working_state = get_activity_working_state(repo, current_app.config['default_branch'], branch_name)
-
-    activity.update(date_created=date_created, date_updated=date_updated,
-                    edit_path=u'/tree/{}/edit/'.format(branch_name2path(branch_name)),
-                    overview_path=u'/tree/{}/'.format(branch_name2path(branch_name)),
-                    review_state=review_state, review_authorized=review_authorized,
-                    working_state=working_state)
+    activity = chime_activity.ChimeActivity(repo=repo, branch_name=branch_name, default_branch_name=current_app.config['default_branch'], actor_email=session.get('email', None))
 
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(branch=branch_name, safe_branch=branch_name2path(branch_name),
@@ -1250,23 +1096,7 @@ def render_edit_view(repo, branch_name, path, file):
         analytics_dict = fetch_google_analytics_for_page(current_app.config, path, ga_config.get('access_token'))
     commit = repo.commit()
 
-    # contains 'author_email', 'task_description'
-    activity = get_task_metadata_for_branch(repo, branch_name)
-    activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
-    activity['task_description'] = activity['task_description'] if 'task_description' in activity else u''
-
-    # get the current review state and authorized status
-    review_state, review_authorized = get_review_state_and_authorized(
-        repo=repo, default_branch_name=current_app.config['default_branch'],
-        working_branch_name=branch_name, actor_email=session.get('email', None)
-    )
-
-    working_state = get_activity_working_state(repo, current_app.config['default_branch'], branch_name)
-
-    activity.update(edit_path=u'/tree/{}/edit/'.format(branch_name2path(branch_name)),
-                    overview_path=u'/tree/{}/'.format(branch_name2path(branch_name)),
-                    review_state=review_state, review_authorized=review_authorized,
-                    working_state=working_state)
+    activity = chime_activity.ChimeActivity(repo=repo, branch_name=branch_name, default_branch_name=current_app.config['default_branch'], actor_email=session.get('email', None))
 
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(branch=branch_name, safe_branch=branch_name2path(branch_name),

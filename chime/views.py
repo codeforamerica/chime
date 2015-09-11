@@ -484,32 +484,7 @@ def show_activity_overview(branch_name):
     if ga_config.get('access_token'):
         app_authorized = True
 
-    history = make_activity_history(repo=repo)
-    history_summary = summarize_activity_history(history=history, branch_name=branch_name)
-
-    # get the current review state and authorized status
-    review_state, review_authorized = repo_functions.get_review_state_and_authorized(
-        repo=repo, default_branch_name=current_app.config['default_branch'],
-        working_branch_name=branch_name, actor_email=session.get('email', None)
-    )
-
-    # the email of the last person who edited the activity
-    last_edited_email = repo_functions.get_last_edited_email(
-        repo=repo, default_branch_name=current_app.config['default_branch'],
-        working_branch_name=branch_name
-    )
-
-    date_created = repo.git.log('--format=%ad', '--date=relative', '--', repo_functions.TASK_METADATA_FILENAME).split('\n')[-1]
-    date_updated = repo.git.log('--format=%ad', '--date=relative').split('\n')[0]
-
-    working_state = repo_functions.get_activity_working_state(repo, current_app.config['default_branch'], branch_name)
-
-    activity.update(date_created=date_created, date_updated=date_updated,
-                    edit_path=u'/tree/{}/edit/'.format(safe_branch),
-                    overview_path=u'/tree/{}/'.format(safe_branch), safe_branch=safe_branch,
-                    branch=safe_branch, history=history, history_summary=history_summary,
-                    review_state=review_state, review_authorized=review_authorized,
-                    last_edited_email=last_edited_email, working_state=working_state)
+    activity = chime_activity.ChimeActivity(repo=repo, branch_name=safe_branch, default_branch_name=current_app.config['default_branch'], actor_email=session.get('email', None))
 
     kwargs.update(activity=activity, app_authorized=app_authorized, languages=languages)
 
@@ -536,21 +511,12 @@ def edit_activity_overview(branch_name):
 @synched_checkout_required
 def branch_history(branch_name, path=None):
     branch_name = branch_var2name(branch_name)
-
+    safe_branch = branch_name2path(branch_name)
     repo = get_repo(flask_app=current_app)
 
-    safe_branch = branch_name2path(branch_name)
-
-    # contains 'author_email', 'task_description'
-    activity = repo_functions.get_task_metadata_for_branch(repo, branch_name)
-    activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
-    activity['task_description'] = activity['task_description'] if 'task_description' in activity else u''
+    activity = chime_activity.ChimeActivity(repo=repo, branch_name=safe_branch, default_branch_name=current_app.config['default_branch'], actor_email=session.get('email', None))
 
     article_edit_path = join('/tree/{}/edit'.format(branch_name2path(branch_name)), path)
-
-    activity.update(edit_path=u'/tree/{}/edit/'.format(branch_name2path(branch_name)),
-                    overview_path=u'/tree/{}/'.format(branch_name2path(branch_name)),
-                    view_path=u'/tree/{}/view/'.format(branch_name2path(branch_name)))
 
     languages = load_languages(repo.working_dir)
 
