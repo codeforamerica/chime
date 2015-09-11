@@ -166,6 +166,9 @@ class TestPreview(ChimeTestCase):
 
         # assert that the submitted text is on the preview screen
         self.assertIn(body_text_marker, self.driver.find_element_by_class_name('article-content').text)
+        # extract the branch name from the view URL
+        branch_url = self.driver.current_url
+        branch_name = search(r'tree\/(.+?)\/view', branch_url).group(1)
 
         # go back to the main page
         self.driver.get(main_url)
@@ -173,12 +176,16 @@ class TestPreview(ChimeTestCase):
         # delete our activity
         # hide the stubby status bar, it can block the delete button
         self.driver.execute_script('window.navigator.id.stubby.widgetElement.style.visibility="hidden";')
-        delete_xpath = "//a[contains(text(),'{}')]/../..//button[@value='Delete']".format(task_description)
-        self.scrollTo(self.driver.find_element_by_xpath(delete_xpath))
+        delete_id = '{}-delete'.format(branch_name)
+        delete_button = self.driver.find_element_by_id(delete_id)
 
-        # click the button when it's clickable
-        # need to do this because the position isn't getting updated immediately after scroll
-        self.click_button_when_clickable(delete_xpath)
+        if delete_button.is_displayed():
+            delete_button.click()
+        else:
+            self.scrollTo(delete_button)
+            # click the button when it's clickable
+            # need to do this because the position isn't getting updated immediately after scroll
+            self.click_button_when_clickable(delete_id)
 
         # wait until the activity is no longer visible in the list
         self.waiter.until(
@@ -200,7 +207,7 @@ class TestPreview(ChimeTestCase):
 
         self.assertTrue(found_flash)
 
-    def click_button_when_clickable(self, target_xpath, timeout_after=5):
+    def click_button_when_clickable(self, target_id, timeout_after=5):
         ''' Try to click the element at the passed xpath until it's successful, or
             time out after the passed number of seconds
         '''
@@ -209,7 +216,7 @@ class TestPreview(ChimeTestCase):
         started = datetime.now()
         while not clicked and not timeout:
             try:
-                self.driver.find_element_by_xpath(target_xpath).click()
+                self.driver.find_element_by_id(target_id).click()
                 clicked = True
             except WebDriverException:
                 timeout = (datetime.now() - started).seconds > timeout_after
@@ -271,9 +278,9 @@ class TestPreview(ChimeTestCase):
 
     def scrollTo(self, element):
         ActionChains(self.driver).move_to_element(element).perform()
-        element.send_keys(Keys.PAGE_DOWN)
-
-
+        # if it's still not displayed, try page down
+        if not element.is_displayed():
+            element.send_keys(Keys.PAGE_DOWN)
 
 if BROWSERS_TO_TRY:
     rewrite_for_all_browsers(TestPreview, BROWSERS_TO_TRY, TEST_REPETITIONS, TEST_RETRY_COUNT)
