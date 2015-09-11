@@ -13,7 +13,7 @@
           <p class="current-tasks__empty-description">Doesn't look like anyone's working on anything at the moment. You should hop to it!</p>
         {% else %}
           <p class="current-tasks__description">Work that's already underway by you and your colleagues.</p>
-          <ul class="current-tasks__list">
+          <ul class="current-tasks__list" id="current-activities">
           {% for activity in activities %}
            <li class="current-task">
             <p class="current-task__title"><a href="{{ activity.edit_path }}">{{ activity.task_description }}</a></p>
@@ -48,7 +48,7 @@
         {% if published_activities.count > 0 %}
           <h2 class="current-tasks__title">Recently Published Activities</h2>
           <p class="current-tasks__description">The {{ published_activities.description }} most recently published to the live site.</p>
-          <ul class="current-tasks__list">
+          <ul class="current-tasks__list" id="published-activities">
           {% for activity in published_activities.activities %}
            <li class="current-task">
             <!-- branch: {{ activity.safe_branch }} -->
