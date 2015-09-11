@@ -25,6 +25,7 @@ from box.util.rotunicode import RotUnicode
 
 from chime import jekyll_functions, repo_functions, edit_functions, view_functions
 from chime import constants
+from chime import chime_activity
 
 import codecs
 codecs.register(RotUnicode.search_function)
@@ -924,9 +925,9 @@ class TestRepo (TestCase):
         art_title = u'快速狐狸'
         art_slug = slugify(art_title)
         add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, u'', art_title, constants.ARTICLE_LAYOUT)
-        self.assertEqual(u'{}/index.{}'.format(art_slug, view_functions.CONTENT_FILE_EXTENSION), file_path)
+        self.assertEqual(u'{}/index.{}'.format(art_slug, constants.CONTENT_FILE_EXTENSION), file_path)
         self.assertEqual(u'The "{art_title}" article was created\n\n[{{"action": "create", "file_path": "{file_path}", "display_type": "article", "title": "{art_title}"}}]'.format(art_title=art_title, file_path=file_path), add_message)
-        self.assertEqual(u'{}/index.{}'.format(art_slug, view_functions.CONTENT_FILE_EXTENSION), redirect_path)
+        self.assertEqual(u'{}/index.{}'.format(art_slug, constants.CONTENT_FILE_EXTENSION), redirect_path)
         self.assertEqual(True, do_save)
         # commit the article
         repo_functions.save_working_file(new_clone, file_path, add_message, new_clone.commit().hexsha, 'master')
@@ -963,7 +964,7 @@ class TestRepo (TestCase):
         cat_title = u'快速狐狸'
         cat_slug = slugify(cat_title)
         add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, u'', cat_title, constants.CATEGORY_LAYOUT)
-        self.assertEqual(u'{}/index.{}'.format(cat_slug, view_functions.CONTENT_FILE_EXTENSION), file_path)
+        self.assertEqual(u'{}/index.{}'.format(cat_slug, constants.CONTENT_FILE_EXTENSION), file_path)
         self.assertEqual(u'The "{cat_title}" topic was created\n\n[{{"action": "create", "file_path": "{file_path}", "display_type": "category", "title": "{cat_title}"}}]'.format(cat_title=cat_title, file_path=file_path), add_message)
         self.assertEqual(u'{}/'.format(cat_slug), redirect_path)
         self.assertEqual(True, do_save)
@@ -1024,7 +1025,7 @@ class TestRepo (TestCase):
         cat_title = u'Daffodils and Drop Cloths'
         cat_slug = slugify(cat_title)
         add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, u'', cat_title, constants.CATEGORY_LAYOUT)
-        self.assertEqual(u'{}/index.{}'.format(cat_slug, view_functions.CONTENT_FILE_EXTENSION), file_path)
+        self.assertEqual(u'{}/index.{}'.format(cat_slug, constants.CONTENT_FILE_EXTENSION), file_path)
         self.assertEqual(u'The "{cat_title}" topic was created\n\n[{{"action": "create", "file_path": "{file_path}", "display_type": "category", "title": "{cat_title}"}}]'.format(cat_title=cat_title, file_path=file_path), add_message)
         self.assertEqual(u'{}/'.format(cat_slug), redirect_path)
         self.assertEqual(True, do_save)
@@ -1040,7 +1041,7 @@ class TestRepo (TestCase):
         cat2_title = u'Drain Bawlers'
         cat2_slug = slugify(cat2_title)
         add_message, cat2_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, cat_slug, cat2_title, constants.CATEGORY_LAYOUT)
-        self.assertEqual(u'{}/{}/index.{}'.format(cat_slug, cat2_slug, view_functions.CONTENT_FILE_EXTENSION), cat2_path)
+        self.assertEqual(u'{}/{}/index.{}'.format(cat_slug, cat2_slug, constants.CONTENT_FILE_EXTENSION), cat2_path)
         self.assertEqual(u'The "{cat_title}" topic was created\n\n[{{"action": "create", "file_path": "{file_path}", "display_type": "category", "title": "{cat_title}"}}]'.format(cat_title=cat2_title, file_path=cat2_path), add_message)
         self.assertEqual(u'{}/{}/'.format(cat_slug, cat2_slug), redirect_path)
         self.assertEqual(True, do_save)
@@ -1057,9 +1058,9 @@ class TestRepo (TestCase):
         art_slug = slugify(art_title)
         dir_path = redirect_path.rstrip('/')
         add_message, art_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, dir_path, art_title, constants.ARTICLE_LAYOUT)
-        self.assertEqual(u'{}/{}/{}/index.{}'.format(cat_slug, cat2_slug, art_slug, view_functions.CONTENT_FILE_EXTENSION), art_path)
+        self.assertEqual(u'{}/{}/{}/index.{}'.format(cat_slug, cat2_slug, art_slug, constants.CONTENT_FILE_EXTENSION), art_path)
         self.assertEqual(u'The "{art_title}" article was created\n\n[{{"action": "create", "file_path": "{file_path}", "display_type": "article", "title": "{art_title}"}}]'.format(art_title=art_title, file_path=art_path), add_message)
-        self.assertEqual(u'{}/{}/{}/index.{}'.format(cat_slug, cat2_slug, art_slug, view_functions.CONTENT_FILE_EXTENSION), redirect_path)
+        self.assertEqual(u'{}/{}/{}/index.{}'.format(cat_slug, cat2_slug, art_slug, constants.CONTENT_FILE_EXTENSION), redirect_path)
         self.assertEqual(True, do_save)
         # commit the article
         repo_functions.save_working_file(new_clone, art_path, add_message, new_clone.commit().hexsha, 'master')
@@ -1145,7 +1146,8 @@ class TestRepo (TestCase):
         working_branch.checkout()
 
         # get and check the history
-        activity_history = view_functions.make_activity_history(repo=new_clone)
+        activity = chime_activity.ChimeActivity(repo=new_clone, branch_name=working_branch.name, default_branch_name='master', actor_email=fake_author_email)
+        activity_history = activity.history
         self.assertEqual(len(activity_history), 10)
 
         # check the creation of the activity
