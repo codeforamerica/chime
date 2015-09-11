@@ -295,14 +295,12 @@ class ChimeTestClient:
         data = {i['name']: i.get('value', u'')
                 for i in del_form.find_all(['input', 'button', 'textarea'])}
 
-        print data
-
         delete_article_path = urlparse(urljoin(self.path, del_form['action'])).path
         response = self.client.post(delete_article_path, data=data)
 
         self.follow_redirect(response, 303)
 
-    def request_feedback(self, feedback_str):
+    def request_feedback(self, feedback_str=u''):
         ''' Look for form to request feedback, submit it.
         '''
         body = self.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'comment_text'))
@@ -321,7 +319,7 @@ class ChimeTestClient:
         # View the saved feedback.
         self.follow_redirect(response, 303)
 
-    def leave_feedback(self, feedback_str):
+    def leave_feedback(self, feedback_str=u''):
         ''' Look for form to leave feedback, submit it.
         '''
         body = self.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'comment_text'))
