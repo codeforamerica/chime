@@ -2600,8 +2600,7 @@ class TestApp (TestCase):
             # Load the front page and make sure the activity is listed as published
             #
             erica.open_link('/')
-            pub_header = erica.soup.find(lambda tag: bool(tag.name == 'h2' and tag.text == u'Recently Published Activities'))
-            pub_ul = pub_header.find_parent('ul')
+            pub_ul = erica.soup.select('ul#published-activities')[0]
             # there should be an HTML comment with the branch name
             comment = pub_ul.findAll(text=lambda text: isinstance(text, Comment))[0]
             self.assertTrue(branch_name in comment)
