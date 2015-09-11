@@ -33,6 +33,7 @@ from chime import (
     create_app, repo_functions, google_api_functions, view_functions,
     publish, errors)
 from chime import constants
+from chime import chime_activity
 
 from unit.chime_test_client import ChimeTestClient
 
@@ -1356,9 +1357,10 @@ class TestApp (TestCase):
         ''' The record of a delete in the corresponding commit is accurate.
         '''
         with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
             with HTTMock(self.mock_persona_verify_erica):
                 erica = ChimeTestClient(self.test_client, self)
-                erica.sign_in(email='erica@example.com')
+                erica.sign_in(email=erica_email)
 
             # Start a new task
             erica.start_task(description=u'Ferment Tuber Fibres Using Symbiotic Bacteria in the Intestines for Naked Mole Rats')
@@ -1373,7 +1375,7 @@ class TestApp (TestCase):
             subcategory_names = [u'Volatile Fatty Acids', u'Non-Reproducing Females', u'Arid African Deserts']
             article_names = [u'Eusocial Exhibition', u'Old Enough to Eat Solid Food', u'Contributing to Extension of Tunnels', u'Foraging and Nest Building']
             erica.add_category(category_name=category_names[0])
-            
+
             category_path = erica.path
             erica.add_subcategory(subcategory_name=subcategory_names[0])
             erica.open_link(category_path)
@@ -1397,7 +1399,8 @@ class TestApp (TestCase):
 
             # get and check the history
             repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email='erica@example.com')
-            activity_history = view_functions.make_activity_history(repo=repo)
+            activity = chime_activity.ChimeActivity(repo=repo, branch_name=branch_name, default_branch_name='master', actor_email=erica_email)
+            activity_history = activity.history
             delete_history = json.loads(activity_history[0]['commit_body'])
             for item in delete_history:
                 self.assertEqual(item['action'], u'delete')
