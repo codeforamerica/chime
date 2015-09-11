@@ -36,7 +36,7 @@
                     {% endif %}
                   {% endif %}
                   <form action="/update" method="POST" class="toolbar__item">
-                    <button class="toolbar__item button button--red" type="submit" name="abandon" value="Delete">Delete</button>
+                    <button class="toolbar__item button button--red" type="submit" name="abandon" value="Delete" id="{{ activity.safe_branch }}-delete">Delete</button>
                     <input type="hidden" name="branch" value="{{ activity.safe_branch }}">
                   </form>
                 </div>
