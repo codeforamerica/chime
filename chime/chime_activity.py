@@ -16,24 +16,23 @@ class ChimeActivity:
         '''
         self.repo = repo
         self.safe_branch = branch_name
+        self.default_branch_name = default_branch_name
 
         task_metadata = repo_functions.get_task_metadata_for_branch(self.repo, self.safe_branch)
         self.author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
         self.task_description = task_metadata['task_description'] if 'task_description' in task_metadata else self.safe_branch
 
         self.review_state, self.review_authorized = repo_functions.get_review_state_and_authorized(
-            repo=self.repo, default_branch_name=default_branch_name,
+            repo=self.repo, default_branch_name=self.default_branch_name,
             working_branch_name=self.safe_branch, actor_email=actor_email
         )
-
-        self.working_state = repo_functions.get_activity_working_state(self.repo, default_branch_name, self.safe_branch)
 
         self.date_created = self.repo.git.log('--format=%ad', '--date=relative', '--', repo_functions.TASK_METADATA_FILENAME).split('\n')[-1]
         self.date_updated = self.repo.git.log('--format=%ad', '--date=relative').split('\n')[0]
 
         # the email of the last person who edited the activity
         self.last_edited_email = repo_functions.get_last_edited_email(
-            repo=repo, default_branch_name=default_branch_name,
+            repo=repo, default_branch_name=self.default_branch_name,
             working_branch_name=self.safe_branch
         )
 
@@ -41,9 +40,10 @@ class ChimeActivity:
         self.overview_path = u'/tree/{}/'.format(self.safe_branch)
         self.view_path = u'/tree/{}/view/'.format(self.safe_branch)
 
-        # only build history if requested
+        # only build history and working state if requested
         self._history = None
         self._history_summary = None
+        self._working_state = None
 
     @property
     def history(self):
@@ -62,6 +62,15 @@ class ChimeActivity:
             self._history_summary = self._make_history_summary()
 
         return self._history_summary
+
+    @property
+    def working_state(self):
+        ''' Get the activity working state.
+        '''
+        if not self._working_state:
+            self._working_state = repo_functions.get_activity_working_state(self.repo, self.default_branch_name, self.safe_branch)
+
+        return self._working_state
 
     def _make_history(self):
         ''' Make an easily-parsable history of the activity since it was created.
