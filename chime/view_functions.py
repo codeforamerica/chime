@@ -773,7 +773,7 @@ def make_list_of_published_activities(repo, limit=10):
         last_edited_email = ref_split[3]
 
         activity.update(date_created=date_created, date_updated=date_updated,
-                        edit_path=u'#', overview_path=u'/tree/{}/'.format(safe_branch),
+                        edit_path=u'#', overview_path=u'#',
                         safe_branch=safe_branch, review_state=review_state,
                         review_authorized=review_authorized, last_edited_email=last_edited_email)
 
