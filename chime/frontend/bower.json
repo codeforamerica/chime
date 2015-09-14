@@ -1,0 +1,34 @@
+{
+  "name": "chime",
+  "version": "0.0.0",
+  "private": true,
+  "homepage": "https://github.com/chimecms/chime",
+  "authors": [
+    "David Arvelo <david@davidarvelo.com>"
+  ],
+  "description": "Hashing out some ideas about Git, Jekyll, language, and content management",
+  "keywords": [
+    "chime",
+    "cms",
+    "codeforamerica"
+  ],
+  "license": "BSD",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "es5-shim": "~4.1.13",
+    "html5shiv": "~3.7.3",
+    "jquery": "^1.0.0",
+    "loader.js": "~3.3.0",
+    "marked": "~0.3.5",
+    "placeholders": "~4.0.1",
+    "prism": "~1.0.1",
+    "stubbyid": "git://github.com/toolness/stubbyid.git#gh-pages",
+    "undo": "git://github.com/jzaefferer/undo.git"
+  }
+}

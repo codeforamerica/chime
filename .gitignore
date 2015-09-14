@@ -15,3 +15,19 @@ apache
 hosts.txt
 .sass-cache
 app.log
+
+node_modules
+bower_components
+static/javascript
+
+# vim-related
+[._]*.s[a-w][a-z]
+[._]s[a-w][a-z]
+*.un~
+Session.vim
+.netrwhist
+.vimrc
+*~
+
+# TernJS
+.tern-project

@@ -1,0 +1,24 @@
+{
+  "name": "Chime-frontend",
+  "version": "0.0.0",
+  "private": true,
+  "homepage": "https://github.com/chimecms/chime",
+  "description": "Hashing out some ideas about Git, Jekyll, language, and content management",
+  "author": "David Arvelo",
+  "license": "BSD",
+  "scripts": {
+    "test": "./node_modules/mocha/bin/mocha --recursive"
+  },
+  "devDependencies": {
+    "babel": "^5.8.19",
+    "browser-sync": "^2.8.1",
+    "chai": "^3.0.0",
+    "del": "^1.2.0",
+    "gulp": "^3.9.0",
+    "gulp-babel": "^5.1.0",
+    "gulp-concat": "^2.6.0",
+    "mocha": "^2.2.5",
+    "sinon": "^1.15.4",
+    "sinon-chai": "^2.8.0"
+  }
+}
