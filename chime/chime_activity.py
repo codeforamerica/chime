@@ -19,8 +19,7 @@ class ChimeActivity:
         self.default_branch_name = default_branch_name
 
         task_metadata = repo_functions.get_task_metadata_for_branch(self.repo, self.safe_branch)
-        self.author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
-        self.task_description = task_metadata['task_description'] if 'task_description' in task_metadata else self.safe_branch
+        self.author_email, self.task_description = self._process_task_metadata(task_metadata)
 
         self.review_state, self.review_authorized = repo_functions.get_review_state_and_authorized(
             repo=self.repo, default_branch_name=self.default_branch_name,
@@ -173,3 +172,49 @@ class ChimeActivity:
             history_summary['summary'] = summary_sentence
 
         return history_summary
+
+    def _process_task_metadata(self, task_metadata):
+        ''' Extract and return values from the task metadata.
+        '''
+        author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
+        task_description = task_metadata['task_description'] if 'task_description' in task_metadata else self.safe_branch
+        # add the beneficiary to the description if it's there
+        try:
+            task_description = u'{} for {}'.format(task_description, task_metadata['task_beneficiary'])
+        except KeyError:
+            pass
+
+        return author_email, task_description
+
+
+class ChimePublishedActivity(ChimeActivity):
+    ''' A representation of a published activity in Chime
+    '''
+    def __init__(self, repo, branch_name, default_branch_name, task_metadata, date_updated, last_edited_email):
+        ''' Create a new activity
+        '''
+        self.repo = repo
+        self.safe_branch = branch_name
+        self.default_branch_name = default_branch_name
+
+        self.author_email, self.task_description = self._process_task_metadata(task_metadata)
+
+        # we know the current review state and authorized status
+        self.review_state = constants.WORKING_STATE_PUBLISHED
+        self.review_authorized = False
+
+        # set date created and updated the same for now
+        self.date_updated = date_updated
+        self.date_created = date_updated
+
+        # the email of the last person who edited the activity
+        self.last_edited_email = last_edited_email
+
+        self.edit_path = u'#'
+        self.overview_path = u'/tree/{}/'.format(self.safe_branch)
+        self.view_path = u'#'
+
+        # only build history and working state if requested
+        self._history = None
+        self._history_summary = None
+        self._working_state = None

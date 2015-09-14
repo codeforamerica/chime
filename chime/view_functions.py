@@ -750,33 +750,19 @@ def make_list_of_published_activities(repo, limit=10):
         # if there's no parsable task metadata in the tag's subject, this isn't a viable published activity
         try:
             # contains 'author_email', 'task_description'
-            activity = json.loads(ref_split[1])
+            task_metadata = json.loads(ref_split[1])
         except ValueError:
             continue
-        activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
-        activity['task_description'] = activity['task_description'] if 'task_description' in activity else safe_branch
-        # add the beneficiary to the description if it's there
-        try:
-            activity['task_description'] = u'{} for {}'.format(activity['task_description'], activity['task_beneficiary'])
-        except KeyError:
-            pass
 
-        # we know the current review state and authorized status
-        review_state = constants.WORKING_STATE_PUBLISHED
-        review_authorized = False
-
-        # set date created and updated the same for now
         date_updated = ref_split[2]
-        date_created = date_updated
-
         # the email of the person who published the activity (stripping angle brackets if they're there)
         last_edited_email = ref_split[3].lstrip(u'<').rstrip(u'>')
 
-        activity.update(date_created=date_created, date_updated=date_updated,
-                        edit_path=u'#', overview_path=u'#',
-                        safe_branch=safe_branch, review_state=review_state,
-                        review_authorized=review_authorized, last_edited_email=last_edited_email)
-
+        # create a new ChimePublishedActivity and append it to published
+        activity = chime_activity.ChimePublishedActivity(
+            repo=repo, branch_name=safe_branch, default_branch_name=current_app.config['default_branch'],
+            task_metadata=task_metadata, date_updated=date_updated, last_edited_email=last_edited_email
+        )
         published.append(activity)
 
     return published
