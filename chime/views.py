@@ -489,11 +489,6 @@ def show_activity_overview(branch_name):
     if repo_functions.get_conflict(repo, current_app.config['default_branch']):
         view_functions.flash_unique(repo_functions.MERGE_CONFLICT_WARNING_FLASH_MESSAGE, u'warning')
 
-    # contains 'author_email', 'task_description'
-    activity = repo_functions.get_task_metadata_for_branch(repo, branch_name)
-    activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
-    activity['task_description'] = activity['task_description'] if 'task_description' in activity else u''
-
     kwargs = view_functions.common_template_args(current_app.config, session)
 
     languages = load_languages(repo.working_dir)
@@ -503,7 +498,16 @@ def show_activity_overview(branch_name):
     if ga_config.get('access_token'):
         app_authorized = True
 
-    activity = chime_activity.ChimeActivity(repo=repo, branch_name=safe_branch, default_branch_name=current_app.config['default_branch'], actor_email=session.get('email', None))
+    if repo_functions.get_activity_working_state(repo, current_app.config['default_branch'], safe_branch) == constants.WORKING_STATE_ACTIVE:
+        activity = chime_activity.ChimeActivity(repo=repo, branch_name=safe_branch, default_branch_name=current_app.config['default_branch'], actor_email=session.get('email', None))
+    else:
+        task_metadata = repo_functions.get_task_metadata_from_tag(clone=repo, working_branch_name=safe_branch)
+        hexsha = repo.tags[safe_branch].tag.hexsha
+        date_updated, last_edited_email = repo.git.log('--format=%ad\t%ae', '--date=relative', '{}^!'.format(hexsha)).split('\t')
+        activity = chime_activity.ChimePublishedActivity(
+            repo=repo, branch_name=safe_branch, default_branch_name=current_app.config['default_branch'],
+            task_metadata=task_metadata, date_updated=date_updated, last_edited_email=last_edited_email
+        )
 
     kwargs.update(activity=activity, app_authorized=app_authorized, languages=languages)
 

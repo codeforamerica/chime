@@ -631,10 +631,6 @@ def synched_checkout_required(route_function):
             published_by = commit.committer.email
             flash_only(MESSAGE_ACTIVITY_PUBLISHED.format(published_date=published_date, published_by=published_by), u'warning')
 
-            # if the published branch doesn't exist locally, raise a 404
-            if not local_branch:
-                abort(404)
-
         elif working_state == constants.WORKING_STATE_DELETED:
             flash_only(MESSAGE_ACTIVITY_DELETED, u'warning')
 
