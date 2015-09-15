@@ -45,13 +45,6 @@ class ChimeTestClient:
 
         self.path, self.soup, self.headers = url, BeautifulSoup(response.data), response.headers
 
-    def open_link_blindly(self, url):
-        ''' Open a link without testing
-        '''
-        response = self.client.get(url)
-
-        self.path, self.soup, self.headers = url, BeautifulSoup(response.data), response.headers
-
     def follow_link(self, href):
         ''' Follow a link after making sure it's present in the page.
         '''
