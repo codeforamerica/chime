@@ -224,55 +224,6 @@ class TestProcess (TestCase):
             self.assertIsNone(frances.soup.find(text='Dollars'), 'Should not see first published category')
 
     # in TestProcess
-    def test_editing_process_with_outdated_publish(self):
-        ''' Check edit process with a user attempting to change an activity that's been published.
-        '''
-        with HTTMock(self.auth_csv_example_allowed):
-            erica_email = u'erica@example.com'
-            frances_email = u'frances@example.com'
-            with HTTMock(self.mock_persona_verify_erica):
-                erica = ChimeTestClient(self.app.test_client(), self)
-                erica.sign_in(erica_email)
-
-            with HTTMock(self.mock_persona_verify_frances):
-                frances = ChimeTestClient(self.app.test_client(), self)
-                frances.sign_in(frances_email)
-
-            # Start a new task
-            erica.open_link('/')
-            args = 'Diving for Dollars', 'Ninjas', 'Flipping Out', 'So Awesome'
-            branch_name = erica.quick_activity_setup(*args)
-
-            # Edit the new article.
-            erica.edit_article(title_str='So, So Awesome', body_str='It was the best of times.')
-            article_path = erica.path
-
-            # Ask for feedback
-            erica.follow_link(href='/tree/{}'.format(branch_name))
-            erica.request_feedback(feedback_str='Is this okay?')
-
-            #
-            # Switch users and publish the article.
-            #
-            frances.open_link(url=erica.path)
-            frances.leave_feedback(feedback_str='It is super-great.')
-            frances.approve_activity()
-            frances.publish_activity()
-
-            #
-            # Switch back and try to make another edit.
-            #
-            erica.open_link(article_path)
-            erica.edit_article(title_str='Just Awful', body_str='It was the worst of times.')
-
-            # a warning is flashed about working in a published branch
-            # we can't get the date exactly right, so test for every other part of the message
-            message_published = view_functions.MESSAGE_ACTIVITY_PUBLISHED.format(published_date=u'xxx', published_by=frances_email)
-            message_published_split = message_published.split(u'xxx')
-            for part in message_published_split:
-                self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and part in tag.text))
-
-    # in TestProcess
     def test_editing_process_with_conflicting_edit(self):
         ''' Check edit process with a user attempting to change an activity with a conflict.
         '''
@@ -527,59 +478,6 @@ class TestProcess (TestCase):
             self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'button' and tag['value'] == u'Publish'))
 
     # in TestProcess
-    def test_notified_when_working_in_published_task(self):
-        ''' When someone else publishes a task you're working in, you're notified.
-        '''
-        with HTTMock(self.auth_csv_example_allowed):
-            erica_email = u'erica@example.com'
-            frances_email = u'frances@example.com'
-            with HTTMock(self.mock_persona_verify_erica):
-                erica = ChimeTestClient(self.app.test_client(), self)
-                erica.sign_in(erica_email)
-
-            with HTTMock(self.mock_persona_verify_frances):
-                frances = ChimeTestClient(self.app.test_client(), self)
-                frances.sign_in(frances_email)
-
-            # Start a new task
-            erica.open_link('/')
-            erica.start_task(description='Eating Carrion for Vultures')
-            erica_branch_name = erica.get_branch_name()
-
-            # Enter the "other" folder
-            erica.follow_link(href='/tree/{}/edit/other/'.format(erica_branch_name))
-
-            # Create a new category
-            category_name = u'Forage'
-            category_slug = slugify(category_name)
-            erica.add_category(category_name=category_name)
-
-            # Ask for feedback
-            erica.follow_link(href='/tree/{}'.format(erica_branch_name))
-            erica.request_feedback(feedback_str='Is this okay?')
-
-            #
-            # Switch users
-            #
-            # approve and publish erica's changes
-            frances.open_link(url=erica.path)
-            frances.leave_feedback(feedback_str='It is perfect.')
-            frances.approve_activity()
-            frances.publish_activity()
-
-            #
-            # Switch users
-            #
-            # load an edit page
-            erica.open_link(url='/tree/{}/edit/other/{}/'.format(erica_branch_name, category_slug))
-            # a warning is flashed about working in a published branch
-            # we can't get the date exactly right, so test for every other part of the message
-            message_published = view_functions.MESSAGE_ACTIVITY_PUBLISHED.format(published_date=u'xxx', published_by=frances_email)
-            message_published_split = message_published.split(u'xxx')
-            for part in message_published_split:
-                self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and part in tag.text))
-
-    # in TestProcess
     def test_page_not_found_when_branch_published(self):
         ''' When you're working in a published branch and don't have a local copy, you get a 404 error
         '''
@@ -642,78 +540,6 @@ class TestProcess (TestCase):
             pattern_template_comment_stripped = sub(ur'<!--|-->', u'', PATTERN_TEMPLATE_COMMENT)
             comments = erica.soup.find_all(text=lambda text: isinstance(text, Comment))
             self.assertTrue(pattern_template_comment_stripped.format(u'error-404') in comments)
-
-    # in TestProcess
-    def test_published_branch_not_resurrected_on_save(self):
-        ''' Saving a change on a branch that exists locally but isn't at origin because it was published doesn't re-create the branch.
-        '''
-        with HTTMock(self.auth_csv_example_allowed):
-            erica_email = u'erica@example.com'
-            frances_email = u'frances@example.com'
-            with HTTMock(self.mock_persona_verify_erica):
-                erica = ChimeTestClient(self.app.test_client(), self)
-                erica.sign_in(erica_email)
-
-            with HTTMock(self.mock_persona_verify_frances):
-                frances = ChimeTestClient(self.app.test_client(), self)
-                frances.sign_in(frances_email)
-
-            # Start a new task
-            erica.open_link('/')
-            task_description = u'Squeeze A School Of Fish Into A Bait Ball for Dolphins'
-            erica.start_task(description=task_description)
-            erica_branch_name = erica.get_branch_name()
-
-            # Enter the "other" folder
-            erica.follow_link(href='/tree/{}/edit/other/'.format(erica_branch_name))
-
-            # Create a category, subcategory, and article
-            article_name = u'Stunned Fish'
-            erica.add_category(category_name=u'Plowing Through')
-            erica.add_subcategory(subcategory_name=u'Feeding On')
-            erica.add_article(article_name=article_name)
-            erica_article_path = erica.path
-
-            # Ask for feedback
-            erica.follow_link(href='/tree/{}'.format(erica_branch_name))
-            erica.request_feedback(feedback_str='Is this okay?')
-
-            # verify that the branch exists locally and remotely
-            repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email='erica@example.com')
-            self.assertTrue(erica_branch_name in repo.branches)
-            # there's a remote branch with the branch name, but no tag
-            self.assertFalse('refs/tags/{}'.format(erica_branch_name) in repo.git.ls_remote('origin', erica_branch_name).split())
-            self.assertTrue('refs/heads/{}'.format(erica_branch_name) in repo.git.ls_remote('origin', erica_branch_name).split())
-
-            #
-            # Switch users
-            #
-            # approve and publish erica's changes
-            frances.open_link(url=erica.path)
-            frances.leave_feedback(feedback_str='It is perfect.')
-            frances.approve_activity()
-            frances.publish_activity()
-
-            #
-            # Switch users
-            #
-            # load the article edit page
-            erica.open_link(url=erica_article_path)
-            # a warning is flashed about working in a published branch
-            # we can't get the date exactly right, so test for every other part of the message
-            message_published = view_functions.MESSAGE_ACTIVITY_PUBLISHED.format(published_date=u'xxx', published_by=frances_email)
-            message_published_split = message_published.split(u'xxx')
-            for part in message_published_split:
-                self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and part in tag.text))
-
-            # submit an edit to the article
-            erica.edit_article(title_str=article_name, body_str=u'Chase fish into shallow water to catch them.')
-
-            # verify that the branch exists locally and not remotely
-            self.assertTrue(erica_branch_name in repo.branches)
-            # there's a remote tag with the branch name, but no branch
-            self.assertTrue('refs/tags/{}'.format(erica_branch_name) in repo.git.ls_remote('origin', erica_branch_name).split())
-            self.assertFalse('refs/heads/{}'.format(erica_branch_name) in repo.git.ls_remote('origin', erica_branch_name).split())
 
     # in TestProcess
     def test_notified_when_working_in_deleted_task(self):
