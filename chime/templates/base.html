@@ -20,7 +20,7 @@
         <title>{% block title %}{% endblock %} | Chime</title>
         <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
         {% if activity %}
-        <!-- branch: {{branch}} -->
+        <!-- branch: {{ safe_branch }} -->
         <!-- author: {% if activity.author_email %}{{activity.author_email}}{% else %}unknown{% endif %} -->
         {% endif %}
         <script>
@@ -38,7 +38,7 @@
 
     {% block global_header %}
       {% from 'macros/macros.html' import globalHeader as globalHeader %}
-      {{ globalHeader(breadcrumb_items = breadcrumb_items, email=email, branch=branch, activity=activity, live_site_url=live_site_url) }}
+      {{ globalHeader(breadcrumb_items=breadcrumb_items, email=email, branch_name=safe_branch, activity=activity, live_site_url=live_site_url) }}
     {% endblock %}
 
     {% include 'includes/flashes.html' %}

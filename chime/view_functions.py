@@ -1007,7 +1007,7 @@ def make_kwargs_for_activity_files_page(repo, branch_name, path):
     activity = chime_activity.ChimeActivity(repo=repo, branch_name=branch_name, default_branch_name=current_app.config['default_branch'], actor_email=session.get('email', None))
 
     kwargs = common_template_args(current_app.config, session)
-    kwargs.update(branch=branch_name, safe_branch=branch_name2path(branch_name),
+    kwargs.update(safe_branch=branch_name2path(branch_name),
                   breadcrumb_paths=make_breadcrumb_paths(branch_name, path),
                   dir_columns=make_directory_columns(repo, branch_name, path, showallfiles),
                   activity=activity)
@@ -1068,7 +1068,7 @@ def render_edit_view(repo, branch_name, path, file):
     activity = chime_activity.ChimeActivity(repo=repo, branch_name=branch_name, default_branch_name=current_app.config['default_branch'], actor_email=session.get('email', None))
 
     kwargs = common_template_args(current_app.config, session)
-    kwargs.update(branch=branch_name, safe_branch=branch_name2path(branch_name),
+    kwargs.update(safe_branch=branch_name2path(branch_name),
                   body=body, hexsha=commit.hexsha, url_slug=url_slug,
                   front=front, view_path=view_path, edit_path=path,
                   history_path=history_path, save_path=save_path, languages=languages,

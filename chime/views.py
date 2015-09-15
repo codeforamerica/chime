@@ -562,6 +562,7 @@ def branch_history(branch_name, path=None):
 
     kwargs = view_functions.common_template_args(current_app.config, session)
     kwargs.update(branch=branch_name, safe_branch=safe_branch,
+    kwargs.update(safe_branch=safe_branch,
                   history=history, path=path, languages=languages,
                   app_authorized=app_authorized, article_edit_path=article_edit_path,
                   activity=activity)
