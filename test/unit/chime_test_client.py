@@ -43,7 +43,10 @@ class ChimeTestClient:
         response = self.client.get(url)
         self.test.assertEqual(response.status_code, expected_status_code)
 
-        self.path, self.soup, self.headers = url, BeautifulSoup(response.data), response.headers
+        if expected_status_code in range(300, 399):
+            self.follow_redirect(response, expected_status_code)
+        else:
+            self.path, self.soup, self.headers = url, BeautifulSoup(response.data), response.headers
 
     def follow_link(self, href):
         ''' Follow a link after making sure it's present in the page.
