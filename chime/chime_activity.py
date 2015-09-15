@@ -71,19 +71,17 @@ class ChimeActivity:
 
         return self._working_state
 
-    def _get_history_log(self, log_format, hexsha):
+    def _get_history_log(self, log_format):
         ''' Get a git log from which to create the activity's history
         '''
+        hexsha = self.repo.branches[self.safe_branch].commit.hexsha
         return self.repo.git.log('--format={}'.format(log_format), '--date=relative', 'master..{}'.format(hexsha))
 
     def _make_history(self):
         ''' Make an easily-parsable history of the activity since it was created.
         '''
         # see <http://git-scm.com/docs/git-log> for placeholders
-        log = self._get_history_log(
-            log_format='%x00Name: %an\tEmail: %ae\tDate: %ad\tSubject: %s\tBody: %b%x00',
-            hexsha=self.repo.branches[self.safe_branch].commit.hexsha
-        )
+        log = self._get_history_log(log_format='%x00Name: %an\tEmail: %ae\tDate: %ad\tSubject: %s\tBody: %b%x00')
 
         history = []
         pattern = re.compile(r'\x00Name: (.*?)\tEmail: (.*?)\tDate: (.*?)\tSubject: (.*?)\tBody: (.*?)\x00', re.DOTALL)
@@ -225,7 +223,8 @@ class ChimePublishedActivity(ChimeActivity):
         self._history_summary = None
         self._working_state = None
 
-    def _get_history_log(self, log_format, hexsha):
+    def _get_history_log(self, log_format):
         ''' Get a git log from which to create the activity's history
         '''
-        return self.repo.git.log('--format={}'.format(log_format), '--date=relative', 'master..{}'.format(hexsha))
+        hexsha = self.repo.tags[self.safe_branch].commit.hexsha
+        return self.repo.git.log('--format={}'.format(log_format), '--date=relative', hexsha)
