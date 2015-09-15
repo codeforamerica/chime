@@ -192,25 +192,30 @@ class ChimeActivity:
 class ChimePublishedActivity(ChimeActivity):
     ''' A representation of a published activity in Chime
     '''
-    def __init__(self, repo, branch_name, default_branch_name, task_metadata, date_updated, last_edited_email):
+    def __init__(self, repo, branch_name, default_branch_name):
         ''' Create a new activity
         '''
         self.repo = repo
         self.safe_branch = branch_name
         self.default_branch_name = default_branch_name
 
+        task_metadata = repo_functions.get_task_metadata_from_tag(clone=self.repo, working_branch_name=self.safe_branch)
         self.author_email, self.task_description = self._process_task_metadata(task_metadata)
 
         # we know the current review state and authorized status
         self.review_state = constants.WORKING_STATE_PUBLISHED
         self.review_authorized = False
 
+        # get date updated and last edited email from the tag's git log
+        hexsha = repo.tags[self.safe_branch].tag.hexsha
+        date_updated, last_edited_email = repo.git.log('--format=%ad\t%ae', '--date=relative', '{}^!'.format(hexsha)).split('\t')
+
         # set date created and updated the same for now
         self.date_updated = date_updated
         self.date_created = date_updated
 
-        # the email of the last person who edited the activity
-        self.last_edited_email = last_edited_email
+        # the email of the last person who edited the activity (stripping angle brackets if they're there)
+        self.last_edited_email = last_edited_email.lstrip(u'<').rstrip(u'>')
 
         self.overview_path = u'/tree/{}/'.format(self.safe_branch)
 

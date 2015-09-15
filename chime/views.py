@@ -501,13 +501,7 @@ def show_activity_overview(branch_name):
     if repo_functions.get_activity_working_state(repo, current_app.config['default_branch'], safe_branch) == constants.WORKING_STATE_ACTIVE:
         activity = chime_activity.ChimeActivity(repo=repo, branch_name=safe_branch, default_branch_name=current_app.config['default_branch'], actor_email=session.get('email', None))
     else:
-        task_metadata = repo_functions.get_task_metadata_from_tag(clone=repo, working_branch_name=safe_branch)
-        hexsha = repo.tags[safe_branch].tag.hexsha
-        date_updated, last_edited_email = repo.git.log('--format=%ad\t%ae', '--date=relative', '{}^!'.format(hexsha)).split('\t')
-        activity = chime_activity.ChimePublishedActivity(
-            repo=repo, branch_name=safe_branch, default_branch_name=current_app.config['default_branch'],
-            task_metadata=task_metadata, date_updated=date_updated, last_edited_email=last_edited_email
-        )
+        activity = chime_activity.ChimePublishedActivity(repo=repo, branch_name=safe_branch, default_branch_name=current_app.config['default_branch'])
 
     kwargs.update(activity=activity, app_authorized=app_authorized, languages=languages)
 

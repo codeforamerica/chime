@@ -732,33 +732,18 @@ def make_list_of_published_activities(repo, limit=10):
     #   subject = task metadata json
     #   taggerdate:relative = published date in relative format
     #   *authoremail = the email of the person who published the activity
-    ref_list = repo.git.for_each_ref('--count={}'.format(limit), '--format=%(refname:short)\t%(subject)\t%(taggerdate:relative)\t%(*authoremail)', '--sort=-taggerdate', 'refs/tags').split('\n')
+    branch_names = repo.git.for_each_ref('--count={}'.format(limit), '--format=%(refname:short)', '--sort=-taggerdate', 'refs/tags').split('\n')
 
     published = []
-    for ref in ref_list:
-        ref_split = ref.split('\t')
-        # skip if we didn't get a fully formed line of data
-        if len(ref_split) < 4:
-            continue
+    for branch_name in branch_names:
+        safe_branch = branch_name2path(branch_name)
 
-        safe_branch = branch_name2path(ref_split[0])
-
-        # if there's no parsable task metadata in the tag's subject, this isn't a viable published activity
         try:
-            # contains 'author_email', 'task_description'
-            task_metadata = json.loads(ref_split[1])
-        except ValueError:
+            # create a new ChimePublishedActivity and append it to published
+            activity = chime_activity.ChimePublishedActivity(repo=repo, branch_name=safe_branch, default_branch_name=current_app.config['default_branch'])
+        except:
             continue
 
-        date_updated = ref_split[2]
-        # the email of the person who published the activity (stripping angle brackets if they're there)
-        last_edited_email = ref_split[3].lstrip(u'<').rstrip(u'>')
-
-        # create a new ChimePublishedActivity and append it to published
-        activity = chime_activity.ChimePublishedActivity(
-            repo=repo, branch_name=safe_branch, default_branch_name=current_app.config['default_branch'],
-            task_metadata=task_metadata, date_updated=date_updated, last_edited_email=last_edited_email
-        )
         published.append(activity)
 
     return published
