@@ -203,7 +203,7 @@ class ChimePublishedActivity(ChimeActivity):
         self.author_email, self.task_description = self._process_task_metadata(task_metadata)
 
         # we know the current review state and authorized status
-        self.review_state = constants.WORKING_STATE_PUBLISHED
+        self.review_state = constants.REVIEW_STATE_PUBLISHED
         self.review_authorized = False
 
         # get date updated and last edited email from the tag's git log
