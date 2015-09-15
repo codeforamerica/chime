@@ -478,8 +478,9 @@ class TestProcess (TestCase):
             self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'button' and tag['value'] == u'Publish'))
 
     # in TestProcess
-    def test_page_not_found_when_branch_published(self):
-        ''' When you're working in a published branch and don't have a local copy, you get a 404 error
+    def test_redirect_to_overview_when_branch_published(self):
+        ''' When you're working in a published branch and don't have a local copy, you're redirected to
+            that activity's overview page.
         '''
         with HTTMock(self.auth_csv_example_allowed):
             erica_email = u'erica@example.com'
@@ -528,7 +529,7 @@ class TestProcess (TestCase):
             # Switch users
             #
             # load an edit page
-            erica.open_link(url='/tree/{}/edit/other/{}/'.format(erica_branch_name, category_slug), expected_status_code=404)
+            erica.open_link(url='/tree/{}/edit/other/{}/'.format(erica_branch_name, category_slug), expected_status_code=303)
             # a warning is flashed about working in a published branch
             # we can't get the date exactly right, so test for every other part of the message
             message_published = view_functions.MESSAGE_ACTIVITY_PUBLISHED.format(published_date=u'xxx', published_by=frances_email)
@@ -536,10 +537,10 @@ class TestProcess (TestCase):
             for part in message_published_split:
                 self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and part in tag.text))
 
-            # the 404 page was loaded
+            # the overview page was loaded
             pattern_template_comment_stripped = sub(ur'<!--|-->', u'', PATTERN_TEMPLATE_COMMENT)
             comments = erica.soup.find_all(text=lambda text: isinstance(text, Comment))
-            self.assertTrue(pattern_template_comment_stripped.format(u'error-404') in comments)
+            self.assertTrue(pattern_template_comment_stripped.format(u'activity-overview') in comments)
 
     # in TestProcess
     def test_notified_when_working_in_deleted_task(self):
