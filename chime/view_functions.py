@@ -1001,7 +1001,10 @@ def render_activities_list(task_description=None):
     master_name = current_app.config['default_branch']
     branch_names = [b.name for b in repo.branches if b.name != master_name]
 
-    activities = []
+    in_progress_activities = []
+    feedback_activities = []
+    endorsed_activities = []
+
     for branch_name in branch_names:
         safe_branch = branch_name2path(branch_name)
 
@@ -1012,8 +1015,13 @@ def render_activities_list(task_description=None):
             continue
 
         activity = chime_activity.ChimeActivity(repo=repo, branch_name=safe_branch, default_branch_name=current_app.config['default_branch'], actor_email=session.get('email', None))
+        if activity.review_state == constants.REVIEW_STATE_FRESH or activity.review_state == constants.REVIEW_STATE_EDITED:
+            in_progress_activities.append(activity)
+        elif activity.review_state == constants.REVIEW_STATE_FEEDBACK:
+            feedback_activities.append(activity)
+        elif activity.review_state == constants.REVIEW_STATE_ENDORSED:
+            endorsed_activities.append(activity)
 
-        activities.append(activity)
 
     published_activities = dict(activities=make_list_of_published_activities(repo=repo, limit=10))
     published_count = len(published_activities['activities'])
@@ -1021,7 +1029,7 @@ def render_activities_list(task_description=None):
     published_activities['description'] = u'activity' if published_count < 2 else u'{} activities'.format(published_count)
 
     kwargs = common_template_args(current_app.config, session)
-    kwargs.update(activities=activities, published_activities=published_activities)
+    kwargs.update(in_progress_activities=in_progress_activities, feedback_activities=feedback_activities, endorsed_activities=endorsed_activities, published_activities=published_activities)
 
     # pre-populate the new activity form with description value if it was passed
     if task_description:

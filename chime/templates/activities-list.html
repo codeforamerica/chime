@@ -3,77 +3,62 @@
 {% set template_name = 'activities-list' %}
 {% block body_class %}{{template_name}}{% endblock %}
 
-{% block content %}
-    <!-- template name: {{ template_name }} -->
-    <div class="activities-list__main row row--main grid col__flex">
-      <div class="current-tasks grid__item width-two-thirds">
-        <h2 class="current-tasks__title">Current Activities</h2>
-        {% if activities | length == 0 %}
-
-          <p class="current-tasks__empty-description">Doesn't look like anyone's working on anything at the moment. You should hop to it!</p>
-        {% else %}
-          <p class="current-tasks__description">Work that's already underway by you and your colleagues.</p>
-          <ul class="current-tasks__list" id="current-activities">
-          {% for activity in activities %}
-           <li class="current-task">
-            <p class="current-task__title"><a href="{{ activity.edit_path }}">{{ activity.task_description }}</a></p>
-            <div class="current-task__details row">
-              <p class="current-task__author row__left">Last edited by {{ activity.last_edited_email }}</p>
-              <div class="current-task__actions row__right toolbar--right">
-                  {% if activity.review_authorized %}
-                    {% if activity.review_state == config.REVIEW_STATE_EDITED %}
-                    <a href="{{ activity.overview_path }}" class="toolbar__item button">Unreviewed Edits</a>
-                    {% elif activity.review_state == config.REVIEW_STATE_FEEDBACK %}
-                    <a href="{{ activity.overview_path }}" class="toolbar__item button">Feedback requested</a>
-                    {% elif activity.review_state == config.REVIEW_STATE_ENDORSED %}
-                    <a href="{{ activity.overview_path }}" class="toolbar__item button">Ready to publish</a>
-                    {% elif activity.review_state == config.REVIEW_STATE_PUBLISHED %}
-                    <a href="{{ activity.overview_path }}" class="toolbar__item button">Published</a>
-                    {% endif %}
-                  {% else %}
-                    {% if activity.review_state == config.REVIEW_STATE_FEEDBACK %}
-                    <a href="{{ activity.overview_path }}" class="toolbar__item button">Waiting for feedback</a>
-                    {% endif %}
-                  {% endif %}
-                  <form action="/update" method="POST" class="toolbar__item">
-                    <button class="toolbar__item button button--red" type="submit" name="abandon" value="Delete" id="{{ activity.safe_branch }}-delete">Delete</button>
-                    <input type="hidden" name="branch" value="{{ activity.safe_branch }}">
-                  </form>
-                </div>
-              </div>
-            </li>
-          {% endfor %}
-          </ul>
-        {% endif %}
-        {% if published_activities.count > 0 %}
-          <h2 class="current-tasks__title">Recently Published Activities</h2>
-          <p class="current-tasks__description">The {{ published_activities.description }} most recently published to the live site.</p>
-          <ul class="current-tasks__list" id="published-activities">
-          {% for activity in published_activities.activities %}
-           <li class="current-task">
-            <!-- branch: {{ activity.safe_branch }} -->
-            <p class="current-task__title">{{ activity.task_description }}</p>
-            <div class="current-task__details row">
-              <p class="current-task__author row__left">Published {{ activity.date_updated }} by {{ activity.last_edited_email }}</p>
-              <div class="current-task__actions row__right toolbar--right">
-                  <a href="{{ activity.overview_path }}" class="toolbar__item button">Published</a>
-              </div>
-            </li>
-          {% endfor %}
-          </ul>
-        {% endif %}
-        </div>
-        <div class="new-task grid__item width-one-third end-row">
-          <h2 class="new-task__title">Start a new activity</h2>
-          <form action="/start" method="POST" class="new-task__form">
-            <p class="new-task__description">Let teammates know what public need you are addressing.</p>
-            <textarea name="task_description" placeholder="clarifying the permitting application process for business owners" class="new-task__textarea" {% if task_description %} value="{{ task_description }}"{% endif %}></textarea>
-            <div class="row new-task__actions">
-              <button type="submit" class="button button--green button--medium" id="create-activity-button">Create</button>
-            </div>
-          </form> 
-          <p class="text-detail">Starting an activity gives you your own copy of the site to work in. Changes in an activity need to be reviewed by someone else in order to go live.</p>
-        </div>
-    </div>
+{% block scripts %}
+<script src="static/javascript/activities-list.js"></script>
 {% endblock %}
 
+{% block content %}
+    <div class="row row--main activities-list__header">
+      <p class="row__left">A view of work in progress on the site</p>
+      <div class="toolbar toobar--right row__right">
+        <a class="button button--green button--medium button--new-activity">Start a new activity</a>
+      </div>
+    </div>
+    <div class="activities-list__main row row--main col__flex">
+      {{ activity_box(in_progress_activities, "edited")}}
+      {{ activity_box(feedback_activities, "feedback")}}
+      {{ activity_box(endorsed_activities, "endorsed")}}
+      {{ activity_box(published_activities.activities, "published")}}
+    </div>
+    <div class="modal-container">
+    <div class="new-activity modal">
+      <h3>Let teammates know what public need you are addressing.</h3>
+      <form action="/start" method="POST">
+        <textarea type="text" name="task_description" placeholder="clarifying the permitting application process for business owners" class="need"></textarea>
+        <input name="task_beneficiary" type="hidden" class="need"/>
+        <p class="text-detail width-three-fourths">Starting an activity gives you your own copy of the site to work in. Activities need to be reviewed by someone else in order to go live.</p> 
+        <div class="toolbar toolbar--right">
+          <a href="#" class="toolbar__item button button--medium button--close-modal">Cancel</a>
+          <button type="submit" class="toolbar__item button button--medium button--green button--create-activity">Create</button>
+        </div>         
+      </form> 
+    </div>
+  </div>
+{% endblock %}
+
+{% macro activity_box(state_activities, activity_state) -%}
+<div class="activity-box">
+    <ul class="activity-box__list">
+    {% for activity in state_activities %}
+     <li class="activity activity--{{activity_state}}">
+      <p class="activity__title"><a href="{{ activity.edit_path }}">{{ activity.task_description }}</a></p>
+      <div class="row">
+        <p class="activity__author row__left">Last edited by {{ activity.last_edited_email }}</p>
+        <form action="/update" method="POST" class="row__right">
+          <input type="hidden" name="branch" value="{{ activity.safe_branch }}">
+        </form>
+      </div>
+      <div class="activity__actions row">
+        <div class="row__left toolbar toolbar--left">
+          <a class="toolbar__item" href="{{ activity.edit_path }}"><span class="fa fa-files-o"></span></a>
+          <a class="toolbar__item" href="{{ activity.overview_path }}"><span class="fa fa-calendar-o"></span></a>
+        </div>
+        <div class="row__right toolbar toolbar--right">
+          <a href="" class="toolbar__item"><span class="fa fa-trash"></span></a>
+        </div>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{%- endmacro %}

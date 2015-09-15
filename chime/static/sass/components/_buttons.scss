@@ -114,11 +114,9 @@
 .button--text {
 	background-color: transparent;
 	border: 1px solid transparent;
-	border-radius: 0;
 	&:hover, &:active, &.is-selected {
-		background-color: transparent;
-		border-color: transparent;
-		border-bottom: 1px solid #000;
+		background-color: $color-grey-300;
+		border-color: $color-grey-300;
 		color: #000;
 	}
 }
