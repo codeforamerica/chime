@@ -71,12 +71,19 @@ class ChimeActivity:
 
         return self._working_state
 
+    def _get_history_log(self, log_format, hexsha):
+        ''' Get a git log from which to create the activity's history
+        '''
+        return self.repo.git.log('--format={}'.format(log_format), '--date=relative', 'master..{}'.format(hexsha))
+
     def _make_history(self):
         ''' Make an easily-parsable history of the activity since it was created.
         '''
         # see <http://git-scm.com/docs/git-log> for placeholders
-        log_format = '%x00Name: %an\tEmail: %ae\tDate: %ad\tSubject: %s\tBody: %b%x00'
-        log = self.repo.git.log('--format={}'.format(log_format), '--date=relative')
+        log = self._get_history_log(
+            log_format='%x00Name: %an\tEmail: %ae\tDate: %ad\tSubject: %s\tBody: %b%x00',
+            hexsha=self.repo.branches[self.safe_branch].commit.hexsha
+        )
 
         history = []
         pattern = re.compile(r'\x00Name: (.*?)\tEmail: (.*?)\tDate: (.*?)\tSubject: (.*?)\tBody: (.*?)\x00', re.DOTALL)
@@ -87,9 +94,6 @@ class ChimeActivity:
                             commit_body=body, commit_category=commit_category, commit_type=commit_type,
                             commit_action=commit_action)
             history.append(log_item)
-            # don't get any history beyond the creation of the task metadata file, which is the beginning of the activity
-            if re.search(r'{}$'.format(repo_functions.ACTIVITY_CREATED_MESSAGE), subject):
-                break
 
         return history
 
@@ -210,11 +214,18 @@ class ChimePublishedActivity(ChimeActivity):
         # the email of the last person who edited the activity
         self.last_edited_email = last_edited_email
 
-        self.edit_path = u'#'
         self.overview_path = u'/tree/{}/'.format(self.safe_branch)
-        self.view_path = u'#'
+
+        # You can't edit or view a published activity
+        self.edit_path = None
+        self.view_path = None
 
         # only build history and working state if requested
         self._history = None
         self._history_summary = None
         self._working_state = None
+
+    def _get_history_log(self, log_format, hexsha):
+        ''' Get a git log from which to create the activity's history
+        '''
+        return self.repo.git.log('--format={}'.format(log_format), '--date=relative', 'master..{}'.format(hexsha))
