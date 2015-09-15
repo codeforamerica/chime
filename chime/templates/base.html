@@ -7,7 +7,7 @@
         <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
         <meta http-equiv="X-UA-Compatible" content="IE=Edge">
         {% if config.get('ACCEPTANCE_TEST_MODE', False) %}
-        <script src="/static/javascript/stubbyid.js"></script>
+        <script src="/static/javascript/vendor/stubbyid.js"></script>
         {% else %}
         <script src="https://login.persona.org/include.js"></script>
         {% endif %}
@@ -18,7 +18,7 @@
         <link href="/static/stylesheets/main.css" rel="stylesheet" />
         <script src="{{ url_for('static', filename='script.js') }}"></script>
         <title>{% block title %}{% endblock %} | Chime</title>
-        <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+        <script src="/static/javascript/vendor/html5shiv.min.js"></script>
         {% if activity %}
         <!-- branch: {{branch}} -->
         <!-- author: {% if activity.author_email %}{{activity.author_email}}{% else %}unknown{% endif %} -->
@@ -31,7 +31,6 @@
 
           ga('create', 'UA-64736351-1', 'auto');
           ga('send', 'pageview');
-
         </script>
     </head>
     <body class="{% block body_class %}{% endblock %} col">
@@ -43,16 +42,15 @@
 
     {% include 'includes/flashes.html' %}
 
-     <!-- content -->
-        {% block content %}{% endblock %}
-     <!-- end content -->
+    <!-- content -->
+       {% block content %}{% endblock %}
+    <!-- end content -->
 
-     <script src="/static/javascript/placeholders.min.js"></script>
-     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-     <script src="/static/javascript/button-states.js"></script>
+    <script src="/static/javascript/placeholders.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="/static/javascript/button-states.js"></script>
 
-      {% block scripts %}{% endblock %}
-    </body>
+    {% block scripts %}{% endblock %}
 
     <script type="text/javascript">
       var signinLink = document.getElementById('signin');
@@ -66,4 +64,5 @@
         signoutLinks[it].onclick = function() { navigator.id.logout(); return false };
       }
     </script>
+    </body>
 </html>

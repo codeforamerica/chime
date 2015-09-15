@@ -1,0 +1,14 @@
+{
+  "name": "Chime-server",
+  "version": "0.0.0",
+  "private": true,
+  "homepage": "https://github.com/chimecms/chime",
+  "description": "Hashing out some ideas about Git, Jekyll, language, and content management",
+  "author": "David Arvelo",
+  "license": "BSD",
+  "scripts": {
+  },
+  "devDependencies": {
+    "gulp": "^3.9.0"
+  }
+}
