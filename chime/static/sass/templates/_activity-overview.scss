@@ -23,13 +23,10 @@
 	margin: 3em auto;
 	max-width: 680px;
 	box-shadow: $box-shadow-1;
+	background-color: #fff;
 	.row {
 		padding: 2em $site-margins;
 		border-top: 1px solid $color-grey-200;
-		background-color: #fff;
-		&:first-child {
-			border-top: 0;
-		}
 	}
 }
 
@@ -44,7 +41,7 @@
 .activity-overview__description {
 	font-size: $text-font-size;
 	font-weight: 600;
-	padding-bottom: 2em;
+	margin-top: 0;
 	a {
 		color: inherit;
 		text-decoration: underline;

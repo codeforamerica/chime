@@ -1616,30 +1616,29 @@ input[type="submit"]:disabled:hover {
 }
 
 /* line 1, ../sass/components/_activity-progress.scss */
-.activity-progress {
+.activity-overview__main .activity-progress.row {
   font-size: 18px;
   margin: 0;
   margin-top: -1px;
-  padding-bottom: 1.5em;
   padding-right: 0;
   padding-left: 0;
 }
 /* line 7, ../sass/core/_utilities.scss */
-.activity-progress:before, .activity-progress:after {
+.activity-overview__main .activity-progress.row:before, .activity-overview__main .activity-progress.row:after {
   content: " ";
   display: table;
 }
 /* line 11, ../sass/core/_utilities.scss */
-.activity-progress:after {
+.activity-overview__main .activity-progress.row:after {
   clear: both;
 }
 
-/* line 13, ../sass/components/_activity-progress.scss */
+/* line 12, ../sass/components/_activity-progress.scss */
 .activity-progress__item {
   text-align: center;
   position: relative;
 }
-/* line 16, ../sass/components/_activity-progress.scss */
+/* line 15, ../sass/components/_activity-progress.scss */
 .activity-progress__item:before {
   content: '';
   display: block;
@@ -1647,50 +1646,90 @@ input[type="submit"]:disabled:hover {
   top: 1em;
   left: -50%;
   right: 50%;
-  height: 4px;
+  margin-right: 1.4em;
+  margin-left: 1.4em;
+  height: 2px;
   margin-top: -2px;
   background-color: #eeeeee;
   z-index: 0;
 }
-/* line 29, ../sass/components/_activity-progress.scss */
+/* line 30, ../sass/components/_activity-progress.scss */
 .activity-progress__item:first-child:before {
   display: none;
 }
-/* line 34, ../sass/components/_activity-progress.scss */
+/* line 35, ../sass/components/_activity-progress.scss */
 .activity-progress__item.is-completed:before {
-  background-color: #66c6ac;
+  background-color: #757575;
+}
+/* line 41, ../sass/components/_activity-progress.scss */
+.activity-progress__item--edited.is-completed .activity-progress__icon {
+  border-color: #616161;
+  color: #616161;
+}
+/* line 49, ../sass/components/_activity-progress.scss */
+.activity-progress__item--requested.is-completed .activity-progress__icon {
+  border-color: #f1b17f;
+  color: #f1b17f;
+}
+/* line 57, ../sass/components/_activity-progress.scss */
+.activity-progress__item--endorsed.is-completed .activity-progress__icon {
+  border-color: #66c6ac;
+  color: #66c6ac;
+}
+/* line 65, ../sass/components/_activity-progress.scss */
+.activity-progress__item--published.is-completed .activity-progress__icon {
+  border-color: #6693a5;
+  color: #6693a5;
 }
 
-/* line 40, ../sass/components/_activity-progress.scss */
+/* line 73, ../sass/components/_activity-progress.scss */
 .activity-progress__label {
   font-size: 14px;
   color: #9e9e9e;
   font-weight: 300;
   margin-bottom: 0;
 }
-/* line 45, ../sass/components/_activity-progress.scss */
+/* line 78, ../sass/components/_activity-progress.scss */
 .is-completed .activity-progress__label {
   color: #000;
   font-weight: 600;
 }
 
-/* line 51, ../sass/components/_activity-progress.scss */
+/* line 84, ../sass/components/_activity-progress.scss */
 .activity-progress__icon {
+  display: inline-block;
   position: relative;
   z-index: 1;
-  padding: .5em;
   border-radius: 50%;
   height: 2em;
   width: 2em;
   text-align: center;
-  line-height: 1em;
-  background-color: #eeeeee;
+  line-height: 2em;
+  border: 2px solid #e0e0e0;
   color: #9e9e9e;
 }
-/* line 62, ../sass/components/_activity-progress.scss */
-.is-completed .activity-progress__icon {
-  background-color: #33b390;
-  color: #fff;
+/* line 95, ../sass/components/_activity-progress.scss */
+.activity-progress__icon:before {
+  font-family: "FontAwesome";
+  position: relative;
+  top: -1px;
+}
+/* line 101, ../sass/components/_activity-progress.scss */
+.activity-progress__item--edited .activity-progress__icon:before {
+  content: '\f040';
+}
+/* line 106, ../sass/components/_activity-progress.scss */
+.activity-progress__item--requested .activity-progress__icon:before {
+  top: -2px;
+  content: '\f06e';
+}
+/* line 112, ../sass/components/_activity-progress.scss */
+.activity-progress__item--endorsed .activity-progress__icon:before {
+  content: '\f087';
+}
+/* line 117, ../sass/components/_activity-progress.scss */
+.activity-progress__item--published .activity-progress__icon:before {
+  content: '\f00c';
 }
 
 /* line 1, ../sass/components/_activity-summary.scss */
@@ -2082,31 +2121,27 @@ input[type="submit"]:disabled:hover {
   margin: 3em auto;
   max-width: 680px;
   box-shadow: 0 0 3px rgba(0, 0, 0, 0.25);
+  background-color: #fff;
 }
-/* line 26, ../sass/templates/_activity-overview.scss */
+/* line 27, ../sass/templates/_activity-overview.scss */
 .activity-overview__main .row {
   padding: 2em 40px;
   border-top: 1px solid #eeeeee;
-  background-color: #fff;
-}
-/* line 30, ../sass/templates/_activity-overview.scss */
-.activity-overview__main .row:first-child {
-  border-top: 0;
 }
 
-/* line 38, ../sass/templates/_activity-overview.scss */
+/* line 35, ../sass/templates/_activity-overview.scss */
 .activity-overview .activity-log.row {
   background-color: #fafafa;
   margin-top: -1px;
 }
 
-/* line 44, ../sass/templates/_activity-overview.scss */
+/* line 41, ../sass/templates/_activity-overview.scss */
 .activity-overview__description {
   font-size: 16px;
   font-weight: 600;
-  padding-bottom: 2em;
+  margin-top: 0;
 }
-/* line 48, ../sass/templates/_activity-overview.scss */
+/* line 45, ../sass/templates/_activity-overview.scss */
 .activity-overview__description a {
   color: inherit;
   text-decoration: underline;

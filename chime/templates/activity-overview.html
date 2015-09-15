@@ -11,7 +11,6 @@
 {% block scripts %}
 
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-<script src="/static/javascript/activity-summary.js"></script>
 
 {% endblock%}
 
@@ -37,27 +36,27 @@
                 {% set review_step = 4 %}
             {% endif %}
 
-            <li class="activity-progress__item {% if review_step > 0 %}is-completed{% endif %} grid__item width-one-fourth">
-                <div class="activity-progress__icon fa fa-pencil"></div>
+            <li class="activity-progress__item  activity-progress__item--edited {% if review_step > 0 %}is-completed{% endif %} grid__item width-one-fourth">
+                <div class="activity-progress__icon"></div>
                 <p class="activity-progress__label">Edits Made</p>
             </li>
-            <li class="activity-progress__item {% if review_step > 1 %}is-completed{% endif %} grid__item width-one-fourth">
-                <div class="activity-progress__icon fa fa-eye"></div>
+            <li class="activity-progress__item  activity-progress__item--requested {% if review_step > 1 %}is-completed{% endif %} grid__item width-one-fourth">
+                <div class="activity-progress__icon"></div>
                 <p class="activity-progress__label">Feedback Requested</p>
             </li>
-            <li class="activity-progress__item {% if review_step > 2 %}is-completed{% endif %} grid__item width-one-fourth">
-                <div class="activity-progress__icon fa fa-thumbs-o-up"></div>
+            <li class="activity-progress__item  activity-progress__item--endorsed {% if review_step > 2 %}is-completed{% endif %} grid__item width-one-fourth">
+                <div class="activity-progress__icon"></div>
                 <p class="activity-progress__label">Edits Endorsed</p>
             </li>
-            <li class="activity-progress__item {% if review_step > 3 %}is-completed{% endif %} grid__item width-one-fourth end-row">
-                <div class="activity-progress__icon fa fa-check"></div>
+            <li class="activity-progress__item activity-progress__item--published {% if review_step > 3 %}is-completed{% endif %} grid__item width-one-fourth end-row">
+                <div class="activity-progress__icon "></div>
                 <p class="activity-progress__label">Published</p>
             </li>
         </ul>
 
         {% if activity.history_summary.changes | length > 0 %}
         <div class="activity-summary row">
-            <a href="#" class="activity-summary__toggle">{{ activity.history_summary.summary }} (click to review)</a>
+            <p class="activity-overview__description">{{ activity.history_summary.summary }}</p>
             <table class="activity-summary__table">
                 <thead>
                     <tr>
