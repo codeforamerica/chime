@@ -285,7 +285,7 @@ def branch_edit(branch_name, path=None):
 
     # if this is a published branch, redirect to overview
     if repo_functions.get_activity_working_state(repo, current_app.config['default_branch'], safe_branch) == constants.WORKING_STATE_PUBLISHED:
-        return redirect('/tree/{}/'.format(safe_branch))
+        return redirect('/tree/{}/'.format(safe_branch), code=303)
 
     # flash a conflict warning if necessary
     if repo_functions.get_conflict(repo, current_app.config['default_branch']):
@@ -561,7 +561,6 @@ def branch_history(branch_name, path=None):
         history.append(dict(name=name, email=email, date=date, subject=subject))
 
     kwargs = view_functions.common_template_args(current_app.config, session)
-    kwargs.update(branch=branch_name, safe_branch=safe_branch,
     kwargs.update(safe_branch=safe_branch,
                   history=history, path=path, languages=languages,
                   app_authorized=app_authorized, article_edit_path=article_edit_path,
