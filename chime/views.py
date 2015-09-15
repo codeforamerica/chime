@@ -281,6 +281,13 @@ def branch_view(branch_name, path=None):
 def branch_edit(branch_name, path=None):
     repo = view_functions.get_repo(flask_app=current_app)
     branch_name = view_functions.branch_var2name(branch_name)
+    safe_branch = view_functions.branch_name2path(branch_name)
+
+    # if this is a published branch, redirect to overview
+    if repo_functions.get_activity_working_state(repo, current_app.config['default_branch'], safe_branch) == constants.WORKING_STATE_PUBLISHED:
+        return redirect('/tree/{}/'.format(safe_branch))
+
+    # flash a conflict warning if necessary
     if repo_functions.get_conflict(repo, current_app.config['default_branch']):
         view_functions.flash_unique(repo_functions.MERGE_CONFLICT_WARNING_FLASH_MESSAGE, u'warning')
 
@@ -294,11 +301,11 @@ def branch_edit(branch_name, path=None):
         # if this is a directory representing an article, redirect to edit
         if view_functions.is_article_dir(full_path):
             index_path = join(path or u'', u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
-            return redirect('/tree/{}/edit/{}'.format(view_functions.branch_name2path(branch_name), index_path))
+            return redirect('/tree/{}/edit/{}'.format(safe_branch, index_path))
 
         # if the directory path didn't end with a slash, add it and redirect
         if path and not path.endswith('/'):
-            return redirect('/tree/{}/edit/{}/'.format(view_functions.branch_name2path(branch_name), path), code=302)
+            return redirect('/tree/{}/edit/{}/'.format(safe_branch, path), code=302)
 
         # redirect inside solo directories if necessary
         redirect_path = view_functions.get_redirect_path_for_solo_directory(repo, branch_name, path)
