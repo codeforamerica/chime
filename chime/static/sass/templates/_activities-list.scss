@@ -1,3 +1,7 @@
+.activities-list {
+	background-color: $color-grey-50;
+}
+
 .activities-list__header {
 	background-color: #fff;
 	border-bottom: 1px solid $color-grey-300;
@@ -6,10 +10,19 @@
 	}
 }
 
+.activity-list__states {
+	padding: 1em 0;
+	.activity-progress__item:before {
+		background-color: $color-grey-300;
+	}
+	.activity-progress__label {
+		font-weight: 300;
+	}
+}
+
 .activities-list__main {
 	@include stretch-content();
 	padding: 0 $site-margins/2;
-	background-color: $color-grey-50;
 	overflow: auto;
 }
 
@@ -17,7 +30,7 @@
 	@include flex(1 1 250px);
 	width: 250px;
 	float: left;
-	padding: 2em $site-margins/2;
+	padding: 0 $site-margins/2 2em $site-margins/2;
 	border-right: 1px solid $color-grey-300;
 	overflow: auto;
 	&:last-child {
@@ -98,7 +111,7 @@
 	background-color: #fff;
 	box-shadow: $box-shadow-1;
 	padding: $site-margins/4 $site-margins/2;
-	margin: 1em 0;
+	margin: .2em 0 1em 0;
 }
 
 .activity--edited {
@@ -130,13 +143,14 @@
 .activity__author {
 	margin: 0;
 	font-size: $base-font-size;
+	color: $color-grey-700;
 }
 
 .activity__actions {
 	margin-top: .5em;
 	border-top: 1px solid $color-grey-300;
 	padding-top: .5em;
-	a {
+	.toolbar__item {
 		color: $color-grey-400;
 		&:hover {
 			color: $color-grey-600;

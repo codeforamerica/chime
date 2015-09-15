@@ -1,0 +1,40 @@
+.tooltipped {
+	position: relative;
+	&:hover {
+		.tooltipped__tt-container {
+			@include animation(tooltip .2s ease-out);
+			display: block;
+			top: 100%;
+			opacity: 1;
+		}
+	}
+}
+
+.tooltipped__tt-container {
+	display: none;
+	position: absolute;
+	left: 50%;
+	top: 120%;
+	margin-top: 6px;
+}
+
+.tooltipped__tt {
+	position: relative;
+	left: -50%;
+	background-color: $color-grey-200;
+	border: 1px solid $color-grey-300;
+	color: #000;
+	line-height: 2em;
+	padding: .3em .7em;
+	text-align: center;
+	font-weight: 400;
+	font-size: $small-font-size;
+
+	&:before {
+		position: absolute;
+		left: 50%;
+		margin-left: -5px;
+		top: -8px;
+		@include triangle(top, $color-grey-300, 5px);
+	}
+}

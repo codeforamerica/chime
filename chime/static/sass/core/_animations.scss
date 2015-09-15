@@ -6,3 +6,18 @@
 		@include transform(rotate(359deg));
 	}
 }
+
+@include keyframes(tooltip) {
+	0% {
+	   display: none;
+	   opacity: 0;
+	   top: 110%
+	 }
+	 1% {
+	   display: block;
+	 }
+	 100% {
+	   opacity: 1;
+	   top: 100%;
+	 }
+}
