@@ -35,7 +35,7 @@
         </li>
     </ul>
 
-    <div class="activities-list__main row row--main col__flex">
+    <div class="activities-list__main row row--main col__flex grid">
       {{ activity_box(in_progress_activities, "edited")}}
       {{ activity_box(feedback_activities, "feedback")}}
       {{ activity_box(endorsed_activities, "endorsed")}}
@@ -59,7 +59,7 @@
 {% endblock %}
 
 {% macro activity_box(state_activities, activity_state) -%}
-<div class="activity-box activity-box--{{ activity_state }}">
+<div class="activity-box activity-box--{{ activity_state }} grid__item width-one-fourth">
     <ul class="activity-box__list" id="activity-list-{{ activity_state }}">
     {% for activity in state_activities %}
      <li class="activity activity--{{ activity_state }}">
@@ -75,24 +75,18 @@
         <div class="row__left toolbar toolbar--left">
           <a class="toolbar__item tooltipped" href="{{ activity.edit_path }}">
             <span class="fa fa-files-o"></span>
-            <span class="tooltipped__tt-container">
-              <span class="tooltipped__tt">Content</span>
-            </span>
+            <span class="tooltipped__tt">Content</span>
           </a>
           <a class="toolbar__item tooltipped" href="{{ activity.overview_path }}">
             <span class="fa fa-calendar-o"></span>
-            <span class="tooltipped__tt-container">
-              <span class="tooltipped__tt">Overview</span>
-            </span>
+            <span class="tooltipped__tt">Overview</span>
           </a>
         </div>
         <div class="row__right toolbar toolbar--right">
           <form action="/update" method="POST" class="toolbar__item">
             <button class="toolbar__item button--nostyle tooltipped" type="submit" name="abandon" value="Delete" id="{{ activity.safe_branch }}-delete">
               <span class="fa fa-trash"></span>
-              <span class="tooltipped__tt-container">
-                <span class="tooltipped__tt">Delete</span>
-              </span>
+              <span class="tooltipped__tt">Delete</span>
             </button>
             <input type="hidden" name="branch" value="{{ activity.safe_branch }}">
           </form>

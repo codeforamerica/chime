@@ -43,6 +43,9 @@
 		&:before {
 			background-color: $color-grey-600;
 		}
+		&:after {
+			@include triangle(right, $color-grey-600, 6px);
+		}
 	}
 	&--edited {
 		&.is-completed {
@@ -93,7 +96,6 @@
 .activity-progress__icon {
 	display: inline-block;
 	position: relative;
-	z-index: 1;
 	border-radius: 50%;
 	height: 2.5em;
 	width: 2.5em;
@@ -113,7 +115,6 @@
 	}
 	.activity-progress__item--requested & {
 		&:before {
-			top: -2px;
 			content: '\f06e';
 		}
 	}

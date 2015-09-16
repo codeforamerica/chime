@@ -12,8 +12,13 @@
 
 .activity-list__states {
 	padding: 1em 0;
-	.activity-progress__item:before {
-		background-color: $color-grey-300;
+	.activity-progress__item {
+		&:before {
+			background-color: $color-grey-300;
+		}
+		&:after {
+			@include triangle(right, $color-grey-300, 6px);
+		}		
 	}
 	.activity-progress__label {
 		font-weight: 300;
@@ -33,6 +38,7 @@
 	padding: 0 $site-margins/2 2em $site-margins/2;
 	border-right: 1px solid $color-grey-200;
 	overflow: auto;
+	overflow-x: hidden;
 	&:last-child {
 		border-right: 0;
 	}
