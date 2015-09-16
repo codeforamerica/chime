@@ -60,9 +60,10 @@
 
 {% macro activity_box(state_activities, activity_state) -%}
 <div class="activity-box activity-box--{{ activity_state }}">
-    <ul class="activity-box__list">
+    <ul class="activity-box__list" id="activity-list-{{ activity_state }}">
     {% for activity in state_activities %}
-     <li class="activity activity--{{activity_state}}">
+     <li class="activity activity--{{ activity_state }}">
+      <!-- branch: {{ activity.safe_branch }} -->
       <p class="activity__title"><a href="{{ activity.edit_path }}">{{ activity.task_description }}</a></p>
       <div class="row">
         <p class="activity__author row__left">edited {{ activity.date_updated }} by {{ activity.last_edited_email }}</p>
