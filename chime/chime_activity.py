@@ -72,11 +72,6 @@ class ChimeActivity:
 
         return self._working_state
 
-    def review_state(self):
-        ''' Get the activity review state
-        '''
-        return self._review_state
-
     def _make_history(self):
         ''' Make an easily-parsable history of the activity since it was created.
         '''

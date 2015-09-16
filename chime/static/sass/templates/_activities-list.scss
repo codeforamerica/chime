@@ -31,7 +31,7 @@
 	width: 250px;
 	float: left;
 	padding: 0 $site-margins/2 2em $site-margins/2;
-	border-right: 1px solid $color-grey-300;
+	border-right: 1px solid $color-grey-200;
 	overflow: auto;
 	&:last-child {
 		border-right: 0;
@@ -110,12 +110,12 @@
 	padding: 1em 0;
 	background-color: #fff;
 	box-shadow: $box-shadow-1;
-	padding: $site-margins/4 $site-margins/2;
+	padding: $site-margins/4;
 	margin: .2em 0 1em 0;
 }
 
 .activity--edited {
-	border-left: 4px solid $color-grey-300;
+	border-left: 4px solid $color-grey-600;
 }
 
 .activity--feedback {
@@ -143,12 +143,22 @@
 .activity__author {
 	margin: 0;
 	font-size: $base-font-size;
-	color: $color-grey-700;
+	color: $color-grey-500;
+	font-weight: 400;
 }
 
 .activity__actions {
+	width: auto;
 	margin-top: .5em;
-	border-top: 1px solid $color-grey-300;
+	margin: {
+		left: -$site-margins/4;
+		right: -$site-margins/4;
+	}
+	padding: {
+		left: $site-margins/4;
+		right: $site-margins/4;
+	}
+	border-top: 1px solid $color-grey-200;
 	padding-top: .5em;
 	.toolbar__item {
 		color: $color-grey-400;

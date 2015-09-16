@@ -15,7 +15,7 @@
 		content: '';
 		display: block;
 		position: absolute;
-		top: 1.25em;
+		top: 1.3em;
 		left: -50%;
 		right: 50%;
 		margin-right: 2em;
@@ -25,8 +25,17 @@
 		background-color: $color-grey-200;
 		z-index: 0;
 	}
+	&:after {
+		position: absolute;
+		display: block;
+		top: 1.3em;
+		margin-top: -7px;
+		right: 50%;
+		margin-right: 1.8em;
+		@include triangle(right, $color-grey-300, 6px);
+	}
 	&:first-child {
-		&:before {
+		&:before, &:after {
 			display: none;
 		}
 	}
@@ -70,7 +79,7 @@
 }
 
 .activity-progress__label {
-	font-size: $h4-font-size;
+	font-size: $h5-font-size;
 	color: $color-grey-500;
 	font-weight: 300;
 	margin-top: .5em;

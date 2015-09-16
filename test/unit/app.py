@@ -62,7 +62,7 @@ PATTERN_FORM_CATEGORY_DESCRIPTION = u'<textarea name="en-description" class="dir
 
 # review stuff
 PATTERN_REQUEST_FEEDBACK_BUTTON = u'<button class="toolbar__item button button--orange" type="submit" name="request_feedback" value="Request Feedback">Request Feedback</button>'
-PATTERN_UNREVIEWED_EDITS_LINK = u'<a href="/tree/{branch_name}/" class="toolbar__item button">Unreviewed Edits</a>'
+PATTERN_UNREVIEWED_EDITS_LINK = u'<a href="/tree/{branch_name}/edit/">'
 PATTERN_ENDORSE_BUTTON = u'<button class="toolbar__item button button--green" type="submit" name="endorse_edits" value="Endorse Edits">Endorse Edits</button>'
 PATTERN_FEEDBACK_REQUESTED_LINK = u'<a href="/tree/{branch_name}/" class="toolbar__item button">Feedback requested</a>'
 PATTERN_PUBLISH_BUTTON = u'<button class="toolbar__item button button--blue" type="submit" name="merge" value="Publish">Publish</button>'
@@ -2001,7 +2001,7 @@ class TestApp (TestCase):
             summary_div = erica.soup.find("div", class_="activity-summary")
             self.assertIsNotNone(summary_div)
             # it's right about what's changed
-            self.assertIsNotNone(summary_div.find(lambda tag: bool(tag.name == 'a' and '2 articles and 2 topics' in tag.text)))
+            self.assertIsNotNone(summary_div.find(lambda tag: bool(tag.name == 'p' and '2 articles and 2 topics' in tag.text)))
             # grab all the table rows
             check_rows = summary_div.find_all('tr')
 
@@ -2603,7 +2603,7 @@ class TestApp (TestCase):
             # Load the front page and make sure the activity is listed as published
             #
             erica.open_link('/')
-            pub_ul = erica.soup.select('ul#published-activities')[0]
+            pub_ul = erica.soup.select('ul.activity-box--published')[0]
             # there should be an HTML comment with the branch name
             comment = pub_ul.findAll(text=lambda text: isinstance(text, Comment))[0]
             self.assertTrue(branch_name in comment)

@@ -8,8 +8,9 @@
 {% endblock %}
 
 {% block content %}
+    <!-- template name: {{ template_name }} -->
     <div class="row row--main activities-list__header">
-      <p class="row__left">A view of work in progress on the site</p>
+      <p class="row__left">A view of work in progress by you and your collegues</p>
       <div class="toolbar toobar--right row__right">
         <a class="button button--green button--medium button--new-activity">Start a new activity</a>
       </div>
@@ -18,19 +19,19 @@
     <ul class="activity-list__states grid row">
         <li class="activity-progress__item activity-progress__item--edited is-completed grid__item width-one-fourth">
             <div class="activity-progress__icon"></div>
-            <p class="activity-progress__label">Edits Made</p>
+            <p class="activity-progress__label">In progress</p>
         </li>
         <li class="activity-progress__item  activity-progress__item--requested is-completed grid__item width-one-fourth">
             <div class="activity-progress__icon"></div>
-            <p class="activity-progress__label">Feedback Requested</p>
+            <p class="activity-progress__label">Feedback needed</p>
         </li>
         <li class="activity-progress__item  activity-progress__item--endorsed is-completed grid__item width-one-fourth">
             <div class="activity-progress__icon"></div>
-            <p class="activity-progress__label">Edits Endorsed</p>
+            <p class="activity-progress__label">Ready to publish</p>
         </li>
         <li class="activity-progress__item activity-progress__item--published is-completed grid__item width-one-fourth end-row">
             <div class="activity-progress__icon "></div>
-            <p class="activity-progress__label">Published</p>
+            <p class="activity-progress__label">Recently published</p>
         </li>
     </ul>
 
@@ -58,13 +59,13 @@
 {% endblock %}
 
 {% macro activity_box(state_activities, activity_state) -%}
-<div class="activity-box">
+<div class="activity-box activity-box--{{ activity_state }}">
     <ul class="activity-box__list">
     {% for activity in state_activities %}
      <li class="activity activity--{{activity_state}}">
       <p class="activity__title"><a href="{{ activity.edit_path }}">{{ activity.task_description }}</a></p>
       <div class="row">
-        <p class="activity__author row__left">Last edited by {{ activity.last_edited_email }}</p>
+        <p class="activity__author row__left">edited {{ activity.date_updated }} by {{ activity.last_edited_email }}</p>
         <form action="/update" method="POST" class="row__right">
           <input type="hidden" name="branch" value="{{ activity.safe_branch }}">
         </form>
