@@ -27,7 +27,7 @@ sys.path.insert(0, repo_root)
 from box.util.rotunicode import RotUnicode
 from httmock import response, HTTMock
 from mock import MagicMock, patch
-from bs4 import Comment
+from bs4 import Comment, BeautifulSoup
 
 from chime import (
     create_app, repo_functions, google_api_functions, view_functions,
@@ -738,8 +738,15 @@ class TestApp (TestCase):
             # get the activity list page
             response = self.test_client.get('/', follow_redirects=True)
             self.assertEqual(response.status_code, 200)
-            # verify that there's a feedback requested link
-            self.assertTrue(PATTERN_FEEDBACK_REQUESTED_LINK.format(branch_name=generated_branch_name) in response.data)
+            # verify that the project is listed in the feedback needed column
+            soup = BeautifulSoup(response.data)
+            pub_ul = soup.select("#activity-list-feedback")[0]
+            # there should be an HTML comment with the branch name
+            comment = pub_ul.findAll(text=lambda text: isinstance(text, Comment))[0]
+            self.assertTrue(generated_branch_name in comment)
+            pub_li = comment.find_parent('li')
+            # and the activity title wrapped in an a tag
+            self.assertIsNotNone(pub_li.find('a', text=fake_task_description))
 
         # Endorse the change
         with HTTMock(self.auth_csv_example_allowed):
@@ -767,8 +774,15 @@ class TestApp (TestCase):
             # get the activity list page
             response = self.test_client.get('/', follow_redirects=True)
             self.assertEqual(response.status_code, 200)
-            # verify that there's an 'ready to publish' link
-            self.assertTrue(PATTERN_READY_TO_PUBLISH_LINK.format(branch_name=generated_branch_name) in response.data)
+            # verify that the project is listed in the ready to publish column
+            soup = BeautifulSoup(response.data)
+            pub_ul = soup.select("#activity-list-endorsed")[0]
+            # there should be an HTML comment with the branch name
+            comment = pub_ul.findAll(text=lambda text: isinstance(text, Comment))[0]
+            self.assertTrue(generated_branch_name in comment)
+            pub_li = comment.find_parent('li')
+            # and the activity title wrapped in an a tag
+            self.assertIsNotNone(pub_li.find('a', text=fake_task_description))
 
         # And publish the change!
         with HTTMock(self.auth_csv_example_allowed):
@@ -776,9 +790,15 @@ class TestApp (TestCase):
         self.assertEqual(response.status_code, 200)
         # should've been redirected to the front page
         self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('activities-list') in response.data)
-        # the activity we just published should be listed under 'recently published activities'
-        self.assertTrue(generated_branch_name in response.data)
-        self.assertTrue(response.data.find(generated_branch_name) > response.data.find(u'Recently Published Activities'))
+        # verify that the project is listed in the recently published column
+        soup = BeautifulSoup(response.data)
+        pub_ul = soup.select("#activity-list-published")[0]
+        # there should be an HTML comment with the branch name
+        comment = pub_ul.findAll(text=lambda text: isinstance(text, Comment))[0]
+        self.assertTrue(generated_branch_name in comment)
+        pub_li = comment.find_parent('li')
+        # and the activity title wrapped in an a tag
+        self.assertIsNotNone(pub_li.find('a', text=fake_task_description))
 
     # in TestApp
     def test_get_request_does_not_create_branch(self):
@@ -2603,13 +2623,13 @@ class TestApp (TestCase):
             # Load the front page and make sure the activity is listed as published
             #
             erica.open_link('/')
-            pub_ul = erica.soup.select('ul.activity-box--published')[0]
+            pub_ul = erica.soup.select("#activity-list-published")[0]
             # there should be an HTML comment with the branch name
             comment = pub_ul.findAll(text=lambda text: isinstance(text, Comment))[0]
             self.assertTrue(branch_name in comment)
             pub_li = comment.find_parent('li')
-            # and the activity title wrapped in a p tag
-            self.assertIsNotNone(pub_li.find('p', text=activity_title))
+            # and the activity title wrapped in an a tag
+            self.assertIsNotNone(pub_li.find('a', text=activity_title))
 
 class TestPublishApp (TestCase):
 
