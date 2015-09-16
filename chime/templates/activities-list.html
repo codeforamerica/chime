@@ -64,13 +64,14 @@
     {% for activity in state_activities %}
      <li class="activity activity--{{ activity_state }}">
       <!-- branch: {{ activity.safe_branch }} -->
-      <p class="activity__title"><a href="{{ activity.edit_path }}">{{ activity.task_description }}</a></p>
+      <p class="activity__title"><a href="{{ activity.overview_path }}">{{ activity.task_description }}</a></p>
       <div class="row">
         <p class="activity__author row__left">edited {{ activity.date_updated }} by {{ activity.last_edited_email }}</p>
         <form action="/update" method="POST" class="row__right">
           <input type="hidden" name="branch" value="{{ activity.safe_branch }}">
         </form>
       </div>
+      {% if activity_state != "published" %}
       <div class="activity__actions row">
         <div class="row__left toolbar toolbar--left">
           <a class="toolbar__item tooltipped" href="{{ activity.edit_path }}">
@@ -82,6 +83,7 @@
             <span class="tooltipped__tt">Overview</span>
           </a>
         </div>
+        
         <div class="row__right toolbar toolbar--right">
           <form action="/update" method="POST" class="toolbar__item">
             <button class="toolbar__item button--nostyle tooltipped" type="submit" name="abandon" value="Delete" id="{{ activity.safe_branch }}-delete">
@@ -92,6 +94,7 @@
           </form>
         </div>
       </div>
+      {% endif %}
     </li>
     {% endfor %}
   </ul>
