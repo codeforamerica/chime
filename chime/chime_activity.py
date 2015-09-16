@@ -27,8 +27,8 @@ class ChimeActivity:
             working_branch_name=self.safe_branch, actor_email=actor_email
         )
 
-        self.date_created = self.repo.git.log('--format=%ad', '--date=relative', '--', repo_functions.TASK_METADATA_FILENAME).split('\n')[-1]
-        self.date_updated = self.repo.git.log('--format=%ad', '--date=relative').split('\n')[0]
+        self.date_created = self.repo.git.log(self.safe_branch, '-1', '--format=%ad', '--date=relative', '--', repo_functions.TASK_METADATA_FILENAME)
+        self.date_updated = self.repo.git.log(self.safe_branch, '-1', '--format=%ad', '--date=relative')
 
         # the email of the last person who edited the activity
         self.last_edited_email = repo_functions.get_last_edited_email(
