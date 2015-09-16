@@ -110,8 +110,8 @@ class ChimeTestClient:
     def delete_task(self, branch_name):
         ''' Look for button to delete a task, click it.
         '''
-        hidden = self.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('value') == branch_name))
-        form = hidden.find_parent('form')
+        button = self.soup.select('#{}-delete'.format(branch_name))[0]
+        form = button.find_parent('form')
 
         self.test.assertEqual(form['method'].upper(), 'POST')
 
@@ -120,7 +120,6 @@ class ChimeTestClient:
 
         delete_task_path = urlparse(urljoin(self.path, form['action'])).path
         response = self.client.post(delete_task_path, data=data)
-
         self.follow_redirect(response, 303)
 
     def add_category(self, category_name):
