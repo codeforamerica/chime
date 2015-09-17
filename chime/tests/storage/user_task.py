@@ -56,14 +56,14 @@ class TestFirst(TestCase):
     def testCommitWrite(self):
         with get_usertask("erica", "task-xyz", self.origin_dirname) as usertask:
             usertask.write('parking.md', "---\nnew stuff")
-            usertask.commit('I wrote new things')
+            usertask.commit("task-xyz", 'I wrote new things')
         with get_usertask("frances", "task-xyz", self.origin_dirname) as usertask:
             self.assertEqual(usertask.read('parking.md'), '---\nnew stuff')
 
     def testCommitNewFile(self):
         with get_usertask("erica", "task-xyz", self.origin_dirname) as usertask:
             usertask.write('jobs.md', "---\nnew stuff")
-            usertask.commit('I wrote new things')
+            usertask.commit("task-xyz", 'I wrote new things')
         with get_usertask("frances", "task-xyz", self.origin_dirname) as usertask:
             self.assertEqual(usertask.read('jobs.md'), '---\nnew stuff')
 
