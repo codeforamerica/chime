@@ -6,7 +6,7 @@ from os.path import join
 from os import mkdir
 from unittest import TestCase
 
-from storage.user_task import UserTask
+from ...storage.user_task import UserTask
 
 
 class UserTaskTest(TestCase):

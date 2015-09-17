@@ -4,7 +4,7 @@ from os.path import join, isdir
 
 from git import Repo
 
-from simple_flock import SimpleFlock
+from ..simple_flock import SimpleFlock
 
 
 class UserTask():
