@@ -707,8 +707,20 @@ class TestApp (TestCase):
             # get the activity list page
             response = self.test_client.get('/', follow_redirects=True)
             self.assertEqual(response.status_code, 200)
-            # verify that there's an unreviewed edits link
-            self.assertTrue(PATTERN_UNREVIEWED_EDITS_LINK.format(branch_name=generated_branch_name) in response.data)
+            # verify that the project is listed in the edited column
+            soup = BeautifulSoup(response.data)
+            pub_ul = soup.select("#activity-list-edited")[0]
+            # there should be an HTML comment with the branch name
+            comments = pub_ul.findAll(text=lambda text: isinstance(text, Comment))
+            found = False
+            for comment in comments:
+                if generated_branch_name in comment:
+                    found = True
+                    pub_li = comment.find_parent('li')
+                    # and the activity title wrapped in an a tag
+                    self.assertIsNotNone(pub_li.find('a', text=fake_task_description))
+
+            self.assertEqual(True, found)
 
         # Request feedback on the change
         with HTTMock(self.auth_csv_example_allowed):
