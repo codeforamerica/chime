@@ -13,6 +13,8 @@ def get_usertask(*args):
 
 
 class UserTask():
+    commit_sha = None
+
     def __init__(self, username, start_point, origin_dirname):
         '''
         
@@ -29,12 +31,12 @@ class UserTask():
         # Figure out what start_point is.
         if 'origin/{}'.format(start_point) in self.repo.refs:
             branch = self.repo.refs['origin/{}'.format(start_point)]
-            commit_sha = branch.commit.hexsha
+            self.commit_sha = branch.commit.hexsha
         else:
-            commit_sha = start_point
+            self.commit_sha = start_point
         
         # Point local master to start_point.
-        self.repo.git.reset(commit_sha, hard=True)
+        self.repo.git.reset(self.commit_sha, hard=True)
 
     def _open(self, path, *args, **kwargs):
         return open(join(self.repo.working_dir, path), *args, **kwargs)
@@ -51,7 +53,23 @@ class UserTask():
     def commit(self, task_id, message):
         # Commit to local master, push to origin task ID.
         self.repo.git.commit(m=message, a=True)
+        
+        #
+        # See if we are behind the origin branch, for example because we are
+        # using the back button for editing, and starting from an older commit.
+        #
+        branch = self.repo.refs['origin/{}'.format(task_id)]
+        origin_sha = branch.commit.hexsha
+        
+        # Rebase if necessary.
+        if origin_sha != self.commit_sha:
+            self.repo.git.rebase(origin_sha)
+        
+        # Push to origin; we think this is safe to do.
         self.repo.git.push('origin', 'master:{}'.format(task_id))
+        
+        # Re-point self.commit_sha to the new one.
+        self.commit_sha = branch.commit.hexsha
 
     def cleanup(self):
         # once we have locking, we will unlock here

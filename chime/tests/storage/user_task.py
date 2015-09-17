@@ -67,6 +67,18 @@ class TestFirst(TestCase):
         with get_usertask("frances", "task-xyz", self.origin_dirname) as usertask:
             self.assertEqual(usertask.read('jobs.md'), '---\nnew stuff')
 
+    def testResubmitFileEdits(self):
+        ''' Simulate a single user's preview, back-button, and re-save.
+        '''
+        with get_usertask("erica", "task-xyz", self.origin_dirname) as usertask:
+            start_sha = usertask.commit_sha
+            usertask.write('jobs.md', "---\nnew stuff")
+            usertask.commit("task-xyz", 'I wrote new things')
+
+        with get_usertask("erica", start_sha, self.origin_dirname) as usertask:
+            usertask.write('jobs.md', "---\nnew stuff")
+            usertask.commit("task-xyz", 'I wrote different things')
+
 
 def call_git(command, working_dir=None):
     if type(command) is list:
