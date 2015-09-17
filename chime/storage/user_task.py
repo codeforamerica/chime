@@ -2,7 +2,7 @@ from contextlib import contextmanager
 from tempfile import mkdtemp
 from os.path import join
 
-from git import Repo
+from git import Repo, Actor
 
 
 @contextmanager
@@ -37,6 +37,9 @@ class UserTask():
         
         # Point local master to start_point.
         self.repo.git.reset(self.commit_sha, hard=True)
+        
+        # uhhhh
+        self.actor = Actor(username, username + '@example.com')
 
     def _open(self, path, *args, **kwargs):
         return open(join(self.repo.working_dir, path), *args, **kwargs)
@@ -52,6 +55,13 @@ class UserTask():
 
     def commit(self, task_id, message):
         # Commit to local master, push to origin task ID.
+        
+        from os import environ
+        environ['GIT_AUTHOR_NAME'] = self.actor.name
+        environ['GIT_COMMITTER_NAME'] = self.actor.name
+        environ['GIT_AUTHOR_EMAIL'] = self.actor.email
+        environ['GIT_COMMITTER_EMAIL'] = self.actor.email
+        
         self.repo.git.commit(m=message, a=True)
         
         #
@@ -63,7 +73,18 @@ class UserTask():
         
         # Rebase if necessary.
         if origin_sha != self.commit_sha:
-            self.repo.git.rebase(origin_sha)
+            
+            # Determine if someone else has been here.
+            rev_list = '{}..{}'.format(self.commit_sha, origin_sha)
+            interlopers = [c.author for c in self.repo.iter_commits(rev_list)
+                           if c.author != self.actor]
+            
+            if not interlopers:
+                # Do an aggressive rebase since no one else has been here.
+                self.repo.git.rebase(origin_sha, X='theirs')
+            else:
+                # Do a timid rebase since someone else has been here.
+                self.repo.git.rebase(origin_sha)
         
         # Push to origin; we think this is safe to do.
         self.repo.git.push('origin', 'master:{}'.format(task_id))

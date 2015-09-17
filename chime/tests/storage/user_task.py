@@ -4,6 +4,8 @@ from shutil import rmtree
 from os.path import join
 from os import mkdir
 
+from git import GitCommandError
+
 from ...storage.user_task import get_usertask
 from unittest import TestCase
 
@@ -77,7 +79,43 @@ class TestFirst(TestCase):
 
         with get_usertask("erica", start_sha, self.origin_dirname) as usertask:
             usertask.write('jobs.md', "---\nnew stuff")
-            usertask.commit("task-xyz", 'I wrote different things')
+            usertask.commit("task-xyz", 'I wrote the same things')
+
+    def testResubmitFileEdits(self):
+        ''' Simulate a single user's preview, back-button, and conflicting re-save.
+        '''
+        with get_usertask("erica", "task-xyz", self.origin_dirname) as usertask:
+            usertask.write('jobs.md', "---\nnew stuff\n")
+            usertask.commit("task-xyz", 'I wrote new things')
+            start_sha = usertask.commit_sha
+
+        with get_usertask("erica", start_sha, self.origin_dirname) as usertask:
+            usertask.write('jobs.md', "---\nnew stuff\n\nmore stuff\n")
+            usertask.commit("task-xyz", 'I wrote more things')
+
+        with get_usertask("erica", start_sha, self.origin_dirname) as usertask:
+            usertask.write('jobs.md', "---\nnew stuff\n\nmore stuff\n\nfinal stuff\n")
+            usertask.commit("task-xyz", 'I wrote final things')
+
+    def testResubmitFileEditsWithInterloper(self):
+        ''' Simulate two users' previews, back-buttons, and conflicting re-saves.
+        '''
+        with get_usertask("erica", "task-xyz", self.origin_dirname) as usertask:
+            usertask.write('jobs.md', "---\nnew stuff\n")
+            usertask.commit("task-xyz", 'I wrote new things')
+            start_sha = usertask.commit_sha
+
+        with get_usertask("frances", start_sha, self.origin_dirname) as usertask:
+            usertask.write('jobs.md', "---\nnew stuff\n\nmore stuff\n")
+            usertask.commit("task-xyz", 'I wrote more things')
+
+        with get_usertask("erica", start_sha, self.origin_dirname) as usertask:
+            usertask.write('jobs.md', "---\nnew stuff\n\nmore stuff\n\nfinal stuff\n")
+            
+            # Don't let Erica possibly clobber Frances's changes.
+            # Kick this conflict upstairs.
+            with self.assertRaises(GitCommandError):
+                usertask.commit("task-xyz", 'I wrote final things')
 
 
 def call_git(command, working_dir=None):
