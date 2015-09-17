@@ -38,6 +38,22 @@ def after_request(response):
 def index():
     return view_functions.render_activities_list()
 
+@app.route('/activity', methods=['GET'])
+@log_application_errors
+@login_required
+@lock_on_user
+@synch_required
+def activity():
+    return view_functions.render_activities_list()
+
+@app.route('/start-activity', methods=['GET'])
+@log_application_errors
+@login_required
+@lock_on_user
+@synch_required
+def create_activity():
+    return view_functions.render_activities_list(show_new_activity_modal=True)
+
 @app.route('/not-allowed')
 @log_application_errors
 @browserid_hostname_required

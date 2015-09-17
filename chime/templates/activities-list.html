@@ -12,7 +12,7 @@
     <div class="row row--main activities-list__header">
       <p class="row__left">A view of work in progress by you and your collegues</p>
       <div class="toolbar toobar--right row__right">
-        <a class="button button--green button--medium button--new-activity">Start a new activity</a>
+        <a class="button button--green button--medium button--new-activity" href="/start-activity">Start a new activity</a>
       </div>
     </div>
 
@@ -42,7 +42,7 @@
       {{ activity_box(published_activities.activities, "published")}}
     </div>
 
-    <div class="modal-container">
+    <div class="modal-container {% if show_new_activity_modal %}is-open{% endif %}">
     <div class="new-activity modal">
       <h3>Let teammates know what public need you are addressing.</h3>
       <form action="/start" method="POST">
@@ -50,7 +50,7 @@
         <input name="task_beneficiary" type="hidden" class="need"/>
         <p class="text-detail width-three-fourths">Starting an activity gives you your own copy of the site to work in. Activities need to be reviewed by someone else in order to go live.</p> 
         <div class="toolbar toolbar--right">
-          <a href="#" class="toolbar__item button button--medium button--close-modal">Cancel</a>
+          <a href="/activity" class="toolbar__item button button--medium button--close-modal">Cancel</a>
           <button type="submit" class="toolbar__item button button--medium button--green button--create-activity">Create</button>
         </div>         
       </form> 
@@ -96,6 +96,8 @@
       </div>
       {% endif %}
     </li>
+    {% else %}
+    <div class="activity-box__empty-state">Empty</div>
     {% endfor %}
   </ul>
 </div>

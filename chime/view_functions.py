@@ -994,7 +994,7 @@ def publish_or_destroy_activity(branch_name, action, comment_text=None):
 
         return redirect('/', code=303)
 
-def render_activities_list(task_description=None):
+def render_activities_list(task_description=None, show_new_activity_modal=False):
     ''' Render the activities list page
     '''
     repo = ChimeRepo(current_app.config['REPO_PATH'])
@@ -1029,7 +1029,7 @@ def render_activities_list(task_description=None):
     published_activities['description'] = u'activity' if published_count < 2 else u'{} activities'.format(published_count)
 
     kwargs = common_template_args(current_app.config, session)
-    kwargs.update(in_progress_activities=in_progress_activities, feedback_activities=feedback_activities, endorsed_activities=endorsed_activities, published_activities=published_activities)
+    kwargs.update(in_progress_activities=in_progress_activities, feedback_activities=feedback_activities, endorsed_activities=endorsed_activities, published_activities=published_activities, show_new_activity_modal=show_new_activity_modal)
 
     # pre-populate the new activity form with description value if it was passed
     if task_description:

@@ -449,22 +449,22 @@ th {
   padding: 0;
 }
 
-/* line 42, ../sass/core/_utilities.scss */
+/* line 41, ../sass/core/_utilities.scss */
 .is-hidden {
   display: none !important;
 }
 
-/* line 46, ../sass/core/_utilities.scss */
+/* line 45, ../sass/core/_utilities.scss */
 .text-red {
   color: #aa1c3a !important;
 }
 
-/* line 50, ../sass/core/_utilities.scss */
+/* line 49, ../sass/core/_utilities.scss */
 .text-green {
   color: #00a175 !important;
 }
 
-/* line 54, ../sass/core/_utilities.scss */
+/* line 53, ../sass/core/_utilities.scss */
 .text-detail {
   font-size: 14px;
   font-weight: 400;
@@ -1493,7 +1493,6 @@ input[type="submit"]:disabled:hover {
   width: 0;
   height: 0;
   content: '';
-  z-index: 2;
   border-bottom: 7.5px solid #e0e0e0;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
@@ -1923,7 +1922,6 @@ input[type="submit"]:disabled:hover {
   width: 0;
   height: 0;
   content: '';
-  z-index: 2;
   border-left: 9px solid #e0e0e0;
   border-bottom: 6px solid transparent;
   border-top: 6px solid transparent;
@@ -1941,7 +1939,6 @@ input[type="submit"]:disabled:hover {
   width: 0;
   height: 0;
   content: '';
-  z-index: 2;
   border-left: 9px solid #757575;
   border-bottom: 6px solid transparent;
   border-top: 6px solid transparent;
@@ -2187,7 +2184,6 @@ input[type="submit"]:disabled:hover {
   width: 0;
   height: 0;
   content: '';
-  z-index: 2;
   border-bottom: 6px solid #212121;
   border-left: 4px solid transparent;
   border-right: 4px solid transparent;
@@ -2268,7 +2264,6 @@ input[type="submit"]:disabled:hover {
   width: 0;
   height: 0;
   content: '';
-  z-index: 2;
   border-left: 9px solid #e0e0e0;
   border-bottom: 6px solid transparent;
   border-top: 6px solid transparent;
@@ -2390,12 +2385,16 @@ input[type="submit"]:disabled:hover {
 
 /* line 109, ../sass/templates/_activities-list.scss */
 .activity-box__empty-state {
-  font-size: 18px;
-  text-align: center;
-  color: #757575;
+  height: 6em;
+  width: 6em;
+  text-indent: -9999px;
+  margin: 3em auto;
+  opacity: .3;
+  background: url("../images/chime_symbol.svg") no-repeat center center;
+  background-size: 6em 6em;
 }
 
-/* line 115, ../sass/templates/_activities-list.scss */
+/* line 119, ../sass/templates/_activities-list.scss */
 .activity {
   padding: 1em 0;
   background-color: #fff;
@@ -2404,39 +2403,39 @@ input[type="submit"]:disabled:hover {
   margin: .2em 0 1em 0;
 }
 
-/* line 123, ../sass/templates/_activities-list.scss */
+/* line 127, ../sass/templates/_activities-list.scss */
 .activity--edited {
   border-left: 4px solid #757575;
 }
 
-/* line 127, ../sass/templates/_activities-list.scss */
+/* line 131, ../sass/templates/_activities-list.scss */
 .activity--feedback {
   border-left: 4px solid #f1b17f;
 }
 
-/* line 131, ../sass/templates/_activities-list.scss */
+/* line 135, ../sass/templates/_activities-list.scss */
 .activity--endorsed {
   border-left: 4px solid #66c6ac;
 }
 
-/* line 135, ../sass/templates/_activities-list.scss */
+/* line 139, ../sass/templates/_activities-list.scss */
 .activity--published {
   border-left: 4px solid #6693a5;
 }
 
-/* line 139, ../sass/templates/_activities-list.scss */
+/* line 143, ../sass/templates/_activities-list.scss */
 .activity__title {
   font-weight: 400;
   font-size: 18px;
   margin: 0;
   margin-bottom: .2em;
 }
-/* line 144, ../sass/templates/_activities-list.scss */
+/* line 148, ../sass/templates/_activities-list.scss */
 .activity__title a {
   color: #000;
 }
 
-/* line 149, ../sass/templates/_activities-list.scss */
+/* line 153, ../sass/templates/_activities-list.scss */
 .activity__author {
   margin: 0;
   font-size: 14px;
@@ -2444,7 +2443,7 @@ input[type="submit"]:disabled:hover {
   font-weight: 400;
 }
 
-/* line 156, ../sass/templates/_activities-list.scss */
+/* line 160, ../sass/templates/_activities-list.scss */
 .activity__actions {
   width: auto;
   margin-top: .5em;
@@ -2455,11 +2454,11 @@ input[type="submit"]:disabled:hover {
   border-top: 1px solid #eeeeee;
   padding-top: .5em;
 }
-/* line 169, ../sass/templates/_activities-list.scss */
+/* line 173, ../sass/templates/_activities-list.scss */
 .activity__actions .toolbar__item {
   color: #bdbdbd;
 }
-/* line 171, ../sass/templates/_activities-list.scss */
+/* line 175, ../sass/templates/_activities-list.scss */
 .activity__actions .toolbar__item:hover {
   color: #757575;
 }

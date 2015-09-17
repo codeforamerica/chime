@@ -107,9 +107,13 @@
 }
 
 .activity-box__empty-state {
-	font-size: $h4-font-size;
-	text-align: center;
-	color: $color-grey-600;
+	height: 6em;
+	width: 6em;
+	text-indent: -9999px;
+	margin: 3em auto;
+	opacity: .3;
+	background: url('../images/chime_symbol.svg') no-repeat center center;
+	background-size: 6em 6em;
 }
 
 .activity {
