@@ -97,7 +97,7 @@ class ChimeTestClient:
         return branch_name
 
     def start_task(self, description):
-        ''' Start a new task.
+        ''' Start a new task by submitting form data (doesn't look for a form or button on the page).
         '''
         data = {'task_description': description}
         response = self.client.post('/start', data=data)
