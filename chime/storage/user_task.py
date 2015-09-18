@@ -3,7 +3,9 @@ from tempfile import mkdtemp
 from os.path import join
 from os import environ
 
-from git import Repo, Actor
+from git import Repo, Actor, GitCommandError
+
+from ..repo_functions import MergeConflict
 
 
 @contextmanager
@@ -70,7 +72,12 @@ class UserTask():
         if origin_sha != self.commit_sha:
             if self._is_interloped(origin_sha):
                 # Do a timid rebase since someone else has been here.
-                self.repo.git.rebase(origin_sha)
+                try:
+                    local_commit = self.repo.commit()
+                    self.repo.git.rebase(origin_sha)
+                except GitCommandError:
+                    remote_commit = self.repo.commit(origin_sha)
+                    raise MergeConflict(remote_commit, local_commit)
             else:
                 # Do an aggressive rebase since no one else has been here.
                 self.repo.git.rebase(origin_sha, X='theirs')

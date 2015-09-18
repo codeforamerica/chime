@@ -4,8 +4,9 @@ from shutil import rmtree
 from os.path import join
 from os import mkdir
 
-from git import Actor, GitCommandError
+from git import Actor
 
+from ...repo_functions import MergeConflict
 from ...storage.user_task import get_usertask
 from unittest import TestCase
 
@@ -118,8 +119,11 @@ class TestFirst(TestCase):
             
             # Don't let Erica possibly clobber Frances's changes.
             # Kick this conflict upstairs.
-            with self.assertRaises(GitCommandError):
+            with self.assertRaises(MergeConflict) as conflict:
                 usertask.commit("task-xyz", 'I wrote final things')
+            
+            self.assertEqual(conflict.exception.local_commit.author, Erica)
+            self.assertEqual(conflict.exception.remote_commit.author, Frances)
 
 
 def call_git(command, working_dir=None):
