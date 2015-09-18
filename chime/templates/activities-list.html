@@ -66,7 +66,7 @@
       <!-- branch: {{ activity.safe_branch }} -->
       <p class="activity__title"><a href="{{ activity.overview_path }}">{{ activity.task_description }}</a></p>
       <div class="row">
-        <p class="activity__author row__left">edited {{ activity.date_updated }} by {{ activity.last_edited_email }}</p>
+        <p class="activity__status row__left">edited <span class="activity__date">{{ activity.date_updated }}</span> by <span class="activity__author">{{ activity.last_edited_email }}</span></p>
         <form action="/update" method="POST" class="row__right">
           <input type="hidden" name="branch" value="{{ activity.safe_branch }}">
         </form>
