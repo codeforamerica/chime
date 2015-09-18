@@ -61,32 +61,26 @@ class UserTask():
         self._set_author_env()
         self.repo.git.commit(m=message, a=True)
         
-        #
         # See if we are behind the origin branch, for example because we are
         # using the back button for editing, and starting from an older commit.
-        #
-        branch = self.repo.refs['origin/{}'.format(task_id)]
-        origin_sha = branch.commit.hexsha
+        task_sha = self._get_task_sha(task_id)
         
         # Rebase if necessary.
-        if origin_sha != self.commit_sha:
-            if self._is_interloped(origin_sha):
-                # Do a timid rebase since someone else has been here.
-                try:
-                    local_commit = self.repo.commit()
-                    self.repo.git.rebase(origin_sha)
-                except GitCommandError:
-                    remote_commit = self.repo.commit(origin_sha)
-                    raise MergeConflict(remote_commit, local_commit)
-            else:
-                # Do an aggressive rebase since no one else has been here.
-                self.repo.git.rebase(origin_sha, X='theirs')
+        if task_sha != self.commit_sha:
+            self._rebase_with_author_check(task_sha)
         
-        # Push to origin; we think this is safe to do.
-        self.repo.git.push('origin', 'master:{}'.format(task_id))
+        try:
+            # Push to origin; we think this is safe to do.
+            self.repo.git.push('origin', 'master:{}'.format(task_id))
+
+        except GitCommandError:
+            # Push failed, possibly because origin has
+            # been modified due to rapid concurrent editing.
+            self.repo.git.fetch('origin')
+            self._rebase_with_author_check(self._get_task_sha(task_id))
         
         # Re-point self.commit_sha to the new one.
-        self.commit_sha = branch.commit.hexsha
+        self.commit_sha = self._get_task_sha(task_id)
     
     def _set_author_env(self):
         '''
@@ -107,6 +101,32 @@ class UserTask():
                 return True
 
         return False
+    
+    def _get_task_sha(self, task_id):
+        ''' Get local commit SHA for a given task ID.
+        '''
+        branch = self.repo.refs['origin/{}'.format(task_id)]
+        return branch.commit.hexsha
+    
+    def _rebase_with_author_check(self, task_sha):
+        ''' Rebase onto given SHA, checking for interloping authors.
+        
+            If no interlopers exist, use an aggressive merge strategy
+            to clobber possible conflicts. If any interloper exists,
+            use a more timid strategy and possibly raise a MergeConflict.
+        '''
+        if self._is_interloped(task_sha):
+            try:
+                # Do a timid rebase since someone else has been here.
+                local_commit = self.repo.commit()
+                self.repo.git.rebase(task_sha)
+            except GitCommandError:
+                # Raise a MergeConflict.
+                remote_commit = self.repo.commit(task_sha)
+                raise MergeConflict(remote_commit, local_commit)
+        else:
+            # Do an aggressive rebase since no one else has been here.
+            self.repo.git.rebase(task_sha, X='theirs')
 
     def cleanup(self):
         # once we have locking, we will unlock here

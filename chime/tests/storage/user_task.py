@@ -125,6 +125,45 @@ class TestFirst(TestCase):
             self.assertEqual(conflict.exception.local_commit.author, Erica)
             self.assertEqual(conflict.exception.remote_commit.author, Frances)
 
+    def testInterleavedFileEdits(self):
+        ''' Simulate a single user editing in two browser windows.
+        '''
+        with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:
+            usertask.write('jobs.md', "---\nnew stuff\n")
+            usertask.commit("task-xyz", 'I wrote new things')
+            start_sha = usertask.commit_sha
+
+        with get_usertask(Erica, start_sha, self.origin_dirname) as usertask1, \
+             get_usertask(Erica, start_sha, self.origin_dirname) as usertask2:
+            usertask1.write('jobs.md', "---\nnew stuff\n\nmore stuff\n")
+            usertask1.commit("task-xyz", 'I wrote more things')
+
+            usertask2.write('jobs.md', "---\nnew stuff\n\nother stuff\n")
+            usertask2.commit("task-xyz", 'I wrote different things')
+
+    def testInterleavedFileEditsWithInterloper(self):
+        ''' Simulate a two users editing in two browser windows.
+        '''
+        with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:
+            usertask.write('jobs.md', "---\nnew stuff\n")
+            usertask.commit("task-xyz", 'I wrote new things')
+            start_sha = usertask.commit_sha
+
+        with get_usertask(Frances, start_sha, self.origin_dirname) as usertaskF, \
+             get_usertask(Erica, start_sha, self.origin_dirname) as usertaskE:
+            usertaskF.write('jobs.md', "---\nnew stuff\n\nmore stuff\n")
+            usertaskF.commit("task-xyz", 'I wrote more things')
+
+            usertaskE.write('jobs.md', "---\nnew stuff\n\nother stuff\n")
+
+            # Don't let Erica possibly clobber Frances's changes.
+            # Kick this conflict upstairs.
+            with self.assertRaises(MergeConflict) as conflict:
+                usertaskE.commit("task-xyz", 'I wrote different things')
+            
+            self.assertEqual(conflict.exception.local_commit.author, Erica)
+            self.assertEqual(conflict.exception.remote_commit.author, Frances)
+
 
 def call_git(command, working_dir=None):
     if type(command) is list:
