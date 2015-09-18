@@ -43,7 +43,7 @@ class TestFirst(TestCase):
         rmtree(clone_dirname)
 
     def tearDown(self):
-        pass # rmtree(self.working_dirname)
+        rmtree(self.working_dirname)
 
     def testReadsExistingRepo(self):
         with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:
