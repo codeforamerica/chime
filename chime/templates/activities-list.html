@@ -12,7 +12,7 @@
     <div class="row row--main activities-list__header">
       <p class="row__left">A view of work in progress by you and your colleagues</p>
       <div class="toolbar toobar--right row__right">
-        <a class="button button--green button--medium button--new-activity" href="/start-activity">Start a new activity</a>
+        <a id="submit-start-activity" class="button button--green button--medium button--new-activity" href="/start-activity">Start a new activity</a>
       </div>
     </div>
 
@@ -36,10 +36,10 @@
     </ul>
 
     <div class="activities-list__main row row--main col__flex grid">
-      {{ activity_box(in_progress_activities, "edited")}}
-      {{ activity_box(feedback_activities, "feedback")}}
-      {{ activity_box(endorsed_activities, "endorsed")}}
-      {{ activity_box(published_activities.activities, "published")}}
+      {{ activity_box(activities.in_progress, "edited")}}
+      {{ activity_box(activities.feedback, "feedback")}}
+      {{ activity_box(activities.endorsed, "endorsed")}}
+      {{ activity_box(activities.published, "published")}}
     </div>
 
     <div class="modal-container {% if show_new_activity_modal %}is-open{% endif %}">
@@ -47,11 +47,10 @@
       <h3>Let teammates know what public need you are addressing.</h3>
       <form action="/start" method="POST">
         <textarea type="text" name="task_description" placeholder="clarifying the permitting application process for business owners" class="need"></textarea>
-        <input name="task_beneficiary" type="hidden" class="need"/>
         <p class="text-detail width-three-fourths">Starting an activity gives you your own copy of the site to work in. Activities need to be reviewed by someone else in order to go live.</p> 
         <div class="toolbar toolbar--right">
           <a href="/activity" class="toolbar__item button button--medium button--close-modal">Cancel</a>
-          <button type="submit" class="toolbar__item button button--medium button--green button--create-activity">Create</button>
+          <button id="submit-create-activity" type="submit" class="toolbar__item button button--medium button--green button--create-activity">Create</button>
         </div>         
       </form> 
     </div>

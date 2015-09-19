@@ -420,6 +420,7 @@ class TestApp (TestCase):
             flash_message_text = u'Please describe what you\'re doing when you start a new activity!'
 
             # start a new task without a description
+            erica.open_link('/')
             erica.start_task(description=u'')
             # the activities-list template reloaded
             comments = erica.soup.findAll(text=lambda text: isinstance(text, Comment))
@@ -437,6 +438,7 @@ class TestApp (TestCase):
                 erica.sign_in(email='erica@example.com')
 
             # start a new task with a lot of random whitespace
+            erica.open_link('/')
             task_description = u'I think\n\r\n\rI am      so   \t\t\t   coool!!\n\n\nYeah.\n\nOK\n\rERWEREW      dkkdk'
             task_description_stripped = u'I think I am so coool!! Yeah. OK ERWEREW dkkdk'
             erica.start_task(description=task_description)
@@ -461,6 +463,7 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task
+            erica.open_link('/')
             erica.start_task(description=u'Lick Water Droplets From Leaves for Leopard Geckos')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -488,6 +491,7 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task
+            erica.open_link('/')
             erica.start_task(description=u'Lick Water Droplets From Leaves for Leopard Geckos')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -1184,6 +1188,7 @@ class TestApp (TestCase):
                 erica.sign_in(email='erica@example.com')
 
             # Start a new task
+            erica.open_link('/')
             erica.start_task(description=u'Be Shot Hundreds Of Feet Into The Air for A Geyser Of Highly Pressurized Water')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -1218,6 +1223,7 @@ class TestApp (TestCase):
             pattern_template_comment_stripped = sub(ur'<!--|-->', u'', PATTERN_TEMPLATE_COMMENT)
 
             # Start a new task
+            erica.open_link('/')
             erica.start_task(description=u'Deep-Fry a Buffalo in Forty Seconds for Moe')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -1395,6 +1401,7 @@ class TestApp (TestCase):
                 erica.sign_in(email=erica_email)
 
             # Start a new task
+            erica.open_link('/')
             erica.start_task(description=u'Ferment Tuber Fibres Using Symbiotic Bacteria in the Intestines for Naked Mole Rats')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -1557,6 +1564,7 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task, topic, subtopic, article
+            erica.open_link('/')
             args = 'Mermithergate for Ant Worker', 'Enoplia Nematode', 'Genus Mermis', 'Cephalotes Atratus'
             erica.quick_activity_setup(*args)
 
@@ -1997,6 +2005,7 @@ class TestApp (TestCase):
                 erica.sign_in(email='erica@example.com')
 
             # Start a new task
+            erica.open_link('/')
             erica.start_task(description=u'Parasitize with Ichneumonidae for Moth Larvae')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -2296,6 +2305,7 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task
+            erica.open_link('/')
             erica.start_task(description=u'Take Malarone for People Susceptible to Malaria')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -2321,6 +2331,7 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task
+            erica.open_link('/')
             erica.start_task(description=u'Chew Mulberry Leaves for Silkworms')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -2497,6 +2508,7 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task
+            erica.open_link('/')
             erica.start_task(description=u'Be Shot Hundreds Of Feet Into The Air for A Geyser Of Highly Pressurized Water')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -2525,6 +2537,7 @@ class TestApp (TestCase):
                 frances.sign_in('frances@example.com')
             
             # Start a new task, "Diving for Dollars".
+            frances.open_link('/')
             frances.start_task(description=u'Diving for Dollars')
             branch_name = frances.get_branch_name()
             
@@ -2558,6 +2571,7 @@ class TestApp (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task
+            frances.open_link('/')
             frances.start_task(description=u'Crunching Beetles for Trap-Door Spiders')
             branch_name = frances.get_branch_name()
 
@@ -2582,6 +2596,7 @@ class TestApp (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task
+            frances.open_link('/')
             frances.start_task(description=u'Beating Crunches for Door-Spider Traps')
 
             # hit the front page a bunch of times
@@ -2616,6 +2631,7 @@ class TestApp (TestCase):
                 frances.sign_in(frances_email)
 
             # Start a new task and create a topic, subtopic and article
+            erica.open_link('/')
             activity_title = u'Flicking Ants Off My Laptop'
             args = activity_title, u'Flying', u'Through The Air', u'Goodbye'
             branch_name = erica.quick_activity_setup(*args)

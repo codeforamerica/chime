@@ -144,9 +144,9 @@ class TestProcess (TestCase):
             with HTTMock(self.mock_persona_verify_frances):
                 frances = ChimeTestClient(self.app.test_client(), self)
                 frances.sign_in('frances@example.com')
-            
-            # Start a new task, "Diving for Dollars", create a new category
-            # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
+
+            # Start a new task
+            erica.open_link('/')
             args = 'Diving for Dollars', 'Ninjas', 'Flipping Out', 'So Awesome'
             branch_name = erica.quick_activity_setup(*args)
             
@@ -186,6 +186,7 @@ class TestProcess (TestCase):
                 frances.sign_in('frances@example.com')
             
             # Erica starts a new task, "Diving for Dollars".
+            erica.open_link('/')
             erica.start_task('Diving for Dollars')
             erica_branchname = erica.get_branch_name()
             
@@ -196,6 +197,7 @@ class TestProcess (TestCase):
             erica.request_feedback('Is this okay?')
             
             # Frances starts a new task, "Bobbing for Apples".
+            frances.open_link('/')
             frances.start_task('Bobbing for Apples')
             frances_branchname = frances.get_branch_name()
             
@@ -210,6 +212,7 @@ class TestProcess (TestCase):
             frances.publish_activity()
             
             # Erica should now expect to see her own new category.
+            erica.open_link('/')
             erica.start_task('Canticle for Leibowitz')
             erica_branchname2 = erica.get_branch_name()
             erica.follow_link('/tree/{}/edit/other/'.format(erica_branchname2))
@@ -235,8 +238,8 @@ class TestProcess (TestCase):
                 frances = ChimeTestClient(self.app.test_client(), self)
                 frances.sign_in(frances_email)
 
-            # Start a new task, "Diving for Dollars", create a new category
-            # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
+            # Start a new task
+            erica.open_link('/')
             args = 'Diving for Dollars', 'Ninjas', 'Flipping Out', 'So Awesome'
             branch_name = erica.quick_activity_setup(*args)
 
@@ -282,14 +285,14 @@ class TestProcess (TestCase):
                 frances = ChimeTestClient(self.app.test_client(), self)
                 frances.sign_in('frances@example.com')
 
-            # Start a new task, "Bobbing for Apples", create a new category
-            # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
+            # Start a new task
+            frances.open_link('/')
             args = 'Bobbing for Apples', 'Ninjas', 'Flipping Out', 'So Awesome'
             f_branch_name = frances.quick_activity_setup(*args)
             f_article_path = frances.path
 
-            # Start a new task, "Diving for Dollars", create a new category
-            # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
+            # Start a new task
+            erica.open_link('/')
             args = 'Diving for Dollars', 'Ninjas', 'Flipping Out', 'So Awesome'
             e_branch_name = erica.quick_activity_setup(*args)
 
@@ -334,13 +337,13 @@ class TestProcess (TestCase):
                 frances = ChimeTestClient(self.app.test_client(), self)
                 frances.sign_in('frances@example.com')
 
-            # Frances: Start a new task, "Bobbing for Apples", create a new category
-            # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
+            # Frances: Start a new task
+            frances.open_link('/')
             args = 'Bobbing for Apples', 'Ninjas', 'Flipping Out', 'So Awesome'
             frances.quick_activity_setup(*args)
 
-            # Erica: Start a new task, "Diving for Dollars", create a new category
-            # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
+            # Erica: Start a new task
+            erica.open_link('/')
             args = 'Diving for Dollars', 'Ninjas', 'Flipping Out', 'So Awesome'
             erica.quick_activity_setup(*args)
 
@@ -362,14 +365,14 @@ class TestProcess (TestCase):
                 frances = ChimeTestClient(self.app.test_client(), self)
                 frances.sign_in('frances@example.com')
 
-            # Start a new task, "Bobbing for Apples", create a new category
-            # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
+            # Start a new task
+            frances.open_link('/')
             args = 'Bobbing for Apples', 'Ninjas', 'Flipping Out', 'So Awesome'
             f_branch_name = frances.quick_activity_setup(*args)
             f_article_path = frances.path
 
-            # Start a new task, "Diving for Dollars", create a new category
-            # "Samurai", subcategory "Flipping Out", and article "So Awesome".
+            # Start a new task
+            erica.open_link('/')
             args = 'Diving for Dollars', 'Samurai', 'Flipping Out', 'So Awesome'
             e_branch_name = erica.quick_activity_setup(*args)
 
@@ -417,6 +420,7 @@ class TestProcess (TestCase):
                 frances.sign_in(frances_email)
 
             # Frances: Start a new task, topic, subtopic, article
+            frances.open_link('/')
             args = 'Triassic for Artemia', 'Biological', 'Toxicity', 'Assays'
             frances.quick_activity_setup(*args)
             branch_name = frances.get_branch_name()
@@ -456,6 +460,7 @@ class TestProcess (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task
+            erica.open_link('/')
             erica.start_task(description='Eating Carrion for Vultures')
             erica_branch_name = erica.get_branch_name()
 
@@ -478,6 +483,7 @@ class TestProcess (TestCase):
             # Switch users
             #
             # Start a new task
+            frances.open_link('/')
             frances.start_task(description='Flying in Circles for Vultures')
             frances_branch_name = frances.get_branch_name()
 
@@ -536,6 +542,7 @@ class TestProcess (TestCase):
                 frances.sign_in(frances_email)
 
             # Start a new task
+            erica.open_link('/')
             erica.start_task(description='Eating Carrion for Vultures')
             erica_branch_name = erica.get_branch_name()
 
@@ -588,6 +595,7 @@ class TestProcess (TestCase):
                 frances.sign_in(frances_email)
 
             # Start a new task
+            erica.open_link('/')
             erica.start_task(description='Eating Carrion for Vultures')
             erica_branch_name = erica.get_branch_name()
 
@@ -651,6 +659,7 @@ class TestProcess (TestCase):
                 frances.sign_in(frances_email)
 
             # Start a new task
+            erica.open_link('/')
             task_description = u'Squeeze A School Of Fish Into A Bait Ball for Dolphins'
             erica.start_task(description=task_description)
             erica_branch_name = erica.get_branch_name()
@@ -720,6 +729,7 @@ class TestProcess (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task
+            erica.open_link('/')
             task_description = u'Eating Carrion for Vultures'
             erica.start_task(description=task_description)
             erica_branch_name = erica.get_branch_name()
@@ -757,6 +767,7 @@ class TestProcess (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task
+            erica.open_link('/')
             task_description = u'Eating Carrion for Vultures'
             erica.start_task(description=task_description)
             erica_branch_name = erica.get_branch_name()
@@ -804,6 +815,7 @@ class TestProcess (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task
+            erica.open_link('/')
             task_description = u'Squeeze A School Of Fish Into A Bait Ball for Dolphins'
             erica.start_task(description=task_description)
             erica_branch_name = erica.get_branch_name()
@@ -867,6 +879,7 @@ class TestProcess (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task
+            erica.open_link('/')
             task_description = u'Eating Carrion for Vultures'
             erica.start_task(description=task_description)
             erica_branch_name = erica.get_branch_name()
@@ -942,6 +955,7 @@ class TestProcess (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task
+            erica.open_link('/')
             task_description = u'Eating Carrion for Vultures'
             erica.start_task(description=task_description)
             erica_branch_name = erica.get_branch_name()
@@ -1021,8 +1035,8 @@ class TestProcess (TestCase):
                 frances = ChimeTestClient(self.app.test_client(), self)
                 frances.sign_in('frances@example.com')
 
-            # Start a new task, "Bobbing for Apples", create a new category
-            # "Ninjas", subcategory "Flipping Out", and article "So Awesome".
+            # Start a new task
+            frances.open_link('/')
             args = 'Bobbing for Apples', 'Ninjas', 'Flipping Out', 'So Awesome'
             frances.quick_activity_setup(*args)
             frances.edit_article(title_str='So, So Awesome', body_str='It was the best of times.')
