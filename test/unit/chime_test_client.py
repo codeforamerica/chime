@@ -97,11 +97,30 @@ class ChimeTestClient:
         return branch_name
 
     def start_task(self, description):
-        ''' Start a new task by submitting form data (doesn't look for a form or button on the page).
+        ''' Look for form to start a task, submit it.
         '''
-        data = {'task_description': description}
-        response = self.client.post('/start', data=data)
+        # verify we're on a page that has a start activity link
+        start_link = self.soup.find(id='submit-start-activity')
+        self.test.assertIsNotNone(start_link, u'No start link on current page')
 
+        # if the modal container's not open, click the start activity link
+        if not self.soup.find('div', 'modal-container', 'is-open'):
+            self.open_link(start_link['href'])
+
+        # verify that the modal container is now open
+        self.test.assertIsNotNone(self.soup.find('div', 'modal-container', 'is-open'), u'No open modal container when expected')
+
+        # find the create task form and submit it
+        button = self.soup.find(id='submit-create-activity')
+        self.test.assertIsNotNone(button)
+        form = button.find_parent('form')
+        self.test.assertEqual(form['method'].upper(), 'POST')
+
+        data = {i['name']: i.get('value', u'') for i in form.find_all(['input', 'button', 'textarea']) if i.has_attr('name')}
+        data['task_description'] = description
+
+        start_task_path = urlparse(urljoin(self.path, form['action'])).path
+        response = self.client.post(start_task_path, data=data)
         if response.status_code == 200:
             self.soup, self.headers = BeautifulSoup(response.data), response.headers
         else:
