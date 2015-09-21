@@ -229,7 +229,7 @@ def start_branch():
     # require a task description
     if len(task_description) == 0:
         flash(u'Please describe what you\'re doing when you start a new activity!', u'warning')
-        return view_functions.render_activities_list()
+        return redirect('/activity', code=303)
 
     branch = repo_functions.get_start_branch(repo, master_name, task_description, session['email'])
     safe_branch = view_functions.branch_name2path(branch.name)
