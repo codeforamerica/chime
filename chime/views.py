@@ -621,6 +621,24 @@ def branch_save(branch_name, path):
     print >> stderr, 'path:', path
     
     user_task.write(path, data.getvalue())
+
+    print >> stderr, 'url-slug:', request.form.get('url-slug')
+    
+    from .view_functions import calculate_new_slug
+    
+    if request.form.get('url-slug'):
+        new_path = calculate_new_slug(path, request.form['url-slug'])
+        
+        if new_path:
+            print >> stderr, 'moving:', path, 'to', new_path
+            try:
+                user_task.move(path, new_path)
+            except Exception as e:
+                print >> stderr, 'uh-oh:', e
+                raise
+                
+        else:
+            new_path = path
     
     task_id = branch_name2path(branch_var2name(branch_name))
 
@@ -652,7 +670,7 @@ def branch_save(branch_name, path):
     # if did_save:
     #     flash(u'Saved changes to the {} article! Remember to submit this change for feedback when you\'re ready to go live.'.format(request.form['en-title']), u'notice')
     
-    safe_branch, new_path = task_id, path
+    safe_branch = task_id
 
     if request.form.get('action', '').lower() == 'preview':
         return redirect('/tree/{}/view/{}'.format(safe_branch, new_path), code=303)

@@ -1405,6 +1405,28 @@ def prep_jekyll_content(new_values, languages):
 
     return front, body
 
+def calculate_new_slug(file_path, new_slug):
+    '''
+    '''
+    # they may've renamed the page by editing the URL slug
+    original_slug = file_path
+    #if re.search(r'\/index.{}$'.format(CONTENT_FILE_EXTENSION), file_path):
+    #    original_slug = re.sub(ur'index.{}$'.format(CONTENT_FILE_EXTENSION), u'', file_path)
+
+    # do some simple input cleaning
+    newer_slug = re.sub(r'\/+', '/', new_slug)
+    
+    # We may need to treat this as a directory name, with an index.whatever inside.
+    _, ext = splitext(basename(newer_slug))
+    if not ext:
+        newer_slug = join(newer_slug, u'index.{}'.format(CONTENT_FILE_EXTENSION))
+
+    if newer_slug != original_slug:
+        from sys import stderr; print >> stderr, newer_slug, '!=', original_slug
+        return newer_slug
+    
+    return None
+
 def save_page(repo, default_branch_name, working_branch_name, file_path, new_values):
     ''' Save the page with the passed values
     '''
