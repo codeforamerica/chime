@@ -1,0 +1,46 @@
+.tooltipped {
+	position: relative;
+	&:hover {
+		.tooltipped__tt {
+			@include animation(tooltip .2s ease-out);
+			display: block;
+			top: 100%;
+			opacity: 1;
+		}
+	}
+}
+
+.tooltipped__tt {
+	@include transform(translateX(-50%));
+	display: none;
+	position: absolute;
+	left: 50%;
+	top: 120%;
+	margin-top: 6px;
+	background-color: $color-grey-200;
+	border: 1px solid $color-grey-300;
+	color: #000;
+	line-height: 2em;
+	padding: .3em .7em;
+	text-align: center;
+	font-weight: 400;
+	font-size: $small-font-size;
+	z-index: 9999;
+
+	&:before {
+		position: absolute;
+		left: 50%;
+		margin-left: -5px;
+		top: -8px;
+		@include triangle(top, $color-grey-300, 5px);
+	}
+
+	// Different treatment of tooltips to get around lack of translateX support for <IE10
+	// Tooltip is not centered in this case but aligned left
+	.lt-ie10 & {
+		margin-left: -50%;	
+		&:before {
+			left: 5px;
+		}
+	}
+}

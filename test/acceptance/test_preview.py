@@ -131,11 +131,19 @@ class TestPreview(ChimeTestCase):
 
         sys.stderr.write("at url {}\n".format(main_url))
 
-        # start a new task
+        # click the start activity link to bring up the create activity form
+        self.driver.find_element_by_id("submit-start-activity").click()
+
+        # wait until we see the create task form
+        self.waiter.until(
+            EC.visibility_of_element_located((By.NAME, 'task_description'))
+        )
+
+        # fill and submit the create task form
         task_description = self.marked_string('task_description')
         self.driver.find_element_by_name('task_description').send_keys(task_description)
         main_window = self.driver.current_window_handle
-        self.driver.find_element_by_id("create-activity-button").click()
+        self.driver.find_element_by_id("submit-create-activity").click()
 
         # create a new page
         self.driver.find_element_by_id("create-category-name").send_keys(self.marked_string('category'))

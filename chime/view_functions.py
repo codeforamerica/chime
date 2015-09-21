@@ -769,8 +769,8 @@ def make_list_of_published_activities(repo, limit=10):
         date_updated = ref_split[2]
         date_created = date_updated
 
-        # the email of the person who published the activity
-        last_edited_email = ref_split[3]
+        # the email of the person who published the activity (stripping angle brackets if they're there)
+        last_edited_email = ref_split[3].lstrip(u'<').rstrip(u'>')
 
         activity.update(date_created=date_created, date_updated=date_updated,
                         edit_path=u'#', overview_path=u'#',
@@ -994,14 +994,15 @@ def publish_or_destroy_activity(branch_name, action, comment_text=None):
 
         return redirect('/', code=303)
 
-def render_activities_list(task_description=None):
+def render_activities_list(task_description=None, show_new_activity_modal=False):
     ''' Render the activities list page
     '''
     repo = ChimeRepo(current_app.config['REPO_PATH'])
     master_name = current_app.config['default_branch']
     branch_names = [b.name for b in repo.branches if b.name != master_name]
 
-    activities = []
+    activities = dict(in_progress=[], feedback=[], endorsed=[], published=[])
+
     for branch_name in branch_names:
         safe_branch = branch_name2path(branch_name)
 
@@ -1012,16 +1013,17 @@ def render_activities_list(task_description=None):
             continue
 
         activity = chime_activity.ChimeActivity(repo=repo, branch_name=safe_branch, default_branch_name=current_app.config['default_branch'], actor_email=session.get('email', None))
+        if activity.review_state == constants.REVIEW_STATE_FRESH or activity.review_state == constants.REVIEW_STATE_EDITED:
+            activities['in_progress'].append(activity)
+        elif activity.review_state == constants.REVIEW_STATE_FEEDBACK:
+            activities['feedback'].append(activity)
+        elif activity.review_state == constants.REVIEW_STATE_ENDORSED:
+            activities['endorsed'].append(activity)
 
-        activities.append(activity)
-
-    published_activities = dict(activities=make_list_of_published_activities(repo=repo, limit=10))
-    published_count = len(published_activities['activities'])
-    published_activities['count'] = published_count
-    published_activities['description'] = u'activity' if published_count < 2 else u'{} activities'.format(published_count)
+    activities['published'] = make_list_of_published_activities(repo=repo, limit=10)
 
     kwargs = common_template_args(current_app.config, session)
-    kwargs.update(activities=activities, published_activities=published_activities)
+    kwargs.update(activities=activities, show_new_activity_modal=show_new_activity_modal)
 
     # pre-populate the new activity form with description value if it was passed
     if task_description:

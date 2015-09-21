@@ -38,6 +38,22 @@ def after_request(response):
 def index():
     return view_functions.render_activities_list()
 
+@app.route('/activity', methods=['GET'])
+@log_application_errors
+@login_required
+@lock_on_user
+@synch_required
+def activity():
+    return view_functions.render_activities_list()
+
+@app.route('/start-activity', methods=['GET'])
+@log_application_errors
+@login_required
+@lock_on_user
+@synch_required
+def create_activity():
+    return view_functions.render_activities_list(show_new_activity_modal=True)
+
 @app.route('/not-allowed')
 @log_application_errors
 @browserid_hostname_required
@@ -213,7 +229,7 @@ def start_branch():
     # require a task description
     if len(task_description) == 0:
         flash(u'Please describe what you\'re doing when you start a new activity!', u'warning')
-        return view_functions.render_activities_list()
+        return redirect('/activity', code=303)
 
     branch = repo_functions.get_start_branch(repo, master_name, task_description, session['email'])
     safe_branch = view_functions.branch_name2path(branch.name)

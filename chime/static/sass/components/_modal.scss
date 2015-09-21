@@ -1,0 +1,35 @@
+.modal-container {
+	@include animation(modal-container .2s ease-out);
+	@include display(flex);
+	@include justify-content(center);
+	@include align-items(center);
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	background-color: $color-grey-800;
+	background-color: rgba(#000, .15);
+	opacity: 0;
+	margin-top: -2em;
+	display: none;
+	&.is-open {
+		display: block;
+		display: flex;
+		margin-top: 0;
+		opacity: 1;
+	}
+}
+.modal {
+	@include clearfix();
+	@include animation(modal .2s ease-out);
+	background-color: #fff;
+	box-shadow: $box-shadow-2;
+	width: 600px;
+	margin: 0 auto;
+	height: auto;
+	padding: $site-margins/2;
+	.lt-ie10 & {
+		margin-top: 4em;
+	}
+}

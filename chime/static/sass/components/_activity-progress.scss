@@ -1,10 +1,8 @@
-.activity-progress {
+.activity-overview__main .activity-progress.row {
 	@include clearfix();
-	font-size: $h4-font-size;
 	margin: 0;
 	margin-top: -1px;
 	padding: {
-		bottom: 1.5em;
 		right: 0;
 		left: 0;
 	}
@@ -17,51 +15,118 @@
 		content: '';
 		display: block;
 		position: absolute;
-		top: 1em;
+		top: 1.3em;
 		left: -50%;
 		right: 50%;
-		height: 4px;
+		margin-right: 2em;
+		margin-left: 2em;
+		height: 2px;
 		margin-top: -2px;
 		background-color: $color-grey-200;
 		z-index: 0;
 	}
+	&:after {
+		position: absolute;
+		display: block;
+		top: 1.3em;
+		margin-top: -7px;
+		right: 50%;
+		margin-right: 1.8em;
+		@include triangle(right, $color-grey-300, 6px);
+	}
 	&:first-child {
-		&:before {
+		&:before, &:after {
 			display: none;
 		}
 	}
 	&.is-completed {
 		&:before {
-			background-color: $color-green-300;
+			background-color: $color-grey-600;
+		}
+		&:after {
+			@include triangle(right, $color-grey-600, 6px);
+		}
+	}
+	&--edited {
+		&.is-completed {
+			.activity-progress__icon {
+				border-color: $color-grey-700;
+				color: $color-grey-700;
+			}
+		}
+	}
+	&--requested {
+		&.is-completed {
+			.activity-progress__icon {
+				border-color: $color-orange-300;
+				color: $color-orange-300;
+			}
+		}
+	}
+	&--endorsed {
+		&.is-completed {
+			.activity-progress__icon {
+				border-color: $color-green-300;
+				color: $color-green-300;
+			}
+		}
+	}
+	&--published {
+		&.is-completed {
+			.activity-progress__icon {
+				border-color: $color-blue-300;
+				color: $color-blue-300;
+			}
 		}
 	}
 }
 
 .activity-progress__label {
-	font-size: $base-font-size;
+	font-size: $h5-font-size;
 	color: $color-grey-500;
 	font-weight: 300;
+	margin-top: .5em;
 	margin-bottom: 0;
 	.is-completed & {
 		color: #000;
-		font-weight: 600;
+		font-weight: 400;
 	}
 }
 
 .activity-progress__icon {
+	display: inline-block;
 	position: relative;
-	z-index: 1;
-	padding: .5em;
 	border-radius: 50%;
-	height: 2em;
-	width: 2em;
+	height: 2.5em;
+	width: 2.5em;
 	text-align: center;
-	line-height: 1em;
-	background-color: $color-grey-200;
+	line-height: 2.5em;
+	border: 2px solid $color-grey-300;
 	color: $color-grey-500;
-	.is-completed & {
-		background-color: $color-green-400;
-		color: #fff;
+	&:before {
+		font-family: "FontAwesome";
+		position: relative;
+		top: -1px;
+	}
+	.activity-progress__item--edited & {
+		&:before {
+			content: '\f040';
+		}
+	}
+	.activity-progress__item--requested & {
+		&:before {
+			content: '\f06e';
+		}
+	}
+	.activity-progress__item--endorsed & {
+		&:before {
+			content: '\f087';
+		}
+	}
+	.activity-progress__item--published & {
+		&:before {
+			content: '\f00c';
+		}
 	}
 
 }

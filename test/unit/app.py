@@ -27,7 +27,7 @@ sys.path.insert(0, repo_root)
 from box.util.rotunicode import RotUnicode
 from httmock import response, HTTMock
 from mock import MagicMock, patch
-from bs4 import Comment
+from bs4 import Comment, BeautifulSoup
 
 from chime import (
     create_app, repo_functions, google_api_functions, view_functions,
@@ -62,7 +62,7 @@ PATTERN_FORM_CATEGORY_DESCRIPTION = u'<textarea name="en-description" class="dir
 
 # review stuff
 PATTERN_REQUEST_FEEDBACK_BUTTON = u'<button class="toolbar__item button button--orange" type="submit" name="request_feedback" value="Request Feedback">Request Feedback</button>'
-PATTERN_UNREVIEWED_EDITS_LINK = u'<a href="/tree/{branch_name}/" class="toolbar__item button">Unreviewed Edits</a>'
+PATTERN_UNREVIEWED_EDITS_LINK = u'<a href="/tree/{branch_name}/edit/">'
 PATTERN_ENDORSE_BUTTON = u'<button class="toolbar__item button button--green" type="submit" name="endorse_edits" value="Endorse Edits">Endorse Edits</button>'
 PATTERN_FEEDBACK_REQUESTED_LINK = u'<a href="/tree/{branch_name}/" class="toolbar__item button">Feedback requested</a>'
 PATTERN_PUBLISH_BUTTON = u'<button class="toolbar__item button button--blue" type="submit" name="merge" value="Publish">Publish</button>'
@@ -420,6 +420,7 @@ class TestApp (TestCase):
             flash_message_text = u'Please describe what you\'re doing when you start a new activity!'
 
             # start a new task without a description
+            erica.open_link('/')
             erica.start_task(description=u'')
             # the activities-list template reloaded
             comments = erica.soup.findAll(text=lambda text: isinstance(text, Comment))
@@ -437,6 +438,7 @@ class TestApp (TestCase):
                 erica.sign_in(email='erica@example.com')
 
             # start a new task with a lot of random whitespace
+            erica.open_link('/')
             task_description = u'I think\n\r\n\rI am      so   \t\t\t   coool!!\n\n\nYeah.\n\nOK\n\rERWEREW      dkkdk'
             task_description_stripped = u'I think I am so coool!! Yeah. OK ERWEREW dkkdk'
             erica.start_task(description=task_description)
@@ -461,6 +463,7 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task
+            erica.open_link('/')
             erica.start_task(description=u'Lick Water Droplets From Leaves for Leopard Geckos')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -488,6 +491,7 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task
+            erica.open_link('/')
             erica.start_task(description=u'Lick Water Droplets From Leaves for Leopard Geckos')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -707,8 +711,20 @@ class TestApp (TestCase):
             # get the activity list page
             response = self.test_client.get('/', follow_redirects=True)
             self.assertEqual(response.status_code, 200)
-            # verify that there's an unreviewed edits link
-            self.assertTrue(PATTERN_UNREVIEWED_EDITS_LINK.format(branch_name=generated_branch_name) in response.data)
+            # verify that the project is listed in the edited column
+            soup = BeautifulSoup(response.data)
+            pub_ul = soup.select("#activity-list-edited")[0]
+            # there should be an HTML comment with the branch name
+            comments = pub_ul.findAll(text=lambda text: isinstance(text, Comment))
+            found = False
+            for comment in comments:
+                if generated_branch_name in comment:
+                    found = True
+                    pub_li = comment.find_parent('li')
+                    # and the activity title wrapped in an a tag
+                    self.assertIsNotNone(pub_li.find('a', text=fake_task_description))
+
+            self.assertEqual(True, found)
 
         # Request feedback on the change
         with HTTMock(self.auth_csv_example_allowed):
@@ -738,8 +754,15 @@ class TestApp (TestCase):
             # get the activity list page
             response = self.test_client.get('/', follow_redirects=True)
             self.assertEqual(response.status_code, 200)
-            # verify that there's a feedback requested link
-            self.assertTrue(PATTERN_FEEDBACK_REQUESTED_LINK.format(branch_name=generated_branch_name) in response.data)
+            # verify that the project is listed in the feedback needed column
+            soup = BeautifulSoup(response.data)
+            pub_ul = soup.select("#activity-list-feedback")[0]
+            # there should be an HTML comment with the branch name
+            comment = pub_ul.findAll(text=lambda text: isinstance(text, Comment))[0]
+            self.assertTrue(generated_branch_name in comment)
+            pub_li = comment.find_parent('li')
+            # and the activity title wrapped in an a tag
+            self.assertIsNotNone(pub_li.find('a', text=fake_task_description))
 
         # Endorse the change
         with HTTMock(self.auth_csv_example_allowed):
@@ -767,8 +790,15 @@ class TestApp (TestCase):
             # get the activity list page
             response = self.test_client.get('/', follow_redirects=True)
             self.assertEqual(response.status_code, 200)
-            # verify that there's an 'ready to publish' link
-            self.assertTrue(PATTERN_READY_TO_PUBLISH_LINK.format(branch_name=generated_branch_name) in response.data)
+            # verify that the project is listed in the ready to publish column
+            soup = BeautifulSoup(response.data)
+            pub_ul = soup.select("#activity-list-endorsed")[0]
+            # there should be an HTML comment with the branch name
+            comment = pub_ul.findAll(text=lambda text: isinstance(text, Comment))[0]
+            self.assertTrue(generated_branch_name in comment)
+            pub_li = comment.find_parent('li')
+            # and the activity title wrapped in an a tag
+            self.assertIsNotNone(pub_li.find('a', text=fake_task_description))
 
         # And publish the change!
         with HTTMock(self.auth_csv_example_allowed):
@@ -776,9 +806,15 @@ class TestApp (TestCase):
         self.assertEqual(response.status_code, 200)
         # should've been redirected to the front page
         self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('activities-list') in response.data)
-        # the activity we just published should be listed under 'recently published activities'
-        self.assertTrue(generated_branch_name in response.data)
-        self.assertTrue(response.data.find(generated_branch_name) > response.data.find(u'Recently Published Activities'))
+        # verify that the project is listed in the recently published column
+        soup = BeautifulSoup(response.data)
+        pub_ul = soup.select("#activity-list-published")[0]
+        # there should be an HTML comment with the branch name
+        comment = pub_ul.findAll(text=lambda text: isinstance(text, Comment))[0]
+        self.assertTrue(generated_branch_name in comment)
+        pub_li = comment.find_parent('li')
+        # and the activity title wrapped in an a tag
+        self.assertIsNotNone(pub_li.find('a', text=fake_task_description))
 
     # in TestApp
     def test_get_request_does_not_create_branch(self):
@@ -1152,6 +1188,7 @@ class TestApp (TestCase):
                 erica.sign_in(email='erica@example.com')
 
             # Start a new task
+            erica.open_link('/')
             erica.start_task(description=u'Be Shot Hundreds Of Feet Into The Air for A Geyser Of Highly Pressurized Water')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -1186,6 +1223,7 @@ class TestApp (TestCase):
             pattern_template_comment_stripped = sub(ur'<!--|-->', u'', PATTERN_TEMPLATE_COMMENT)
 
             # Start a new task
+            erica.open_link('/')
             erica.start_task(description=u'Deep-Fry a Buffalo in Forty Seconds for Moe')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -1363,6 +1401,7 @@ class TestApp (TestCase):
                 erica.sign_in(email=erica_email)
 
             # Start a new task
+            erica.open_link('/')
             erica.start_task(description=u'Ferment Tuber Fibres Using Symbiotic Bacteria in the Intestines for Naked Mole Rats')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -1525,6 +1564,7 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task, topic, subtopic, article
+            erica.open_link('/')
             args = 'Mermithergate for Ant Worker', 'Enoplia Nematode', 'Genus Mermis', 'Cephalotes Atratus'
             erica.quick_activity_setup(*args)
 
@@ -1965,6 +2005,7 @@ class TestApp (TestCase):
                 erica.sign_in(email='erica@example.com')
 
             # Start a new task
+            erica.open_link('/')
             erica.start_task(description=u'Parasitize with Ichneumonidae for Moth Larvae')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -2001,7 +2042,7 @@ class TestApp (TestCase):
             summary_div = erica.soup.find("div", class_="activity-summary")
             self.assertIsNotNone(summary_div)
             # it's right about what's changed
-            self.assertIsNotNone(summary_div.find(lambda tag: bool(tag.name == 'a' and '2 articles and 2 topics' in tag.text)))
+            self.assertIsNotNone(summary_div.find(lambda tag: bool(tag.name == 'p' and '2 articles and 2 topics' in tag.text)))
             # grab all the table rows
             check_rows = summary_div.find_all('tr')
 
@@ -2264,6 +2305,7 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task
+            erica.open_link('/')
             erica.start_task(description=u'Take Malarone for People Susceptible to Malaria')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -2289,6 +2331,7 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task
+            erica.open_link('/')
             erica.start_task(description=u'Chew Mulberry Leaves for Silkworms')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -2465,6 +2508,7 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task
+            erica.open_link('/')
             erica.start_task(description=u'Be Shot Hundreds Of Feet Into The Air for A Geyser Of Highly Pressurized Water')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -2493,6 +2537,7 @@ class TestApp (TestCase):
                 frances.sign_in('frances@example.com')
             
             # Start a new task, "Diving for Dollars".
+            frances.open_link('/')
             frances.start_task(description=u'Diving for Dollars')
             branch_name = frances.get_branch_name()
             
@@ -2526,6 +2571,7 @@ class TestApp (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task
+            frances.open_link('/')
             frances.start_task(description=u'Crunching Beetles for Trap-Door Spiders')
             branch_name = frances.get_branch_name()
 
@@ -2550,6 +2596,7 @@ class TestApp (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task
+            frances.open_link('/')
             frances.start_task(description=u'Beating Crunches for Door-Spider Traps')
 
             # hit the front page a bunch of times
@@ -2584,6 +2631,7 @@ class TestApp (TestCase):
                 frances.sign_in(frances_email)
 
             # Start a new task and create a topic, subtopic and article
+            erica.open_link('/')
             activity_title = u'Flicking Ants Off My Laptop'
             args = activity_title, u'Flying', u'Through The Air', u'Goodbye'
             branch_name = erica.quick_activity_setup(*args)
@@ -2603,13 +2651,13 @@ class TestApp (TestCase):
             # Load the front page and make sure the activity is listed as published
             #
             erica.open_link('/')
-            pub_ul = erica.soup.select('ul#published-activities')[0]
+            pub_ul = erica.soup.select("#activity-list-published")[0]
             # there should be an HTML comment with the branch name
             comment = pub_ul.findAll(text=lambda text: isinstance(text, Comment))[0]
             self.assertTrue(branch_name in comment)
             pub_li = comment.find_parent('li')
-            # and the activity title wrapped in a p tag
-            self.assertIsNotNone(pub_li.find('p', text=activity_title))
+            # and the activity title wrapped in an a tag
+            self.assertIsNotNone(pub_li.find('a', text=activity_title))
 
 class TestPublishApp (TestCase):
 
