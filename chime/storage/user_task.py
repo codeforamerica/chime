@@ -44,6 +44,9 @@ class UserTask():
         
         # Point local master to start_point.
         self.repo.git.reset(self.commit_sha, hard=True)
+    
+    def __repr__(self):
+        return '<UserTask {} in {}>'.format(self.actor.email, self.repo.working_dir)
 
     def _open(self, path, *args, **kwargs):
         return open(join(self.repo.working_dir, path), *args, **kwargs)

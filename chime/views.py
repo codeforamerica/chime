@@ -587,15 +587,70 @@ def branch_history(branch_name, path=None):
 @log_application_errors
 @login_required
 @lock_on_user
-@synch_required
 def branch_save(branch_name, path):
     ''' Handle a submission from the article-edit form.
     '''
-    repo = get_repo(flask_app=current_app)
-    safe_branch = branch_name2path(branch_var2name(branch_name))
-    new_path, did_save = save_page(repo, current_app.config['default_branch'], branch_name, path, request.form)
-    if did_save:
-        flash(u'Saved changes to the {} article! Remember to submit this change for feedback when you\'re ready to go live.'.format(request.form['en-title']), u'notice')
+    from git import Actor
+    from .storage.user_task import UserTask
+    from sys import stderr
+    
+    actor = Actor(' ', session['email'])
+    start_point = request.form['hexsha']
+    origin_dirname = current_app.config['REPO_PATH']
+    print >> stderr, 'actor:', actor.email
+    print >> stderr, 'start_point:', start_point
+    print >> stderr, 'origin_dirname:', origin_dirname
+    user_task = UserTask(actor, start_point, origin_dirname)
+    print >> stderr, 'user_task:', user_task
+    
+    from .jekyll_functions import dump_jekyll_doc, load_languages
+    from .view_functions import prep_jekyll_content
+    from io import BytesIO
+    
+    languages = load_languages(user_task.repo.working_dir)
+    front, body = prep_jekyll_content(request.form, languages)
+    
+    print >> stderr, 'languages:', languages
+    print >> stderr, 'front:', front
+    print >> stderr, 'body:', repr(body)
+    
+    data = BytesIO()
+    dump_jekyll_doc(front, body, data)
+
+    print >> stderr, 'data:', repr(data.getvalue())
+    print >> stderr, 'path:', path
+    
+    user_task.write(path, data.getvalue())
+    
+    task_id = branch_name2path(branch_var2name(branch_name))
+
+    print >> stderr, 'task_id:', repr(task_id)
+    
+    from .repo_functions import MergeConflict
+    from .view_functions import MESSAGE_PAGE_EDITED
+    
+    try:
+        user_task.commit(task_id, 'Get Schwifty')
+    except MergeConflict as e:
+        message = MESSAGE_PAGE_EDITED.format(published_date='YYYY-MM-DD', published_by=e.remote_commit.author.email)
+        published_date = user_task.repo.git.show('--format=%ad', '--date=relative', e.remote_commit.hexsha).split('\n')[0]
+        print >> stderr, 'conflicted schwifty:'
+        print >> stderr, e.remote_commit.author.email
+        print >> stderr, 'published_date:', published_date
+        print >> stderr, message
+        flash(message, u'error')
+    except Exception as e:
+        print >> stderr, 'error:', e
+    else:
+        print >> stderr, 'got schwifty'
+    
+    # repo = get_repo(flask_app=current_app)
+    # safe_branch = branch_name2path(branch_var2name(branch_name))
+    # new_path, did_save = save_page(repo, current_app.config['default_branch'], branch_name, path, request.form)
+    # if did_save:
+    #     flash(u'Saved changes to the {} article! Remember to submit this change for feedback when you\'re ready to go live.'.format(request.form['en-title']), u'notice')
+    
+    safe_branch, new_path = task_id, path
 
     if request.form.get('action', '').lower() == 'preview':
         return redirect('/tree/{}/view/{}'.format(safe_branch, new_path), code=303)
