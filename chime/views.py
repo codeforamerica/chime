@@ -4,18 +4,34 @@ Logger = getLogger('chime.views')
 
 from os.path import join, isdir, exists
 from re import compile, MULTILINE, sub, search
+from io import BytesIO
 
 from requests import post
 from slugify import slugify
 from datetime import datetime
 from flask import current_app, flash, render_template, redirect, request, Response, session, abort
+from git import Actor
 
 from . import chime as app
 from . import repo_functions, edit_functions
 from . import publish
-from .jekyll_functions import load_jekyll_doc, load_languages
+from .jekyll_functions import load_jekyll_doc, dump_jekyll_doc, load_languages
+from .storage.user_task import UserTask
 
-from .view_functions import branch_name2path, branch_var2name, get_repo, login_required, lock_on_user, browserid_hostname_required, synch_required, synched_checkout_required, should_redirect, make_redirect, get_auth_data_file, is_allowed_email, common_template_args, log_application_errors, is_article_dir, is_category_dir, make_activity_history, summarize_activity_history, render_edit_view, render_modify_dir, render_list_dir, add_article_or_category, strip_index_file, delete_page, save_page, render_activities_list, update_activity_review_state, flash_only, flash_unique, file_display_name, get_redirect_path_for_solo_directory, get_preview_asset_response, CONTENT_FILE_EXTENSION, ARTICLE_LAYOUT, CATEGORY_LAYOUT, MESSAGE_ACTIVITY_DELETED, publish_commit
+from .view_functions import (
+    branch_name2path, branch_var2name, get_repo, login_required, lock_on_user,
+    browserid_hostname_required, synch_required, synched_checkout_required,
+    should_redirect, make_redirect, get_auth_data_file, is_allowed_email,
+    common_template_args, log_application_errors, is_article_dir,
+    is_category_dir, make_activity_history, summarize_activity_history,
+    render_edit_view, render_modify_dir, render_list_dir,
+    add_article_or_category, strip_index_file, delete_page, save_page,
+    render_activities_list, update_activity_review_state, flash_only,
+    flash_unique, file_display_name, get_redirect_path_for_solo_directory,
+    get_preview_asset_response, CONTENT_FILE_EXTENSION, ARTICLE_LAYOUT,
+    CATEGORY_LAYOUT, MESSAGE_ACTIVITY_DELETED, publish_commit,
+    prep_jekyll_content, calculate_new_slug, MESSAGE_PAGE_EDITED
+    )
 
 from .google_api_functions import read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens, authorize_google, get_google_personal_info, get_google_analytics_properties
 
@@ -590,92 +606,44 @@ def branch_history(branch_name, path=None):
 def branch_save(branch_name, path):
     ''' Handle a submission from the article-edit form.
     '''
-    from git import Actor
-    from .storage.user_task import UserTask
-    from sys import stderr
     
     actor = Actor(' ', session['email'])
     start_point = request.form['hexsha']
     origin_dirname = current_app.config['REPO_PATH']
-    print >> stderr, 'actor:', actor.email
-    print >> stderr, 'start_point:', start_point
-    print >> stderr, 'origin_dirname:', origin_dirname
     user_task = UserTask(actor, start_point, origin_dirname)
-    print >> stderr, 'user_task:', user_task
-    
-    from .jekyll_functions import dump_jekyll_doc, load_languages
-    from .view_functions import prep_jekyll_content
-    from io import BytesIO
     
     languages = load_languages(user_task.repo.working_dir)
     front, body = prep_jekyll_content(request.form, languages)
     
-    print >> stderr, 'languages:', languages
-    print >> stderr, 'front:', front
-    print >> stderr, 'body:', repr(body)
-    
     data = BytesIO()
     dump_jekyll_doc(front, body, data)
-
-    print >> stderr, 'data:', repr(data.getvalue())
-    print >> stderr, 'path:', path
-    
     user_task.write(path, data.getvalue())
 
-    print >> stderr, 'url-slug:', request.form.get('url-slug')
-    
-    from .view_functions import calculate_new_slug
+    end_path = path
     
     if request.form.get('url-slug'):
         new_path = calculate_new_slug(path, request.form['url-slug'])
         
         if new_path:
-            print >> stderr, 'moving:', path, 'to', new_path
-            try:
-                user_task.move(path, new_path)
-            except Exception as e:
-                print >> stderr, 'uh-oh:', e
-                raise
-                
-        else:
-            new_path = path
+            user_task.move(path, new_path)
+            end_path = new_path
     
     task_id = branch_name2path(branch_var2name(branch_name))
 
-    print >> stderr, 'task_id:', repr(task_id)
-    
-    from .repo_functions import MergeConflict
-    from .view_functions import MESSAGE_PAGE_EDITED
-    
     try:
         user_task.commit(task_id, 'Get Schwifty')
-    except MergeConflict as e:
+    except repo_functions.MergeConflict as e:
         message = MESSAGE_PAGE_EDITED.format(published_date='YYYY-MM-DD', published_by=e.remote_commit.author.email)
         published_date = user_task.repo.git.show('--format=%ad', '--date=relative', e.remote_commit.hexsha).split('\n')[0]
-        print >> stderr, 'conflicted schwifty:'
-        print >> stderr, e.remote_commit.author.email
-        print >> stderr, 'published_date:', published_date
-        print >> stderr, message
         flash(message, u'error')
-    except Exception as e:
-        print >> stderr, 'error:', e
     else:
-        print >> stderr, 'got schwifty'
         message = u'Saved changes to the {} article! Remember to submit this change for feedback when you\'re ready to go live.'.format(request.form['en-title'])
         flash(message, u'notice')
     
-    # repo = get_repo(flask_app=current_app)
-    # safe_branch = branch_name2path(branch_var2name(branch_name))
-    # new_path, did_save = save_page(repo, current_app.config['default_branch'], branch_name, path, request.form)
-    # if did_save:
-    #     flash(u'Saved changes to the {} article! Remember to submit this change for feedback when you\'re ready to go live.'.format(request.form['en-title']), u'notice')
-    
-    safe_branch = task_id
-
     if request.form.get('action', '').lower() == 'preview':
-        return redirect('/tree/{}/view/{}'.format(safe_branch, new_path), code=303)
+        return redirect('/tree/{}/view/{}'.format(task_id, end_path), code=303)
     else:
-        return redirect('/tree/{}/edit/{}'.format(safe_branch, new_path), code=303)
+        return redirect('/tree/{}/edit/{}'.format(task_id, end_path), code=303)
 
 @app.route('/.well-known/deploy-key.txt')
 @log_application_errors
