@@ -1,7 +1,7 @@
 from contextlib import contextmanager
+from os.path import join, exists, dirname
+from os import environ, makedirs
 from tempfile import mkdtemp
-from os.path import join
-from os import environ
 
 from git import Repo, Actor, GitCommandError
 
@@ -61,6 +61,16 @@ class UserTask():
         with self._open(filename, 'w') as file:
             file.write(content)
         self.repo.git.add(filename)
+
+    def move(self, old_path, new_path):
+        assert not self.committed
+        
+        dir_path = join(self.repo.working_dir, dirname(new_path))
+        
+        if not exists(dir_path):
+            makedirs(dir_path)
+        
+        self.repo.git.mv(old_path, new_path)
 
     def commit(self, task_id, message):
         assert not self.committed

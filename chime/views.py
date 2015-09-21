@@ -643,6 +643,8 @@ def branch_save(branch_name, path):
         print >> stderr, 'error:', e
     else:
         print >> stderr, 'got schwifty'
+        message = u'Saved changes to the {} article! Remember to submit this change for feedback when you\'re ready to go live.'.format(request.form['en-title'])
+        flash(message, u'notice')
     
     # repo = get_repo(flask_app=current_app)
     # safe_branch = branch_name2path(branch_var2name(branch_name))

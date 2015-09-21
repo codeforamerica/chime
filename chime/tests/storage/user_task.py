@@ -73,6 +73,20 @@ class TestFirst(TestCase):
             usertask.commit("task-xyz", 'I wrote new things')
         with get_usertask(Frances, "task-xyz", self.origin_dirname) as usertask:
             self.assertEqual(usertask.read('jobs.md'), '---\nnew stuff')
+    
+    def testMoveFile(self):
+        with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:
+            usertask.move('parking.md', 'carholing.md')
+            usertask.commit("task-xyz", 'I moved a thing')
+        with get_usertask(Frances, "task-xyz", self.origin_dirname) as usertask:
+            self.assertEqual(usertask.read('carholing.md'), '---\nold stuff')
+
+    def testMoveFileFurther(self):
+        with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:
+            usertask.move('parking.md', 'carholing/carholes/parking.md')
+            usertask.commit("task-xyz", 'I moved a thing')
+        with get_usertask(Frances, "task-xyz", self.origin_dirname) as usertask:
+            self.assertEqual(usertask.read('carholing/carholes/parking.md'), '---\nold stuff')
 
     def testResubmitFileEdits(self):
         ''' Simulate a single user's preview, back-button, and re-save.
