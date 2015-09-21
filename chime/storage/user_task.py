@@ -18,6 +18,7 @@ def get_usertask(*args):
 class UserTask():
     actor = None
     commit_sha = None
+    committed = False
 
     def __init__(self, actor, start_point, origin_dirname):
         '''
@@ -52,11 +53,16 @@ class UserTask():
             return file.read()
 
     def write(self, filename, content):
+        assert not self.committed
+    
         with self._open(filename, 'w') as file:
             file.write(content)
         self.repo.git.add(filename)
 
     def commit(self, task_id, message):
+        assert not self.committed
+        self.committed = True
+    
         # Commit to local master, push to origin task ID.
         self._set_author_env()
         self.repo.git.commit(m=message, a=True)
