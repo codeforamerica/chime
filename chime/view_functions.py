@@ -1379,6 +1379,32 @@ def get_preview_asset_response(working_dir, path):
 
     return Response(open(local_path).read(), 200, {'Content-Type': mime_type})
 
+def prep_jekyll_content(new_values, languages):
+    '''
+    '''
+    # make sure order is an integer; otherwise default to 0
+    try:
+        order = int(dos2unix(new_values.get('order', '0')))
+    except ValueError:
+        order = 0
+
+    # populate the jekyll front matter
+    front = {
+        'layout': dos2unix(new_values.get('layout')),
+        'order': order,
+        'title': dos2unix(new_values.get('en-title', '')),
+        'description': dos2unix(new_values.get('en-description', ''))
+    }
+    for iso in languages:
+        if iso != constants.ISO_CODE_ENGLISH:
+            front['title-' + iso] = dos2unix(new_values.get(iso + '-title', ''))
+            front['description-' + iso] = dos2unix(new_values.get(iso + '-description', ''))
+            front['body-' + iso] = dos2unix(new_values.get(iso + '-body', ''))
+    
+    body = dos2unix(new_values.get('en-body', ''))
+
+    return front, body
+
 def save_page(repo, default_branch_name, working_branch_name, file_path, new_values):
     ''' Save the page with the passed values
     '''
@@ -1402,29 +1428,10 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
         existing_branch.checkout()
         possible_conflict = False
     
-    # make sure order is an integer; otherwise default to 0
-    try:
-        order = int(dos2unix(new_values.get('order', '0')))
-    except ValueError:
-        order = 0
-
-    # populate the jekyll front matter
-    front = {
-        'layout': dos2unix(new_values.get('layout')),
-        'order': order,
-        'title': dos2unix(new_values.get('en-title', '')),
-        'description': dos2unix(new_values.get('en-description', ''))
-    }
-    for iso in load_languages(repo.working_dir):
-        if iso != constants.ISO_CODE_ENGLISH:
-            front['title-' + iso] = dos2unix(new_values.get(iso + '-title', ''))
-            front['description-' + iso] = dos2unix(new_values.get(iso + '-description', ''))
-            front['body-' + iso] = dos2unix(new_values.get(iso + '-body', ''))
-
     #
     # Write changes.
     #
-    body = dos2unix(new_values.get('en-body', ''))
+    front, body = prep_jekyll_content(new_values, load_languages(repo.working_dir))
     update_page(repo, file_path, front, body)
     
     #
