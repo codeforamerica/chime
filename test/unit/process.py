@@ -278,6 +278,73 @@ class TestProcess (TestCase):
                 self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and part in tag.text))
 
     # in TestProcess
+    def test_published_branch_not_resurrected_on_save(self):
+        ''' Saving a change on a branch that exists locally but isn't at origin because it was published doesn't re-create the branch.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            frances_email = u'frances@example.com'
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in(erica_email)
+
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in(frances_email)
+
+            # Start a new task, topic, subtopic, article
+            erica.open_link('/')
+            task_description = u'Squeeze A School Of Fish Into A Bait Ball for Dolphins'
+            article_name = u'Stunned Fish'
+            args = task_description, u'Plowing Through', u'Feeding On', article_name
+            branch_name = erica.quick_activity_setup(*args)
+            article_path = erica.path
+
+            # Ask for feedback
+            erica.follow_link(href='/tree/{}'.format(branch_name))
+            erica.request_feedback(feedback_str='Is this okay?')
+
+            # Re-load the article page
+            erica.open_link(url=article_path)
+
+            # verify that the branch exists locally and remotely
+            repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email='erica@example.com')
+            self.assertTrue(branch_name in repo.branches)
+            # there's a remote branch with the branch name, but no tag
+            self.assertFalse('refs/tags/{}'.format(branch_name) in repo.git.ls_remote('origin', branch_name).split())
+            self.assertTrue('refs/heads/{}'.format(branch_name) in repo.git.ls_remote('origin', branch_name).split())
+
+            #
+            # Switch to frances, approve and publish erica's changes
+            #
+            frances.open_link(url=erica.path)
+            frances.leave_feedback(feedback_str='It is perfect.')
+            frances.approve_activity()
+            frances.publish_activity()
+
+            #
+            # Switch to erica, try to submit an edit to the article
+            #
+
+            erica.edit_article(title_str=article_name, body_str=u'Chase fish into shallow water to catch them.')
+
+            # we should've been redirected to the activity overview page
+            self.assertEqual(erica.path, '/tree/{}/'.format(branch_name))
+
+            # a warning is flashed about working in a published branch
+            # we can't get the date exactly right, so test for every other part of the message
+            message_published = view_functions.MESSAGE_ACTIVITY_PUBLISHED.format(published_date=u'xxx', published_by=frances_email)
+            message_published_split = message_published.split(u'xxx')
+            for part in message_published_split:
+                self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and part in tag.text))
+
+            # verify that the branch exists locally and not remotely
+            self.assertTrue(branch_name in repo.branches)
+            # there's a remote tag with the branch name, but no branch
+            self.assertTrue('refs/tags/{}'.format(branch_name) in repo.git.ls_remote('origin', branch_name).split())
+            self.assertFalse('refs/heads/{}'.format(branch_name) in repo.git.ls_remote('origin', branch_name).split())
+
+    # in TestProcess
     def test_notified_when_browsing_in_published_activity(self):
         ''' You're notified and redirected when trying to browse a published activity.
         '''
@@ -334,6 +401,7 @@ class TestProcess (TestCase):
             for part in message_published_split:
                 self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and part in tag.text))
 
+    # in TestProcess
     def test_editing_process_with_conflicting_edit(self):
         ''' Check edit process with a user attempting to change an activity with a conflict.
         '''
