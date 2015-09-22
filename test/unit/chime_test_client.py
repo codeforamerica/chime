@@ -54,16 +54,16 @@ class ChimeTestClient:
         # Look for the link
         link = self.soup.find(lambda tag: bool(tag.name == 'a' and tag['href'] == href))
         response = self.client.get(link['href'])
-        redirect = href
+        redirect_path = href
         redirect_count = 0
-        while response.status_code in (301, 302) and redirect_count < 3:
-            redirect = urlparse(response.headers['Location']).path
-            response = self.client.get(redirect)
+        while response.status_code in range(301, 399) and redirect_count < 3:
+            redirect_path = urlparse(response.headers['Location']).path
+            response = self.client.get(redirect_path)
             redirect_count = redirect_count + 1
 
         self.test.assertEqual(response.status_code, 200)
 
-        self.path, self.soup, self.headers = redirect, BeautifulSoup(response.data), response.headers
+        self.path, self.soup, self.headers = redirect_path, BeautifulSoup(response.data), response.headers
 
     def follow_redirect(self, response, code):
         ''' Expect and follow a response HTTP redirect.
@@ -73,11 +73,17 @@ class ChimeTestClient:
         if code in range(500, 599):
             self.soup, self.headers = BeautifulSoup(response.data), response.headers
         else:
-            redirect = urlparse(response.headers['Location']).path
-            response = self.client.get(redirect)
+            redirect_path = urlparse(response.headers['Location']).path
+            response = self.client.get(redirect_path)
+            redirect_count = 0
+            while response.status_code in range(301, 399) and redirect_count < 3:
+                redirect_path = urlparse(response.headers['Location']).path
+                response = self.client.get(redirect_path)
+                redirect_count = redirect_count + 1
+
             self.test.assertEqual(response.status_code, 200)
 
-            self.path, self.soup, self.headers = redirect, BeautifulSoup(response.data), response.headers
+            self.path, self.soup, self.headers = redirect_path, BeautifulSoup(response.data), response.headers
 
     def get_branch_name(self):
         ''' Extract and return the branch name from the current soup.
@@ -236,8 +242,9 @@ class ChimeTestClient:
         return self.client.post(edit_article_path, data=data)
 
     def edit_article(self, title_str, body_str):
-        ''' Look for form to edit an article, submit it. This will submit even if there's no
-            save button available for the form.
+        ''' Look for form to edit an article, submit it.
+
+            Note: This will submit the form even if it doesn't have a save/submit button.
         '''
         response = self.submit_edit_article_form(title_str, body_str)
         # View the updated article.
