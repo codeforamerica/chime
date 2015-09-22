@@ -224,6 +224,59 @@ class TestProcess (TestCase):
             self.assertIsNone(frances.soup.find(text='Dollars'), 'Should not see first published category')
 
     # in TestProcess
+    def test_notified_when_saving_article_in_published_activity(self):
+        ''' You're notified and redirected when trying to save an article in a published activity.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            frances_email = u'frances@example.com'
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in(erica_email)
+
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in(frances_email)
+
+            # Start a new task
+            erica.open_link('/')
+            args = 'Diving for Dollars', 'Ninjas', 'Flipping Out', 'So Awesome'
+            branch_name = erica.quick_activity_setup(*args)
+
+            # Edit the new article.
+            erica.edit_article(title_str='So, So Awesome', body_str='It was the best of times.')
+            article_path = erica.path
+
+            # Ask for feedback
+            erica.follow_link(href='/tree/{}'.format(branch_name))
+            erica.request_feedback(feedback_str='Is this okay?')
+
+            # Re-load the article page
+            erica.open_link(article_path)
+
+            #
+            # Switch users and publish the article.
+            #
+            frances.open_link(url=erica.path)
+            frances.leave_feedback(feedback_str='It is super-great.')
+            frances.approve_activity()
+            frances.publish_activity()
+
+            #
+            # Switch back and try to make another edit.
+            #
+            erica.edit_article(title_str='Just Awful', body_str='It was the worst of times.')
+
+            # we should've been redirected to the activity overview page
+            self.assertEqual(erica.path, '/tree/{}/'.format(branch_name))
+
+            # a warning is flashed about working in a published branch
+            # we can't get the date exactly right, so test for every other part of the message
+            message_published = view_functions.MESSAGE_ACTIVITY_PUBLISHED.format(published_date=u'xxx', published_by=frances_email)
+            message_published_split = message_published.split(u'xxx')
+            for part in message_published_split:
+                self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and part in tag.text))
+
     def test_editing_process_with_conflicting_edit(self):
         ''' Check edit process with a user attempting to change an activity with a conflict.
         '''
