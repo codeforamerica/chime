@@ -77,8 +77,8 @@ class ChimeActivity:
         hexsha = self.repo.branches[self.safe_branch].commit.hexsha
         return self.repo.git.log('--format={}'.format(log_format), '--date=relative', 'master..{}'.format(hexsha))
 
-    def _make_history(self):
-        ''' Make an easily-parsable history of the activity since it was created.
+    def _construct_history(self):
+        ''' Create a list of log items from the raw history log
         '''
         # see <http://git-scm.com/docs/git-log> for placeholders
         log = self._get_history_log(log_format='%x00Name: %an\tEmail: %ae\tDate: %ad\tSubject: %s\tBody: %b%x00')
@@ -93,6 +93,12 @@ class ChimeActivity:
                             commit_action=commit_action)
             history.append(log_item)
 
+        return history
+
+    def _make_history(self):
+        ''' Make an easily-parsable history of the activity since it was created.
+        '''
+        history = self._construct_history()
         return history
 
     def _make_history_summary(self):
@@ -227,3 +233,16 @@ class ChimePublishedActivity(ChimeActivity):
         '''
         hexsha = self.repo.tags[self.safe_branch].commit.hexsha
         return self.repo.git.log('--format={}'.format(log_format), '--date=relative', hexsha)
+
+    def _make_history(self):
+        ''' Make an easily-parsable history of the activity since it was created.
+        '''
+        full_history = self._construct_history()
+        edited_history = []
+        # crop the history to the beginning of this published activity
+        for log_item in full_history:
+            edited_history.append(log_item)
+            if log_item['commit_type'] == constants.COMMIT_TYPE_ACTIVITY_UPDATE and log_item['commit_subject'] == u'The "{}" {}'.format(self.task_description, repo_functions.ACTIVITY_CREATED_MESSAGE):
+                break
+
+        return edited_history
