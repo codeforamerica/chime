@@ -180,12 +180,6 @@ class ChimeActivity:
         '''
         author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
         task_description = task_metadata['task_description'] if 'task_description' in task_metadata else self.safe_branch
-        # add the beneficiary to the description if it's there
-        try:
-            task_description = u'{} for {}'.format(task_description, task_metadata['task_beneficiary'])
-        except KeyError:
-            pass
-
         return author_email, task_description
 
 
