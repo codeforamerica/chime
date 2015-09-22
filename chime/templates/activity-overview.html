@@ -4,14 +4,15 @@
 
 {% block title %}Activity Overview{% endblock %}
 
+{% block activity_bar %}
+{{ activity_bar(branch=branch, activity=activity, show_review_modal=show_review_modal) }}
+{% endblock %}
 
 {% set template_name = 'activity-overview' %}
 {% block body_class %}{{template_name}}{% endblock %}
 
 {% block scripts %}
-
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-
 {% endblock%}
 
 {% block content %}

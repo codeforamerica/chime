@@ -39,6 +39,7 @@ class ChimeActivity:
         self.edit_path = u'/tree/{}/edit/'.format(self.safe_branch)
         self.overview_path = u'/tree/{}/'.format(self.safe_branch)
         self.view_path = u'/tree/{}/view/'.format(self.safe_branch)
+        self.review_path = u'/tree/{}/review/'.format(self.safe_branch)
 
         # only build history and working state if requested
         self._history = None

@@ -1,0 +1,32 @@
+.review-modal {
+	border-top: 4px solid $color-grey-100;
+
+	&--unreviewed-edits {
+		border-color: $color-grey-600;
+		h2 {
+			color: $color-grey-600;
+		}
+	}
+	&--feedback-requested {
+		border-color: $color-orange-300;
+		.review-modal__title {
+			color: $color-orange-300;
+		}
+	}
+	&--edits-endorsed {
+		border-color: $color-blue-300;
+		.review-modal__title {
+			color: $color-blue-300;
+		}
+	}
+	&--changes-published {
+		border-color: $color-green-300;
+		.review-modal__title {
+			color: $color-green-300;
+		}
+	}
+}
+
+.review-modal__title {
+	margin-top: 0;
+}

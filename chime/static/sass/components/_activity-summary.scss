@@ -2,27 +2,6 @@
 	margin-top: -1px;
 }
 
-.activity-summary__toggle {
-	position: relative;
-	display: block;
-	font-size: $text-font-size;
-	font-weight: 400;
-	color: $color-grey-800;
-	&:after {
-		content: '\f107';
-		font-family: 'FontAwesome';
-		display: inline-block;
-		position: relative;
-		top: .1em;
-		margin-left: .5em;
-	}
-	&.is-open {
-		&:after {
-			content: '\f106';
-		}
-	}
-}
-
 .activity-summary__table {
 	margin-top: 1em;
 }

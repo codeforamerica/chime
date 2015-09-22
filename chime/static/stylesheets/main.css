@@ -717,7 +717,7 @@ body {
   left: 0;
   right: 0;
   min-width: 1000px;
-  background-color: #fafafa;
+  background-color: #f5f5f5;
 }
 
 /* line 23, ../sass/core/_base.scss */
@@ -1408,13 +1408,14 @@ input[type="submit"]:disabled:hover {
   bottom: 0;
   left: 0;
   right: 0;
+  z-index: 9999;
   background-color: #424242;
   background-color: rgba(0, 0, 0, 0.15);
   opacity: 0;
   margin-top: -2em;
   display: none;
 }
-/* line 16, ../sass/components/_modal.scss */
+/* line 17, ../sass/components/_modal.scss */
 .modal-container.is-open {
   display: block;
   display: flex;
@@ -1422,7 +1423,7 @@ input[type="submit"]:disabled:hover {
   opacity: 1;
 }
 
-/* line 23, ../sass/components/_modal.scss */
+/* line 24, ../sass/components/_modal.scss */
 .modal {
   -webkit-animation: modal 0.2s ease-out;
   -moz-animation: modal 0.2s ease-out;
@@ -1443,7 +1444,7 @@ input[type="submit"]:disabled:hover {
 .modal:after {
   clear: both;
 }
-/* line 32, ../sass/components/_modal.scss */
+/* line 33, ../sass/components/_modal.scss */
 .lt-ie10 .modal {
   margin-top: 4em;
 }
@@ -1754,45 +1755,56 @@ input[type="submit"]:disabled:hover {
   background-color: #2684bc;
 }
 
-/* line 45, ../sass/components/_global-header.scss */
-.activity-dropdown.global-header__link {
-  background-color: #55a8da;
-  width: 30em;
-  padding-right: 4em;
+/* line 1, ../sass/components/_activity-bar.scss */
+.activity-bar {
+  background-color: #fff;
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.25);
+  position: relative;
+  z-index: 2;
 }
-
-/* line 51, ../sass/components/_global-header.scss */
-.activity-dropdown__link {
+/* line 7, ../sass/components/_activity-bar.scss */
+.activity-bar:before {
+  content: '';
   display: block;
-  color: #fff;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  overflow: hidden;
-  height: 1.2em;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 4px;
+  z-index: 2;
 }
-/* line 58, ../sass/components/_global-header.scss */
-.activity-dropdown__link:hover {
-  color: #fff;
+/* line 18, ../sass/components/_activity-bar.scss */
+.activity-bar--unreviewed-edits:before {
+  background-color: #757575;
+}
+/* line 21, ../sass/components/_activity-bar.scss */
+.activity-bar--feedback-requested:before {
+  background-color: #757575;
+}
+/* line 24, ../sass/components/_activity-bar.scss */
+.activity-bar--edits-endorsed:before {
+  background-color: #757575;
+}
+/* line 27, ../sass/components/_activity-bar.scss */
+.activity-bar--changes-published:before {
+  background-color: #757575;
 }
 
-/* line 63, ../sass/components/_global-header.scss */
-.activity-dropdown__subtitle {
-  margin: 0em;
-}
-
-/* line 67, ../sass/components/_global-header.scss */
-.activity-dropdown__title {
+/* line 34, ../sass/components/_activity-bar.scss */
+.activity-bar__title {
   font-weight: 600;
-  padding-bottom: 1em;
-  margin-top: .2em;
-  margin-bottom: 1em;
-  border-bottom: 1px solid #e0e0e0;
   color: #212121;
-  line-height: 1.3em;
+  margin: 0;
+  font-size: 18px;
 }
 
-/* line 77, ../sass/components/_global-header.scss */
-.activity-dropdown__button {
+/* line 41, ../sass/components/_activity-bar.scss */
+.activity-bar__subtitle {
+  font-weight: 300;
+}
+
+/* line 45, ../sass/components/_activity-bar.scss */
+.activity-bar__button {
   width: 100%;
   margin-bottom: 2em;
   text-align: center;
@@ -2019,35 +2031,55 @@ input[type="submit"]:disabled:hover {
 }
 
 /* line 5, ../sass/components/_activity-summary.scss */
-.activity-summary__toggle {
-  position: relative;
-  display: block;
-  font-size: 16px;
-  font-weight: 400;
-  color: #424242;
-}
-/* line 11, ../sass/components/_activity-summary.scss */
-.activity-summary__toggle:after {
-  content: '\f107';
-  font-family: 'FontAwesome';
-  display: inline-block;
-  position: relative;
-  top: .1em;
-  margin-left: .5em;
-}
-/* line 20, ../sass/components/_activity-summary.scss */
-.activity-summary__toggle.is-open:after {
-  content: '\f106';
-}
-
-/* line 26, ../sass/components/_activity-summary.scss */
 .activity-summary__table {
   margin-top: 1em;
 }
 
-/* line 30, ../sass/components/_activity-summary.scss */
+/* line 9, ../sass/components/_activity-summary.scss */
 .activity-summary__name {
   font-weight: 400;
+}
+
+/* line 1, ../sass/components/_review-modal.scss */
+.review-modal {
+  border-top: 4px solid #f5f5f5;
+}
+/* line 4, ../sass/components/_review-modal.scss */
+.review-modal--unreviewed-edits {
+  border-color: #757575;
+}
+/* line 6, ../sass/components/_review-modal.scss */
+.review-modal--unreviewed-edits h2 {
+  color: #757575;
+}
+/* line 10, ../sass/components/_review-modal.scss */
+.review-modal--feedback-requested {
+  border-color: #f1b17f;
+}
+/* line 12, ../sass/components/_review-modal.scss */
+.review-modal--feedback-requested .review-modal__title {
+  color: #f1b17f;
+}
+/* line 16, ../sass/components/_review-modal.scss */
+.review-modal--edits-endorsed {
+  border-color: #6693a5;
+}
+/* line 18, ../sass/components/_review-modal.scss */
+.review-modal--edits-endorsed .review-modal__title {
+  color: #6693a5;
+}
+/* line 22, ../sass/components/_review-modal.scss */
+.review-modal--changes-published {
+  border-color: #66c6ac;
+}
+/* line 24, ../sass/components/_review-modal.scss */
+.review-modal--changes-published .review-modal__title {
+  color: #66c6ac;
+}
+
+/* line 30, ../sass/components/_review-modal.scss */
+.review-modal__title {
+  margin-top: 0;
 }
 
 /* line 1, ../sass/components/_comment.scss */
