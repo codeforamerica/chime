@@ -173,8 +173,8 @@ class ChimeActivity:
             summary_sentence_parts = []
             display_type_tally = Counter(display_types_encountered)
             display_lookup = (
-                (display_type_tally[constants.ARTICLE_LAYOUT.title()], unicode(constants.ARTICLE_LAYOUT), unicode(constants.LAYOUT_PLURAL_LOOKUP[constants.ARTICLE_LAYOUT])),
-                (display_type_tally[constants.CATEGORY_LAYOUT.title()], unicode(constants.CATEGORY_LAYOUT), unicode(constants.LAYOUT_PLURAL_LOOKUP[constants.CATEGORY_LAYOUT]))
+                (display_type_tally[constants.ARTICLE_LAYOUT.title()], unicode(constants.LAYOUT_DISPLAY_LOOKUP[constants.ARTICLE_LAYOUT]), unicode(constants.LAYOUT_PLURAL_LOOKUP[constants.ARTICLE_LAYOUT])),
+                (display_type_tally[constants.CATEGORY_LAYOUT.title()], unicode(constants.LAYOUT_DISPLAY_LOOKUP[constants.CATEGORY_LAYOUT]), unicode(constants.LAYOUT_PLURAL_LOOKUP[constants.CATEGORY_LAYOUT]))
             )
             for tally, singular, plural in display_lookup:
                 if tally:
