@@ -255,7 +255,7 @@ class TestProcess (TestCase):
             erica.open_link(article_path)
 
             #
-            # Switch users and publish the article.
+            # Switch users and publish the activity.
             #
             frances.open_link(url=erica.path)
             frances.leave_feedback(feedback_str='It is super-great.')
@@ -433,7 +433,7 @@ class TestProcess (TestCase):
             erica.request_feedback(feedback_str='Is this okay?')
 
             #
-            # Switch users and publish the article.
+            # Switch users and publish the activity.
             #
             frances.open_link(url=erica.path)
             frances.leave_feedback(feedback_str='It is super-great.')
@@ -513,7 +513,7 @@ class TestProcess (TestCase):
             erica.request_feedback(feedback_str='Is this okay?')
 
             #
-            # Switch users and publish the article.
+            # Switch users and publish the activity.
             #
             frances.open_link(url=erica.path)
             frances.leave_feedback(feedback_str='It is super-great.')
@@ -1094,7 +1094,7 @@ class TestProcess (TestCase):
             erica.request_feedback()
 
             #
-            # Switch users and publish the article.
+            # Switch users and publish the activity.
             #
             frances.open_link(url=erica.path)
             frances.approve_activity()
@@ -1197,6 +1197,142 @@ class TestProcess (TestCase):
             published_row = check_rows.pop()
             # frances@example.com published this activity.
             self.assertEqual(published_row.find('p').text.strip(), u'{} {}'.format(frances_email, repo_functions.ACTIVITY_PUBLISHED_MESSAGE))
+
+    # in TestProcess
+    def test_published_activities_dont_mix_histories(self):
+        ''' The histories of two published activities that were worked on simultaneously don't leak into each other.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            frances_email = u'frances@example.com'
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in(email=erica_email)
+
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in(email=frances_email)
+
+            # Erica starts two new tasks
+            erica.open_link('/')
+            first_activity_description = u'Use Gestures To Coordinate Hunts'
+            first_branch_name = erica.quick_activity_setup(first_activity_description)
+            first_edit_path = erica.path
+
+            erica.open_link('/')
+            second_activity_description = u'Come To The Coral Trout\'s Aid When Signalled'
+            second_branch_name = erica.quick_activity_setup(second_activity_description)
+            second_edit_path = erica.path
+
+            # Erica creates a new topic in the two tasks
+            erica.open_link(first_edit_path)
+            first_topic_name = u'Plectropomus Leopardus'
+            erica.add_category(category_name=first_topic_name)
+
+            erica.open_link(second_edit_path)
+            second_topic_name = u'Cheilinus Undulatus'
+            erica.add_category(category_name=second_topic_name)
+
+            # Erica leaves comments on the two tasks and requests feedback
+            erica.open_link(url='/tree/{}/'.format(first_branch_name))
+            first_comment_body = u'Testing their interactions with Napolean wrasse decoys.'
+            erica.leave_feedback(feedback_str=first_comment_body)
+            # Request feedback
+            erica.request_feedback()
+
+            erica.open_link(url='/tree/{}/'.format(second_branch_name))
+            second_comment_body = u'The "good" wrasse would come to the trout\'s aid when signalled, whereas the "bad" one would swim in the opposite direction.'
+            erica.leave_feedback(feedback_str=second_comment_body)
+            # Request feedback
+            erica.request_feedback()
+
+            #
+            # Switch users and publish the activities.
+            #
+            frances.open_link(url='/tree/{}/'.format(first_branch_name))
+            frances.approve_activity()
+            frances.publish_activity()
+            frances.open_link(url='/tree/{}/'.format(second_branch_name))
+            frances.approve_activity()
+            frances.publish_activity()
+
+            #
+            # Switch users and check the first overview page.
+            #
+            erica.open_link(url='/tree/{}/'.format(first_branch_name))
+
+            # there is a summary
+            summary_div = erica.soup.find("div", class_="activity-summary")
+            self.assertIsNotNone(summary_div)
+            # it's right about what's changed
+            self.assertIsNotNone(summary_div.find(lambda tag: bool(tag.name == 'p' and '1 topic has been changed' in tag.text)))
+            # grab all the table rows and make sure they match what we did above
+            check_rows = summary_div.find_all('tr')
+            category_row = check_rows.pop()
+            category_cells = category_row.find_all('td')
+            self.assertIsNotNone(category_cells[0].find('a'))
+            self.assertEqual(category_cells[0].text, first_topic_name)
+            self.assertEqual(category_cells[1].text, constants.LAYOUT_DISPLAY_LOOKUP[constants.CATEGORY_LAYOUT].title())
+            self.assertEqual(category_cells[2].text, u'Created')
+
+            # only the header row's left
+            self.assertEqual(len(check_rows), 1)
+
+            # also check the full history
+            history_div = erica.soup.find("div", class_="activity-log")
+            check_rows = history_div.find_all('div', class_='activity-log-item')
+            self.assertEqual(len(check_rows), 6)
+            # The "Use Gestures To Coordinate Hunts" activity was started by erica@example.com.
+            self.assertEqual(check_rows.pop().find('p').text.strip(), u'The "{}" {} by {}.'.format(first_activity_description, repo_functions.ACTIVITY_CREATED_MESSAGE, erica_email))
+            # The "Plectropomus Leopardus" topic was created by erica@example.com.
+            self.assertEqual(check_rows.pop().find('p').text.strip(), u'The "{}" topic was created by {}.'.format(first_topic_name, erica_email))
+            # Testing their interactions with Napolean wrasse decoys.
+            self.assertEqual(check_rows.pop().find('div', class_='comment__body').text, first_comment_body)
+            # erica@example.com requested feedback on this activity.
+            self.assertEqual(check_rows.pop().find('p').text.strip(), u'{} {}'.format(erica_email, repo_functions.ACTIVITY_FEEDBACK_MESSAGE))
+            # frances@example.com endorsed this activity.
+            self.assertEqual(check_rows.pop().find('p').text.strip(), u'{} {}'.format(frances_email, repo_functions.ACTIVITY_ENDORSED_MESSAGE))
+            # frances@example.com published this activity.
+            self.assertEqual(check_rows.pop().find('p').text.strip(), u'{} {}'.format(frances_email, repo_functions.ACTIVITY_PUBLISHED_MESSAGE))
+
+            #
+            # Check the second overview page.
+            #
+            erica.open_link(url='/tree/{}/'.format(second_branch_name))
+
+            # there is a summary
+            summary_div = erica.soup.find("div", class_="activity-summary")
+            self.assertIsNotNone(summary_div)
+            # it's right about what's changed
+            self.assertIsNotNone(summary_div.find(lambda tag: bool(tag.name == 'p' and '1 topic has been changed' in tag.text)))
+            # grab all the table rows and make sure they match what we did above
+            check_rows = summary_div.find_all('tr')
+            category_row = check_rows.pop()
+            category_cells = category_row.find_all('td')
+            self.assertIsNotNone(category_cells[0].find('a'))
+            self.assertEqual(category_cells[0].text, second_topic_name)
+            self.assertEqual(category_cells[1].text, constants.LAYOUT_DISPLAY_LOOKUP[constants.CATEGORY_LAYOUT].title())
+            self.assertEqual(category_cells[2].text, u'Created')
+
+            # only the header row's left
+            self.assertEqual(len(check_rows), 1)
+
+            # also check the full history
+            history_div = erica.soup.find("div", class_="activity-log")
+            check_rows = history_div.find_all('div', class_='activity-log-item')
+            self.assertEqual(len(check_rows), 6)
+            # The "Use Gestures To Coordinate Hunts" activity was started by erica@example.com.
+            self.assertEqual(check_rows.pop().find('p').text.strip(), u'The "{}" {} by {}.'.format(second_activity_description, repo_functions.ACTIVITY_CREATED_MESSAGE, erica_email))
+            # The "Plectropomus Leopardus" topic was created by erica@example.com.
+            self.assertEqual(check_rows.pop().find('p').text.strip(), u'The "{}" topic was created by {}.'.format(second_topic_name, erica_email))
+            # Testing their interactions with Napolean wrasse decoys.
+            self.assertEqual(check_rows.pop().find('div', class_='comment__body').text, second_comment_body)
+            # erica@example.com requested feedback on this activity.
+            self.assertEqual(check_rows.pop().find('p').text.strip(), u'{} {}'.format(erica_email, repo_functions.ACTIVITY_FEEDBACK_MESSAGE))
+            # frances@example.com endorsed this activity.
+            self.assertEqual(check_rows.pop().find('p').text.strip(), u'{} {}'.format(frances_email, repo_functions.ACTIVITY_ENDORSED_MESSAGE))
+            # frances@example.com published this activity.
+            self.assertEqual(check_rows.pop().find('p').text.strip(), u'{} {}'.format(frances_email, repo_functions.ACTIVITY_PUBLISHED_MESSAGE))
 
 if __name__ == '__main__':
     main()
