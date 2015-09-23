@@ -25,16 +25,15 @@ textarea  {
 	padding: 0 .7em;
 	height: 2em;
 	line-height: $base-line-height;
+	margin-bottom: 1em;
 }
 
 label {
 	@include user-select(none);
-	font-size: $small-font-size;
-	font-weight: 400;
+	font-size: $base-font-size;
+	font-weight: 600;
 	display: block;
 	margin-bottom: .5em;
-	text-transform: uppercase;
-	letter-spacing: .1em;
 	color: $color-grey-700;
 }
 

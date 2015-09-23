@@ -4,8 +4,8 @@
   <h2 class="activity-bar__title row__left"><span class="activity-bar__subtitle">Currently:</span> {{ activity.task_description | title }}</h2>
   {% if activity.review_state != config.REVIEW_STATE_PUBLISHED and activity.working_state == config.WORKING_STATE_ACTIVE %}
     <div class="toolbar toolbar--right">
-      <a href="{{activity.edit_path}}" class="button button--text toolbar__item"><span class="fa fa-files-o"></span> Content</a>
-      <a href="{{activity.overview_path}}" class="button button--text toolbar__item"><span class="fa fa-calendar-o"></span> Overview</a>
+      <a href="{{activity.edit_path}}" class="button button--text toolbar__item"><span class="button__icon--left fa fa-files-o"></span> Content</a>
+      <a href="{{activity.overview_path}}" class="button button--text toolbar__item"><span class="button__icon--left fa fa-calendar-o"></span> Overview</a>
       {% if activity.review_authorized %}
       {% if activity.review_state == config.REVIEW_STATE_EDITED %}
       <a href="{{activity.review_path}}" class="toolbar__item button button--open-review-modal button--orange">Request Feedback</a>
@@ -15,13 +15,33 @@
       {% elif activity.review_state == config.REVIEW_STATE_ENDORSED %}
       <a href="{{activity.review_path}}" class="toolbar__item button button--open-review-modal button--blue">Publish</a>
       {% endif %}
+      {% else %}
+      <span class="toolbar__item activity-bar__status">awaiting feedback</span>
       {% endif %}
     </div>
   {% endif %}
 </div>
 <div class="modal-container {% if show_review_modal %}is-open{% endif %}">
-  <form class="modal review-modal review-modal--{{activity.review_state|replace(' ', '-')}}">
-    <h2 class="review-modal__title">You are now reviewing edits on 7 files</h2>
+  <form action="{{activity.overview_path}}" method="POST" class="modal review-modal review-modal--{{activity.review_state|replace(' ', '-')}}">
+    <h2 class="review-modal__title">Requesting feedback on 7 files</h2>
+    <p class="review-modal__subtitle">Your work needs to be endorsed to go live.  See more details on the <a href="{{activity.overview_path}}">overview page</a>.</p>
+    <div class="activity-summary">       
+        <ul class="activity-summary__changes">
+            {% for change in activity.history_summary.changes %}
+            <li class="activity-change">
+                {% if change.edit_path %}<a href="{{ change.edit_path }}" class="activity-change__link">{% endif %}
+                <h3 class="activity-change__filename">{{ change.title }}</h3>
+                <p class="activity-change__changes">{{ change.actions }}</p>
+                <div class="activity-change__filetype activity-change__filetype--{{change.display_type|lower}}">{{ change.display_type }}</div>
+                {% if change.edit_path %}</a>{% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    <label for="activity-name">Does the activity name need updating?</label>
+    <input type="text" class="review-modal--name-input" placeholder="{{activity.task_description}}"/>
+    <label for="activity-description">Let the reviewer know what changes you made and why.</label>
+    <textarea class="review-modal__description-input" name="activity-description" id="" placeholder="Updated the parking ticket page to be more action oriented."></textarea>
     <div class="toolbar toolbar--right">
       <a href="{{activity.overview_path}}" class="toolbar__item button button--close-review-modal button--medium">Cancel</a>
       {% if activity.review_authorized %}

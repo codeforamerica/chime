@@ -1,5 +1,7 @@
 .global-header {
 	@include main-padding;
+	position: relative;
+	z-index: 9999;
 	background-color: $color-brand-blue;
 	color: #fff;
 	padding: {
