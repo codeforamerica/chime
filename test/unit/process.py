@@ -1028,6 +1028,7 @@ class TestProcess (TestCase):
             save_button = edit_form.find('button', value='Save')
             self.assertIsNone(save_button)
 
+    # in TestProcess
     def test_editing_out_of_date_article(self):
         ''' Check edit process with a user attempting to edit an out-of-date article.
         '''
@@ -1055,6 +1056,147 @@ class TestProcess (TestCase):
             
             # Meanwhile, Erica completes her edits.
             erica.edit_article(title_str='So, So Awesome', body_str='It was the best of times.\n\nBut also the worst of times.')
+
+    # in TestProcess
+    def test_published_activity_history_accuracy(self):
+        ''' A published activity's history is constructed as expected.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            frances_email = u'frances@example.com'
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in(email=erica_email)
+
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in(email=frances_email)
+
+            # Erica starts a new task, topic, sub-topic, article
+            erica.open_link('/')
+            activity_description = u'Reef-Associated Roving Coralgroupers'
+            topic_name = u'Plectropomus Pessuliferus'
+            subtopic_name = u'Recruit Giant Morays'
+            article_name = u'In Hunting For Food'
+            args = activity_description, topic_name, subtopic_name, article_name
+            branch_name = erica.quick_activity_setup(*args)
+
+            # edit the article
+            erica.edit_article(title_str=article_name, body_str=u'This is the only known instance of interspecies cooperative hunting among fish.')
+
+            # Load the activity overview page
+            erica.open_link(url='/tree/{}/'.format(branch_name))
+
+            # Leave a comment
+            comment_body = u'The invitation to hunt is initiated by head-shaking.'
+            erica.leave_feedback(feedback_str=comment_body)
+            # Request feedback
+            erica.request_feedback()
+
+            #
+            # Switch users and publish the article.
+            #
+            frances.open_link(url=erica.path)
+            frances.approve_activity()
+            frances.publish_activity()
+
+            #
+            # Switch users and load the activity page.
+            #
+            erica.open_link(url='/')
+            # verify that the project is listed in the recently published column
+            pub_ul = erica.soup.select("#activity-list-published")[0]
+            # there should be an HTML comment with the branch name
+            comment = pub_ul.findAll(text=lambda text: isinstance(text, Comment))[0]
+            self.assertTrue(branch_name in comment)
+            pub_li = comment.find_parent('li')
+            # and the activity title wrapped in an a tag
+            self.assertIsNotNone(pub_li.find('a', text=activity_description))
+
+            # load the published activitiy's overview page
+            erica.open_link(url='/tree/{}/'.format(branch_name))
+
+            # a warning is flashed about working in a published branch
+            # we can't get the date exactly right, so test for every other part of the message
+            message_published = view_functions.MESSAGE_ACTIVITY_PUBLISHED.format(published_date=u'xxx', published_by=frances_email)
+            message_published_split = message_published.split(u'xxx')
+            for part in message_published_split:
+                self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and part in tag.text))
+
+            # there is a summary
+            summary_div = erica.soup.find("div", class_="activity-summary")
+            self.assertIsNotNone(summary_div)
+            # it's right about what's changed
+            self.assertIsNotNone(summary_div.find(lambda tag: bool(tag.name == 'p' and '1 article and 2 topics' in tag.text)))
+            # grab all the table rows
+            check_rows = summary_div.find_all('tr')
+
+            # make sure they match what we did above
+            category_row = check_rows.pop()
+            category_cells = category_row.find_all('td')
+            self.assertIsNotNone(category_cells[0].find('a'))
+            self.assertEqual(category_cells[0].text, topic_name)
+            self.assertEqual(category_cells[1].text, u'Category')
+            self.assertEqual(category_cells[2].text, u'Created')
+
+            subcategory_row = check_rows.pop()
+            subcategory_cells = subcategory_row.find_all('td')
+            self.assertIsNotNone(subcategory_cells[0].find('a'))
+            self.assertEqual(subcategory_cells[0].text, subtopic_name)
+            self.assertEqual(subcategory_cells[1].text, u'Category')
+            self.assertEqual(subcategory_cells[2].text, u'Created')
+
+            article_1_row = check_rows.pop()
+            article_1_cells = article_1_row.find_all('td')
+            self.assertIsNotNone(article_1_cells[0].find('a'))
+            self.assertEqual(article_1_cells[0].text, article_name)
+            self.assertEqual(article_1_cells[1].text, u'Article')
+            self.assertEqual(article_1_cells[2].text, u'Created, Edited')
+
+            # only the header row's left
+            self.assertEqual(len(check_rows), 1)
+
+            # also check the full history
+            history_div = erica.soup.find("div", class_="activity-log")
+            check_rows = history_div.find_all('div', class_='activity-log-item')
+            self.assertEqual(len(check_rows), 9)
+
+            # activity started
+            started_row = check_rows.pop()
+            # The "Reef-Associated Roving Coralgroupers" activity was started by erica@example.com.
+            self.assertEqual(started_row.find('p').text.strip(), u'The "{}" {} by {}.'.format(activity_description, repo_functions.ACTIVITY_CREATED_MESSAGE, erica_email))
+
+            topic_row = check_rows.pop()
+            # The "Plectropomus Pessuliferus" topic was created by erica@example.com.
+            self.assertEqual(topic_row.find('p').text.strip(), u'The "{}" topic was created by {}.'.format(topic_name, erica_email))
+
+            subtopic_row = check_rows.pop()
+            # The "Recruit Giant Morays" topic was created by erica@example.com.
+            self.assertEqual(subtopic_row.find('p').text.strip(), u'The "{}" topic was created by {}.'.format(subtopic_name, erica_email))
+
+            article_created_row = check_rows.pop()
+            # The "In Hunting For Food" article was created by erica@example.com.
+            self.assertEqual(article_created_row.find('p').text.strip(), u'The "{}" article was created by {}.'.format(article_name, erica_email))
+
+            article_edited_row = check_rows.pop()
+            # The "In Hunting For Food" article was edited by erica@example.com.
+            self.assertEqual(article_edited_row.find('p').text.strip(), u'The "{}" article was edited by {}.'.format(article_name, erica_email))
+
+            comment_row = check_rows.pop()
+            self.assertEqual(comment_row.find('div', class_='comment__author').text, erica_email)
+            self.assertEqual(comment_row.find('div', class_='comment__body').text, comment_body)
+
+            feedback_requested_row = check_rows.pop()
+            # erica@example.com requested feedback on this activity.
+            self.assertEqual(feedback_requested_row.find('p').text.strip(), u'{} {}'.format(erica_email, repo_functions.ACTIVITY_FEEDBACK_MESSAGE))
+
+            endorsed_row = check_rows.pop()
+            # frances@example.com endorsed this activity.
+            self.assertEqual(endorsed_row.find('p').text.strip(), u'{} {}'.format(frances_email, repo_functions.ACTIVITY_ENDORSED_MESSAGE))
+
+            published_row = check_rows.pop()
+            # frances@example.com published this activity.
+            self.assertEqual(published_row.find('p').text.strip(), u'{} {}'.format(frances_email, repo_functions.ACTIVITY_PUBLISHED_MESSAGE))
 
 if __name__ == '__main__':
     main()
