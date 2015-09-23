@@ -1427,6 +1427,16 @@ def calculate_new_slug(file_path, new_slug):
     
     return None
 
+def format_commit_message(file_path, en_title, layout):
+    '''
+    '''
+    display_name = en_title
+    display_type = layout
+    action_descriptions = [{'action': u'edit', 'title': display_name, 'display_type': display_type, 'file_path': file_path}]
+    commit_message = u'The "{}" {} was edited\n\n{}'.format(display_name, display_type, json.dumps(action_descriptions, ensure_ascii=False))
+    
+    return commit_message
+
 def save_page(repo, default_branch_name, working_branch_name, file_path, new_values):
     ''' Save the page with the passed values
     '''

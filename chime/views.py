@@ -30,7 +30,8 @@ from .view_functions import (
     flash_unique, file_display_name, get_redirect_path_for_solo_directory,
     get_preview_asset_response, CONTENT_FILE_EXTENSION, ARTICLE_LAYOUT,
     CATEGORY_LAYOUT, MESSAGE_ACTIVITY_DELETED, publish_commit,
-    prep_jekyll_content, calculate_new_slug, MESSAGE_PAGE_EDITED
+    prep_jekyll_content, calculate_new_slug, MESSAGE_PAGE_EDITED,
+    format_commit_message
     )
 
 from .google_api_functions import read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens, authorize_google, get_google_personal_info, get_google_analytics_properties
@@ -631,7 +632,9 @@ def branch_save(branch_name, path):
     task_id = branch_name2path(branch_var2name(branch_name))
 
     try:
-        user_task.commit(task_id, 'Get Schwifty')
+        title_layout = request.form.get('en-title'), request.form.get('layout')
+        message = format_commit_message(end_path, *title_layout)
+        user_task.commit(task_id, message)
     except repo_functions.MergeConflict as e:
         message = MESSAGE_PAGE_EDITED.format(published_date='YYYY-MM-DD', published_by=e.remote_commit.author.email)
         published_date = user_task.repo.git.show('--format=%ad', '--date=relative', e.remote_commit.hexsha).split('\n')[0]
