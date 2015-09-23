@@ -23,7 +23,7 @@ from httmock import response, HTTMock
 from mock import MagicMock
 from bs4 import Comment
 
-from chime import create_app, repo_functions, google_api_functions, view_functions
+from chime import create_app, repo_functions, google_api_functions, view_functions, constants
 
 from unit.chime_test_client import ChimeTestClient
 
@@ -1136,21 +1136,21 @@ class TestProcess (TestCase):
             category_cells = category_row.find_all('td')
             self.assertIsNotNone(category_cells[0].find('a'))
             self.assertEqual(category_cells[0].text, topic_name)
-            self.assertEqual(category_cells[1].text, u'Category')
+            self.assertEqual(category_cells[1].text, constants.LAYOUT_DISPLAY_LOOKUP[constants.CATEGORY_LAYOUT].title())
             self.assertEqual(category_cells[2].text, u'Created')
 
             subcategory_row = check_rows.pop()
             subcategory_cells = subcategory_row.find_all('td')
             self.assertIsNotNone(subcategory_cells[0].find('a'))
             self.assertEqual(subcategory_cells[0].text, subtopic_name)
-            self.assertEqual(subcategory_cells[1].text, u'Category')
+            self.assertEqual(subcategory_cells[1].text, constants.LAYOUT_DISPLAY_LOOKUP[constants.CATEGORY_LAYOUT].title())
             self.assertEqual(subcategory_cells[2].text, u'Created')
 
             article_1_row = check_rows.pop()
             article_1_cells = article_1_row.find_all('td')
             self.assertIsNotNone(article_1_cells[0].find('a'))
             self.assertEqual(article_1_cells[0].text, article_name)
-            self.assertEqual(article_1_cells[1].text, u'Article')
+            self.assertEqual(article_1_cells[1].text, constants.LAYOUT_DISPLAY_LOOKUP[constants.ARTICLE_LAYOUT].title())
             self.assertEqual(article_1_cells[2].text, u'Created, Edited')
 
             # only the header row's left

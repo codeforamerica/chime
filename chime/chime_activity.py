@@ -136,12 +136,17 @@ class ChimeActivity:
                 # the passed title or the filename if no title is there
                 title = file_change['title'] or file_change['file_path'].split('/')[-1]
                 # the passed display type or Unknown if no type is there
-                display_type = file_change['display_type'].title() or u'Unknown'
+                display_type = file_change['display_type'] or u'unknown'
+                # how to represent the display type in the interface (i.e. Category -> Topic)
+                show_type = constants.LAYOUT_DISPLAY_LOOKUP[display_type] if display_type in constants.LAYOUT_DISPLAY_LOOKUP else display_type
+                display_type = display_type.title()
+                show_type = show_type.title()
                 try:
                     action = ed_lookup[file_change['action']].title()
                 except:
                     action = file_change['action'].title()
                 file_path = file_change['file_path']
+
                 # if the last action is delete, we don't want an edit_path to a file that no longer exists
                 edit_path = join(u'/tree/{}/edit/'.format(self.safe_branch), repo_functions.strip_index_file(file_path)) if action != u'Deleted' else u''
                 sort_time = datetime.now()
@@ -153,9 +158,9 @@ class ChimeActivity:
                     # add the other variables, which may've changed
                     change_lookup[file_path]['edit_path'] = edit_path
                     change_lookup[file_path]['title'] = title
-                    change_lookup[file_path]['display_type'] = display_type
+                    change_lookup[file_path]['display_type'] = show_type
                 else:
-                    change_lookup[file_path] = dict(title=title, display_type=display_type, actions=action, edit_path=edit_path, sort_time=sort_time)
+                    change_lookup[file_path] = dict(title=title, display_type=show_type, actions=action, edit_path=edit_path, sort_time=sort_time)
                     display_types_encountered.append(display_type)
 
         # flatten and sort the changes

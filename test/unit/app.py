@@ -2051,28 +2051,28 @@ class TestApp (TestCase):
             category_cells = category_row.find_all('td')
             self.assertIsNotNone(category_cells[0].find('a'))
             self.assertEqual(category_cells[0].text, category_name)
-            self.assertEqual(category_cells[1].text, u'Category')
+            self.assertEqual(category_cells[1].text, constants.LAYOUT_DISPLAY_LOOKUP[constants.CATEGORY_LAYOUT].title())
             self.assertEqual(category_cells[2].text, u'Created')
 
             subcategory_row = check_rows.pop()
             subcategory_cells = subcategory_row.find_all('td')
             self.assertIsNotNone(subcategory_cells[0].find('a'))
             self.assertEqual(subcategory_cells[0].text, subcategory_name)
-            self.assertEqual(subcategory_cells[1].text, u'Category')
+            self.assertEqual(subcategory_cells[1].text, constants.LAYOUT_DISPLAY_LOOKUP[constants.CATEGORY_LAYOUT].title())
             self.assertEqual(subcategory_cells[2].text, u'Created')
 
             article_1_row = check_rows.pop()
             article_1_cells = article_1_row.find_all('td')
             self.assertIsNotNone(article_1_cells[0].find('a'))
             self.assertEqual(article_1_cells[0].text, article_names[0])
-            self.assertEqual(article_1_cells[1].text, u'Article')
+            self.assertEqual(article_1_cells[1].text, constants.LAYOUT_DISPLAY_LOOKUP[constants.ARTICLE_LAYOUT].title())
             self.assertEqual(article_1_cells[2].text, u'Created, Edited')
 
             article_2_row = check_rows.pop()
             article_2_cells = article_2_row.find_all('td')
             self.assertIsNone(article_2_cells[0].find('a'))
             self.assertEqual(article_2_cells[0].text, article_names[1])
-            self.assertEqual(article_2_cells[1].text, u'Article')
+            self.assertEqual(article_2_cells[1].text, constants.LAYOUT_DISPLAY_LOOKUP[constants.ARTICLE_LAYOUT].title())
             self.assertEqual(article_2_cells[2].text, u'Created, Deleted')
 
             # only the header row's left
