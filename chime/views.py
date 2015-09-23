@@ -626,8 +626,13 @@ def branch_save(branch_name, path):
         new_path = calculate_new_slug(path, request.form['url-slug'])
         
         if new_path:
-            user_task.move(path, new_path)
-            end_path = new_path
+            try:
+                user_task.move(path, new_path)
+            except ValueError as e:
+                e_message, e_type = e.args[0], e.args[1] if len(e.args) > 1 else None
+                flash(e_message, e_type)
+            else:
+                end_path = new_path
     
     task_id = branch_name2path(branch_var2name(branch_name))
 

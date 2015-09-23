@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from os.path import join, exists, dirname
+from os.path import join, exists, dirname, relpath
 from os import environ, makedirs
 from tempfile import mkdtemp
 
@@ -67,6 +67,17 @@ class UserTask():
         
         dir_path = join(self.repo.working_dir, dirname(new_path))
         
+        #
+        # Make sure we're not trying to move a directory inside itself.
+        # This behavior is pretty old, and it's unclear if we want to
+        # keep it but for now we just wants the existings test to pass.
+        # 
+        old_dirname, new_dirname = dirname(old_path), dirname(new_path)
+        
+        if old_dirname:
+            if not relpath(new_dirname, old_dirname).startswith('..'):
+                raise ValueError(u'I cannot move a directory inside itself!', u'warning')
+
         if not exists(dir_path):
             makedirs(dir_path)
         
