@@ -683,7 +683,7 @@ def get_relative_date(repo, file_path):
     '''
     return repo.git.log('-1', '--format=%ad', '--date=relative', '--', file_path)
 
-def make_delete_display_commit_message(repo, request_path):
+def make_delete_display_commit_message(repo, working_branch_name, request_path):
     ''' Build a commit message about file deletion for display in the activity history
     '''
     # construct the commit message
@@ -714,12 +714,14 @@ def make_delete_display_commit_message(repo, request_path):
     commit_message = commit_message + u' was deleted'
 
     # alter targeted_files and dump it to the message body as json
-    altered_files = []
+    action_descriptions = []
     for file_description in targeted_files:
         del file_description['is_root']
         file_description['action'] = u'delete'
-        altered_files.append(file_description)
-    commit_message = commit_message + u'\n\n' + json.dumps(altered_files, ensure_ascii=False)
+        action_descriptions.append(file_description)
+    branch_name = working_branch_name if working_branch_name else repo.active_branch.name
+    message_body = dict(branch_name=branch_name, actions=action_descriptions)
+    commit_message = commit_message + u'\n\n' + json.dumps(message_body, ensure_ascii=False)
 
     return commit_message
 
@@ -1077,7 +1079,7 @@ def render_edit_view(repo, branch_name, path, file):
     kwargs.update(analytics_dict)
     return render_template('article-edit.html', **kwargs)
 
-def add_article_or_category(repo, dir_path, request_path, create_what):
+def add_article_or_category(repo, working_branch_name, dir_path, request_path, create_what):
     ''' Add an article or category
     '''
     if create_what not in (constants.ARTICLE_LAYOUT, constants.CATEGORY_LAYOUT):
@@ -1104,11 +1106,13 @@ def add_article_or_category(repo, dir_path, request_path, create_what):
 
     file_path = create_new_page(clone=repo, dir_path=dir_path, request_path=name, front=create_front, body=u'')
     action_descriptions = [{'action': u'create', 'title': display_name, 'display_type': create_what, 'file_path': file_path}]
-    commit_message = u'The "{}" {} was created\n\n{}'.format(display_name, display_what, json.dumps(action_descriptions, ensure_ascii=False))
+    branch_name = working_branch_name if working_branch_name else repo.active_branch.name
+    message_body = dict(branch_name=branch_name, actions=action_descriptions)
+    commit_message = u'The "{}" {} was created\n\n{}'.format(display_name, display_what, json.dumps(message_body, ensure_ascii=False))
 
     return commit_message, file_path, redirect_path, True
 
-def delete_page(repo, browse_path, target_path):
+def delete_page(repo, working_branch_name, browse_path, target_path):
     ''' Delete a category or article.
 
         browse_path is where you are when issuing the deletion request; it's
@@ -1118,7 +1122,7 @@ def delete_page(repo, browse_path, target_path):
         target_path is the location of the object that needs to be deleted.
     '''
     # construct the commit message
-    commit_message = make_delete_display_commit_message(repo, target_path)
+    commit_message = make_delete_display_commit_message(repo, working_branch_name, target_path)
 
     # delete the file(s)
     deleted_file_paths, do_save = delete_file(repo, target_path)
@@ -1256,7 +1260,9 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
     display_name = new_values.get('en-title')
     display_type = new_values.get('layout')
     action_descriptions = [{'action': u'edit', 'title': display_name, 'display_type': display_type, 'file_path': file_path}]
-    commit_message = u'The "{}" {} was edited\n\n{}'.format(display_name, display_type, json.dumps(action_descriptions, ensure_ascii=False))
+    branch_name = working_branch_name if working_branch_name else repo.active_branch.name
+    message_body = dict(branch_name=branch_name, actions=action_descriptions)
+    commit_message = u'The "{}" {} was edited\n\n{}'.format(display_name, display_type, json.dumps(message_body, ensure_ascii=False))
     c2 = save_local_working_file(repo, file_path, commit_message)
 
     if possible_conflict:

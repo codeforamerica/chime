@@ -367,7 +367,7 @@ def branch_modify_category(branch_name, path=u''):
     # delete the passed category
     if 'delete' in request.form:
         # delete the page
-        redirect_path, do_save, commit_message = view_functions.delete_page(repo=repo, browse_path=path, target_path=path)
+        redirect_path, do_save, commit_message = view_functions.delete_page(repo=repo, working_branch_name=branch_name, browse_path=path, target_path=path)
         # save and redirect
         if do_save:
             master_name = current_app.config['default_branch']
@@ -458,7 +458,7 @@ def branch_edit_file(branch_name, path=None):
                 flash(u'Please enter a name to create {}!'.format(describe_what), u'warning')
             return redirect('/tree/{}/edit/{}'.format(safe_branch, file_path), code=303)
 
-        add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(repo, create_path, request.form['request_path'], create_what)
+        add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(repo, branch_name, create_path, request.form['request_path'], create_what)
         if do_save:
             commit = repo.commit()
             commit_message = add_message
@@ -468,7 +468,7 @@ def branch_edit_file(branch_name, path=None):
             flash(add_message, u'notice')
 
     elif action == 'delete' and 'request_path' in request.form:
-        redirect_path, do_save, commit_message = view_functions.delete_page(repo=repo, browse_path=path, target_path=request.form['request_path'])
+        redirect_path, do_save, commit_message = view_functions.delete_page(repo=repo, working_branch_name=branch_name, browse_path=path, target_path=request.form['request_path'])
         if do_save:
             # flash the human-readable part of the commit message
             flash(u'{}! Remember to submit this change for feedback when you\'re ready to go live.'.format(commit_message.split('\n')[0]), u'notice')

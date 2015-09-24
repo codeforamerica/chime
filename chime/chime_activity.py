@@ -132,7 +132,9 @@ class ChimeActivity:
                 continue
 
             # step through the changed files
-            for file_change in commit_body:
+            # NOTE: don't break if this is an old-style commit message
+            actions = commit_body['actions'] if 'actions' in commit_body else commit_body
+            for file_change in actions:
                 # the passed title or the filename if no title is there
                 title = file_change['title'] or file_change['file_path'].split('/')[-1]
                 # the passed display type or Unknown if no type is there
