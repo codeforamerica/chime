@@ -77,9 +77,9 @@ class TestFirst(TestCase):
         with get_usertask(Frances, "task-xyz", self.origin_dirname) as usertask:
             self.assertEqual(usertask.read('parking.md'), '---\nnew stuff')
             
-            email, date = usertask.ref_info(usertask.commit_sha)
-            self.assertEqual(email, Erica.email)
-            self.assertTrue('ago' in date)
+            info = usertask.ref_info()
+            self.assertEqual(info['published_by'], Erica.email)
+            self.assertTrue('ago' in info['published_date'])
 
     def testCommitNewFile(self):
         with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:
@@ -89,9 +89,9 @@ class TestFirst(TestCase):
         with get_usertask(Frances, "task-xyz", self.origin_dirname) as usertask:
             self.assertEqual(usertask.read('jobs.md'), '---\nnew stuff')
             
-            email, date = usertask.ref_info(usertask.commit_sha)
-            self.assertEqual(email, Erica.email)
-            self.assertTrue('ago' in date)
+            info = usertask.ref_info()
+            self.assertEqual(info['published_by'], Erica.email)
+            self.assertTrue('ago' in info['published_date'])
     
     def testMoveFile(self):
         with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:

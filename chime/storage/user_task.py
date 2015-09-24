@@ -135,10 +135,13 @@ class UserTask():
         # Re-point self.commit_sha to the new one.
         self.commit_sha = self._get_task_sha(task_id)
     
-    def ref_info(self, ref):
-        ''' Return author email and a relative date for a given reference.
+    def ref_info(self, ref=None):
+        ''' Return dict with author email and a relative date for a given reference.
         '''
-        if ref in self.repo.tags:
+        if ref is None:
+            ref = self.commit_sha
+        
+        elif ref in self.repo.tags:
             # De-reference the tag. Sometimes showing a tag shows more than
             # just the commit, prefixing output with "tag <tag name>" if
             # there are notes attached.
@@ -147,7 +150,7 @@ class UserTask():
         raw = self.repo.git.show('--format=%ae %ad', '--date=relative', ref)
         email, date = raw.split('\n')[0].split(' ', 1)
 
-        return email, date
+        return dict(published_date=date, published_by=email)
     
     def _set_author_env(self):
         '''
