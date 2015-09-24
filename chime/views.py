@@ -639,7 +639,8 @@ def branch_save(branch_name, path):
     try:
         title_layout = request.form.get('en-title'), request.form.get('layout')
         message = format_commit_message(end_path, *title_layout)
-        user_task.commit(task_id, message)
+        user_task.commit(message)
+        user_task.publish(task_id)
     except repo_functions.MergeConflict as e:
         message = MESSAGE_PAGE_EDITED.format(published_date='YYYY-MM-DD', published_by=e.remote_commit.author.email)
         published_date = user_task.repo.git.show('--format=%ad', '--date=relative', e.remote_commit.hexsha).split('\n')[0]

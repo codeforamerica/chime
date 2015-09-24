@@ -19,6 +19,7 @@ class UserTask():
     actor = None
     commit_sha = None
     committed = False
+    published = False
 
     def __init__(self, actor, start_point, origin_dirname):
         '''
@@ -56,14 +57,14 @@ class UserTask():
             return file.read()
 
     def write(self, filename, content):
-        assert not self.committed
+        assert not (self.committed or self.published)
     
         with self._open(filename, 'w') as file:
             file.write(content)
         self.repo.git.add(filename)
 
     def move(self, old_path, new_path):
-        assert not self.committed
+        assert not (self.committed or self.published)
         
         dir_path = join(self.repo.working_dir, dirname(new_path))
         
@@ -83,14 +84,18 @@ class UserTask():
         
         self.repo.git.mv(old_path, new_path)
 
-    def commit(self, task_id, message):
-        assert not self.committed
+    def commit(self, message):
+        assert not (self.committed or self.published)
         self.committed = True
     
         # Commit to local master, push to origin task ID.
         self._set_author_env()
         self.repo.git.commit(m=message, a=True)
-        
+    
+    def publish(self, task_id):
+        assert self.committed and not self.published
+        self.published = True
+
         # See if we are behind the origin branch, for example because we are
         # using the back button for editing, and starting from an older commit.
         task_sha = self._get_task_sha(task_id)

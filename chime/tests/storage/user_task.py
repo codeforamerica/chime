@@ -63,28 +63,32 @@ class TestFirst(TestCase):
     def testCommitWrite(self):
         with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:
             usertask.write('parking.md', "---\nnew stuff")
-            usertask.commit("task-xyz", 'I wrote new things')
+            usertask.commit('I wrote new things')
+            usertask.publish("task-xyz")
         with get_usertask(Frances, "task-xyz", self.origin_dirname) as usertask:
             self.assertEqual(usertask.read('parking.md'), '---\nnew stuff')
 
     def testCommitNewFile(self):
         with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:
             usertask.write('jobs.md', "---\nnew stuff")
-            usertask.commit("task-xyz", 'I wrote new things')
+            usertask.commit('I wrote new things')
+            usertask.publish("task-xyz")
         with get_usertask(Frances, "task-xyz", self.origin_dirname) as usertask:
             self.assertEqual(usertask.read('jobs.md'), '---\nnew stuff')
     
     def testMoveFile(self):
         with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:
             usertask.move('parking.md', 'carholing.md')
-            usertask.commit("task-xyz", 'I moved a thing')
+            usertask.commit('I moved a thing')
+            usertask.publish("task-xyz")
         with get_usertask(Frances, "task-xyz", self.origin_dirname) as usertask:
             self.assertEqual(usertask.read('carholing.md'), '---\nold stuff')
 
     def testMoveFileFurther(self):
         with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:
             usertask.move('parking.md', 'carholing/carholes/parking.md')
-            usertask.commit("task-xyz", 'I moved a thing')
+            usertask.commit('I moved a thing')
+            usertask.publish("task-xyz")
         with get_usertask(Frances, "task-xyz", self.origin_dirname) as usertask:
             self.assertEqual(usertask.read('carholing/carholes/parking.md'), '---\nold stuff')
 
@@ -94,39 +98,46 @@ class TestFirst(TestCase):
         with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:
             start_sha = usertask.commit_sha
             usertask.write('jobs.md', "---\nnew stuff")
-            usertask.commit("task-xyz", 'I wrote new things')
+            usertask.commit('I wrote new things')
+            usertask.publish("task-xyz")
 
         with get_usertask(Erica, start_sha, self.origin_dirname) as usertask:
             usertask.write('jobs.md', "---\nnew stuff")
-            usertask.commit("task-xyz", 'I wrote the same things')
+            usertask.commit('I wrote the same things')
+            usertask.publish("task-xyz")
 
     def testResubmitFileEdits(self):
         ''' Simulate a single user's preview, back-button, and conflicting re-save.
         '''
         with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:
             usertask.write('jobs.md', "---\nnew stuff\n")
-            usertask.commit("task-xyz", 'I wrote new things')
+            usertask.commit('I wrote new things')
+            usertask.publish("task-xyz")
             start_sha = usertask.commit_sha
 
         with get_usertask(Erica, start_sha, self.origin_dirname) as usertask:
             usertask.write('jobs.md', "---\nnew stuff\n\nmore stuff\n")
-            usertask.commit("task-xyz", 'I wrote more things')
+            usertask.commit('I wrote more things')
+            usertask.publish("task-xyz")
 
         with get_usertask(Erica, start_sha, self.origin_dirname) as usertask:
             usertask.write('jobs.md', "---\nnew stuff\n\nmore stuff\n\nfinal stuff\n")
-            usertask.commit("task-xyz", 'I wrote final things')
+            usertask.commit('I wrote final things')
+            usertask.publish("task-xyz")
 
     def testResubmitFileEditsWithInterloper(self):
         ''' Simulate two users' previews, back-buttons, and conflicting re-saves.
         '''
         with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:
             usertask.write('jobs.md', "---\nnew stuff\n")
-            usertask.commit("task-xyz", 'I wrote new things')
+            usertask.commit('I wrote new things')
+            usertask.publish("task-xyz")
             start_sha = usertask.commit_sha
 
         with get_usertask(Frances, start_sha, self.origin_dirname) as usertask:
             usertask.write('jobs.md', "---\nnew stuff\n\nmore stuff\n")
-            usertask.commit("task-xyz", 'I wrote more things')
+            usertask.commit('I wrote more things')
+            usertask.publish("task-xyz")
 
         with get_usertask(Erica, start_sha, self.origin_dirname) as usertask:
             usertask.write('jobs.md', "---\nnew stuff\n\nmore stuff\n\nfinal stuff\n")
@@ -134,7 +145,8 @@ class TestFirst(TestCase):
             # Don't let Erica possibly clobber Frances's changes.
             # Kick this conflict upstairs.
             with self.assertRaises(MergeConflict) as conflict:
-                usertask.commit("task-xyz", 'I wrote final things')
+                usertask.commit('I wrote final things')
+                usertask.publish("task-xyz")
             
             self.assertEqual(conflict.exception.local_commit.author, Erica)
             self.assertEqual(conflict.exception.remote_commit.author, Frances)
@@ -144,36 +156,42 @@ class TestFirst(TestCase):
         '''
         with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:
             usertask.write('jobs.md', "---\nnew stuff\n")
-            usertask.commit("task-xyz", 'I wrote new things')
+            usertask.commit('I wrote new things')
+            usertask.publish("task-xyz")
             start_sha = usertask.commit_sha
 
         with get_usertask(Erica, start_sha, self.origin_dirname) as usertask1, \
              get_usertask(Erica, start_sha, self.origin_dirname) as usertask2:
             usertask1.write('jobs.md', "---\nnew stuff\n\nmore stuff\n")
-            usertask1.commit("task-xyz", 'I wrote more things')
+            usertask1.commit('I wrote more things')
+            usertask1.publish("task-xyz")
 
             usertask2.write('jobs.md', "---\nnew stuff\n\nother stuff\n")
-            usertask2.commit("task-xyz", 'I wrote different things')
+            usertask2.commit('I wrote different things')
+            usertask2.publish("task-xyz")
 
     def testInterleavedFileEditsWithInterloper(self):
         ''' Simulate a two users editing in two browser windows.
         '''
         with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:
             usertask.write('jobs.md', "---\nnew stuff\n")
-            usertask.commit("task-xyz", 'I wrote new things')
+            usertask.commit('I wrote new things')
+            usertask.publish("task-xyz")
             start_sha = usertask.commit_sha
 
         with get_usertask(Frances, start_sha, self.origin_dirname) as usertaskF, \
              get_usertask(Erica, start_sha, self.origin_dirname) as usertaskE:
             usertaskF.write('jobs.md', "---\nnew stuff\n\nmore stuff\n")
-            usertaskF.commit("task-xyz", 'I wrote more things')
+            usertaskF.commit('I wrote more things')
+            usertaskF.publish("task-xyz")
 
             usertaskE.write('jobs.md', "---\nnew stuff\n\nother stuff\n")
 
             # Don't let Erica possibly clobber Frances's changes.
             # Kick this conflict upstairs.
             with self.assertRaises(MergeConflict) as conflict:
-                usertaskE.commit("task-xyz", 'I wrote different things')
+                usertaskE.commit('I wrote different things')
+                usertaskE.publish("task-xyz")
             
             self.assertEqual(conflict.exception.local_commit.author, Erica)
             self.assertEqual(conflict.exception.remote_commit.author, Frances)
