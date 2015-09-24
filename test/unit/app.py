@@ -1008,9 +1008,8 @@ class TestApp (TestCase):
         branch1_name = branch1.name
         branch1.checkout()
 
-        # verify that the most recent commit on the new branch is for the task metadata file
-        # by checking for the name of the file in the commit message
-        self.assertTrue(repo_functions.TASK_METADATA_FILENAME in branch1.commit.message)
+        # verify that the most recent commit on the new branch is for starting the activity
+        self.assertTrue(repo_functions.ACTIVITY_CREATED_MESSAGE in branch1.commit.message)
 
         # validate the existence of the task metadata file
         self.assertTrue(repo_functions.verify_file_exists_in_branch(self.clone1, repo_functions.TASK_METADATA_FILENAME, branch1_name))

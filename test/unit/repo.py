@@ -787,7 +787,7 @@ class TestRepo (TestCase):
 
         # If goner.md is still around, then the branch wasn't fully abandoned.
         self.assertFalse(exists(join(self.clone2.working_dir, 'goner.md')))
-        self.assertTrue(self.clone2.commit().message.startswith('Abandoned work from'))
+        self.assertTrue(self.clone2.commit().message.startswith(u'The "{}" {}'.format(task_description, repo_functions.ACTIVITY_DELETED_MESSAGE)))
 
     # in TestRepo
     def test_peer_review(self):
@@ -1153,7 +1153,14 @@ class TestRepo (TestCase):
         # check the creation of the activity
         check_item = activity_history.pop()
         self.assertEqual(u'The "{}" activity was started'.format(task_description), check_item['commit_subject'])
-        self.assertEqual(u'Created task metadata file "{}"\nSet author_email to {}\nSet task_description to {}'.format(repo_functions.TASK_METADATA_FILENAME, fake_author_email, task_description), check_item['commit_body'])
+        try:
+            check_task_metadata = json.loads(check_item['commit_body'])
+        except ValueError:
+            raise Exception(u'No valid json in commit body.')
+
+        self.assertEqual(check_task_metadata['author_email'], fake_author_email)
+        self.assertEqual(check_task_metadata['task_description'], task_description)
+        self.assertEqual(check_task_metadata['branch_name'], working_branch.name)
         self.assertEqual(constants.COMMIT_TYPE_ACTIVITY_UPDATE, check_item['commit_type'])
 
         # check the delete
@@ -1280,9 +1287,8 @@ class TestRepo (TestCase):
         branch1_name = branch1.name
         branch1.checkout()
 
-        # verify that the most recent commit on the new branch is for the task metadata file
-        # by checking for the name of the file in the commit message
-        self.assertTrue(repo_functions.TASK_METADATA_FILENAME in branch1.commit.message)
+        # verify that the most recent commit on the new branch is for starting the activity
+        self.assertTrue(repo_functions.ACTIVITY_CREATED_MESSAGE in branch1.commit.message)
 
         # validate the existence of the task metadata file
         task_metadata = repo_functions.get_task_metadata_for_branch(self.clone1, branch1_name)
@@ -1303,9 +1309,8 @@ class TestRepo (TestCase):
         branch1_name = branch1.name
         branch1.checkout()
 
-        # verify that the most recent commit on the new branch is for the task metadata file
-        # by checking for the name of the file in the commit message
-        self.assertTrue(repo_functions.TASK_METADATA_FILENAME in branch1.commit.message)
+        # verify that the most recent commit on the new branch is for starting the activity
+        self.assertTrue(repo_functions.ACTIVITY_CREATED_MESSAGE in branch1.commit.message)
 
         # validate the existence of the task metadata file
         task_metadata = repo_functions.get_task_metadata_for_branch(self.clone1, branch1_name)
@@ -1326,9 +1331,8 @@ class TestRepo (TestCase):
         branch1_name = branch1.name
         branch1.checkout()
 
-        # verify that the most recent commit on the new branch is for the task metadata file
-        # by checking for the name of the file in the commit message
-        self.assertTrue(repo_functions.TASK_METADATA_FILENAME in branch1.commit.message)
+        # verify that the most recent commit on the new branch is for starting the activity
+        self.assertTrue(repo_functions.ACTIVITY_CREATED_MESSAGE in branch1.commit.message)
 
         # validate the existence of the task metadata file
         task_metadata = repo_functions.get_task_metadata_for_branch(self.clone1, branch1_name)
