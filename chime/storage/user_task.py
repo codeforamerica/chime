@@ -2,6 +2,8 @@ from contextlib import contextmanager
 from os.path import join, exists, dirname, relpath, isdir, realpath
 from os import environ, makedirs
 from tempfile import mkdtemp
+from time import sleep, time
+import fcntl, errno
 
 from git import Repo, Actor, GitCommandError
 from slugify import slugify
@@ -48,6 +50,8 @@ class UserTask():
             # Clone origin to local checkout.
             self.repo = origin.clone(clone_dirname)
         
+        self._lock()
+        
         # Fetch all branches from origin.
         self.repo.git.fetch('origin')
         
@@ -63,7 +67,28 @@ class UserTask():
     
     def __repr__(self):
         return '<UserTask {} in {}>'.format(self.actor.email, self.repo.working_dir)
+    
+    def _lock(self):
+        self._lockfile = open('{}.lock'.format(self.repo.working_dir), 'a')
+        timeout = time() + 1.
+        
+        while True:
+            try:
+                fcntl.flock(self._lockfile, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                # Lock acquired!
+                return
+            except IOError, ex:
+                if ex.errno != errno.EAGAIN:  # Resource temporarily unavailable
+                    raise
+                elif time() > timeout:
+                    # Exceeded the timeout.
+                    raise
 
+            sleep(.01)
+    
+    def _unlock(self):
+        fcntl.flock(self._lockfile, fcntl.LOCK_UN)
+    
     def _open(self, path, *args, **kwargs):
         return open(join(self.repo.working_dir, path), *args, **kwargs)
 
@@ -214,7 +239,7 @@ class UserTask():
 
     def cleanup(self):
         # once we have locking, we will unlock here
-        pass
+        self._unlock()
 
     def __del__(self):
         self.cleanup()

@@ -178,15 +178,11 @@ class TestFirst(TestCase):
             usertask.publish("task-xyz")
             start_sha = usertask.commit_sha
 
-        with get_usertask(Erica, start_sha, *self.get_usertask_args) as usertask1, \
-             get_usertask(Erica, start_sha, *self.get_usertask_args) as usertask2:
-            usertask1.write('jobs.md', "---\nnew stuff\n\nmore stuff\n")
-            usertask1.commit('I wrote more things')
-            usertask1.publish("task-xyz")
-
-            usertask2.write('jobs.md', "---\nnew stuff\n\nother stuff\n")
-            usertask2.commit('I wrote different things')
-            usertask2.publish("task-xyz")
+        with get_usertask(Erica, start_sha, *self.get_usertask_args) as usertask1:
+            # Lock contention will bubble up as an IOError.
+            with self.assertRaises(IOError) as error:
+                with get_usertask(Erica, start_sha, *self.get_usertask_args) as usertask2:
+                    pass
 
     def testInterleavedFileEditsWithInterloper(self):
         ''' Simulate a two users editing in two browser windows.
