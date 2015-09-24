@@ -16,7 +16,7 @@
 	display: none;
 	&.is-open {
 		display: block;
-		display: flex;
+		@include display(flex);
 		margin-top: 0;
 		opacity: 1;
 	}

@@ -68,7 +68,7 @@
     </div>
     {% if activity.review_authorized and activity.review_state == config.REVIEW_STATE_EDITED %}
     <label for="activity-name">Does the activity name need updating?</label>
-    <input type="text" class="review-modal--name-input" value="{{activity.task_description}}"/>
+    <input type="text" class="review-modal--name-input" name="task_description" value="{{activity.task_description}}"/>
     <label for="comment_text">Leave a comment to let the reviewer know what you did.</label>
     <textarea class="review-modal__description-input" name="comment_text" id="" placeholder="Updated the parking ticket page to be more action oriented."></textarea>
     {% endif %}

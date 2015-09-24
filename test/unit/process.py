@@ -154,7 +154,7 @@ class TestProcess (TestCase):
             erica.edit_article('So, So Awesome', 'It was the best of times.')
             
             # Ask for feedback
-            erica.follow_link('/tree/{}'.format(branch_name))
+            erica.follow_link('/tree/{}/'.format(branch_name))
             erica.request_feedback('Is this okay?')
             
             #
@@ -193,7 +193,7 @@ class TestProcess (TestCase):
             # Erica creates a new category and asks for feedback.
             erica.follow_link('/tree/{}/edit/other/'.format(erica_branchname))
             erica.add_category('Dollars')
-            erica.follow_link('/tree/{}'.format(erica_branchname))
+            erica.follow_link('/tree/{}/'.format(erica_branchname))
             erica.request_feedback('Is this okay?')
             
             # Frances starts a new task, "Bobbing for Apples".
@@ -248,7 +248,7 @@ class TestProcess (TestCase):
             article_path = erica.path
 
             # Ask for feedback
-            erica.follow_link(href='/tree/{}'.format(branch_name))
+            erica.follow_link(href='/tree/{}/'.format(branch_name))
             erica.request_feedback(feedback_str='Is this okay?')
 
             #
@@ -300,7 +300,7 @@ class TestProcess (TestCase):
             erica.edit_article(title_str='So, So Awesome', body_str='It was the best of times.')
 
             # Ask for feedback
-            erica.follow_link(href='/tree/{}'.format(e_branch_name))
+            erica.follow_link(href='/tree/{}/'.format(e_branch_name))
             erica.request_feedback(feedback_str='Is this okay?')
 
             #
@@ -320,7 +320,7 @@ class TestProcess (TestCase):
             self.assertIsNotNone(frances.soup.find(text=repo_functions.MERGE_CONFLICT_WARNING_FLASH_MESSAGE),
                                  'Should see a warning about the conflict above the article.')
 
-            frances.follow_link(href='/tree/{}'.format(f_branch_name))
+            frances.follow_link(href='/tree/{}/'.format(f_branch_name))
             self.assertIsNotNone(frances.soup.find(text=repo_functions.MERGE_CONFLICT_WARNING_FLASH_MESSAGE),
                                  'Should see a warning about the conflict in the activity history.')
 
@@ -380,7 +380,7 @@ class TestProcess (TestCase):
             erica.edit_article(title_str='So, So Awesome', body_str='It was the best of times.')
 
             # Ask for feedback
-            erica.follow_link(href='/tree/{}'.format(e_branch_name))
+            erica.follow_link(href='/tree/{}/'.format(e_branch_name))
             erica.request_feedback(feedback_str='Is this okay?')
 
             #
@@ -400,7 +400,7 @@ class TestProcess (TestCase):
             self.assertIsNone(frances.soup.find(text=repo_functions.UPSTREAM_EDIT_INFO_FLASH_MESSAGE),
                               'Should not see a warning about the conflict in the activity history.')
 
-            frances.follow_link(href='/tree/{}'.format(f_branch_name))
+            frances.follow_link(href='/tree/{}/'.format(f_branch_name))
             self.assertIsNone(frances.soup.find(text=repo_functions.UPSTREAM_EDIT_INFO_FLASH_MESSAGE),
                               'Should not see a warning about the conflict in the activity history.')
 
@@ -476,7 +476,7 @@ class TestProcess (TestCase):
             erica.edit_article(title_str='Dingos', body_str='Canis Lupus Dingo')
 
             # Ask for feedback
-            erica.follow_link(href='/tree/{}'.format(erica_branch_name))
+            erica.follow_link(href='/tree/{}/'.format(erica_branch_name))
             erica.request_feedback(feedback_str='Is this okay?')
 
             #
@@ -499,7 +499,7 @@ class TestProcess (TestCase):
             frances.edit_article(title_str='Dingos', body_str='Apex Predator')
 
             # Ask for feedback
-            frances.follow_link(href='/tree/{}'.format(frances_branch_name))
+            frances.follow_link(href='/tree/{}/'.format(frances_branch_name))
             frances.request_feedback(feedback_str='Is this okay?')
             frances_overview_path = frances.path
 
@@ -555,7 +555,7 @@ class TestProcess (TestCase):
             erica.add_category(category_name=category_name)
 
             # Ask for feedback
-            erica.follow_link(href='/tree/{}'.format(erica_branch_name))
+            erica.follow_link(href='/tree/{}/'.format(erica_branch_name))
             erica.request_feedback(feedback_str='Is this okay?')
 
             #
@@ -608,7 +608,7 @@ class TestProcess (TestCase):
             erica.add_category(category_name=category_name)
 
             # Ask for feedback
-            erica.follow_link(href='/tree/{}'.format(erica_branch_name))
+            erica.follow_link(href='/tree/{}/'.format(erica_branch_name))
             erica.request_feedback(feedback_str='Is this okay?')
 
             #
@@ -675,7 +675,7 @@ class TestProcess (TestCase):
             erica_article_path = erica.path
 
             # Ask for feedback
-            erica.follow_link(href='/tree/{}'.format(erica_branch_name))
+            erica.follow_link(href='/tree/{}/'.format(erica_branch_name))
             erica.request_feedback(feedback_str='Is this okay?')
 
             # verify that the branch exists locally and remotely
@@ -906,8 +906,8 @@ class TestProcess (TestCase):
             erica.open_link(url=subcategory_path)
 
             # the drop-down comment form is there
-            dropdown_form = erica.soup.find(lambda tag: bool(tag.name == 'div' and 'dropdown__popup' in tag.get('class'))).find('form')
-            self.assertIsNotNone(dropdown_form)
+            review_modal = erica.soup.find(lambda tag: bool(tag.name == 'form' and 'review-modal' in tag.get('class')))
+            self.assertIsNotNone(review_modal)
 
             # the add new topic, subtopic, and article fields is there
             self.assertIsNotNone(erica.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add topic')))
@@ -989,8 +989,8 @@ class TestProcess (TestCase):
             erica.open_link(url=subcategory_path)
 
             # the drop-down comment form isn't there
-            dropdown_form = erica.soup.find(lambda tag: bool(tag.name == 'div' and 'dropdown__popup' in tag.get('class'))).find('form')
-            self.assertIsNone(dropdown_form)
+            review_modal = erica.soup.find(lambda tag: bool(tag.name == 'form' and 'review-modal' in tag.get('class')))
+            self.assertIsNone(review_modal)
 
             # the add new topic, subtopic, and article fields aren't there
             self.assertIsNone(erica.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('placeholder') == 'Add topic')))

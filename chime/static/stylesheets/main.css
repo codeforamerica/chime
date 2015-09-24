@@ -1424,6 +1424,12 @@ input[type="submit"]:disabled:hover {
 /* line 17, ../sass/components/_modal.scss */
 .modal-container.is-open {
   display: block;
+  display: -webkit-box;
+  display: -moz-box;
+  display: box;
+  display: -webkit-flex;
+  display: -moz-flex;
+  display: -ms-flexbox;
   display: flex;
   margin-top: 0;
   opacity: 1;

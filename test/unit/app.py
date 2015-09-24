@@ -2011,10 +2011,7 @@ class TestApp (TestCase):
             branch_name = erica.get_branch_name()
 
             # Load the activity overview page
-            erica.follow_link(href='/tree/{}'.format(branch_name))
-            # there shouldn't be a summary yet
-            summary_div = erica.soup.find("div", class_="activity-summary")
-            self.assertIsNone(summary_div)
+            erica.follow_link(href='/tree/{}/'.format(branch_name))
 
             # Load the "other" folder
             erica.open_link(url='/tree/{}/edit/other/'.format(branch_name))
@@ -2043,37 +2040,33 @@ class TestApp (TestCase):
             self.assertIsNotNone(summary_div)
             # it's right about what's changed
             self.assertIsNotNone(summary_div.find(lambda tag: bool(tag.name == 'p' and '2 articles and 2 topics' in tag.text)))
-            # grab all the table rows
-            check_rows = summary_div.find_all('tr')
+            # grab all the list items
+            check_rows = summary_div.find_all('li')
 
             # make sure they match what we did above
             category_row = check_rows.pop()
-            category_cells = category_row.find_all('td')
-            self.assertIsNotNone(category_cells[0].find('a'))
-            self.assertEqual(category_cells[0].text, category_name)
-            self.assertEqual(category_cells[1].text, u'Category')
-            self.assertEqual(category_cells[2].text, u'Created')
+            self.assertIsNotNone(category_row.find('a', 'activity-change__link'))
+            self.assertEqual(category_row.find('a', 'activity-change__filename').text, category_name)
+            self.assertEqual(category_row.find('a', 'activity-change__filetype').text, u'Category')
+            self.assertEqual(category_row.find('a', 'activity-change__changes').text, u'Created')
 
             subcategory_row = check_rows.pop()
-            subcategory_cells = subcategory_row.find_all('td')
             self.assertIsNotNone(subcategory_cells[0].find('a'))
-            self.assertEqual(subcategory_cells[0].text, subcategory_name)
-            self.assertEqual(subcategory_cells[1].text, u'Category')
-            self.assertEqual(subcategory_cells[2].text, u'Created')
+            self.assertEqual(subcategory_row.find('a', 'activity-change__filename').text, subcategory_name)
+            self.assertEqual(subcategory_row.find('a', 'activity-change__filetype').text, u'Category')
+            self.assertEqual(subcategory_row.find('a', 'activity-change__changes').text, u'Created')
 
             article_1_row = check_rows.pop()
-            article_1_cells = article_1_row.find_all('td')
-            self.assertIsNotNone(article_1_cells[0].find('a'))
-            self.assertEqual(article_1_cells[0].text, article_names[0])
-            self.assertEqual(article_1_cells[1].text, u'Article')
-            self.assertEqual(article_1_cells[2].text, u'Created, Edited')
+            self.assertIsNotNone(article_1_row.find('a', 'activity-change__link'))
+            self.assertEqual(article_1_row.find('a', 'activity-change__filename').text, article_names[0])
+            self.assertEqual(article_1_row.find('a', 'activity-change__filetype').text, u'Article')
+            self.assertEqual(article_1_row.find('a', 'activity-change__changes').text, u'Created, Edited')
 
             article_2_row = check_rows.pop()
-            article_2_cells = article_2_row.find_all('td')
-            self.assertIsNone(article_2_cells[0].find('a'))
-            self.assertEqual(article_2_cells[0].text, article_names[1])
-            self.assertEqual(article_2_cells[1].text, u'Article')
-            self.assertEqual(article_2_cells[2].text, u'Created, Deleted')
+            self.assertIsNone(article_2_row.find('a', 'activity-change__filename').find('a'))
+            self.assertEqual(article_2_row.find('a', 'activity-change__filename').text, article_names[1])
+            self.assertEqual(article_2_row.find('a', 'activity-change__filetype').text, u'Article')
+            self.assertEqual(article_2_row.find('a', 'activity-change__changes').text, u'Created, Deleted')
 
             # only the header row's left
             self.assertEqual(len(check_rows), 1)
@@ -2637,7 +2630,7 @@ class TestApp (TestCase):
             branch_name = erica.quick_activity_setup(*args)
 
             # Ask for feedback
-            erica.follow_link(href='/tree/{}'.format(branch_name))
+            erica.follow_link(href='/tree/{}/'.format(branch_name))
             erica.request_feedback()
 
             #
