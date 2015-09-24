@@ -6,6 +6,7 @@ from tempfile import mkdtemp
 from git import Repo, Actor, GitCommandError
 
 from ..repo_functions import MergeConflict
+from ..constants import WORKING_STATE_PUBLISHED, WORKING_STATE_DELETED
 
 
 @contextmanager
@@ -92,6 +93,23 @@ class UserTask():
         self._set_author_env()
         self.repo.git.commit(m=message, a=True)
     
+    def is_publishable(self, task_id):
+        ''' Return publishable status: True, False, or a working state constant.
+        '''
+        if self.published:
+            return False
+
+        if not self.committed:
+            return False
+        
+        if task_id in self.repo.tags:
+            return WORKING_STATE_PUBLISHED
+
+        if 'origin/{}'.format(task_id) not in self.repo.refs:
+            return WORKING_STATE_DELETED
+
+        return True
+    
     def publish(self, task_id):
         assert self.committed and not self.published
         self.published = True
@@ -116,6 +134,20 @@ class UserTask():
         
         # Re-point self.commit_sha to the new one.
         self.commit_sha = self._get_task_sha(task_id)
+    
+    def ref_info(self, ref):
+        ''' Return author email and a relative date for a given reference.
+        '''
+        if ref in self.repo.tags:
+            # De-reference the tag. Sometimes showing a tag shows more than
+            # just the commit, prefixing output with "tag <tag name>" if
+            # there are notes attached.
+            ref = self.repo.tags[ref].commit.hexsha
+        
+        raw = self.repo.git.show('--format=%ae %ad', '--date=relative', ref)
+        email, date = raw.split('\n')[0].split(' ', 1)
+
+        return email, date
     
     def _set_author_env(self):
         '''

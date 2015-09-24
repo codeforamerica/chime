@@ -60,6 +60,15 @@ class TestFirst(TestCase):
         with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:
             self.assertEqual(usertask.read('parking.md'), '---\nold stuff')
 
+    def testPublishable(self):
+        with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:
+            usertask.write('parking.md', "---\nnew stuff")
+            self.assertIs(usertask.is_publishable("task-xyz"), False)
+            usertask.commit('I wrote new things')
+            self.assertIs(usertask.is_publishable("task-xyz"), True)
+            usertask.publish("task-xyz")
+            self.assertIs(usertask.is_publishable("task-xyz"), False)
+
     def testCommitWrite(self):
         with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:
             usertask.write('parking.md', "---\nnew stuff")
@@ -67,6 +76,10 @@ class TestFirst(TestCase):
             usertask.publish("task-xyz")
         with get_usertask(Frances, "task-xyz", self.origin_dirname) as usertask:
             self.assertEqual(usertask.read('parking.md'), '---\nnew stuff')
+            
+            email, date = usertask.ref_info(usertask.commit_sha)
+            self.assertEqual(email, Erica.email)
+            self.assertTrue('ago' in date)
 
     def testCommitNewFile(self):
         with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:
@@ -75,6 +88,10 @@ class TestFirst(TestCase):
             usertask.publish("task-xyz")
         with get_usertask(Frances, "task-xyz", self.origin_dirname) as usertask:
             self.assertEqual(usertask.read('jobs.md'), '---\nnew stuff')
+            
+            email, date = usertask.ref_info(usertask.commit_sha)
+            self.assertEqual(email, Erica.email)
+            self.assertTrue('ago' in date)
     
     def testMoveFile(self):
         with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:

@@ -31,8 +31,10 @@ from .view_functions import (
     get_preview_asset_response, CONTENT_FILE_EXTENSION, ARTICLE_LAYOUT,
     CATEGORY_LAYOUT, MESSAGE_ACTIVITY_DELETED, publish_commit,
     prep_jekyll_content, calculate_new_slug, MESSAGE_PAGE_EDITED,
-    format_commit_message
+    format_commit_message, MESSAGE_ACTIVITY_PUBLISHED
     )
+
+from .constants import WORKING_STATE_PUBLISHED, WORKING_STATE_DELETED
 
 from .google_api_functions import read_ga_config, write_ga_config, request_new_google_access_and_refresh_tokens, authorize_google, get_google_personal_info, get_google_analytics_properties
 
@@ -640,10 +642,15 @@ def branch_save(branch_name, path):
         title_layout = request.form.get('en-title'), request.form.get('layout')
         message = format_commit_message(end_path, *title_layout)
         user_task.commit(message)
-        user_task.publish(task_id)
+        publishable = user_task.is_publishable(task_id)
+        if publishable is True:
+            user_task.publish(task_id)
+        elif publishable is WORKING_STATE_PUBLISHED:
+            email, date = user_task.ref_info(task_id)
+            flash_only(MESSAGE_ACTIVITY_PUBLISHED.format(published_date=date, published_by=email), u'warning')
     except repo_functions.MergeConflict as e:
-        message = MESSAGE_PAGE_EDITED.format(published_date='YYYY-MM-DD', published_by=e.remote_commit.author.email)
-        published_date = user_task.repo.git.show('--format=%ad', '--date=relative', e.remote_commit.hexsha).split('\n')[0]
+        email, date = user_task.ref_info(e.remote_commit.hexsha)
+        message = MESSAGE_PAGE_EDITED.format(published_date=date, published_by=email)
         flash(message, u'error')
     else:
         message = u'Saved changes to the {} article! Remember to submit this change for feedback when you\'re ready to go live.'.format(request.form['en-title'])
