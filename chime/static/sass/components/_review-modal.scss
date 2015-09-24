@@ -8,15 +8,16 @@
 		}
 	}
 	&--feedback-requested {
-		border-color: $color-blue-300;
-		.review-modal__title {
-			color: $color-blue-300;
-		}
-	}
-	&--edits-endorsed {
 		border-color: $color-green-300;
 		.review-modal__title {
 			color: $color-green-300;
+		}
+	}
+	&--edits-endorsed {
+
+		border-color: $color-blue-300;
+		.review-modal__title {
+			color: $color-blue-300;
 		}
 	}
 

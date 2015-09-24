@@ -51,3 +51,11 @@
 	background-color: transparent;
 	border: 0;
 }
+
+.rename-modal {
+	textarea {
+		font-size: $h4-font-size;
+		resize: none;
+		padding: .5em;
+	}
+}

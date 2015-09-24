@@ -509,6 +509,39 @@ def show_activity_overview(branch_name):
 
     return render_template('activity-overview.html', **kwargs)
 
+@app.route('/tree/<branch_name>/rename', methods=['GET'])
+@log_application_errors
+@login_required
+@lock_on_user
+@synched_checkout_required
+def show_rename_modal(branch_name):
+    branch_name = view_functions.branch_var2name(branch_name)
+    repo = view_functions.get_repo(flask_app=current_app)
+    safe_branch = view_functions.branch_name2path(branch_name)
+
+    if repo_functions.get_conflict(repo, current_app.config['default_branch']):
+        view_functions.flash_unique(repo_functions.MERGE_CONFLICT_WARNING_FLASH_MESSAGE, u'warning')
+
+    # contains 'author_email', 'task_description'
+    activity = repo_functions.get_task_metadata_for_branch(repo, branch_name)
+    activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
+    activity['task_description'] = activity['task_description'] if 'task_description' in activity else u''
+
+    kwargs = view_functions.common_template_args(current_app.config, session)
+
+    languages = load_languages(repo.working_dir)
+
+    app_authorized = False
+    ga_config = read_ga_config(current_app.config['RUNNING_STATE_DIR'])
+    if ga_config.get('access_token'):
+        app_authorized = True
+
+    activity = chime_activity.ChimeActivity(repo=repo, branch_name=safe_branch, default_branch_name=current_app.config['default_branch'], actor_email=session.get('email', None))
+
+    kwargs.update(branch=branch_name, activity=activity, app_authorized=app_authorized, languages=languages, show_rename_modal=True)
+
+    return render_template('activity-overview.html', **kwargs)
+
 @app.route('/tree/<branch_name>/review/', methods=['GET'])
 @log_application_errors
 @login_required

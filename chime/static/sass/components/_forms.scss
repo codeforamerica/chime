@@ -100,7 +100,7 @@ input[type="submit"]:disabled {
 	}
 	.form-one-line__input {
 		@include flex(1);
-
+		margin-bottom: 0;
 		border-top-right-radius: 0;
 		border-bottom-right-radius: 0;
 

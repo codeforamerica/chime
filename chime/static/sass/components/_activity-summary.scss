@@ -17,7 +17,7 @@
 		margin-right: 0;
 	}
 
-	&--new {
+	&--new, &--more {
 		background-color: transparent;
 		border: 2px dotted $color-grey-200;
 		padding: .5em;
@@ -44,7 +44,7 @@
 		box-shadow: $box-shadow-1-hover;
 	}
 
-	.activity-change--new & {
+	.activity-change--new &, .activity-change--more & {
 		top: 50%;
 		bottom: auto;
 		transform: translateY(-50%);
@@ -52,7 +52,9 @@
 		font-weight: 400;
 		cursor: pointer;
 		box-shadow: none;
+		font-size: $base-font-size;
 	}
+
 }
 
 .activity-change__filename {
@@ -60,7 +62,10 @@
 	font-size: $base-font-size;
 	max-height: 4em;
 	overflow: hidden;
-	padding: .5rem;
+	position: absolute;
+	top: .5rem;
+	left: .5rem;
+	right: .5rem;
 	&.is-deleted {
 		text-decoration: line-through;
 		color: $color-grey-500;
@@ -86,7 +91,7 @@
 	right: 0;
 	font-size: $small-font-size;
 	font-weight: 400;
-	padding: .5rem .5rem;
+	padding: .5rem;
 
 	&:before {
 		font-family: "FontAwesome";

@@ -1,17 +1,19 @@
 {% macro activity_bar(branch, activity, show_review_modal=False) -%}
 {% if branch %}
 <div class="activity-bar activity-bar--{{activity.review_state|replace(' ', '-')}} row row--main">
-  <h2 class="activity-bar__title row__left"><span class="activity-bar__subtitle">Currently:</span> {{ activity.task_description | title }}</h2>
+  <h2 class="activity-bar__title row__left">{{ activity.task_description | title }} <span class="activity-bar__subtitle">({{activity.history_summary.changes|length}} changes)</span></h2>
   {% if activity.review_state != config.REVIEW_STATE_PUBLISHED and activity.working_state == config.WORKING_STATE_ACTIVE %}
     <div class="toolbar toolbar--right">
       <a href="{{activity.edit_path}}" class="button button--text toolbar__item"><span class="button__icon--left fa fa-files-o"></span> Content</a>
       <a href="{{activity.overview_path}}" class="button button--text toolbar__item"><span class="button__icon--left fa fa-calendar-o"></span> Overview</a>
       {% if activity.review_authorized %}
-      {% if activity.review_state == config.REVIEW_STATE_EDITED %}
-      <a href="{{activity.review_path}}" class="toolbar__item button button--open-review-modal button--orange">Request Feedback</a>
+      {% if activity.review_state == config.REVIEW_STATE_FRESH %}
+      <span class="toolbar__item activity-bar__status">awaiting edits</span>
+      {% elif activity.review_state == config.REVIEW_STATE_EDITED %}
+      <a href="{{activity.review_path}}" class="toolbar__item button button--open-review-modal button--orange">Request feedback</a>
       {% elif activity.review_state == config.REVIEW_STATE_FEEDBACK %}
-      <a href="{{activity.review_path}}" class="toolbar__item button button--open-review-modal">Leave a comment</a>
-      <a href="{{activity.review_path}}" class="toolbar__item button button--open-review-modal button--green">Endorse Edits</a>
+      <a href="{{activity.overview_path}}#activity-log" class="toolbar__item button">Comment</a>
+      <a href="{{activity.review_path}}" class="toolbar__item button button--open-review-modal button--green">Endorse</a>
       {% elif activity.review_state == config.REVIEW_STATE_ENDORSED %}
       <a href="{{activity.review_path}}" class="toolbar__item button button--open-review-modal button--blue">Publish</a>
       {% endif %}
@@ -22,12 +24,24 @@
   {% endif %}
 </div>
 <div class="modal-container {% if show_review_modal %}is-open{% endif %}">
+  {% set review_action_text = "Requesting feedback on" %}
+  {% set review_description_text = "Your work needs to be endorsed before publishing." %}
+  {% if activity.review_state == config.REVIEW_STATE_FEEDBACK %}
+  {% set review_action_text = "Endorsing edits on" %}
+  {% set review_description_text = "This work needs to be endorsed before publishing." %}
+  {% elif activity.review_state == config.REVIEW_STATE_ENDORSED %}
+  {% set review_action_text = "Publishing work from" %}
+  {% set review_description_text = "This work has been endorsed and is ready to publish." %}
+  {% endif %}
+
+
   <form action="{{activity.overview_path}}" method="POST" class="modal review-modal review-modal--{{activity.review_state|replace(' ', '-')}}">
-    <h2 class="review-modal__title">Requesting feedback on 7 files</h2>
-    <p class="review-modal__subtitle">Your work needs to be endorsed to go live.  See more details on the <a href="{{activity.overview_path}}">overview page</a>.</p>
+    <h2 class="review-modal__title">{{ review_action_text }} {{activity.history_summary.changes|length}} files</h2>
+    <p class="review-modal__subtitle">{{ review_description_text }}  See more details on the <a href="{{activity.overview_path}}">overview page</a>.</p>
     <div class="activity-summary">       
         <ul class="activity-summary__changes">
-            {% for change in activity.history_summary.changes %}
+          {% if activity.history_summary.changes|length > 4 %}
+            {% for change  in activity.history_summary.changes|batch(3)|first %}
             <li class="activity-change">
                 {% if change.edit_path %}<a href="{{ change.edit_path }}" class="activity-change__link">{% endif %}
                 <h3 class="activity-change__filename">{{ change.title }}</h3>
@@ -36,22 +50,37 @@
                 {% if change.edit_path %}</a>{% endif %}
             </li>
             {% endfor %}
+            <li class="activity-change activity-change--more">
+              <a href="{{activity.overview_path}}" class="activity-change__link">+ {{activity.history_summary.changes|length-3}} more changes</a>
+            </li>
+          {% else %}
+            {% for change  in activity.history_summary.changes %}
+            <li class="activity-change">
+                {% if change.edit_path %}<a href="{{ change.edit_path }}" class="activity-change__link">{% endif %}
+                <h3 class="activity-change__filename">{{ change.title }}</h3>
+                <p class="activity-change__changes">{{ change.actions }}</p>
+                <div class="activity-change__filetype activity-change__filetype--{{change.display_type|lower}}">{{ change.display_type }}</div>
+                {% if change.edit_path %}</a>{% endif %}
+            </li>
+            {% endfor %}
+          {% endif %}
         </ul>
     </div>
+    {% if activity.review_authorized and activity.review_state == config.REVIEW_STATE_EDITED %}
     <label for="activity-name">Does the activity name need updating?</label>
-    <input type="text" class="review-modal--name-input" placeholder="{{activity.task_description}}"/>
-    <label for="activity-description">Let the reviewer know what changes you made and why.</label>
-    <textarea class="review-modal__description-input" name="activity-description" id="" placeholder="Updated the parking ticket page to be more action oriented."></textarea>
+    <input type="text" class="review-modal--name-input" value="{{activity.task_description}}"/>
+    <label for="comment_text">Leave a comment to let the reviewer know what you did.</label>
+    <textarea class="review-modal__description-input" name="comment_text" id="" placeholder="Updated the parking ticket page to be more action oriented."></textarea>
+    {% endif %}
     <div class="toolbar toolbar--right">
       <a href="{{activity.overview_path}}" class="toolbar__item button button--close-review-modal button--medium">Cancel</a>
       {% if activity.review_authorized %}
       {% if activity.review_state == config.REVIEW_STATE_EDITED %}
       <button class="toolbar__item button button--medium button--orange" type="submit" name="request_feedback" value="Request Feedback">Request Feedback</button>
       {% elif activity.review_state == config.REVIEW_STATE_FEEDBACK %}
-      <button class="toolbar__item button button--medium button" type="submit" name="comment" value="Leave a comment">Leave a comment</button>
       <button class="toolbar__item button button--medium button--green" type="submit" name="endorse_edits" value="Endorse Edits">Endorse Edits</button>
       {% elif activity.review_state == config.REVIEW_STATE_ENDORSED %}
-      <button class="toolbar__item button button--blue" type="submit" name="merge" value="Publish">Publish</button>
+      <button class="toolbar__item button button--medium button--blue" type="submit" name="merge" value="Publish">Publish</button>
       {% endif %}
       {% endif %}
     </div>

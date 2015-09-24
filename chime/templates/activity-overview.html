@@ -13,6 +13,7 @@
 
 {% block scripts %}
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script src="/static/javascript/activity-overview.js"></script>
 {% endblock%}
 
 {% block content %}
@@ -22,17 +23,22 @@
 
     <div class="activity-overview__actions activity-overview__row">
         <div class="row__left toolbar toolbar--left">
-            <a href="#" class="toolbar__item button button--text"><span class="button__icon--left fa fa-comment"></span> Comment</a>
-            <a href="#" class="toolbar__item button button--text"><span class="button__icon--left fa fa-pencil"></span> Rename</a>
-            <a href="#" class="toolbar__item button button--text"><span class="button__icon--left fa fa-trash"></span> Delete</a>
+            <a href="#" class="toolbar__item button button--text button--open-rename-modal"><span class="button__icon--left fa fa-pencil"></span> Rename</a>
+            <form action="/update" method="POST" class="toolbar__item">
+              <button class="button button--text" type="submit" name="abandon" value="Delete" id="{{ activity.safe_branch }}-delete"><span class="button__icon--left fa fa-trash"></span> Delete</button>
+              <input type="hidden" name="branch" value="{{ activity.safe_branch }}">
+            </form>
+            
         </div>
         <div class="row__right toolbar toolbar--right">
           {% if activity.review_authorized %}
-          {% if activity.review_state == config.REVIEW_STATE_EDITED %}
-          <a href="{{activity.review_path}}" class="toolbar__item button button--open-review-modal button--orange">Request Feedback</a>
+          {% if activity.review_state == config.REVIEW_STATE_FRESH %}
+          <span class="toolbar__item activity-bar__status">awaiting edits</span>
+          {% elif activity.review_state == config.REVIEW_STATE_EDITED %}
+          <a href="{{activity.review_path}}" class="toolbar__item button button--open-review-modal button--orange">Request feedback</a>
           {% elif activity.review_state == config.REVIEW_STATE_FEEDBACK %}
-          <a href="{{activity.review_path}}" class="toolbar__item button button--open-review-modal">Leave a comment</a>
-          <a href="{{activity.review_path}}" class="toolbar__item button button--open-review-modal button--green">Endorse Edits</a>
+          <a href="{{activity.overview_path}}#activity-log" class="toolbar__item button">Comment</a>
+          <a href="{{activity.review_path}}" class="toolbar__item button button--open-review-modal button--green">Endorse</a>
           {% elif activity.review_state == config.REVIEW_STATE_ENDORSED %}
           <a href="{{activity.review_path}}" class="toolbar__item button button--open-review-modal button--blue">Publish</a>
           {% endif %}
@@ -73,7 +79,7 @@
     </ul>
 
     <div class="activity-summary activity-overview__row  activity-overview__row">
-        <p class="activity-overview__header">{{ activity.history_summary.summary }}</p>        
+        <p class="activity-overview__header">{% if activity.history_summary.changes|length > 1 %}{{ activity.history_summary.summary }}{% else %}No changes in this activity yet{% endif %}</p>        
         <ul class="activity-summary__changes">
             {% for change in activity.history_summary.changes %}
             <li class="activity-change">
@@ -85,14 +91,13 @@
             </li>
             {% endfor %}
             <li class="activity-change activity-change--new">
-                <a class="activity-change__link" href="{{activity.edit_path}}">Make another change in this activity</a>
+                <a class="activity-change__link" href="{{activity.edit_path}}">Add a change to this activity</a>
             </li>
         </ul>
     </div>
 
-    <div class="activity-log activity-overview__row">
+    <div class="activity-log activity-overview__row" id="activity-log">
         <p class="activity-overview__header">History and discussion</p>
-        {% set comment_note = "leave a comment" %}
 
         {% if activity.review_state != config.REVIEW_STATE_PUBLISHED and activity.working_state == config.WORKING_STATE_ACTIVE %}
         <div class="activity-log-item activity-log-item--comment">
@@ -100,6 +105,9 @@
                 <div class="comment__author">{% if email %}{{ email }}{% else %}unknown{% endif %}</div>
                 <div class="comment__body">
                     <textarea class="comment__input" name="comment_text" placeholder="Leave your comment here"></textarea>
+                </div>
+                <div class="comment__actions toolbar toolbar--left">
+                    <button class="toolbar__item button " type="submit" name="comment" value="Leave a Comment">Leave a Comment</button>
                 </div>
             </form>
         </div>
@@ -126,6 +134,19 @@
             {% endif %}
         </div>
         {% endfor %}
+    </div>
+</div>
+
+<div class="modal-container {% if show_rename_modal %}is-open{% endif %}">
+    <div class="modal rename-modal">
+        <h3 class="modal__header">Change your activity name</h3>
+        <form action="." method="POST">
+            <textarea name="activity_name">{{activity.task_description}}</textarea>
+            <div class="toolbar toolbar--right">
+                <a href="{{activity.overview_path}}" class="toolbar__item button button--close-rename-modal">Cancel</a>
+                <button class="toolbar__item button button--green" type="submit" name="rename">Rename</button>
+            </div>
+        </form>
     </div>
 </div>
 

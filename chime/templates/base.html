@@ -42,11 +42,11 @@
 
     {{ global_header(breadcrumb_items = breadcrumb_items, email=email, live_site_url=live_site_url) }}
 
-    {% include 'includes/flashes.html' %}
-
     {% block activity_bar %}
     {{ activity_bar(branch=branch, activity=activity, show_review_modal=False) }}
     {% endblock %}
+
+    {% include 'includes/flashes.html' %}
 
      <!-- content -->
         {% block content %}{% endblock %}
