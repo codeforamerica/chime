@@ -6,3 +6,46 @@
 		@include transform(rotate(359deg));
 	}
 }
+
+@include keyframes(tooltip) {
+	0% {
+	   display: none;
+	   opacity: 0;
+	   top: 110%
+	 }
+	 1% {
+	   display: block;
+	 }
+	 100% {
+	   opacity: 1;
+	   top: 100%;
+	 }
+}
+
+@include keyframes(modal-container) {
+	0% {
+	   display: none;
+	   opacity: 0;
+	 }
+	 1% {
+	   display: block;
+	 }
+	 100% {
+	   opacity: 1;
+	 }
+}
+
+@include keyframes(modal) {
+	0% {
+	   display: none;
+	   opacity: 0;
+	   margin-top: 4em;
+	 }
+	 1% {
+	   display: block;
+	 }
+	 100% {
+	   opacity: 1;
+	   margin-top: 0;
+	 }
+}

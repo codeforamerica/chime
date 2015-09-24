@@ -14,7 +14,6 @@ from mimetypes import guess_type
 from functools import wraps
 from io import BytesIO
 from slugify import slugify
-from collections import Counter
 from tempfile import mkdtemp
 from subprocess import Popen
 from git.cmd import GitCommandError
@@ -36,47 +35,23 @@ from .jekyll_functions import load_jekyll_doc, load_languages, build_jekyll_site
 from .google_api_functions import read_ga_config, fetch_google_analytics_for_page
 from .repo_functions import (
     get_existing_branch, get_branch_if_exists_locally, ignore_task_metadata_on_merge,
-    get_commit_classification, ChimeRepo, get_task_metadata_for_branch, complete_branch,
-    abandon_branch, clobber_default_branch, get_review_state_and_authorized,
-    update_review_state, provide_feedback, move_existing_file,
-    get_last_edited_email, mark_upstream_push_needed, MergeConflict,
-    get_activity_working_state, ACTIVITY_CREATED_MESSAGE, TASK_METADATA_FILENAME,
-    make_branch_name, save_local_working_file, sync_with_default_and_upstream_branches
+    ChimeRepo, get_task_metadata_for_branch, complete_branch, abandon_branch,
+    clobber_default_branch, get_review_state_and_authorized, update_review_state,
+    provide_feedback, move_existing_file, mark_upstream_push_needed, MergeConflict,
+    get_activity_working_state, make_branch_name, save_local_working_file,
+    sync_with_default_and_upstream_branches, strip_index_file
 )
 from . import constants
 
 from .href import needs_redirect, get_redirect
 
+from . import chime_activity
+
 # Maximum age of an authentication check in seconds.
 AUTH_CHECK_LIFESPAN = 300.0
 
-# when creating a content file, what extension should it have?
-CONTENT_FILE_EXTENSION = u'markdown'
-
 # Name of default AUTH_DATA_HREF value
 AUTH_DATA_HREF_DEFAULT = 'data/authentication.csv'
-
-# the names of layouts, used in jekyll front matter and also in interface text
-CATEGORY_LAYOUT = 'category'
-ARTICLE_LAYOUT = 'article'
-FOLDER_FILE_TYPE = 'folder'
-FILE_FILE_TYPE = 'file'
-IMAGE_FILE_TYPE = 'image'
-# how we describe items based on their layout
-LAYOUT_DISPLAY_LOOKUP = {
-    CATEGORY_LAYOUT: 'topic',
-    ARTICLE_LAYOUT: 'article',
-    FOLDER_FILE_TYPE: 'folder',
-    FILE_FILE_TYPE: 'file',
-    IMAGE_FILE_TYPE: 'image'
-}
-LAYOUT_PLURAL_LOOKUP = {
-    CATEGORY_LAYOUT: 'topics',
-    ARTICLE_LAYOUT: 'articles',
-    FOLDER_FILE_TYPE: 'folders',
-    FILE_FILE_TYPE: 'files',
-    IMAGE_FILE_TYPE: 'images'
-}
 
 # error messages
 MESSAGE_ACTIVITY_DELETED = u'This activity has been deleted or never existed! Please start a new activity to make changes.'
@@ -90,7 +65,7 @@ FILE_FILTERS = [
     r'\.lock$',
     r'Gemfile',
     r'LICENSE',
-    r'index\.{}'.format(CONTENT_FILE_EXTENSION),
+    r'index\.{}'.format(constants.CONTENT_FILE_EXTENSION),
     # below filters were added by norris to focus bootcamp UI on articles
     r'^css',
     r'\.xml',
@@ -170,21 +145,21 @@ def path_type(file_path):
     ''' Returns the type of file at the passed path
     '''
     if isdir(file_path):
-        return FOLDER_FILE_TYPE
+        return constants.FOLDER_FILE_TYPE
 
     if str(guess_type(file_path)[0]).startswith('image/'):
-        return IMAGE_FILE_TYPE
+        return constants.IMAGE_FILE_TYPE
 
-    return FILE_FILE_TYPE
+    return constants.FILE_FILE_TYPE
 
 def path_display_type(file_path):
     ''' Returns a type matching how the file at the passed path should be displayed
     '''
     if is_article_dir(file_path):
-        return ARTICLE_LAYOUT
+        return constants.ARTICLE_LAYOUT
 
     if is_category_dir(file_path):
-        return CATEGORY_LAYOUT
+        return constants.CATEGORY_LAYOUT
 
     return path_type(file_path)
 
@@ -193,21 +168,21 @@ def index_path_display_type_and_title(file_path):
         it checks the containing directory. Also returns an article or category title if
         appropriate.
     '''
-    index_filename = u'index.{}'.format(CONTENT_FILE_EXTENSION)
+    index_filename = u'index.{}'.format(constants.CONTENT_FILE_EXTENSION)
     path_split = split(file_path)
     if path_split[1] == index_filename:
         folder_type = path_display_type(path_split[0])
         # if the enclosing folder is just a folder (and not an article or category)
         # return the type of the index file instead
-        if folder_type == FOLDER_FILE_TYPE:
-            return FILE_FILE_TYPE, u''
+        if folder_type == constants.FOLDER_FILE_TYPE:
+            return constants.FILE_FILE_TYPE, u''
 
         # the enclosing folder is an article or category
         return folder_type, get_value_from_front_matter('title', file_path)
 
     # the path was to something other than an index file
     path_type = path_display_type(file_path)
-    if path_type in (ARTICLE_LAYOUT, CATEGORY_LAYOUT):
+    if path_type in (constants.ARTICLE_LAYOUT, constants.CATEGORY_LAYOUT):
         return path_type, get_value_from_front_matter('title', join(file_path, index_filename))
 
     return path_type, u''
@@ -215,16 +190,16 @@ def index_path_display_type_and_title(file_path):
 def file_display_name(file_type):
     ''' Get the display name of the passed file type
     '''
-    if file_type in LAYOUT_DISPLAY_LOOKUP:
-        return LAYOUT_DISPLAY_LOOKUP[file_type]
+    if file_type in constants.LAYOUT_DISPLAY_LOOKUP:
+        return constants.LAYOUT_DISPLAY_LOOKUP[file_type]
 
     return file_type
 
 def file_type_plural(file_type):
     ''' Get the plural of the passed file type
     '''
-    if file_type in LAYOUT_PLURAL_LOOKUP:
-        return LAYOUT_PLURAL_LOOKUP[file_type]
+    if file_type in constants.LAYOUT_PLURAL_LOOKUP:
+        return constants.LAYOUT_PLURAL_LOOKUP[file_type]
 
     return file_type
 
@@ -238,12 +213,12 @@ def is_display_editable(file_path):
 def is_article_dir(file_path):
     ''' Returns True if the file at the passed path is a directory containing only an index file with an article jekyll layout.
     '''
-    return is_dir_with_layout(file_path, ARTICLE_LAYOUT, True)
+    return is_dir_with_layout(file_path, constants.ARTICLE_LAYOUT, True)
 
 def is_category_dir(file_path):
     ''' Returns True if the file at the passed path is a directory containing an index file with a category jekyll layout.
     '''
-    return is_dir_with_layout(file_path, CATEGORY_LAYOUT, False)
+    return is_dir_with_layout(file_path, constants.CATEGORY_LAYOUT, False)
 
 def is_editable(file_path, layout=None):
     ''' Returns True if the file at the passed path is not a directory, and has jekyll
@@ -310,7 +285,7 @@ def is_dir_with_layout(file_path, layout, only=True):
     '''
     if isdir(file_path):
         # it's a directory
-        index_path = join(file_path or u'', u'index.{}'.format(CONTENT_FILE_EXTENSION))
+        index_path = join(file_path or u'', u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
         if not exists(index_path) or not is_editable(index_path, layout):
             # there's no index file in the directory or it's not editable
             return False
@@ -332,7 +307,7 @@ def get_solo_directory_name(repo, branch_name, path):
         that's the only visible object in the hierarchy, return its name.
     '''
     directory_contents = sorted_paths(repo=repo, branch_name=branch_name, path=path)
-    if len(directory_contents) == 1 and directory_contents[0]['display_type'] == FOLDER_FILE_TYPE:
+    if len(directory_contents) == 1 and directory_contents[0]['display_type'] == constants.FOLDER_FILE_TYPE:
         return directory_contents[0]['name']
 
     return None
@@ -752,115 +727,59 @@ def make_delete_display_commit_message(repo, request_path):
 
     return commit_message
 
-def make_activity_history(repo):
-    ''' Make an easily-parsable history of an activity since it was created.
+def make_list_of_published_activities(repo, limit=10):
+    ''' Make a list of recently published activities.
     '''
-    # see <http://git-scm.com/docs/git-log> for placeholders
-    log_format = '%x00Name: %an\tEmail: %ae\tDate: %ad\tSubject: %s\tBody: %b%x00'
-    log = repo.git.log('--format={}'.format(log_format), '--date=relative')
+    # get a list of tags in the repo with associated metadata
+    # see: http://git-scm.com/docs/git-for-each-ref
+    #   rename:short = branch name
+    #   subject = task metadata json
+    #   taggerdate:relative = published date in relative format
+    #   *authoremail = the email of the person who published the activity
+    ref_list = repo.git.for_each_ref('--count={}'.format(limit), '--format=%(refname:short)\t%(subject)\t%(taggerdate:relative)\t%(*authoremail)', '--sort=-taggerdate', 'refs/tags').split('\n')
 
-    history = []
-    pattern = re.compile(r'\x00Name: (.*?)\tEmail: (.*?)\tDate: (.*?)\tSubject: (.*?)\tBody: (.*?)\x00', re.DOTALL)
-    for log_details in pattern.findall(log):
-        name, email, date, subject, body = tuple([item for item in log_details])
-        commit_category, commit_type, commit_action = get_commit_classification(subject, body)
-        log_item = dict(author_name=name, author_email=email, commit_date=date, commit_subject=subject,
-                        commit_body=body, commit_category=commit_category, commit_type=commit_type,
-                        commit_action=commit_action)
-        history.append(log_item)
-        # don't get any history beyond the creation of the task metadata file, which is the beginning of the activity
-        if re.search(r'{}$'.format(ACTIVITY_CREATED_MESSAGE), subject):
-            break
-
-    return history
-
-def summarize_activity_history(repo=None, history=None, branch_name=u''):
-    ''' Make an object that summarizes an activity's history. If no history is passed, will get a new one from make_activity_history()
-
-        The object looks like this:
-        {
-            'summary': u'3 articles and 1 category have been changed',
-            'changes': [
-                {'edit_path': u'', 'display_type': u'Article', 'actions': u'Created, Edited, Deleted', 'title': u'How to Find Us'},
-                {'edit_path': u'/tree/34246e3/edit/contact/hours-of-operation/', 'display_type': u'Article', 'actions': u'Created, Edited', 'title': u'Hours of Operation'},
-                {'edit_path': u'/tree/34246e3/edit/contact/driving-directions/', 'display_type': u'Article', 'actions': u'Created, Edited', 'title': u'Driving Directions'},
-                {'edit_path': u'/tree/34246e3/edit/contact/', 'display_type': u'Category', 'actions': u'Created', 'title': u'Contact'}
-            ]
-        }
-    '''
-    # an empty summary object
-    summary = dict(summary=u'', changes=[])
-
-    # make sure we've got what we need
-    if not history:
-        try:
-            history = make_activity_history(repo=repo)
-        except:
-            # we weren't given what we need, return an empty summary
-            return summary
-
-    ed_lookup = {'create': u'created', 'edit': u'edited', 'delete': u'deleted'}
-    change_lookup = {}
-    display_types_encountered = []
-    # we only care about edits
-    edit_history = [action for action in reversed(history) if action['commit_category'] == constants.COMMIT_CATEGORY_EDIT]
-    for action in edit_history:
-        # get the list of changed files from the commit body
-        try:
-            commit_body = json.loads(action['commit_body'])
-        except:
-            # could't parse json in the commit body, keep moving
+    published = []
+    for ref in ref_list:
+        ref_split = ref.split('\t')
+        # skip if we didn't get a fully formed line of data
+        if len(ref_split) < 4:
             continue
 
-        # step through the changed files
-        for file_change in commit_body:
-            # the passed title or the filename if no title is there
-            title = file_change['title'] or file_change['file_path'].split('/')[-1]
-            # the passed display type or Unknown if no type is there
-            display_type = file_change['display_type'].title() or u'Unknown'
-            try:
-                action = ed_lookup[file_change['action']].title()
-            except:
-                action = file_change['action'].title()
-            file_path = file_change['file_path']
-            # if the last action is delete, we don't want an edit_path to a file that no longer exists
-            edit_path = join(u'/tree/{}/edit/'.format(branch_name), strip_index_file(file_path)) if action != u'Deleted' else u''
-            sort_time = datetime.now()
-            if file_path in change_lookup:
-                change_lookup[file_path]['sort_time'] = sort_time
-                # add the action to the end of the list if it's different from the last action added
-                if not re.search(r'{}$'.format(action), change_lookup[file_path]['actions']):
-                    change_lookup[file_path]['actions'] = change_lookup[file_path]['actions'] + u', {}'.format(action)
-                # add the other variables, which may've changed
-                change_lookup[file_path]['edit_path'] = edit_path
-                change_lookup[file_path]['title'] = title
-                change_lookup[file_path]['display_type'] = display_type
-            else:
-                change_lookup[file_path] = dict(title=title, display_type=display_type, actions=action, edit_path=edit_path, sort_time=sort_time)
-                display_types_encountered.append(display_type)
+        safe_branch = branch_name2path(ref_split[0])
 
-    # flatten and sort the changes
-    changes = [change_lookup[item] for item in change_lookup]
-    if len(changes):
-        changes.sort(key=lambda k: k['sort_time'], reverse=True)
-        summary['changes'] = changes
+        # if there's no parsable task metadata in the tag's subject, this isn't a viable published activity
+        try:
+            # contains 'author_email', 'task_description'
+            activity = json.loads(ref_split[1])
+        except ValueError:
+            continue
+        activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
+        activity['task_description'] = activity['task_description'] if 'task_description' in activity else safe_branch
+        # add the beneficiary to the description if it's there
+        try:
+            activity['task_description'] = u'{} for {}'.format(activity['task_description'], activity['task_beneficiary'])
+        except KeyError:
+            pass
 
-        # now construct the summary sentence
-        summary_sentence_parts = []
-        display_type_tally = Counter(display_types_encountered)
-        display_lookup = (
-            (display_type_tally[ARTICLE_LAYOUT.title()], unicode(ARTICLE_LAYOUT), unicode(file_type_plural(ARTICLE_LAYOUT))),
-            (display_type_tally[CATEGORY_LAYOUT.title()], unicode(CATEGORY_LAYOUT), unicode(file_type_plural(CATEGORY_LAYOUT)))
-        )
-        for tally, singular, plural in display_lookup:
-            if tally:
-                summary_sentence_parts.append("{} {}".format(tally, singular if tally == 1 else plural))
-        has_have = u''
-        has_have = u'have' if len(changes) > 1 else u'has'
-        summary_sentence = u'{} {} been changed'.format(u', '.join(summary_sentence_parts[:-2] + [u' and '.join(summary_sentence_parts[-2:])]), has_have)
-        summary['summary'] = summary_sentence
+        # we know the current review state and authorized status
+        review_state = constants.WORKING_STATE_PUBLISHED
+        review_authorized = False
 
-    return summary
+        # set date created and updated the same for now
+        date_updated = ref_split[2]
+        date_created = date_updated
+
+        # the email of the person who published the activity (stripping angle brackets if they're there)
+        last_edited_email = ref_split[3].lstrip(u'<').rstrip(u'>')
+
+        activity.update(date_created=date_created, date_updated=date_updated,
+                        edit_path=u'#', overview_path=u'#',
+                        safe_branch=safe_branch, review_state=review_state,
+                        review_authorized=review_authorized, last_edited_email=last_edited_email)
+
+        published.append(activity)
+
+    return published
 
 def sorted_paths(repo, branch_name, path=None, showallfiles=False):
     ''' Returns a list of files and their attributes in the passed directory.
@@ -883,10 +802,10 @@ def sorted_paths(repo, branch_name, path=None, showallfiles=False):
             info = {}
             info['name'] = basename(edit_path)
             info['display_type'] = path_display_type(edit_path)
-            info['link_name'] = u'{}/'.format(info['name']) if info['display_type'] in (FOLDER_FILE_TYPE, CATEGORY_LAYOUT, ARTICLE_LAYOUT) else info['name']
-            file_title = get_value_from_front_matter('title', join(edit_path, u'index.{}'.format(CONTENT_FILE_EXTENSION)))
+            info['link_name'] = u'{}/'.format(info['name']) if info['display_type'] in (constants.FOLDER_FILE_TYPE, constants.CATEGORY_LAYOUT, constants.ARTICLE_LAYOUT) else info['name']
+            file_title = get_value_from_front_matter('title', join(edit_path, u'index.{}'.format(constants.CONTENT_FILE_EXTENSION)))
             if not file_title:
-                if info['display_type'] in (FOLDER_FILE_TYPE, IMAGE_FILE_TYPE, FILE_FILE_TYPE):
+                if info['display_type'] in (constants.FOLDER_FILE_TYPE, constants.IMAGE_FILE_TYPE, constants.FILE_FILE_TYPE):
                     file_title = info['name']
                 else:
                     file_title = re.sub('-', ' ', info['name']).title()
@@ -1041,11 +960,10 @@ def publish_or_destroy_activity(branch_name, action, comment_text=None):
     repo = get_repo(flask_app=current_app)
     master_name = current_app.config['default_branch']
 
-    # contains 'author_email', 'task_description', 'task_beneficiary'
+    # contains 'author_email', 'task_description'
     activity = get_task_metadata_for_branch(repo, branch_name)
     activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
     activity['task_description'] = activity['task_description'] if 'task_description' in activity else u''
-    activity['task_beneficiary'] = activity['task_beneficiary'] if 'task_beneficiary' in activity else u''
 
     try:
         args = repo, master_name, branch_name, comment_text
@@ -1066,7 +984,7 @@ def publish_or_destroy_activity(branch_name, action, comment_text=None):
         raise conflict
 
     else:
-        activity_blurb = u'"{task_description}" activity for {task_beneficiary}'.format(task_description=activity['task_description'], task_beneficiary=activity['task_beneficiary'])
+        activity_blurb = u'"{task_description}" activity'.format(task_description=activity['task_description'])
         if action == 'merge':
             flash(u'You published the {activity_blurb}!'.format(activity_blurb=activity_blurb), u'notice')
         elif action == 'abandon':
@@ -1076,14 +994,15 @@ def publish_or_destroy_activity(branch_name, action, comment_text=None):
 
         return redirect('/', code=303)
 
-def render_activities_list(task_description=None, task_beneficiary=None):
+def render_activities_list(task_description=None, show_new_activity_modal=False):
     ''' Render the activities list page
     '''
     repo = ChimeRepo(current_app.config['REPO_PATH'])
     master_name = current_app.config['default_branch']
     branch_names = [b.name for b in repo.branches if b.name != master_name]
 
-    activities = []
+    activities = dict(in_progress=[], feedback=[], endorsed=[], published=[])
+
     for branch_name in branch_names:
         safe_branch = branch_name2path(branch_name)
 
@@ -1093,43 +1012,22 @@ def render_activities_list(task_description=None, task_beneficiary=None):
             # Skip this branch if it looks to be an orphan. Just don't show it.
             continue
 
-        # contains 'author_email', 'task_description', 'task_beneficiary'
-        activity = get_task_metadata_for_branch(repo, branch_name)
-        activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
-        activity['task_description'] = activity['task_description'] if 'task_description' in activity else branch_name
-        activity['task_beneficiary'] = activity['task_beneficiary'] if 'task_beneficiary' in activity else u''
+        activity = chime_activity.ChimeActivity(repo=repo, branch_name=safe_branch, default_branch_name=current_app.config['default_branch'], actor_email=session.get('email', None))
+        if activity.review_state == constants.REVIEW_STATE_FRESH or activity.review_state == constants.REVIEW_STATE_EDITED:
+            activities['in_progress'].append(activity)
+        elif activity.review_state == constants.REVIEW_STATE_FEEDBACK:
+            activities['feedback'].append(activity)
+        elif activity.review_state == constants.REVIEW_STATE_ENDORSED:
+            activities['endorsed'].append(activity)
 
-        # get the current review state and authorized status
-        review_state, review_authorized = get_review_state_and_authorized(
-            repo=repo, default_branch_name=current_app.config['default_branch'],
-            working_branch_name=branch_name, actor_email=session.get('email', None)
-        )
-
-        date_created = repo.git.log('--format=%ad', '--date=relative', '--', TASK_METADATA_FILENAME).split('\n')[-1]
-        date_updated = repo.git.log('--format=%ad', '--date=relative').split('\n')[0]
-
-        # the email of the last person who edited the activity
-        last_edited_email = get_last_edited_email(
-            repo=repo, default_branch_name=current_app.config['default_branch'],
-            working_branch_name=branch_name
-        )
-
-        activity.update(date_created=date_created, date_updated=date_updated,
-                        edit_path=u'/tree/{}/edit/'.format(branch_name2path(branch_name)),
-                        overview_path=u'/tree/{}/'.format(branch_name2path(branch_name)),
-                        safe_branch=safe_branch, review_state=review_state,
-                        review_authorized=review_authorized, last_edited_email=last_edited_email)
-
-        activities.append(activity)
+    activities['published'] = make_list_of_published_activities(repo=repo, limit=10)
 
     kwargs = common_template_args(current_app.config, session)
-    kwargs.update(activities=activities)
+    kwargs.update(activities=activities, show_new_activity_modal=show_new_activity_modal)
 
-    # pre-populate the new activity form with description and/or beneficiary values if they were passed
+    # pre-populate the new activity form with description value if it was passed
     if task_description:
         kwargs.update(task_description=task_description)
-    if task_beneficiary:
-        kwargs.update(task_beneficiary=task_beneficiary)
 
     return render_template('activities-list.html', **kwargs)
 
@@ -1139,29 +1037,7 @@ def make_kwargs_for_activity_files_page(repo, branch_name, path):
     # :NOTE: temporarily turning off filtering if 'showallfiles=true' is in the request
     showallfiles = request.args.get('showallfiles') == u'true'
 
-    # contains 'author_email', 'task_description', 'task_beneficiary'
-    activity = get_task_metadata_for_branch(repo, branch_name)
-    activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
-    activity['task_description'] = activity['task_description'] if 'task_description' in activity else u''
-    activity['task_beneficiary'] = activity['task_beneficiary'] if 'task_beneficiary' in activity else u''
-
-    # get created and modified dates via git logs (relative dates for now)
-    date_created = repo.git.log('--format=%ad', '--date=relative', '--', TASK_METADATA_FILENAME).split('\n')[-1]
-    date_updated = repo.git.log('--format=%ad', '--date=relative').split('\n')[0]
-
-    # get the current review state and authorized status
-    review_state, review_authorized = get_review_state_and_authorized(
-        repo=repo, default_branch_name=current_app.config['default_branch'],
-        working_branch_name=branch_name, actor_email=session.get('email', None)
-    )
-
-    working_state = get_activity_working_state(repo, current_app.config['default_branch'], branch_name)
-
-    activity.update(date_created=date_created, date_updated=date_updated,
-                    edit_path=u'/tree/{}/edit/'.format(branch_name2path(branch_name)),
-                    overview_path=u'/tree/{}/'.format(branch_name2path(branch_name)),
-                    review_state=review_state, review_authorized=review_authorized,
-                    working_state=working_state)
+    activity = chime_activity.ChimeActivity(repo=repo, branch_name=branch_name, default_branch_name=current_app.config['default_branch'], actor_email=session.get('email', None))
 
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(branch=branch_name, safe_branch=branch_name2path(branch_name),
@@ -1182,21 +1058,21 @@ def render_modify_dir(repo, branch_name, path):
     '''
     path = path or '.'
     full_path = join(repo.working_dir, path).rstrip('/')
-    full_index_path = join(full_path, u'index.{}'.format(CONTENT_FILE_EXTENSION))
+    full_index_path = join(full_path, u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
     # init a category object with the contents of the category's front matter
     category = get_front_matter(full_index_path)
 
     if 'layout' not in category:
         raise Exception(u'No layout found for {}.'.format(full_path))
-    if category['layout'] != CATEGORY_LAYOUT:
+    if category['layout'] != constants.CATEGORY_LAYOUT:
         raise Exception(u'Can\'t modify {}s, only categories.'.format(category['layout']))
 
     languages = load_languages(repo.working_dir)
 
     kwargs = make_kwargs_for_activity_files_page(repo, branch_name, path)
     # cancel redirects to the edit page for that category
-    category['edit_path'] = join(kwargs['activity']['edit_path'], path)
-    url_slug = re.sub(ur'index.{}$'.format(CONTENT_FILE_EXTENSION), u'', path)
+    category['edit_path'] = join(kwargs['activity'].edit_path, path)
+    url_slug = re.sub(ur'index.{}$'.format(constants.CONTENT_FILE_EXTENSION), u'', path)
 
     kwargs.update(category=category, languages=languages, hexsha=repo.commit().hexsha, url_slug=url_slug)
 
@@ -1209,7 +1085,7 @@ def render_edit_view(repo, branch_name, path, file):
     languages = load_languages(repo.working_dir)
     url_slug = path
     # strip the index file from the slug if appropriate
-    url_slug = re.sub(ur'index.{}$'.format(CONTENT_FILE_EXTENSION), u'', url_slug)
+    url_slug = re.sub(ur'index.{}$'.format(constants.CONTENT_FILE_EXTENSION), u'', url_slug)
     view_path = join('/tree/{}/view'.format(branch_name2path(branch_name)), path)
     history_path = join('/tree/{}/history'.format(branch_name2path(branch_name)), path)
     save_path = join('/tree/{}/save'.format(branch_name2path(branch_name)), path)
@@ -1222,24 +1098,7 @@ def render_edit_view(repo, branch_name, path, file):
         analytics_dict = fetch_google_analytics_for_page(current_app.config, path, ga_config.get('access_token'))
     commit = repo.commit()
 
-    # contains 'author_email', 'task_description', 'task_beneficiary'
-    activity = get_task_metadata_for_branch(repo, branch_name)
-    activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
-    activity['task_description'] = activity['task_description'] if 'task_description' in activity else u''
-    activity['task_beneficiary'] = activity['task_beneficiary'] if 'task_beneficiary' in activity else u''
-
-    # get the current review state and authorized status
-    review_state, review_authorized = get_review_state_and_authorized(
-        repo=repo, default_branch_name=current_app.config['default_branch'],
-        working_branch_name=branch_name, actor_email=session.get('email', None)
-    )
-
-    working_state = get_activity_working_state(repo, current_app.config['default_branch'], branch_name)
-
-    activity.update(edit_path=u'/tree/{}/edit/'.format(branch_name2path(branch_name)),
-                    overview_path=u'/tree/{}/'.format(branch_name2path(branch_name)),
-                    review_state=review_state, review_authorized=review_authorized,
-                    working_state=working_state)
+    activity = chime_activity.ChimeActivity(repo=repo, branch_name=branch_name, default_branch_name=current_app.config['default_branch'], actor_email=session.get('email', None))
 
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(branch=branch_name, safe_branch=branch_name2path(branch_name),
@@ -1254,7 +1113,7 @@ def render_edit_view(repo, branch_name, path, file):
 def add_article_or_category(repo, dir_path, request_path, create_what):
     ''' Add an article or category
     '''
-    if create_what not in (ARTICLE_LAYOUT, CATEGORY_LAYOUT):
+    if create_what not in (constants.ARTICLE_LAYOUT, constants.CATEGORY_LAYOUT):
         raise ValueError(u'Can\'t create {} in {}.'.format(create_what, join(dir_path, request_path)))
 
     request_path = request_path.rstrip('/')
@@ -1262,15 +1121,15 @@ def add_article_or_category(repo, dir_path, request_path, create_what):
     # create the article or category
     display_name = request_path
     slug_name = slugify(request_path)
-    name = u'{}/index.{}'.format(slug_name, CONTENT_FILE_EXTENSION)
+    name = u'{}/index.{}'.format(slug_name, constants.CONTENT_FILE_EXTENSION)
     file_path = repo.canonicalize_path(dir_path, name)
 
-    if create_what == ARTICLE_LAYOUT:
+    if create_what == constants.ARTICLE_LAYOUT:
         redirect_path = file_path
-        create_front = dict(title=display_name, description=u'', order=0, layout=ARTICLE_LAYOUT)
-    elif create_what == CATEGORY_LAYOUT:
+        create_front = dict(title=display_name, description=u'', order=0, layout=constants.ARTICLE_LAYOUT)
+    elif create_what == constants.CATEGORY_LAYOUT:
         redirect_path = strip_index_file(file_path)
-        create_front = dict(title=display_name, description=u'', order=0, layout=CATEGORY_LAYOUT)
+        create_front = dict(title=display_name, description=u'', order=0, layout=constants.CATEGORY_LAYOUT)
 
     display_what = file_display_name(create_what)
     if repo.exists(file_path):
@@ -1281,9 +1140,6 @@ def add_article_or_category(repo, dir_path, request_path, create_what):
     commit_message = u'The "{}" {} was created\n\n{}'.format(display_name, display_what, json.dumps(action_descriptions, ensure_ascii=False))
 
     return commit_message, file_path, redirect_path, True
-
-def strip_index_file(file_path):
-    return re.sub(r'index.{}$'.format(CONTENT_FILE_EXTENSION), '', file_path)
 
 def delete_page(repo, browse_path, target_path):
     ''' Delete a category or article.
@@ -1419,7 +1275,7 @@ def calculate_new_slug(file_path, new_slug):
     # We may need to treat this as a directory name, with an index.whatever inside.
     _, ext = splitext(basename(newer_slug))
     if not ext:
-        newer_slug = join(newer_slug, u'index.{}'.format(CONTENT_FILE_EXTENSION))
+        newer_slug = join(newer_slug, u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
 
     if newer_slug != original_slug:
         from sys import stderr; print >> stderr, newer_slug, '!=', original_slug
@@ -1504,8 +1360,8 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
     try:
         # they may've renamed the page by editing the URL slug
         original_slug = file_path
-        if re.search(r'\/index.{}$'.format(CONTENT_FILE_EXTENSION), file_path):
-            original_slug = re.sub(ur'index.{}$'.format(CONTENT_FILE_EXTENSION), u'', file_path)
+        if re.search(r'\/index.{}$'.format(constants.CONTENT_FILE_EXTENSION), file_path):
+            original_slug = re.sub(ur'index.{}$'.format(constants.CONTENT_FILE_EXTENSION), u'', file_path)
 
         # do some simple input cleaning
         new_slug = new_values.get('url-slug')
@@ -1528,7 +1384,7 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
                 file_path = new_slug
                 # append the index file if it's an editable directory
                 if is_article_dir(join(repo.working_dir, new_slug)):
-                    file_path = join(new_slug, u'index.{}'.format(CONTENT_FILE_EXTENSION))
+                    file_path = join(new_slug, u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
 
     except MergeConflict as conflict:
         repo.git.reset(commit.hexsha, hard=True)

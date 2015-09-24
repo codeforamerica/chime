@@ -27,12 +27,13 @@ sys.path.insert(0, repo_root)
 from box.util.rotunicode import RotUnicode
 from httmock import response, HTTMock
 from mock import MagicMock, patch
-from bs4 import Comment
+from bs4 import Comment, BeautifulSoup
 
 from chime import (
     create_app, repo_functions, google_api_functions, view_functions,
     publish, errors)
 from chime import constants
+from chime import chime_activity
 
 from unit.chime_test_client import ChimeTestClient
 
@@ -43,14 +44,13 @@ codecs.register(RotUnicode.search_function)
 PATTERN_BRANCH_COMMENT = u'<!-- branch: {} -->'
 PATTERN_AUTHOR_COMMENT = u'<!-- author: {} -->'
 PATTERN_TASK_COMMENT = u'<!-- task: {} -->'
-PATTERN_BENEFICIARY_COMMENT = u'<!-- beneficiary: {} -->'
 PATTERN_TEMPLATE_COMMENT = u'<!-- template name: {} -->'
 PATTERN_FILE_COMMENT = u'<!-- file type: {file_type}, file name: {file_name}, file title: {file_title} -->'
 PATTERN_OVERVIEW_ITEM_CREATED = u'<p>The "{created_name}" {created_type} was created by {author_email}.</p>'
 PATTERN_OVERVIEW_ACTIVITY_STARTED = u'<p>The "{activity_name}" activity was started by {author_email}.</p>'
 PATTERN_OVERVIEW_COMMENT_BODY = u'<div class="comment__body">{comment_body}</div>'
 PATTERN_OVERVIEW_ITEM_DELETED = u'<p>The "{deleted_name}" {deleted_type} {deleted_also}was deleted by {author_email}.</p>'
-PATTERN_FLASH_TASK_DELETED = u'You deleted the "{description}" activity for {beneficiary}!'
+PATTERN_FLASH_TASK_DELETED = u'You deleted the "{description}" activity!'
 
 PATTERN_FLASH_SAVED_CATEGORY = u'<li class="flash flash--notice">Saved changes to the {title} topic! Remember to submit this change for feedback when you\'re ready to go live.</li>'
 PATTERN_FLASH_CREATED_CATEGORY = u'Created a new topic named {title}! Remember to submit this change for feedback when you\'re ready to go live.'
@@ -62,7 +62,7 @@ PATTERN_FORM_CATEGORY_DESCRIPTION = u'<textarea name="en-description" class="dir
 
 # review stuff
 PATTERN_REQUEST_FEEDBACK_BUTTON = u'<button class="toolbar__item button button--orange" type="submit" name="request_feedback" value="Request Feedback">Request Feedback</button>'
-PATTERN_UNREVIEWED_EDITS_LINK = u'<a href="/tree/{branch_name}/" class="toolbar__item button">Unreviewed Edits</a>'
+PATTERN_UNREVIEWED_EDITS_LINK = u'<a href="/tree/{branch_name}/edit/">'
 PATTERN_ENDORSE_BUTTON = u'<button class="toolbar__item button button--green" type="submit" name="endorse_edits" value="Endorse Edits">Endorse Edits</button>'
 PATTERN_FEEDBACK_REQUESTED_LINK = u'<a href="/tree/{branch_name}/" class="toolbar__item button">Feedback requested</a>'
 PATTERN_PUBLISH_BUTTON = u'<button class="toolbar__item button button--blue" type="submit" name="merge" value="Publish">Publish</button>'
@@ -419,24 +419,39 @@ class TestApp (TestCase):
             pattern_template_comment_stripped = sub(ur'<!--|-->', u'', PATTERN_TEMPLATE_COMMENT)
             flash_message_text = u'Please describe what you\'re doing when you start a new activity!'
 
-            # start a new task without a description or beneficiary
-            erica.start_task(description=u'', beneficiary=u'')
+            # start a new task without a description
+            erica.open_link('/')
+            erica.start_task(description=u'')
             # the activities-list template reloaded
             comments = erica.soup.findAll(text=lambda text: isinstance(text, Comment))
             self.assertTrue(pattern_template_comment_stripped.format(u'activities-list') in comments)
             # verify that there's a flash message warning about submitting an empty description
             self.assertEqual(flash_message_text, erica.soup.find('li', class_='flash').text)
 
-            # start a new task with no description but with a beneficiary
-            fake_task_beneficiary = u'Scary Ghosts'
-            erica.start_task(description=u'', beneficiary=fake_task_beneficiary)
-            # the activities-list template reloaded
+    # in TestApp
+    def test_whitespace_stripped_from_description(self):
+        ''' Carriage returns, tabs, spaces are stripped from task descriptions before they're saved.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.test_client, self)
+                erica.sign_in(email='erica@example.com')
+
+            # start a new task with a lot of random whitespace
+            erica.open_link('/')
+            task_description = u'I think\n\r\n\rI am      so   \t\t\t   coool!!\n\n\nYeah.\n\nOK\n\rERWEREW      dkkdk'
+            task_description_stripped = u'I think I am so coool!! Yeah. OK ERWEREW dkkdk'
+            erica.start_task(description=task_description)
+
+            # the stripped comment is in the HTML
+            pattern_task_comment_stripped = sub(ur'<!--|-->', u'', PATTERN_TASK_COMMENT)
             comments = erica.soup.findAll(text=lambda text: isinstance(text, Comment))
-            self.assertTrue(pattern_template_comment_stripped.format(u'activities-list') in comments)
-            # verify that there's a flash message warning about submitting an empty description
-            self.assertEqual(flash_message_text, erica.soup.find('li', class_='flash').text)
-            # verify that the entered beneficiary text has been pre-filled in the form
-            self.assertEqual(fake_task_beneficiary, erica.soup.find('input', attrs={'name': u'task_beneficiary'}).attrs['value'])
+            self.assertTrue(pattern_task_comment_stripped.format(task_description_stripped) in comments)
+
+            # the stripped comment is in the task metadata
+            repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email='erica@example.com')
+            task_metadata = repo_functions.get_task_metadata_for_branch(repo, erica.get_branch_name())
+            self.assertEqual(task_description_stripped, task_metadata['task_description'])
 
     # in TestApp
     def test_notification_on_create_category(self):
@@ -448,7 +463,8 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task
-            erica.start_task(description=u'Lick Water Droplets From Leaves', beneficiary=u'Leopard Geckos')
+            erica.open_link('/')
+            erica.start_task(description=u'Lick Water Droplets From Leaves for Leopard Geckos')
             # Get the branch name
             branch_name = erica.get_branch_name()
             # Enter the "other" folder
@@ -475,7 +491,8 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task
-            erica.start_task(description=u'Lick Water Droplets From Leaves', beneficiary=u'Leopard Geckos')
+            erica.open_link('/')
+            erica.start_task(description=u'Lick Water Droplets From Leaves for Leopard Geckos')
             # Get the branch name
             branch_name = erica.get_branch_name()
 
@@ -511,22 +528,20 @@ class TestApp (TestCase):
     def test_branches(self):
         ''' Check basic branching functionality.
         '''
-        fake_task_description = u'do things'
-        fake_task_beneficiary = u'somebody else'
+        fake_task_description = u'do things for somebody else'
         fake_author_email = u'erica@example.com'
         fake_endorser_email = u'frances@example.com'
         fake_page_slug = u'hello'
-        fake_page_path = u'{}/index.{}'.format(fake_page_slug, view_functions.CONTENT_FILE_EXTENSION)
+        fake_page_path = u'{}/index.{}'.format(fake_page_slug, constants.CONTENT_FILE_EXTENSION)
         fake_page_content = u'People of earth we salute you.'
         with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'assertion': fake_author_email})
 
         with HTTMock(self.auth_csv_example_allowed):
             # create a new branch
-            response = self.test_client.post('/start', data={'task_description': fake_task_description, 'task_beneficiary': fake_task_beneficiary}, follow_redirects=True)
+            response = self.test_client.post('/start', data={'task_description': fake_task_description}, follow_redirects=True)
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('articles-list') in response.data)
             self.assertTrue(PATTERN_TASK_COMMENT.format(fake_task_description) in response.data)
-            self.assertTrue(PATTERN_BENEFICIARY_COMMENT.format(fake_task_beneficiary) in response.data)
             self.assertTrue(PATTERN_AUTHOR_COMMENT.format(fake_author_email) in response.data)
 
             # extract the generated branch name from the returned HTML
@@ -540,7 +555,7 @@ class TestApp (TestCase):
         with HTTMock(self.mock_google_analytics):
             # create a new file
             response = self.test_client.post('/tree/{}/edit/'.format(generated_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': fake_page_slug},
+                                             data={'action': 'create', 'create_what': constants.ARTICLE_LAYOUT, 'request_path': fake_page_slug},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             self.assertTrue(fake_page_path in response.data)
@@ -549,7 +564,7 @@ class TestApp (TestCase):
             response = self.test_client.get('/tree/{}/edit/'.format(generated_branch_name), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             self.assertTrue(PATTERN_BRANCH_COMMENT.format(generated_branch_name) in response.data)
-            self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": fake_page_slug, "file_title": fake_page_slug, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data)
+            self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": fake_page_slug, "file_title": fake_page_slug, "file_type": constants.ARTICLE_LAYOUT}) in response.data)
 
             # get the edit page for the new file and extract the hexsha value
             response = self.test_client.get('/tree/{}/edit/{}'.format(generated_branch_name, fake_page_path))
@@ -558,7 +573,7 @@ class TestApp (TestCase):
             hexsha = search(r'<input name="hexsha" value="(\w+)"', response.data).group(1)
             # now save the file with new content
             response = self.test_client.post('/tree/{}/save/{}'.format(generated_branch_name, fake_page_path),
-                                             data={'layout': view_functions.ARTICLE_LAYOUT, 'hexsha': hexsha,
+                                             data={'layout': constants.ARTICLE_LAYOUT, 'hexsha': hexsha,
                                                    'en-title': 'Greetings',
                                                    'en-body': u'{}\n'.format(fake_page_content),
                                                    'fr-title': '', 'fr-body': '',
@@ -600,8 +615,9 @@ class TestApp (TestCase):
         self.assertEqual(response.status_code, 200)
         # should've been redirected to the front page
         self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('activities-list') in response.data)
-        # the activity we just published shouldn't be listed on the page
-        self.assertTrue(generated_branch_name not in response.data)
+        # the activity we just published should be listed under 'recently published activities'
+        self.assertTrue(generated_branch_name in response.data)
+        self.assertTrue(response.data.find(generated_branch_name) > response.data.find(u'Recently Published Activities'))
 
         # Look in the published directory and see if the words are there.
         with open(join(self.publish_path, fake_page_slug, 'index.html')) as file:
@@ -618,18 +634,15 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            disposable_task_description = u'unimportant task'
-            disposable_task_beneficiary = u'unimportant person'
-            response = self.test_client.post('/start', data={'task_description': disposable_task_description, 'task_beneficiary': disposable_task_beneficiary}, follow_redirects=True)
+            disposable_task_description = u'unimportant task for unimportant person'
+            response = self.test_client.post('/start', data={'task_description': disposable_task_description}, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('articles-list') in response.data)
             self.assertTrue(PATTERN_TASK_COMMENT.format(disposable_task_description) in response.data)
-            self.assertTrue(PATTERN_BENEFICIARY_COMMENT.format(disposable_task_beneficiary) in response.data)
 
             # create a branch programmatically on our pre-made clone
-            check_task_description = u'Creating a Star Child'
-            check_task_beneficiary = u'Ancient Aliens'
-            check_branch = repo_functions.get_start_branch(self.clone1, 'master', check_task_description, check_task_beneficiary, fake_author_email)
+            check_task_description = u'Creating a Star Child for Ancient Aliens'
+            check_branch = repo_functions.get_start_branch(self.clone1, 'master', check_task_description, fake_author_email)
             self.assertTrue(check_branch.name in self.clone1.branches)
             self.assertTrue(check_branch.name in self.origin.branches)
             # verify that the branch doesn't exist in our new clone
@@ -654,8 +667,7 @@ class TestApp (TestCase):
     def test_review_process(self):
         ''' Check the review process
         '''
-        fake_task_description = u'groom pets'
-        fake_task_beneficiary = u'pet owners'
+        fake_task_description = u'groom pets for pet owners'
         fake_author_email = u'erica@example.com'
         fake_endorser_email = u'frances@example.com'
         fake_page_slug = u'hello'
@@ -666,7 +678,7 @@ class TestApp (TestCase):
 
         with HTTMock(self.auth_csv_example_allowed):
             # create a new branch
-            response = self.test_client.post('/start', data={'task_description': fake_task_description, 'task_beneficiary': fake_task_beneficiary}, follow_redirects=True)
+            response = self.test_client.post('/start', data={'task_description': fake_task_description}, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('articles-list') in response.data)
 
@@ -680,7 +692,7 @@ class TestApp (TestCase):
 
             # create a new file
             response = self.test_client.post('/tree/{}/edit/'.format(generated_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': fake_page_slug},
+                                             data={'action': 'create', 'create_what': constants.ARTICLE_LAYOUT, 'request_path': fake_page_slug},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
 
@@ -699,8 +711,20 @@ class TestApp (TestCase):
             # get the activity list page
             response = self.test_client.get('/', follow_redirects=True)
             self.assertEqual(response.status_code, 200)
-            # verify that there's an unreviewed edits link
-            self.assertTrue(PATTERN_UNREVIEWED_EDITS_LINK.format(branch_name=generated_branch_name) in response.data)
+            # verify that the project is listed in the edited column
+            soup = BeautifulSoup(response.data)
+            pub_ul = soup.select("#activity-list-edited")[0]
+            # there should be an HTML comment with the branch name
+            comments = pub_ul.findAll(text=lambda text: isinstance(text, Comment))
+            found = False
+            for comment in comments:
+                if generated_branch_name in comment:
+                    found = True
+                    pub_li = comment.find_parent('li')
+                    # and the activity title wrapped in an a tag
+                    self.assertIsNotNone(pub_li.find('a', text=fake_task_description))
+
+            self.assertEqual(True, found)
 
         # Request feedback on the change
         with HTTMock(self.auth_csv_example_allowed):
@@ -730,8 +754,15 @@ class TestApp (TestCase):
             # get the activity list page
             response = self.test_client.get('/', follow_redirects=True)
             self.assertEqual(response.status_code, 200)
-            # verify that there's a feedback requested link
-            self.assertTrue(PATTERN_FEEDBACK_REQUESTED_LINK.format(branch_name=generated_branch_name) in response.data)
+            # verify that the project is listed in the feedback needed column
+            soup = BeautifulSoup(response.data)
+            pub_ul = soup.select("#activity-list-feedback")[0]
+            # there should be an HTML comment with the branch name
+            comment = pub_ul.findAll(text=lambda text: isinstance(text, Comment))[0]
+            self.assertTrue(generated_branch_name in comment)
+            pub_li = comment.find_parent('li')
+            # and the activity title wrapped in an a tag
+            self.assertIsNotNone(pub_li.find('a', text=fake_task_description))
 
         # Endorse the change
         with HTTMock(self.auth_csv_example_allowed):
@@ -759,8 +790,15 @@ class TestApp (TestCase):
             # get the activity list page
             response = self.test_client.get('/', follow_redirects=True)
             self.assertEqual(response.status_code, 200)
-            # verify that there's an 'ready to publish' link
-            self.assertTrue(PATTERN_READY_TO_PUBLISH_LINK.format(branch_name=generated_branch_name) in response.data)
+            # verify that the project is listed in the ready to publish column
+            soup = BeautifulSoup(response.data)
+            pub_ul = soup.select("#activity-list-endorsed")[0]
+            # there should be an HTML comment with the branch name
+            comment = pub_ul.findAll(text=lambda text: isinstance(text, Comment))[0]
+            self.assertTrue(generated_branch_name in comment)
+            pub_li = comment.find_parent('li')
+            # and the activity title wrapped in an a tag
+            self.assertIsNotNone(pub_li.find('a', text=fake_task_description))
 
         # And publish the change!
         with HTTMock(self.auth_csv_example_allowed):
@@ -768,8 +806,15 @@ class TestApp (TestCase):
         self.assertEqual(response.status_code, 200)
         # should've been redirected to the front page
         self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('activities-list') in response.data)
-        # the activity we just published shouldn't be listed on the page
-        self.assertTrue(generated_branch_name not in response.data)
+        # verify that the project is listed in the recently published column
+        soup = BeautifulSoup(response.data)
+        pub_ul = soup.select("#activity-list-published")[0]
+        # there should be an HTML comment with the branch name
+        comment = pub_ul.findAll(text=lambda text: isinstance(text, Comment))[0]
+        self.assertTrue(generated_branch_name in comment)
+        pub_li = comment.find_parent('li')
+        # and the activity title wrapped in an a tag
+        self.assertIsNotNone(pub_li.find('a', text=fake_task_description))
 
     # in TestApp
     def test_get_request_does_not_create_branch(self):
@@ -818,7 +863,7 @@ class TestApp (TestCase):
         ''' Certain POSTs to a made-up URL should not create a branch
         '''
         fake_page_slug = u'hello'
-        fake_page_path = u'{}/index.{}'.format(fake_page_slug, view_functions.CONTENT_FILE_EXTENSION)
+        fake_page_path = u'{}/index.{}'.format(fake_page_slug, constants.CONTENT_FILE_EXTENSION)
 
         with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'assertion': 'erica@example.com'})
@@ -828,7 +873,7 @@ class TestApp (TestCase):
             # try creating an article in a non-existent branch
             #
             fake_branch_name = repo_functions.make_branch_name()
-            response = self.test_client.post('/tree/{}/edit/'.format(fake_branch_name), data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': fake_page_slug}, follow_redirects=True)
+            response = self.test_client.post('/tree/{}/edit/'.format(fake_branch_name), data={'action': 'create', 'create_what': constants.ARTICLE_LAYOUT, 'request_path': fake_page_slug}, follow_redirects=True)
             self.assertEqual(response.status_code, 404)
             self.assertTrue(view_functions.MESSAGE_ACTIVITY_DELETED in response.data)
             # the branch name should not be in the origin's branches list
@@ -837,14 +882,12 @@ class TestApp (TestCase):
             #
             # create a branch then delete it right before a POSTing a save command
             #
-            fake_task_description = u'Doing fake stuff'
-            fake_task_beneficiary = u'Nobody'
-            response = self.test_client.post('/start', data={'task_description': fake_task_description, 'task_beneficiary': fake_task_beneficiary}, follow_redirects=True)
+            fake_task_description = u'Doing fake stuff for Nobody'
+            response = self.test_client.post('/start', data={'task_description': fake_task_description}, follow_redirects=True)
             # we should be on the new task's edit page
             self.assertEqual(response.status_code, 200)
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('articles-list') in response.data)
             self.assertTrue(PATTERN_TASK_COMMENT.format(fake_task_description) in response.data)
-            self.assertTrue(PATTERN_BENEFICIARY_COMMENT.format(fake_task_beneficiary) in response.data)
 
             # extract the generated branch name from the returned HTML
             generated_branch_search = search(r'<!-- branch: (.{{{}}}) -->'.format(repo_functions.BRANCH_NAME_LENGTH), response.data)
@@ -855,7 +898,7 @@ class TestApp (TestCase):
                 raise Exception('No match for generated branch name.')
 
             # create a new article
-            response = self.test_client.post('/tree/{}/edit/'.format(generated_branch_name), data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': fake_page_slug}, follow_redirects=True)
+            response = self.test_client.post('/tree/{}/edit/'.format(generated_branch_name), data={'action': 'create', 'create_what': constants.ARTICLE_LAYOUT, 'request_path': fake_page_slug}, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('article-edit') in response.data)
 
@@ -864,7 +907,7 @@ class TestApp (TestCase):
             self.assertEqual(response.status_code, 200)
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('articles-list') in response.data)
             self.assertTrue(PATTERN_BRANCH_COMMENT.format(generated_branch_name) in response.data)
-            self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": fake_page_slug, "file_title": fake_page_slug, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data)
+            self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": fake_page_slug, "file_title": fake_page_slug, "file_type": constants.ARTICLE_LAYOUT}) in response.data)
 
             # load the article edit page and grab the hexsha from the form
             response = self.test_client.get('/tree/{}/edit/{}'.format(generated_branch_name, fake_page_path))
@@ -877,7 +920,7 @@ class TestApp (TestCase):
             self.assertFalse(generated_branch_name in response.data)
 
             # try submitting a change to the article
-            response = self.test_client.post('/tree/{}/save/{}'.format(generated_branch_name, fake_page_path), data={'layout': view_functions.ARTICLE_LAYOUT, 'hexsha': hexsha, 'en-title': 'Greetings', 'en-body': 'Hello world.\n', 'fr-title': '', 'fr-body': '', 'url-slug': 'hello'}, follow_redirects=True)
+            response = self.test_client.post('/tree/{}/save/{}'.format(generated_branch_name, fake_page_path), data={'layout': constants.ARTICLE_LAYOUT, 'hexsha': hexsha, 'en-title': 'Greetings', 'en-body': 'Hello world.\n', 'fr-title': '', 'fr-body': '', 'url-slug': 'hello'}, follow_redirects=True)
             self.assertEqual(response.status_code, 404)
             self.assertTrue(view_functions.MESSAGE_ACTIVITY_DELETED in response.data)
             # the task name should not be in the returned HTML
@@ -897,18 +940,15 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            disposable_task_description = u'unimportant task'
-            disposable_task_beneficiary = u'unimportant person'
-            response = self.test_client.post('/start', data={'task_description': disposable_task_description, 'task_beneficiary': disposable_task_beneficiary}, follow_redirects=True)
+            disposable_task_description = u'unimportant task for unimportant person'
+            response = self.test_client.post('/start', data={'task_description': disposable_task_description}, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('articles-list') in response.data)
             self.assertTrue(PATTERN_TASK_COMMENT.format(disposable_task_description) in response.data)
-            self.assertTrue(PATTERN_BENEFICIARY_COMMENT.format(disposable_task_beneficiary) in response.data)
 
             # create a branch programmatically on our pre-made clone
-            check_task_description = u'the branch we are checking for'
-            check_task_beneficiary = u'just me'
-            check_branch = repo_functions.get_start_branch(self.clone1, 'master', check_task_description, check_task_beneficiary, fake_author_email)
+            check_task_description = u'the branch we are checking for for just me'
+            check_branch = repo_functions.get_start_branch(self.clone1, 'master', check_task_description, fake_author_email)
             self.assertTrue(check_branch.name in self.clone1.branches)
             self.assertTrue(check_branch.name in self.origin.branches)
             # verify that the branch doesn't exist in our new clone
@@ -925,7 +965,6 @@ class TestApp (TestCase):
             # the task description should be in the returned HTML
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('articles-list') in response.data)
             self.assertTrue(PATTERN_TASK_COMMENT.format(check_task_description) in response.data)
-            self.assertTrue(PATTERN_BENEFICIARY_COMMENT.format(check_task_beneficiary) in response.data)
 
             # the branch name should now be in the original repo's branches list
             self.assertTrue(check_branch.name in new_clone.branches)
@@ -964,9 +1003,8 @@ class TestApp (TestCase):
         with HTTMock(self.mock_persona_verify_erica):
             self.test_client.post('/sign-in', data={'assertion': fake_author_email})
 
-        fake_task_description = u'unimportant task'
-        fake_task_beneficiary = u'unimportant person'
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', fake_task_description, fake_task_beneficiary, fake_author_email)
+        fake_task_description = u'unimportant task for unimportant person'
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', fake_task_description, fake_author_email)
         branch1_name = branch1.name
         branch1.checkout()
 
@@ -1113,10 +1151,9 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            task_description = u'force a clam shell open'
-            task_beneficiary = u'starfish'
+            task_description = u'force a clam shell open for starfish'
 
-            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
             self.assertTrue(working_branch.name in self.clone1.branches)
             self.assertTrue(working_branch.name in self.origin.branches)
             working_branch_name = working_branch.name
@@ -1125,7 +1162,7 @@ class TestApp (TestCase):
             # create a new category
             page_slug = u'hello'
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': page_slug},
+                                             data={'action': 'create', 'create_what': constants.CATEGORY_LAYOUT, 'request_path': page_slug},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
 
@@ -1134,7 +1171,7 @@ class TestApp (TestCase):
 
             # a directory was created
             dir_location = join(self.clone1.working_dir, page_slug)
-            idx_location = u'{}/index.{}'.format(dir_location, view_functions.CONTENT_FILE_EXTENSION)
+            idx_location = u'{}/index.{}'.format(dir_location, constants.CONTENT_FILE_EXTENSION)
             self.assertTrue(exists(dir_location) and isdir(dir_location))
             # an index page was created inside
             self.assertTrue(exists(idx_location))
@@ -1151,7 +1188,8 @@ class TestApp (TestCase):
                 erica.sign_in(email='erica@example.com')
 
             # Start a new task
-            erica.start_task(description=u'Be Shot Hundreds Of Feet Into The Air', beneficiary=u'A Geyser Of Highly Pressurized Water')
+            erica.open_link('/')
+            erica.start_task(description=u'Be Shot Hundreds Of Feet Into The Air for A Geyser Of Highly Pressurized Water')
             # Get the branch name
             branch_name = erica.get_branch_name()
 
@@ -1185,7 +1223,8 @@ class TestApp (TestCase):
             pattern_template_comment_stripped = sub(ur'<!--|-->', u'', PATTERN_TEMPLATE_COMMENT)
 
             # Start a new task
-            erica.start_task(description=u'Deep-Fry a Buffalo in Forty Seconds', beneficiary=u'Moe')
+            erica.open_link('/')
+            erica.start_task(description=u'Deep-Fry a Buffalo in Forty Seconds for Moe')
             # Get the branch name
             branch_name = erica.get_branch_name()
 
@@ -1248,12 +1287,11 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            working_branch = repo_functions.get_start_branch(self.clone1, 'master', u'force a clam shell open',
-                                                             u'starfish', fake_author_email)
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', u'force a clam shell open for starfish', fake_author_email)
             working_branch.checkout()
 
             # create a new category
-            request_data = {'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': u'hello'}
+            request_data = {'action': 'create', 'create_what': constants.CATEGORY_LAYOUT, 'request_path': u'hello'}
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch.name),
                                              data=request_data,
                                              follow_redirects=True)
@@ -1272,7 +1310,7 @@ class TestApp (TestCase):
 
             # everything looks good
             dir_location = join(self.clone1.working_dir, u'hello')
-            idx_location = u'{}/index.{}'.format(dir_location, view_functions.CONTENT_FILE_EXTENSION)
+            idx_location = u'{}/index.{}'.format(dir_location, constants.CONTENT_FILE_EXTENSION)
             self.assertTrue(exists(dir_location) and isdir(dir_location))
             # an index page was created inside
             self.assertTrue(exists(idx_location))
@@ -1290,10 +1328,9 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            task_description = u'vomit digestive fluid onto rotting flesh'
-            task_beneficiary = u'flies'
+            task_description = u'vomit digestive fluid onto rotting flesh for flies'
 
-            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
             self.assertTrue(working_branch.name in self.clone1.branches)
             self.assertTrue(working_branch.name in self.origin.branches)
             working_branch_name = working_branch.name
@@ -1302,14 +1339,14 @@ class TestApp (TestCase):
             # create a categories directory
             categories_slug = u'categories'
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': categories_slug},
+                                             data={'action': 'create', 'create_what': constants.CATEGORY_LAYOUT, 'request_path': categories_slug},
                                              follow_redirects=True)
 
             # and put a new category inside it
             cata_title = u'Mouth Parts'
             cata_slug = slugify(cata_title)
             response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, categories_slug),
-                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': cata_title},
+                                             data={'action': 'create', 'create_what': constants.CATEGORY_LAYOUT, 'request_path': cata_title},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
 
@@ -1317,7 +1354,7 @@ class TestApp (TestCase):
             catb_title = u'Esophagus'
             catb_slug = slugify(catb_title)
             response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, join(categories_slug, cata_slug)),
-                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': catb_title},
+                                             data={'action': 'create', 'create_what': constants.CATEGORY_LAYOUT, 'request_path': catb_title},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
 
@@ -1325,7 +1362,7 @@ class TestApp (TestCase):
             art_title = u'Stomach'
             art_slug = slugify(art_title)
             response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, join(categories_slug, cata_slug, catb_slug)),
-                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': art_title},
+                                             data={'action': 'create', 'create_what': constants.ARTICLE_LAYOUT, 'request_path': art_title},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
 
@@ -1358,12 +1395,14 @@ class TestApp (TestCase):
         ''' The record of a delete in the corresponding commit is accurate.
         '''
         with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
             with HTTMock(self.mock_persona_verify_erica):
                 erica = ChimeTestClient(self.test_client, self)
-                erica.sign_in(email='erica@example.com')
+                erica.sign_in(email=erica_email)
 
             # Start a new task
-            erica.start_task(description=u'Ferment Tuber Fibres Using Symbiotic Bacteria in the Intestines', beneficiary=u'Naked Mole Rats')
+            erica.open_link('/')
+            erica.start_task(description=u'Ferment Tuber Fibres Using Symbiotic Bacteria in the Intestines for Naked Mole Rats')
             # Get the branch name
             branch_name = erica.get_branch_name()
 
@@ -1375,7 +1414,7 @@ class TestApp (TestCase):
             subcategory_names = [u'Volatile Fatty Acids', u'Non-Reproducing Females', u'Arid African Deserts']
             article_names = [u'Eusocial Exhibition', u'Old Enough to Eat Solid Food', u'Contributing to Extension of Tunnels', u'Foraging and Nest Building']
             erica.add_category(category_name=category_names[0])
-            
+
             category_path = erica.path
             erica.add_subcategory(subcategory_name=subcategory_names[0])
             erica.open_link(category_path)
@@ -1399,7 +1438,8 @@ class TestApp (TestCase):
 
             # get and check the history
             repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email='erica@example.com')
-            activity_history = view_functions.make_activity_history(repo=repo)
+            activity = chime_activity.ChimeActivity(repo=repo, branch_name=branch_name, default_branch_name='master', actor_email=erica_email)
+            activity_history = activity.history
             delete_history = json.loads(activity_history[0]['commit_body'])
             for item in delete_history:
                 self.assertEqual(item['action'], u'delete')
@@ -1431,10 +1471,9 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            task_description = u'Remove Small Organic Particles From Seawater Passing Over Outspread Tentacles'
-            task_beneficiary = u'Sea Anemones'
+            task_description = u'Remove Small Organic Particles From Seawater Passing Over Outspread Tentacles for Sea Anemones'
 
-            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
             self.assertTrue(working_branch.name in self.clone1.branches)
             self.assertTrue(working_branch.name in self.origin.branches)
             working_branch_name = working_branch.name
@@ -1444,7 +1483,7 @@ class TestApp (TestCase):
             art_title = u'Zooplankters'
             art_slug = slugify(art_title)
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': art_title},
+                                             data={'action': 'create', 'create_what': constants.ARTICLE_LAYOUT, 'request_path': art_title},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
 
@@ -1479,10 +1518,9 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            task_description = u'eviscerate a salmon'
-            task_beneficiary = u'baby grizzly bears'
+            task_description = u'eviscerate a salmon for baby grizzly bears'
 
-            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
             self.assertTrue(working_branch.name in self.clone1.branches)
             self.assertTrue(working_branch.name in self.origin.branches)
             working_branch_name = working_branch.name
@@ -1491,7 +1529,7 @@ class TestApp (TestCase):
             # create a new article
             art_title = u'快速狐狸'
             art_slug = slugify(art_title)
-            response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name), data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': art_title}, follow_redirects=True)
+            response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name), data={'action': 'create', 'create_what': constants.ARTICLE_LAYOUT, 'request_path': art_title}, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format(u'article-edit') in response.data.decode('utf-8'))
 
@@ -1500,7 +1538,7 @@ class TestApp (TestCase):
 
             # a directory was created
             dir_location = join(self.clone1.working_dir, art_slug)
-            idx_location = u'{}/index.{}'.format(dir_location, view_functions.CONTENT_FILE_EXTENSION)
+            idx_location = u'{}/index.{}'.format(dir_location, constants.CONTENT_FILE_EXTENSION)
             self.assertTrue(exists(dir_location) and isdir(dir_location))
             # an index page was created inside
             self.assertTrue(exists(idx_location))
@@ -1514,7 +1552,7 @@ class TestApp (TestCase):
             self.assertEqual(response.status_code, 200)
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format(u'articles-list') in response.data.decode('utf-8'))
             self.assertTrue(PATTERN_BRANCH_COMMENT.format(working_branch) in response.data.decode('utf-8'))
-            self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": art_slug, "file_title": art_title, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data.decode('utf-8'))
+            self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": art_slug, "file_title": art_title, "file_type": constants.ARTICLE_LAYOUT}) in response.data.decode('utf-8'))
 
     # in TestApp
     def test_save_non_roman_characters_to_article(self):
@@ -1526,8 +1564,9 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task, topic, subtopic, article
-            args = 'Mermithergate', 'Ant Worker', 'Enoplia Nematode', 'Genus Mermis', 'Cephalotes Atratus'
-            erica.add_branch_cat_subcat_article(*args)
+            erica.open_link('/')
+            args = 'Mermithergate for Ant Worker', 'Enoplia Nematode', 'Genus Mermis', 'Cephalotes Atratus'
+            erica.quick_activity_setup(*args)
 
             # Edit the new article and give it a non-roman character title
             erica.edit_article(u'快速狐狸', u'Myrmeconema ੯ूᵕू ໒꒱ƶƵ Neotropicum')
@@ -1552,10 +1591,9 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            task_description = u'eviscerate a salmon'
-            task_beneficiary = u'baby grizzly bears'
+            task_description = u'eviscerate a salmon for baby grizzly bears'
 
-            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
             self.assertTrue(working_branch.name in self.clone1.branches)
             self.assertTrue(working_branch.name in self.origin.branches)
             working_branch_name = working_branch.name
@@ -1565,7 +1603,7 @@ class TestApp (TestCase):
             cat_title = u'grrowl!! Yeah'
             cat_slug = slugify(cat_title)
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': cat_title},
+                                             data={'action': 'create', 'create_what': constants.CATEGORY_LAYOUT, 'request_path': cat_title},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
 
@@ -1574,7 +1612,7 @@ class TestApp (TestCase):
 
             # a directory was created
             dir_location = join(self.clone1.working_dir, cat_slug)
-            idx_location = u'{}/index.{}'.format(dir_location, view_functions.CONTENT_FILE_EXTENSION)
+            idx_location = u'{}/index.{}'.format(dir_location, constants.CONTENT_FILE_EXTENSION)
             self.assertTrue(exists(dir_location) and isdir(dir_location))
             # an index page was created inside
             self.assertTrue(exists(idx_location))
@@ -1585,12 +1623,12 @@ class TestApp (TestCase):
 
             # the title saved in the index front matter is displayed on the article list page
             response = self.test_client.get('/tree/{}/edit/'.format(working_branch_name), follow_redirects=True)
-            self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": cat_slug, "file_title": cat_title, "file_type": view_functions.CATEGORY_LAYOUT}) in response.data)
+            self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": cat_slug, "file_title": cat_title, "file_type": constants.CATEGORY_LAYOUT}) in response.data)
 
             # create a new article
             art_title = u'快速狐狸'
             art_slug = slugify(art_title)
-            response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name), data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': art_title}, follow_redirects=True)
+            response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name), data={'action': 'create', 'create_what': constants.ARTICLE_LAYOUT, 'request_path': art_title}, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format(u'article-edit') in response.data.decode('utf-8'))
 
@@ -1599,7 +1637,7 @@ class TestApp (TestCase):
 
             # a directory was created
             dir_location = join(self.clone1.working_dir, art_slug)
-            idx_location = u'{}/index.{}'.format(dir_location, view_functions.CONTENT_FILE_EXTENSION)
+            idx_location = u'{}/index.{}'.format(dir_location, constants.CONTENT_FILE_EXTENSION)
             self.assertTrue(exists(dir_location) and isdir(dir_location))
             # an index page was created inside
             self.assertTrue(exists(idx_location))
@@ -1613,7 +1651,7 @@ class TestApp (TestCase):
             self.assertEqual(response.status_code, 200)
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format(u'articles-list') in response.data.decode('utf-8'))
             self.assertTrue(PATTERN_BRANCH_COMMENT.format(working_branch) in response.data.decode('utf-8'))
-            self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": art_slug, "file_title": art_title, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data.decode('utf-8'))
+            self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": art_slug, "file_title": art_title, "file_type": constants.ARTICLE_LAYOUT}) in response.data.decode('utf-8'))
 
     # in TestApp
     def test_edit_category_title_and_description(self):
@@ -1626,10 +1664,9 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            task_description = u'rapidly discharge black ink into the mantle cavity'
-            task_beneficiary = u'squids'
+            task_description = u'rapidly discharge black ink into the mantle cavity for squids'
 
-            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
             self.assertTrue(working_branch.name in self.clone1.branches)
             self.assertTrue(working_branch.name in self.origin.branches)
             working_branch_name = working_branch.name
@@ -1638,14 +1675,14 @@ class TestApp (TestCase):
             # create a categories directory
             categories_slug = u'categories'
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': categories_slug},
+                                             data={'action': 'create', 'create_what': constants.CATEGORY_LAYOUT, 'request_path': categories_slug},
                                              follow_redirects=True)
 
             # and put a new category inside it
             cat_title = u'Bolus'
             cat_slug = slugify(cat_title)
             response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, categories_slug),
-                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': cat_title},
+                                             data={'action': 'create', 'create_what': constants.CATEGORY_LAYOUT, 'request_path': cat_title},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
 
@@ -1656,8 +1693,8 @@ class TestApp (TestCase):
             hexsha = self.clone1.commit().hexsha
 
             # get the modify page and verify that the form renders with the correct values
-            cat_path = join(categories_slug, cat_slug, u'index.{}'.format(view_functions.CONTENT_FILE_EXTENSION))
-            response = self.test_client.get('/tree/{}/modify/{}'.format(working_branch_name, view_functions.strip_index_file(cat_path)), follow_redirects=True)
+            cat_path = join(categories_slug, cat_slug, u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
+            response = self.test_client.get('/tree/{}/modify/{}'.format(working_branch_name, repo_functions.strip_index_file(cat_path)), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             self.assertTrue(PATTERN_FORM_CATEGORY_TITLE.format(title=cat_title) in response.data)
             self.assertTrue(PATTERN_FORM_CATEGORY_DESCRIPTION.format(description=u'') in response.data)
@@ -1666,7 +1703,7 @@ class TestApp (TestCase):
             new_cat_title = u'Caecum'
             cat_description = u'An intraperitoneal pouch, that is considered to be the beginning of the large intestine.'
             response = self.test_client.post('/tree/{}/modify/{}'.format(working_branch_name, cat_path),
-                                             data={'layout': view_functions.CATEGORY_LAYOUT, 'hexsha': hexsha, 'url-slug': u'{}/{}/'.format(categories_slug, cat_slug),
+                                             data={'layout': constants.CATEGORY_LAYOUT, 'hexsha': hexsha, 'url-slug': u'{}/{}/'.format(categories_slug, cat_slug),
                                                    'en-title': new_cat_title, 'en-description': cat_description, 'order': u'0', 'save': u''},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
@@ -1681,7 +1718,7 @@ class TestApp (TestCase):
 
             # a directory was created
             dir_location = join(self.clone1.working_dir, categories_slug, cat_slug)
-            idx_location = u'{}/index.{}'.format(dir_location, view_functions.CONTENT_FILE_EXTENSION)
+            idx_location = u'{}/index.{}'.format(dir_location, constants.CONTENT_FILE_EXTENSION)
             self.assertTrue(exists(dir_location) and isdir(dir_location))
             # an index page was created inside
             self.assertTrue(exists(idx_location))
@@ -1693,7 +1730,7 @@ class TestApp (TestCase):
 
             # the title saved in the index front matter is displayed on the article list page
             response = self.test_client.get('/tree/{}/edit/{}'.format(working_branch_name, categories_slug), follow_redirects=True)
-            self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": cat_slug, "file_title": new_cat_title, "file_type": view_functions.CATEGORY_LAYOUT}) in response.data)
+            self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": cat_slug, "file_title": new_cat_title, "file_type": constants.CATEGORY_LAYOUT}) in response.data)
 
     # in TestApp
     def test_delete_category(self):
@@ -1706,10 +1743,9 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            task_description = u'clasp with front legs and draw up the hind end'
-            task_beneficiary = u'geometridae'
+            task_description = u'clasp with front legs and draw up the hind end for geometridae'
 
-            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
             self.assertTrue(working_branch.name in self.clone1.branches)
             self.assertTrue(working_branch.name in self.origin.branches)
             working_branch_name = working_branch.name
@@ -1718,14 +1754,14 @@ class TestApp (TestCase):
             # create a categories directory
             categories_slug = u'categories'
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': categories_slug},
+                                             data={'action': 'create', 'create_what': constants.CATEGORY_LAYOUT, 'request_path': categories_slug},
                                              follow_redirects=True)
 
             # and put a new category inside it
             cat_title = u'Soybean Looper'
             cat_slug = slugify(cat_title)
             response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, categories_slug),
-                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': cat_title},
+                                             data={'action': 'create', 'create_what': constants.CATEGORY_LAYOUT, 'request_path': cat_title},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
 
@@ -1739,7 +1775,7 @@ class TestApp (TestCase):
             cat_description = u''
             url_slug = u'{}/{}/'.format(categories_slug, cat_slug)
             response = self.test_client.post('/tree/{}/modify/{}'.format(working_branch_name, url_slug.rstrip('/')),
-                                             data={'layout': view_functions.CATEGORY_LAYOUT, 'hexsha': hexsha, 'url-slug': url_slug,
+                                             data={'layout': constants.CATEGORY_LAYOUT, 'hexsha': hexsha, 'url-slug': url_slug,
                                                    'en-title': cat_title, 'en-description': cat_description, 'order': u'0', 'delete': u''},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
@@ -1756,7 +1792,7 @@ class TestApp (TestCase):
 
             # the title is not displayed on the article list page
             response = self.test_client.get('/tree/{}/edit/{}'.format(working_branch_name, categories_slug), follow_redirects=True)
-            self.assertFalse(PATTERN_FILE_COMMENT.format(**{"file_name": cat_slug, "file_title": cat_title, "file_type": view_functions.CATEGORY_LAYOUT}) in response.data)
+            self.assertFalse(PATTERN_FILE_COMMENT.format(**{"file_name": cat_slug, "file_title": cat_title, "file_type": constants.CATEGORY_LAYOUT}) in response.data)
 
     # in TestApp
     def test_set_and_retrieve_order_and_description(self):
@@ -1769,10 +1805,9 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            task_description = u'regurgitate partially digested worms and grubs'
-            task_beneficiary = u'baby birds'
+            task_description = u'regurgitate partially digested worms and grubs for baby birds'
 
-            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
             self.assertTrue(working_branch.name in self.clone1.branches)
             self.assertTrue(working_branch.name in self.origin.branches)
             working_branch_name = working_branch.name
@@ -1781,14 +1816,14 @@ class TestApp (TestCase):
             # create a categories directory
             categories_slug = u'categories'
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': categories_slug},
+                                             data={'action': 'create', 'create_what': constants.CATEGORY_LAYOUT, 'request_path': categories_slug},
                                              follow_redirects=True)
 
             # and put a new category inside it
             cat_title = u'Small Intestine'
             cat_slug = slugify(cat_title)
             response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, categories_slug),
-                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': cat_title},
+                                             data={'action': 'create', 'create_what': constants.CATEGORY_LAYOUT, 'request_path': cat_title},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
 
@@ -1802,9 +1837,9 @@ class TestApp (TestCase):
             new_cat_title = u'The Small Intestine'
             cat_description = u'The part of the GI tract following the stomach and followed by the large intestine where much of the digestion and absorption of food takes place.'
             cat_order = 3
-            cat_path = join(categories_slug, cat_slug, u'index.{}'.format(view_functions.CONTENT_FILE_EXTENSION))
+            cat_path = join(categories_slug, cat_slug, u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
             response = self.test_client.post('/tree/{}/save/{}'.format(working_branch_name, cat_path),
-                                             data={'layout': view_functions.CATEGORY_LAYOUT, 'hexsha': hexsha,
+                                             data={'layout': constants.CATEGORY_LAYOUT, 'hexsha': hexsha,
                                                    'en-title': new_cat_title, 'en-description': cat_description, 'order': cat_order},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
@@ -1817,7 +1852,7 @@ class TestApp (TestCase):
 
             # a directory was created
             dir_location = join(self.clone1.working_dir, categories_slug, cat_slug)
-            idx_location = u'{}/index.{}'.format(dir_location, view_functions.CONTENT_FILE_EXTENSION)
+            idx_location = u'{}/index.{}'.format(dir_location, constants.CONTENT_FILE_EXTENSION)
             self.assertTrue(exists(dir_location) and isdir(dir_location))
             # an index page was created inside
             self.assertTrue(exists(idx_location))
@@ -1832,7 +1867,7 @@ class TestApp (TestCase):
 
             # the title saved in the index front matter is displayed on the article list page
             response = self.test_client.get('/tree/{}/edit/{}'.format(working_branch_name, categories_slug), follow_redirects=True)
-            self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": cat_slug, "file_title": new_cat_title, "file_type": view_functions.CATEGORY_LAYOUT}) in response.data)
+            self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": cat_slug, "file_title": new_cat_title, "file_type": constants.CATEGORY_LAYOUT}) in response.data)
 
     # in TestApp
     def test_column_navigation_structure(self):
@@ -1845,10 +1880,9 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            task_description = u'force a clam shell open'
-            task_beneficiary = u'starfish'
+            task_description = u'force a clam shell open for starfish'
 
-            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
             self.assertTrue(working_branch.name in self.clone1.branches)
             self.assertTrue(working_branch.name in self.origin.branches)
             working_branch_name = working_branch.name
@@ -1857,25 +1891,25 @@ class TestApp (TestCase):
             # create some nested categories
             slug_hello = u'hello'
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': slug_hello},
+                                             data={'action': 'create', 'create_what': constants.CATEGORY_LAYOUT, 'request_path': slug_hello},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
 
             slug_world = u'world'
             response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, slug_hello),
-                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': slug_world},
+                                             data={'action': 'create', 'create_what': constants.CATEGORY_LAYOUT, 'request_path': slug_world},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
 
             slug_how = u'how'
             response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, sep.join([slug_hello, slug_world])),
-                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': slug_how},
+                                             data={'action': 'create', 'create_what': constants.CATEGORY_LAYOUT, 'request_path': slug_how},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
 
             slug_are = u'are'
             response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, sep.join([slug_hello, slug_world, slug_how])),
-                                             data={'action': 'create', 'create_what': view_functions.CATEGORY_LAYOUT, 'request_path': slug_are},
+                                             data={'action': 'create', 'create_what': constants.CATEGORY_LAYOUT, 'request_path': slug_are},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
 
@@ -1907,10 +1941,9 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            task_description = u'deposit eggs in a syconium'
-            task_beneficiary = u'fig wasp larvae'
+            task_description = u'deposit eggs in a syconium for fig wasp larvae'
 
-            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
             self.assertTrue(working_branch.name in self.clone1.branches)
             self.assertTrue(working_branch.name in self.origin.branches)
             working_branch_name = working_branch.name
@@ -1924,11 +1957,11 @@ class TestApp (TestCase):
             title_fig_en = u'Fig'
             title_fig_bn = u'Dumur'
             create_details = [
-                (u'', title_fig_zh, view_functions.CATEGORY_LAYOUT),
-                (slug_fig_zh, title_syconium, view_functions.CATEGORY_LAYOUT),
-                (u'{}/{}'.format(slug_fig_zh, slug_syconium), title_ostiole, view_functions.ARTICLE_LAYOUT),
-                (u'', title_fig_en, view_functions.CATEGORY_LAYOUT),
-                (u'', title_fig_bn, view_functions.CATEGORY_LAYOUT)
+                (u'', title_fig_zh, constants.CATEGORY_LAYOUT),
+                (slug_fig_zh, title_syconium, constants.CATEGORY_LAYOUT),
+                (u'{}/{}'.format(slug_fig_zh, slug_syconium), title_ostiole, constants.ARTICLE_LAYOUT),
+                (u'', title_fig_en, constants.CATEGORY_LAYOUT),
+                (u'', title_fig_bn, constants.CATEGORY_LAYOUT)
             ]
 
             for detail in create_details:
@@ -1958,7 +1991,7 @@ class TestApp (TestCase):
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('activity-overview') in response_data)
             self.assertTrue(PATTERN_OVERVIEW_ACTIVITY_STARTED.format(**{"activity_name": task_description, "author_email": fake_author_email}) in response_data)
             self.assertTrue(PATTERN_OVERVIEW_COMMENT_BODY.format(**{"comment_body": comment_text}) in response_data)
-            self.assertTrue(PATTERN_OVERVIEW_ITEM_DELETED.format(**{"deleted_name": title_fig_zh, "deleted_type": view_functions.file_display_name(view_functions.CATEGORY_LAYOUT), "deleted_also": u'(containing 1 topic and 1 article) ', "author_email": fake_author_email}) in response_data)
+            self.assertTrue(PATTERN_OVERVIEW_ITEM_DELETED.format(**{"deleted_name": title_fig_zh, "deleted_type": view_functions.file_display_name(constants.CATEGORY_LAYOUT), "deleted_also": u'(containing 1 topic and 1 article) ', "author_email": fake_author_email}) in response_data)
             for detail in create_details:
                 self.assertTrue(PATTERN_OVERVIEW_ITEM_CREATED.format(**{"created_name": detail[1], "created_type": detail[2], "author_email": fake_author_email}), response_data)
 
@@ -1972,7 +2005,8 @@ class TestApp (TestCase):
                 erica.sign_in(email='erica@example.com')
 
             # Start a new task
-            erica.start_task(description=u'Parasitize with Ichneumonidae', beneficiary=u'Moth Larvae')
+            erica.open_link('/')
+            erica.start_task(description=u'Parasitize with Ichneumonidae for Moth Larvae')
             # Get the branch name
             branch_name = erica.get_branch_name()
 
@@ -2008,7 +2042,7 @@ class TestApp (TestCase):
             summary_div = erica.soup.find("div", class_="activity-summary")
             self.assertIsNotNone(summary_div)
             # it's right about what's changed
-            self.assertIsNotNone(summary_div.find(lambda tag: bool(tag.name == 'a' and '2 articles and 2 topics' in tag.text)))
+            self.assertIsNotNone(summary_div.find(lambda tag: bool(tag.name == 'p' and '2 articles and 2 topics' in tag.text)))
             # grab all the table rows
             check_rows = summary_div.find_all('tr')
 
@@ -2055,10 +2089,9 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            task_description = u'filter plankton from sea water'
-            task_beneficiary = u'humpback whales'
+            task_description = u'filter plankton from sea water for humpback whales'
 
-            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
             self.assertTrue(working_branch.name in self.clone1.branches)
             self.assertTrue(working_branch.name in self.origin.branches)
             working_branch_name = working_branch.name
@@ -2066,9 +2099,9 @@ class TestApp (TestCase):
 
             # create a new page
             page_slug = u'hello'
-            page_path = u'{}/index.{}'.format(page_slug, view_functions.CONTENT_FILE_EXTENSION)
+            page_path = u'{}/index.{}'.format(page_slug, constants.CONTENT_FILE_EXTENSION)
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': page_slug},
+                                             data={'action': 'create', 'create_what': constants.ARTICLE_LAYOUT, 'request_path': page_slug},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             self.assertTrue(page_path in response.data)
@@ -2078,7 +2111,7 @@ class TestApp (TestCase):
 
             # a directory was created
             dir_location = join(self.clone1.working_dir, page_slug)
-            idx_location = u'{}/index.{}'.format(dir_location, view_functions.CONTENT_FILE_EXTENSION)
+            idx_location = u'{}/index.{}'.format(dir_location, constants.CONTENT_FILE_EXTENSION)
             self.assertTrue(exists(dir_location) and isdir(dir_location))
             # an index page was created inside
             self.assertTrue(exists(idx_location))
@@ -2096,10 +2129,9 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            task_description = u'filter plankton from sea water'
-            task_beneficiary = u'humpback whales'
+            task_description = u'filter plankton from sea water for humpback whales'
 
-            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
             self.assertTrue(working_branch.name in self.clone1.branches)
             self.assertTrue(working_branch.name in self.origin.branches)
             working_branch_name = working_branch.name
@@ -2107,9 +2139,9 @@ class TestApp (TestCase):
 
             # create a new page
             page_slug = u'hello'
-            page_path = u'{}/index.{}'.format(page_slug, view_functions.CONTENT_FILE_EXTENSION)
+            page_path = u'{}/index.{}'.format(page_slug, constants.CONTENT_FILE_EXTENSION)
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': page_slug},
+                                             data={'action': 'create', 'create_what': constants.ARTICLE_LAYOUT, 'request_path': page_slug},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             self.assertTrue(page_path in response.data)
@@ -2117,9 +2149,9 @@ class TestApp (TestCase):
 
             # now save the file with new content
             new_page_slug = u'goodbye'
-            new_page_path = u'{}/index.{}'.format(new_page_slug, view_functions.CONTENT_FILE_EXTENSION)
+            new_page_path = u'{}/index.{}'.format(new_page_slug, constants.CONTENT_FILE_EXTENSION)
             response = self.test_client.post('/tree/{}/save/{}'.format(working_branch_name, page_path),
-                                             data={'layout': view_functions.ARTICLE_LAYOUT, 'hexsha': hexsha,
+                                             data={'layout': constants.ARTICLE_LAYOUT, 'hexsha': hexsha,
                                                    'en-title': u'',
                                                    'en-body': u'',
                                                    'fr-title': u'', 'fr-body': u'',
@@ -2140,7 +2172,7 @@ class TestApp (TestCase):
             new_dir_location = join(self.clone1.working_dir, new_page_slug)
             self.assertTrue(exists(new_dir_location) and isdir(new_dir_location))
             # an index page is inside
-            idx_location = u'{}/index.{}'.format(new_dir_location, view_functions.CONTENT_FILE_EXTENSION)
+            idx_location = u'{}/index.{}'.format(new_dir_location, constants.CONTENT_FILE_EXTENSION)
             self.assertTrue(exists(idx_location))
             # the directory and index page pass the editable test
             self.assertTrue(view_functions.is_article_dir(new_dir_location))
@@ -2156,10 +2188,9 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            task_description = u'filter plankton from sea water'
-            task_beneficiary = u'humpback whales'
+            task_description = u'filter plankton from sea water for humpback whales'
 
-            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
             self.assertTrue(working_branch.name in self.clone1.branches)
             self.assertTrue(working_branch.name in self.origin.branches)
             working_branch_name = working_branch.name
@@ -2167,9 +2198,9 @@ class TestApp (TestCase):
 
             # create a new page
             page_slug = u'hello'
-            page_path = u'{}/index.{}'.format(page_slug, view_functions.CONTENT_FILE_EXTENSION)
+            page_path = u'{}/index.{}'.format(page_slug, constants.CONTENT_FILE_EXTENSION)
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': page_slug},
+                                             data={'action': 'create', 'create_what': constants.ARTICLE_LAYOUT, 'request_path': page_slug},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             self.assertTrue(page_path in response.data)
@@ -2177,9 +2208,9 @@ class TestApp (TestCase):
 
             # now save the file with new content
             new_page_slug = u'hello/is/better/than/goodbye'
-            new_page_path = u'{}/index.{}'.format(new_page_slug, view_functions.CONTENT_FILE_EXTENSION)
+            new_page_path = u'{}/index.{}'.format(new_page_slug, constants.CONTENT_FILE_EXTENSION)
             response = self.test_client.post('/tree/{}/save/{}'.format(working_branch_name, page_path),
-                                             data={'layout': view_functions.ARTICLE_LAYOUT, 'hexsha': hexsha,
+                                             data={'layout': constants.ARTICLE_LAYOUT, 'hexsha': hexsha,
                                                    'en-title': u'',
                                                    'en-body': u'',
                                                    'fr-title': u'', 'fr-body': u'',
@@ -2214,10 +2245,9 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            task_description = u'filter plankton from sea water'
-            task_beneficiary = u'humpback whales'
+            task_description = u'filter plankton from sea water for humpback whales'
 
-            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
             self.assertTrue(working_branch.name in self.clone1.branches)
             self.assertTrue(working_branch.name in self.origin.branches)
             working_branch_name = working_branch.name
@@ -2225,9 +2255,9 @@ class TestApp (TestCase):
 
             # create a new page
             page_slug = u'hello'
-            page_path = u'{}/index.{}'.format(page_slug, view_functions.CONTENT_FILE_EXTENSION)
+            page_path = u'{}/index.{}'.format(page_slug, constants.CONTENT_FILE_EXTENSION)
             response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': page_slug},
+                                             data={'action': 'create', 'create_what': constants.ARTICLE_LAYOUT, 'request_path': page_slug},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             self.assertTrue(page_path in response.data)
@@ -2237,7 +2267,7 @@ class TestApp (TestCase):
             self.assertEqual(response.status_code, 200)
             # verify that the new folder is represented as a file in the HTML
             self.assertTrue(PATTERN_BRANCH_COMMENT.format(working_branch_name) in response.data)
-            self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": page_slug, "file_title": page_slug, "file_type": view_functions.ARTICLE_LAYOUT}) in response.data)
+            self.assertTrue(PATTERN_FILE_COMMENT.format(**{"file_name": page_slug, "file_title": page_slug, "file_type": constants.ARTICLE_LAYOUT}) in response.data)
 
     # in TestApp
     def test_page_not_found_error(self):
@@ -2250,10 +2280,9 @@ class TestApp (TestCase):
         with HTTMock(self.auth_csv_example_allowed):
             # start a new branch via the http interface
             # invokes view_functions/get_repo which creates a clone
-            task_description = u'drink quinine'
-            task_beneficiary = u'mosquitos'
+            task_description = u'drink quinine for mosquitos'
 
-            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+            working_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
             self.assertTrue(working_branch.name in self.clone1.branches)
             self.assertTrue(working_branch.name in self.origin.branches)
             working_branch_name = working_branch.name
@@ -2276,7 +2305,8 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task
-            erica.start_task(description=u'Take Malarone', beneficiary=u'People Susceptible to Malaria')
+            erica.open_link('/')
+            erica.start_task(description=u'Take Malarone for People Susceptible to Malaria')
             # Get the branch name
             branch_name = erica.get_branch_name()
             # Enter the "other" folder
@@ -2301,7 +2331,8 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task
-            erica.start_task(description=u'Chew Mulberry Leaves', beneficiary=u'Silkworms')
+            erica.open_link('/')
+            erica.start_task(description=u'Chew Mulberry Leaves for Silkworms')
             # Get the branch name
             branch_name = erica.get_branch_name()
 
@@ -2349,14 +2380,12 @@ class TestApp (TestCase):
     def test_merge_conflict_error(self):
         ''' We get a merge conflict error page when there's a merge conflict
         '''
-        fake_task_description_1 = u'do things'
-        fake_task_beneficiary_1 = u'somebody else'
-        fake_task_description_2 = u'do other things'
-        fake_task_beneficiary_2 = u'somebody even else'
+        fake_task_description_1 = u'do things for somebody else'
+        fake_task_description_2 = u'do other things for somebody even else'
         fake_email_1 = u'erica@example.com'
         fake_email_2 = u'frances@example.com'
         fake_page_slug = u'hello'
-        fake_page_path = u'{}/index.{}'.format(fake_page_slug, view_functions.CONTENT_FILE_EXTENSION)
+        fake_page_path = u'{}/index.{}'.format(fake_page_slug, constants.CONTENT_FILE_EXTENSION)
         fake_page_content_1 = u'Hello world.'
         fake_page_content_2 = u'Hello moon.'
         #
@@ -2367,7 +2396,7 @@ class TestApp (TestCase):
 
         with HTTMock(self.auth_csv_example_allowed):
             # create a new branch
-            response = self.test_client.post('/start', data={'task_description': fake_task_description_1, 'task_beneficiary': fake_task_beneficiary_1}, follow_redirects=True)
+            response = self.test_client.post('/start', data={'task_description': fake_task_description_1}, follow_redirects=True)
             # extract the generated branch name from the returned HTML
             generated_branch_search = search(r'<!-- branch: (.{{{}}}) -->'.format(repo_functions.BRANCH_NAME_LENGTH), response.data)
             self.assertIsNotNone(generated_branch_search)
@@ -2379,14 +2408,14 @@ class TestApp (TestCase):
         with HTTMock(self.mock_google_analytics):
             # create a new file
             response = self.test_client.post('/tree/{}/edit/'.format(generated_branch_name_1),
-                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': fake_page_slug},
+                                             data={'action': 'create', 'create_what': constants.ARTICLE_LAYOUT, 'request_path': fake_page_slug},
                                              follow_redirects=True)
             # get the edit page for the new file and extract the hexsha value
             response = self.test_client.get('/tree/{}/edit/{}'.format(generated_branch_name_1, fake_page_path))
             hexsha = search(r'<input name="hexsha" value="(\w+)"', response.data).group(1)
             # now save the file with new content
             response = self.test_client.post('/tree/{}/save/{}'.format(generated_branch_name_1, fake_page_path),
-                                             data={'layout': view_functions.ARTICLE_LAYOUT, 'hexsha': hexsha,
+                                             data={'layout': constants.ARTICLE_LAYOUT, 'hexsha': hexsha,
                                                    'en-title': 'Greetings',
                                                    'en-body': u'{}\n'.format(fake_page_content_1),
                                                    'url-slug': u'{}/index'.format(fake_page_slug)},
@@ -2404,7 +2433,7 @@ class TestApp (TestCase):
 
         with HTTMock(self.auth_csv_example_allowed):
             # create a new branch
-            response = self.test_client.post('/start', data={'task_description': fake_task_description_2, 'task_beneficiary': fake_task_beneficiary_2}, follow_redirects=True)
+            response = self.test_client.post('/start', data={'task_description': fake_task_description_2}, follow_redirects=True)
             # extract the generated branch name from the returned HTML
             generated_branch_search = search(r'<!-- branch: (.{{{}}}) -->'.format(repo_functions.BRANCH_NAME_LENGTH), response.data)
             try:
@@ -2415,7 +2444,7 @@ class TestApp (TestCase):
         with HTTMock(self.mock_google_analytics):
             # create a new file
             response = self.test_client.post('/tree/{}/edit/'.format(generated_branch_name_2),
-                                             data={'action': 'create', 'create_what': view_functions.ARTICLE_LAYOUT, 'request_path': fake_page_slug},
+                                             data={'action': 'create', 'create_what': constants.ARTICLE_LAYOUT, 'request_path': fake_page_slug},
                                              follow_redirects=True)
 
             # get the edit page for the new file and extract the hexsha value
@@ -2424,7 +2453,7 @@ class TestApp (TestCase):
             # now save the file with new content
             fake_new_title = u'Bloople'
             response = self.test_client.post('/tree/{}/save/{}'.format(generated_branch_name_2, fake_page_path),
-                                             data={'layout': view_functions.ARTICLE_LAYOUT, 'hexsha': hexsha,
+                                             data={'layout': constants.ARTICLE_LAYOUT, 'hexsha': hexsha,
                                                    'en-title': fake_new_title,
                                                    'en-body': u'{}\n'.format(fake_page_content_2),
                                                    'url-slug': u'{}/index'.format(fake_page_slug)},
@@ -2459,7 +2488,7 @@ class TestApp (TestCase):
         # verify that we got an error page about the merge conflict
         self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('error-500') in response.data)
         self.assertTrue(u'MergeConflict' in response.data)
-        self.assertTrue(u'{}/index.{}'.format(fake_page_slug, view_functions.CONTENT_FILE_EXTENSION) in response.data)
+        self.assertTrue(u'{}/index.{}'.format(fake_page_slug, constants.CONTENT_FILE_EXTENSION) in response.data)
 
         self.assertTrue(u'<td><a href="/tree/{}/edit/{}/">{}</a></td>'.format(generated_branch_name_2, fake_page_slug, fake_new_title))
         self.assertTrue(u'<td>Article</td>' in response.data)
@@ -2479,7 +2508,8 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task
-            erica.start_task(description=u'Be Shot Hundreds Of Feet Into The Air', beneficiary=u'A Geyser Of Highly Pressurized Water')
+            erica.open_link('/')
+            erica.start_task(description=u'Be Shot Hundreds Of Feet Into The Air for A Geyser Of Highly Pressurized Water')
             # Get the branch name
             branch_name = erica.get_branch_name()
 
@@ -2507,7 +2537,8 @@ class TestApp (TestCase):
                 frances.sign_in('frances@example.com')
             
             # Start a new task, "Diving for Dollars".
-            frances.start_task('Diving', 'Dollars')
+            frances.open_link('/')
+            frances.start_task(description=u'Diving for Dollars')
             branch_name = frances.get_branch_name()
             
             # Look for an "other" link that we know about - is it a category?
@@ -2540,7 +2571,8 @@ class TestApp (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task
-            frances.start_task('Crunching Beetles', 'Trap-Door Spiders')
+            frances.open_link('/')
+            frances.start_task(description=u'Crunching Beetles for Trap-Door Spiders')
             branch_name = frances.get_branch_name()
 
             # Look for an "other" link that we know about - is it a category?
@@ -2564,7 +2596,8 @@ class TestApp (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task
-            frances.start_task('Beating Crunches', 'Door-Spider Traps')
+            frances.open_link('/')
+            frances.start_task(description=u'Beating Crunches for Door-Spider Traps')
 
             # hit the front page a bunch of times
             times = 20
@@ -2581,6 +2614,50 @@ class TestApp (TestCase):
             # raise if any errors were raised
             for process in pros:
                 self.assertEqual(0, process.exitcode, u'A process that was trying to load the front page failed!')
+
+    # in TestApp
+    def test_published_activities_displayed(self):
+        ''' Published activities are displayed on the activities list page.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            frances_email = u'frances@example.com'
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in(erica_email)
+
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in(frances_email)
+
+            # Start a new task and create a topic, subtopic and article
+            erica.open_link('/')
+            activity_title = u'Flicking Ants Off My Laptop'
+            args = activity_title, u'Flying', u'Through The Air', u'Goodbye'
+            branch_name = erica.quick_activity_setup(*args)
+
+            # Ask for feedback
+            erica.follow_link(href='/tree/{}'.format(branch_name))
+            erica.request_feedback()
+
+            #
+            # Switch users and publish the article.
+            #
+            frances.open_link(url=erica.path)
+            frances.approve_activity()
+            frances.publish_activity()
+
+            #
+            # Load the front page and make sure the activity is listed as published
+            #
+            erica.open_link('/')
+            pub_ul = erica.soup.select("#activity-list-published")[0]
+            # there should be an HTML comment with the branch name
+            comment = pub_ul.findAll(text=lambda text: isinstance(text, Comment))[0]
+            self.assertTrue(branch_name in comment)
+            pub_li = comment.find_parent('li')
+            # and the activity title wrapped in an a tag
+            self.assertIsNotNone(pub_li.find('a', text=activity_title))
 
 class TestPublishApp (TestCase):
 

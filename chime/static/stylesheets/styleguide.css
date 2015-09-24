@@ -449,24 +449,25 @@ th {
   padding: 0;
 }
 
-/* line 42, ../sass/core/_utilities.scss */
+/* line 41, ../sass/core/_utilities.scss */
 .is-hidden {
   display: none !important;
 }
 
-/* line 46, ../sass/core/_utilities.scss */
+/* line 45, ../sass/core/_utilities.scss */
 .text-red {
   color: #aa1c3a !important;
 }
 
-/* line 50, ../sass/core/_utilities.scss */
+/* line 49, ../sass/core/_utilities.scss */
 .text-green {
   color: #00a175 !important;
 }
 
-/* line 54, ../sass/core/_utilities.scss */
+/* line 53, ../sass/core/_utilities.scss */
 .text-detail {
   font-size: 14px;
+  font-weight: 400;
 }
 
 /* line 21, ../sass/core/_layout.scss */

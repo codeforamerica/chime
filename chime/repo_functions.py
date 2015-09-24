@@ -6,7 +6,7 @@ from os.path import join, split, exists, isdir, sep
 from git import Repo
 from git.cmd import GitCommandError
 import yaml
-from re import match, search
+import re
 import json
 import random
 from . import edit_functions, google_api_functions
@@ -172,7 +172,7 @@ def get_branch_if_exists_at_origin(clone, default_branch_name, new_branch_name):
     except GitCommandError:
         return None
 
-def get_start_branch(clone, default_branch_name, task_description, task_beneficiary, author_email):
+def get_start_branch(clone, default_branch_name, task_description, author_email):
     ''' Start a new repository branch, push it to origin and return it.
 
         Don't touch the working directory. If an existing branch is found
@@ -194,11 +194,14 @@ def get_start_branch(clone, default_branch_name, task_description, task_benefici
     # create the task metadata file in the new branch
     active_branch_name = clone.active_branch.name
     clone.git.checkout(new_branch_name)
-    metadata_values = {"author_email": author_email, "task_description": task_description, "task_beneficiary": task_beneficiary}
+    metadata_values = {"author_email": author_email, "task_description": task_description}
     save_task_metadata_for_branch(clone, default_branch_name, metadata_values)
     clone.git.checkout(active_branch_name)
 
     return branch
+
+def strip_index_file(file_path):
+    return re.sub(r'index.{}$'.format(constants.CONTENT_FILE_EXTENSION), '', file_path)
 
 def ignore_task_metadata_on_merge(clone):
     ''' Tell this repo to ignore merge conflicts on the task metadata file
@@ -592,7 +595,7 @@ def move_existing_file(clone, old_path, new_path, base_sha, default_branch_name)
         old_dirs = [item for item in old_path.split('/') if item]
         new_dirs = [item for item in new_path.split('/') if item]
         # make sure we're not trying to move a directory inside itself
-        if match(u'/'.join(old_dirs), u'/'.join(new_dirs)):
+        if re.match(u'/'.join(old_dirs), u'/'.join(new_dirs)):
             raise Exception(u'I cannot move a directory inside itself!', u'warning')
 
         if len(new_dirs) > 1:
@@ -634,11 +637,11 @@ def get_commit_classification(subject, body):
                 if the commit changes the review state of an activity, this is the state
                 it was changed to.
     '''
-    if search(r'{}$|{}$|{}$'.format(ACTIVITY_CREATED_MESSAGE, ACTIVITY_UPDATED_MESSAGE, ACTIVITY_DELETED_MESSAGE), subject):
+    if re.search(r'{}$|{}$|{}$'.format(ACTIVITY_CREATED_MESSAGE, ACTIVITY_UPDATED_MESSAGE, ACTIVITY_DELETED_MESSAGE), subject):
         return constants.COMMIT_CATEGORY_INFO, constants.COMMIT_TYPE_ACTIVITY_UPDATE, None
-    elif search(r'{}$'.format(COMMENT_COMMIT_PREFIX), subject):
+    elif re.search(r'{}$'.format(COMMENT_COMMIT_PREFIX), subject):
         return constants.COMMIT_CATEGORY_COMMENT, constants.COMMIT_TYPE_COMMENT, None
-    elif search(r'{}$'.format(REVIEW_STATE_COMMIT_PREFIX), subject):
+    elif re.search(r'{}$'.format(REVIEW_STATE_COMMIT_PREFIX), subject):
         message_action = None
         if ACTIVITY_FEEDBACK_MESSAGE in body:
             message_action = constants.REVIEW_STATE_FEEDBACK
@@ -741,7 +744,7 @@ def get_review_state_and_author_email(repo, default_branch_name, working_branch_
             state = constants.REVIEW_STATE_PUBLISHED
 
     # if the last commit is the creation of the activity, or if it is the same as the base commit, the state is fresh
-    elif search(r'{}$'.format(ACTIVITY_CREATED_MESSAGE), commit_subject) or last_commit.hexsha == base_commit_hexsha:
+    elif re.search(r'{}$'.format(ACTIVITY_CREATED_MESSAGE), commit_subject) or last_commit.hexsha == base_commit_hexsha:
         state = constants.REVIEW_STATE_FRESH
 
     return state, author

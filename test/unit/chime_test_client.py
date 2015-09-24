@@ -96,12 +96,31 @@ class ChimeTestClient:
 
         return branch_name
 
-    def start_task(self, description, beneficiary):
-        ''' Start a new task.
+    def start_task(self, description):
+        ''' Look for form to start a task, submit it.
         '''
-        data = {'task_description': description, 'task_beneficiary': beneficiary}
-        response = self.client.post('/start', data=data)
+        # verify we're on a page that has a start activity link
+        start_link = self.soup.find(id='submit-start-activity')
+        self.test.assertIsNotNone(start_link, u'No start link on current page')
 
+        # if the modal container's not open, click the start activity link
+        if not self.soup.find('div', 'modal-container', 'is-open'):
+            self.open_link(start_link['href'])
+
+        # verify that the modal container is now open
+        self.test.assertIsNotNone(self.soup.find('div', 'modal-container', 'is-open'), u'No open modal container when expected')
+
+        # find the create task form and submit it
+        button = self.soup.find(id='submit-create-activity')
+        self.test.assertIsNotNone(button)
+        form = button.find_parent('form')
+        self.test.assertEqual(form['method'].upper(), 'POST')
+
+        data = {i['name']: i.get('value', u'') for i in form.find_all(['input', 'button', 'textarea']) if i.has_attr('name')}
+        data['task_description'] = description
+
+        start_task_path = urlparse(urljoin(self.path, form['action'])).path
+        response = self.client.post(start_task_path, data=data)
         if response.status_code == 200:
             self.soup, self.headers = BeautifulSoup(response.data), response.headers
         else:
@@ -110,8 +129,8 @@ class ChimeTestClient:
     def delete_task(self, branch_name):
         ''' Look for button to delete a task, click it.
         '''
-        hidden = self.soup.find(lambda tag: bool(tag.name == 'input' and tag.get('value') == branch_name))
-        form = hidden.find_parent('form')
+        button = self.soup.select('#{}-delete'.format(branch_name))[0]
+        form = button.find_parent('form')
 
         self.test.assertEqual(form['method'].upper(), 'POST')
 
@@ -120,7 +139,6 @@ class ChimeTestClient:
 
         delete_task_path = urlparse(urljoin(self.path, form['action'])).path
         response = self.client.post(delete_task_path, data=data)
-
         self.follow_redirect(response, 303)
 
     def add_category(self, category_name):
@@ -178,22 +196,27 @@ class ChimeTestClient:
 
         # View the new article.
         self.follow_redirect(response, 303)
-    
-    def add_branch_cat_subcat_article(self, desc, benef, cat, subcat, title):
+
+    def quick_activity_setup(self, description, category_name=u'', subcategory_name=u'', article_name=u''):
+        ''' Set up an activity quickly, with topic, sub-topic, and article if requested.
         '''
-        '''
-        # Start a new task, "Diving for Dollars".
-        self.start_task(description=desc, beneficiary=benef)
+        # Start a new task
+        self.start_task(description=description)
         branch_name = self.get_branch_name()
 
         # Look for an "other" link that we know about - is it a category?
         self.follow_link(href='/tree/{}/edit/other/'.format(branch_name))
 
         # Create a new category, subcategory, and article.
-        self.add_category(category_name=cat)
-        self.add_subcategory(subcategory_name=subcat)
-        self.add_article(article_name=title)
-        
+        if category_name:
+            self.add_category(category_name=category_name)
+
+        if subcategory_name:
+            self.add_subcategory(subcategory_name=subcategory_name)
+
+        if article_name:
+            self.add_article(article_name=article_name)
+
         return branch_name
 
     def submit_edit_article_form(self, title_str, body_str):
@@ -290,14 +313,12 @@ class ChimeTestClient:
         data = {i['name']: i.get('value', u'')
                 for i in del_form.find_all(['input', 'button', 'textarea'])}
 
-        print data
-
         delete_article_path = urlparse(urljoin(self.path, del_form['action'])).path
         response = self.client.post(delete_article_path, data=data)
 
         self.follow_redirect(response, 303)
 
-    def request_feedback(self, feedback_str):
+    def request_feedback(self, feedback_str=u''):
         ''' Look for form to request feedback, submit it.
         '''
         body = self.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'comment_text'))
@@ -316,7 +337,7 @@ class ChimeTestClient:
         # View the saved feedback.
         self.follow_redirect(response, 303)
 
-    def leave_feedback(self, feedback_str):
+    def leave_feedback(self, feedback_str=u''):
         ''' Look for form to leave feedback, submit it.
         '''
         body = self.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'comment_text'))

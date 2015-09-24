@@ -6,8 +6,9 @@ from flask import current_app, request
 from urllib import quote
 from urlparse import urlparse
 from os.path import join, exists
-from .view_functions import get_repo, strip_index_file, path_display_type, get_value_from_front_matter, FOLDER_FILE_TYPE
-from .repo_functions import TASK_METADATA_FILENAME
+from .view_functions import get_repo, path_display_type, get_value_from_front_matter
+from .repo_functions import strip_index_file, TASK_METADATA_FILENAME
+from . import constants
 
 EMAIL_SUBJECT_TEXT = u'Chime Error Report'
 EMAIL_BODY_PREFIX = u'\n\n----- Please add any relevant details above this line -----\n\n'
@@ -78,7 +79,7 @@ def summarize_conflict_details(error):
             dir_loc = join(repo.working_dir, dir_path)
             display_type = path_display_type(dir_loc)
             # if it's not a category or article, it's just a file
-            if display_type == FOLDER_FILE_TYPE:
+            if display_type == constants.FOLDER_FILE_TYPE:
                 display_type = path_display_type(file_loc)
 
             title = get_value_from_front_matter('title', file_loc) or title

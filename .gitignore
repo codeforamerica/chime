@@ -11,6 +11,7 @@ ga_config.json
 .idea
 *.iml
 apache
+*.lock
 
 hosts.txt
 .sass-cache

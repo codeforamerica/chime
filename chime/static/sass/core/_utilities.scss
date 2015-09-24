@@ -25,7 +25,6 @@
   width: 0;
   height: 0;
   content: '';
-  z-index: 2;
   border-#{opposite-position($direction)}: ($size * 1.5) solid $color;
   
   $perpendicular-borders: $size solid transparent;
@@ -53,4 +52,5 @@
 
 .text-detail {
   font-size: $base-font-size;
+  font-weight: 400;
 }

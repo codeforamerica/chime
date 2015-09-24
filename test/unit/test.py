@@ -23,7 +23,7 @@ from httmock import response, HTTMock
 
 from chime import (
     create_app, jekyll_functions, repo_functions, google_api_functions,
-    view_functions, google_access_token_update)
+    view_functions, google_access_token_update, constants)
 
 from unit.chime_test_client import ChimeTestClient
 from unit.app import TestApp, TestAppConfig, TestPublishApp
@@ -37,14 +37,13 @@ codecs.register(RotUnicode.search_function)
 PATTERN_BRANCH_COMMENT = u'<!-- branch: {} -->'
 PATTERN_AUTHOR_COMMENT = u'<!-- author: {} -->'
 PATTERN_TASK_COMMENT = u'<!-- task: {} -->'
-PATTERN_BENEFICIARY_COMMENT = u'<!-- beneficiary: {} -->'
 PATTERN_TEMPLATE_COMMENT = u'<!-- template name: {} -->'
 PATTERN_FILE_COMMENT = u'<!-- file type: {file_type}, file name: {file_name}, file title: {file_title} -->'
 PATTERN_OVERVIEW_ITEM_CREATED = u'<p>The "{created_name}" {created_type} was created by {author_email}.</p>'
 PATTERN_OVERVIEW_ACTIVITY_STARTED = u'<p>The "{activity_name}" activity was started by {author_email}.</p>'
 PATTERN_OVERVIEW_COMMENT_BODY = u'<div class="comment__body">{comment_body}</div>'
 PATTERN_OVERVIEW_ITEM_DELETED = u'<p>The "{deleted_name}" {deleted_type} {deleted_also}was deleted by {author_email}.</p>'
-PATTERN_FLASH_TASK_DELETED = u'You deleted the "{description}" activity for {beneficiary}!'
+PATTERN_FLASH_TASK_DELETED = u'You deleted the "{description}" activity!'
 
 PATTERN_FLASH_SAVED_CATEGORY = u'<li class="flash flash--notice">Saved changes to the {title} topic! Remember to submit this change for feedback when you\'re ready to go live.</li>'
 PATTERN_FLASH_CREATED_CATEGORY = u'Created a new topic named {title}! Remember to submit this change for feedback when you\'re ready to go live.'
@@ -120,11 +119,11 @@ class TestViewFunctions (TestCase):
         sorted_list = view_functions.sorted_paths(self.clone, 'master')
 
         expected_list = [
-            {'modified_date': view_functions.get_relative_date(self.clone, 'img'), 'name': 'img', 'title': 'img', 'view_path': '/tree/master/view/img', 'is_editable': False, 'link_name': u'img/', 'display_type': view_functions.FOLDER_FILE_TYPE},
-            {'modified_date': view_functions.get_relative_date(self.clone, 'index.md'), 'name': 'index.md', 'title': 'index.md', 'view_path': '/tree/master/view/index.md', 'is_editable': True, 'link_name': 'index.md', 'display_type': view_functions.FILE_FILE_TYPE},
-            {'modified_date': view_functions.get_relative_date(self.clone, 'other'), 'name': 'other', 'title': 'other', 'view_path': '/tree/master/view/other', 'is_editable': False, 'link_name': u'other/', 'display_type': view_functions.FOLDER_FILE_TYPE},
-            {'modified_date': view_functions.get_relative_date(self.clone, 'other.md'), 'name': 'other.md', 'title': 'other.md', 'view_path': '/tree/master/view/other.md', 'is_editable': True, 'link_name': 'other.md', 'display_type': view_functions.FILE_FILE_TYPE},
-            {'modified_date': view_functions.get_relative_date(self.clone, 'sub'), 'name': 'sub', 'title': 'sub', 'view_path': '/tree/master/view/sub', 'is_editable': False, 'link_name': u'sub/', 'display_type': view_functions.FOLDER_FILE_TYPE}]
+            {'modified_date': view_functions.get_relative_date(self.clone, 'img'), 'name': 'img', 'title': 'img', 'view_path': '/tree/master/view/img', 'is_editable': False, 'link_name': u'img/', 'display_type': constants.FOLDER_FILE_TYPE},
+            {'modified_date': view_functions.get_relative_date(self.clone, 'index.md'), 'name': 'index.md', 'title': 'index.md', 'view_path': '/tree/master/view/index.md', 'is_editable': True, 'link_name': 'index.md', 'display_type': constants.FILE_FILE_TYPE},
+            {'modified_date': view_functions.get_relative_date(self.clone, 'other'), 'name': 'other', 'title': 'other', 'view_path': '/tree/master/view/other', 'is_editable': False, 'link_name': u'other/', 'display_type': constants.FOLDER_FILE_TYPE},
+            {'modified_date': view_functions.get_relative_date(self.clone, 'other.md'), 'name': 'other.md', 'title': 'other.md', 'view_path': '/tree/master/view/other.md', 'is_editable': True, 'link_name': 'other.md', 'display_type': constants.FILE_FILE_TYPE},
+            {'modified_date': view_functions.get_relative_date(self.clone, 'sub'), 'name': 'sub', 'title': 'sub', 'view_path': '/tree/master/view/sub', 'is_editable': False, 'link_name': u'sub/', 'display_type': constants.FOLDER_FILE_TYPE}]
 
         self.assertEqual(sorted_list, expected_list)
 

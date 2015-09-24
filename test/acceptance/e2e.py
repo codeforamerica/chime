@@ -64,7 +64,6 @@ class TestSelenium(TestCase):
 
         # start a new task
         self.waiter.until(EC.visibility_of_element_located((By.NAME, 'task_description'))).send_keys('foobar')
-        self.driver.find_element_by_name('task_beneficiary').send_keys('raboof')
         self.driver.find_element_by_class_name('create').click()
 
         # create a new page

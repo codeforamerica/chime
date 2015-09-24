@@ -25,6 +25,7 @@ from box.util.rotunicode import RotUnicode
 
 from chime import jekyll_functions, repo_functions, edit_functions, view_functions
 from chime import constants
+from chime import chime_activity
 
 import codecs
 codecs.register(RotUnicode.search_function)
@@ -33,14 +34,13 @@ codecs.register(RotUnicode.search_function)
 PATTERN_BRANCH_COMMENT = u'<!-- branch: {} -->'
 PATTERN_AUTHOR_COMMENT = u'<!-- author: {} -->'
 PATTERN_TASK_COMMENT = u'<!-- task: {} -->'
-PATTERN_BENEFICIARY_COMMENT = u'<!-- beneficiary: {} -->'
 PATTERN_TEMPLATE_COMMENT = u'<!-- template name: {} -->'
 PATTERN_FILE_COMMENT = u'<!-- file type: {file_type}, file name: {file_name}, file title: {file_title} -->'
 PATTERN_OVERVIEW_ITEM_CREATED = u'<p>The "{created_name}" {created_type} was created by {author_email}.</p>'
 PATTERN_OVERVIEW_ACTIVITY_STARTED = u'<p>The "{activity_name}" activity was started by {author_email}.</p>'
 PATTERN_OVERVIEW_COMMENT_BODY = u'<div class="comment__body">{comment_body}</div>'
 PATTERN_OVERVIEW_ITEM_DELETED = u'<p>The "{deleted_name}" {deleted_type} {deleted_also}was deleted by {author_email}.</p>'
-PATTERN_FLASH_TASK_DELETED = u'You deleted the "{description}" activity for {beneficiary}!'
+PATTERN_FLASH_TASK_DELETED = u'You deleted the "{description}" activity!'
 
 PATTERN_FLASH_SAVED_CATEGORY = u'<li class="flash flash--notice">Saved changes to the {title} topic! Remember to submit this change for feedback when you\'re ready to go live.</li>'
 PATTERN_FLASH_CREATED_CATEGORY = u'Created a new topic named {title}! Remember to submit this change for feedback when you\'re ready to go live.'
@@ -98,8 +98,8 @@ class TestRepo (TestCase):
     def test_get_start_branch(self):
         ''' Make a simple edit in a clone, verify that it appears in the other.
         '''
-        task_description, task_beneficiary = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, u'erica@example.com')
+        task_description = str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, u'erica@example.com')
 
         self.assertTrue(branch1.name in self.clone1.branches)
         self.assertTrue(branch1.name in self.origin.branches)
@@ -129,7 +129,7 @@ class TestRepo (TestCase):
     def test_get_start_branch_2(self):
         ''' Make a simple edit in a clone, verify that it appears in the other.
         '''
-        task_description, task_beneficiary = str(uuid4()), str(uuid4())
+        task_description = str(uuid4())
 
         #
         # Check out both clones.
@@ -159,7 +159,7 @@ class TestRepo (TestCase):
         #
         # Now start a new branch from the second clone, and look for the new master commit.
         #
-        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_description, task_beneficiary, self.session['email'])
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_description, self.session['email'])
 
         self.assertTrue(branch2.name in self.clone2.branches)
         # compare the second-to-last commit on branch2 (by adding ".parents[0]", as
@@ -170,9 +170,9 @@ class TestRepo (TestCase):
     def test_delete_missing_branch(self):
         ''' Delete a branch in a clone that's still in origin, see if it can be deleted anyway.
         '''
-        task_description, task_beneficiary = str(uuid4()), str(uuid4())
+        task_description = str(uuid4())
 
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, u'erica@example.com')
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, u'erica@example.com')
 
         self.assertTrue(branch1.name in self.origin.branches)
 
@@ -191,8 +191,8 @@ class TestRepo (TestCase):
     def test_new_file(self):
         ''' Make a new file and delete an old file in a clone, verify that the changes appear in the other.
         '''
-        task_description, task_beneficiary = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, self.session['email'])
+        task_description = str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, self.session['email'])
 
         self.assertTrue(branch1.name in self.clone1.branches)
         self.assertTrue(branch1.name in self.origin.branches)
@@ -243,12 +243,12 @@ class TestRepo (TestCase):
     def test_try_to_create_existing_category(self):
         ''' We can't create a category that exists already.
         '''
-        first_result = view_functions.add_article_or_category(self.clone1, 'categories', 'My New Category', view_functions.CATEGORY_LAYOUT)
+        first_result = view_functions.add_article_or_category(self.clone1, 'categories', 'My New Category', constants.CATEGORY_LAYOUT)
         self.assertEqual(u'The "My New Category" topic was created\n\n[{"action": "create", "file_path": "categories/my-new-category/index.markdown", "display_type": "category", "title": "My New Category"}]', first_result[0])
         self.assertEqual(u'categories/my-new-category/index.markdown', first_result[1])
         self.assertEqual(u'categories/my-new-category/', first_result[2])
         self.assertEqual(True, first_result[3])
-        second_result = view_functions.add_article_or_category(self.clone1, 'categories', 'My New Category', view_functions.CATEGORY_LAYOUT)
+        second_result = view_functions.add_article_or_category(self.clone1, 'categories', 'My New Category', constants.CATEGORY_LAYOUT)
         self.assertEqual('Topic "My New Category" already exists', second_result[0])
         self.assertEqual(u'categories/my-new-category/index.markdown', second_result[1])
         self.assertEqual(u'categories/my-new-category/', second_result[2])
@@ -258,12 +258,12 @@ class TestRepo (TestCase):
     def test_try_to_create_existing_article(self):
         ''' We can't create an article that exists already
         '''
-        first_result = view_functions.add_article_or_category(self.clone1, 'categories/example', 'New Article', view_functions.ARTICLE_LAYOUT)
+        first_result = view_functions.add_article_or_category(self.clone1, 'categories/example', 'New Article', constants.ARTICLE_LAYOUT)
         self.assertEqual(u'The "New Article" article was created\n\n[{"action": "create", "file_path": "categories/example/new-article/index.markdown", "display_type": "article", "title": "New Article"}]', first_result[0])
         self.assertEqual(u'categories/example/new-article/index.markdown', first_result[1])
         self.assertEqual(u'categories/example/new-article/index.markdown', first_result[2])
         self.assertEqual(True, first_result[3])
-        second_result = view_functions.add_article_or_category(self.clone1, 'categories/example', 'New Article', view_functions.ARTICLE_LAYOUT)
+        second_result = view_functions.add_article_or_category(self.clone1, 'categories/example', 'New Article', constants.ARTICLE_LAYOUT)
         self.assertEqual('Article "New Article" already exists', second_result[0])
         self.assertEqual(u'categories/example/new-article/index.markdown', first_result[1])
         self.assertEqual(u'categories/example/new-article/index.markdown', first_result[2])
@@ -275,7 +275,7 @@ class TestRepo (TestCase):
         '''
         category_name = u'Kristen/Melissa/Kate/Leslie'
         category_slug = slugify(category_name)
-        add_result = view_functions.add_article_or_category(self.clone1, 'categories', category_name, view_functions.CATEGORY_LAYOUT)
+        add_result = view_functions.add_article_or_category(self.clone1, 'categories', category_name, constants.CATEGORY_LAYOUT)
         self.assertEqual(u'The "{category_name}" topic was created\n\n[{{"action": "create", "file_path": "categories/{category_slug}/index.markdown", "display_type": "category", "title": "{category_name}"}}]'.format(category_name=category_name, category_slug=category_slug), add_result[0])
         self.assertEqual(u'categories/{category_slug}/index.markdown'.format(category_slug=category_slug), add_result[1])
         self.assertEqual(u'categories/{category_slug}/'.format(category_slug=category_slug), add_result[2])
@@ -288,7 +288,7 @@ class TestRepo (TestCase):
         article_name = u'Erin/Abby/Jillian/Patty'
         article_slug = slugify(article_name)
 
-        add_result = view_functions.add_article_or_category(self.clone1, 'categories/example', article_name, view_functions.ARTICLE_LAYOUT)
+        add_result = view_functions.add_article_or_category(self.clone1, 'categories/example', article_name, constants.ARTICLE_LAYOUT)
         self.assertEqual(u'The "{article_name}" article was created\n\n[{{"action": "create", "file_path": "categories/example/{article_slug}/index.markdown", "display_type": "article", "title": "{article_name}"}}]'.format(article_name=article_name, article_slug=article_slug), add_result[0])
         self.assertEqual(u'categories/example/{article_slug}/index.markdown'.format(article_slug=article_slug), add_result[1])
         self.assertEqual(u'categories/example/{article_slug}/index.markdown'.format(article_slug=article_slug), add_result[2])
@@ -298,8 +298,8 @@ class TestRepo (TestCase):
     def test_delete_directory(self):
         ''' Make a new file and directory and delete them.
         '''
-        task_description, task_beneficiary = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, u'erica@example.com')
+        task_description = str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, u'erica@example.com')
 
         self.assertTrue(branch1.name in self.clone1.branches)
         self.assertTrue(branch1.name in self.origin.branches)
@@ -335,8 +335,8 @@ class TestRepo (TestCase):
     def test_move_file(self):
         ''' Change the path of a file.
         '''
-        task_description, task_beneficiary = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, u'erica@example.com')
+        task_description = str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, u'erica@example.com')
 
         self.assertTrue(branch1.name in self.clone1.branches)
         self.assertTrue(branch1.name in self.origin.branches)
@@ -458,9 +458,9 @@ class TestRepo (TestCase):
         ''' Test that two non-conflicting new files merge cleanly.
         '''
         fake_author_email = u'erica@example.com'
-        task_description, task_beneficiary = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
-        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_description, task_beneficiary, fake_author_email)
+        task_description = str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_description, fake_author_email)
         branch1_name, branch2_name = branch1.name, branch2.name
 
         #
@@ -511,8 +511,8 @@ class TestRepo (TestCase):
         ''' Test that a conflict in two branches appears at the right spot.
         '''
         fake_author_email = u'erica@example.com'
-        task_description, task_beneficiary = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+        task_description = str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
         branch2 = repo_functions.get_existing_branch(self.clone2, 'master', branch1.name)
         branch1_name = branch1.name
         self.assertIsNotNone(branch2)
@@ -560,9 +560,8 @@ class TestRepo (TestCase):
         '''
         fake_author_email = u'erica@example.com'
         task_description1, task_description2 = str(uuid4()), str(uuid4())
-        task_beneficiary1, task_beneficiary2 = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description1, task_beneficiary1, fake_author_email)
-        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_description2, task_beneficiary2, fake_author_email)
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description1, fake_author_email)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_description2, fake_author_email)
         branch1_name = branch1.name
 
         #
@@ -620,9 +619,8 @@ class TestRepo (TestCase):
         '''
         fake_author_email = u'erica@example.com'
         task_description1, task_description2 = str(uuid4()), str(uuid4())
-        task_beneficiary1, task_beneficiary2 = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description1, task_beneficiary1, fake_author_email)
-        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_description2, task_beneficiary2, fake_author_email)
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description1, fake_author_email)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_description2, fake_author_email)
         branch1_name, branch2_name = branch1.name, branch2.name
 
         #
@@ -669,9 +667,9 @@ class TestRepo (TestCase):
         ''' Test that a conflict in two branches can be clobbered.
         '''
         fake_author_email = u'erica@example.com'
-        task_description, task_beneficiary = str(uuid4()), str(uuid4())
+        task_description = str(uuid4())
         title_branch = repo_functions.get_existing_branch(self.clone1, 'master', 'title')
-        compare_branch = repo_functions.get_start_branch(self.clone2, 'master', task_description, task_beneficiary, fake_author_email)
+        compare_branch = repo_functions.get_start_branch(self.clone2, 'master', task_description, fake_author_email)
         title_branch_name, compare_branch_name = title_branch.name, compare_branch.name
 
         #
@@ -735,10 +733,10 @@ class TestRepo (TestCase):
         ''' Test that a conflict in two branches can be abandoned.
         '''
         fake_author_email = u'erica@example.com'
-        task_description, task_beneficiary = str(uuid4()), str(uuid4())
+        task_description = str(uuid4())
         title_branch_name = 'title'
         repo_functions.get_existing_branch(self.clone1, 'master', title_branch_name)
-        compare_branch = repo_functions.get_start_branch(self.clone2, 'master', task_description, task_beneficiary, fake_author_email)
+        compare_branch = repo_functions.get_start_branch(self.clone2, 'master', task_description, fake_author_email)
         compare_branch_name = compare_branch.name
 
         #
@@ -796,8 +794,8 @@ class TestRepo (TestCase):
         ''' Exercise the review process
         '''
         fake_author_email = u'erica@example.com'
-        task_description, task_beneficiary = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+        task_description = str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
         branch1_name = branch1.name
 
         #
@@ -901,8 +899,7 @@ class TestRepo (TestCase):
         '''
         # start a new branch
         fake_author_email = u'erica@example.com'
-        task_description = u'suck blood from a mammal'
-        task_beneficiary = u'mosquito larvae'
+        task_description = u'suck blood from a mammal for mosquito larvae'
 
         source_repo = self.origin
         first_commit = list(source_repo.iter_commits())[-1].hexsha
@@ -919,7 +916,7 @@ class TestRepo (TestCase):
         # tell git to ignore merge conflicts on the task metadata file
         repo_functions.ignore_task_metadata_on_merge(new_clone)
 
-        working_branch = repo_functions.get_start_branch(new_clone, 'master', task_description, task_beneficiary, fake_author_email)
+        working_branch = repo_functions.get_start_branch(new_clone, 'master', task_description, fake_author_email)
         self.assertTrue(working_branch.name in new_clone.branches)
         self.assertTrue(working_branch.name in self.origin.branches)
         working_branch.checkout()
@@ -927,10 +924,10 @@ class TestRepo (TestCase):
         # create an article
         art_title = u'快速狐狸'
         art_slug = slugify(art_title)
-        add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, u'', art_title, view_functions.ARTICLE_LAYOUT)
-        self.assertEqual(u'{}/index.{}'.format(art_slug, view_functions.CONTENT_FILE_EXTENSION), file_path)
+        add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, u'', art_title, constants.ARTICLE_LAYOUT)
+        self.assertEqual(u'{}/index.{}'.format(art_slug, constants.CONTENT_FILE_EXTENSION), file_path)
         self.assertEqual(u'The "{art_title}" article was created\n\n[{{"action": "create", "file_path": "{file_path}", "display_type": "article", "title": "{art_title}"}}]'.format(art_title=art_title, file_path=file_path), add_message)
-        self.assertEqual(u'{}/index.{}'.format(art_slug, view_functions.CONTENT_FILE_EXTENSION), redirect_path)
+        self.assertEqual(u'{}/index.{}'.format(art_slug, constants.CONTENT_FILE_EXTENSION), redirect_path)
         self.assertEqual(True, do_save)
         # commit the article
         repo_functions.save_working_file(new_clone, file_path, add_message, new_clone.commit().hexsha, 'master')
@@ -941,8 +938,7 @@ class TestRepo (TestCase):
         '''
         # start a new branch
         fake_author_email = u'erica@example.com'
-        task_description = u'squeezing lemons'
-        task_beneficiary = u'lemonade lovers'
+        task_description = u'squeezing lemons for lemonade lovers'
 
         source_repo = self.origin
         first_commit = list(source_repo.iter_commits())[-1].hexsha
@@ -959,7 +955,7 @@ class TestRepo (TestCase):
         # tell git to ignore merge conflicts on the task metadata file
         repo_functions.ignore_task_metadata_on_merge(new_clone)
 
-        working_branch = repo_functions.get_start_branch(new_clone, 'master', task_description, task_beneficiary, fake_author_email)
+        working_branch = repo_functions.get_start_branch(new_clone, 'master', task_description, fake_author_email)
         self.assertTrue(working_branch.name in new_clone.branches)
         self.assertTrue(working_branch.name in self.origin.branches)
         working_branch.checkout()
@@ -967,8 +963,8 @@ class TestRepo (TestCase):
         # create a category
         cat_title = u'快速狐狸'
         cat_slug = slugify(cat_title)
-        add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, u'', cat_title, view_functions.CATEGORY_LAYOUT)
-        self.assertEqual(u'{}/index.{}'.format(cat_slug, view_functions.CONTENT_FILE_EXTENSION), file_path)
+        add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, u'', cat_title, constants.CATEGORY_LAYOUT)
+        self.assertEqual(u'{}/index.{}'.format(cat_slug, constants.CONTENT_FILE_EXTENSION), file_path)
         self.assertEqual(u'The "{cat_title}" topic was created\n\n[{{"action": "create", "file_path": "{file_path}", "display_type": "category", "title": "{cat_title}"}}]'.format(cat_title=cat_title, file_path=file_path), add_message)
         self.assertEqual(u'{}/'.format(cat_slug), redirect_path)
         self.assertEqual(True, do_save)
@@ -1003,8 +999,7 @@ class TestRepo (TestCase):
         '''
         # start a new branch
         fake_author_email = u'erica@example.com'
-        task_description = u'grating lemons'
-        task_beneficiary = u'zest lovers'
+        task_description = u'grating lemons for zest lovers'
 
         source_repo = self.origin
         first_commit = list(source_repo.iter_commits())[-1].hexsha
@@ -1021,7 +1016,7 @@ class TestRepo (TestCase):
         # tell git to ignore merge conflicts on the task metadata file
         repo_functions.ignore_task_metadata_on_merge(new_clone)
 
-        working_branch = repo_functions.get_start_branch(new_clone, 'master', task_description, task_beneficiary, fake_author_email)
+        working_branch = repo_functions.get_start_branch(new_clone, 'master', task_description, fake_author_email)
         self.assertTrue(working_branch.name in new_clone.branches)
         self.assertTrue(working_branch.name in self.origin.branches)
         working_branch.checkout()
@@ -1029,8 +1024,8 @@ class TestRepo (TestCase):
         # create a category
         cat_title = u'Daffodils and Drop Cloths'
         cat_slug = slugify(cat_title)
-        add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, u'', cat_title, view_functions.CATEGORY_LAYOUT)
-        self.assertEqual(u'{}/index.{}'.format(cat_slug, view_functions.CONTENT_FILE_EXTENSION), file_path)
+        add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, u'', cat_title, constants.CATEGORY_LAYOUT)
+        self.assertEqual(u'{}/index.{}'.format(cat_slug, constants.CONTENT_FILE_EXTENSION), file_path)
         self.assertEqual(u'The "{cat_title}" topic was created\n\n[{{"action": "create", "file_path": "{file_path}", "display_type": "category", "title": "{cat_title}"}}]'.format(cat_title=cat_title, file_path=file_path), add_message)
         self.assertEqual(u'{}/'.format(cat_slug), redirect_path)
         self.assertEqual(True, do_save)
@@ -1040,13 +1035,13 @@ class TestRepo (TestCase):
         # verify that the directory and index file exist
         cat_index_path = join(new_clone.working_dir, file_path)
         self.assertTrue(exists(cat_index_path))
-        self.assertTrue(exists(view_functions.strip_index_file(cat_index_path)))
+        self.assertTrue(exists(repo_functions.strip_index_file(cat_index_path)))
 
         # create a category inside that
         cat2_title = u'Drain Bawlers'
         cat2_slug = slugify(cat2_title)
-        add_message, cat2_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, cat_slug, cat2_title, view_functions.CATEGORY_LAYOUT)
-        self.assertEqual(u'{}/{}/index.{}'.format(cat_slug, cat2_slug, view_functions.CONTENT_FILE_EXTENSION), cat2_path)
+        add_message, cat2_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, cat_slug, cat2_title, constants.CATEGORY_LAYOUT)
+        self.assertEqual(u'{}/{}/index.{}'.format(cat_slug, cat2_slug, constants.CONTENT_FILE_EXTENSION), cat2_path)
         self.assertEqual(u'The "{cat_title}" topic was created\n\n[{{"action": "create", "file_path": "{file_path}", "display_type": "category", "title": "{cat_title}"}}]'.format(cat_title=cat2_title, file_path=cat2_path), add_message)
         self.assertEqual(u'{}/{}/'.format(cat_slug, cat2_slug), redirect_path)
         self.assertEqual(True, do_save)
@@ -1056,16 +1051,16 @@ class TestRepo (TestCase):
         # verify that the directory and index file exist
         cat2_index_path = join(new_clone.working_dir, cat2_path)
         self.assertTrue(exists(cat2_index_path))
-        self.assertTrue(exists(view_functions.strip_index_file(cat2_index_path)))
+        self.assertTrue(exists(repo_functions.strip_index_file(cat2_index_path)))
 
         # and an article inside that
         art_title = u'သံပုရာဖျော်ရည်'
         art_slug = slugify(art_title)
         dir_path = redirect_path.rstrip('/')
-        add_message, art_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, dir_path, art_title, view_functions.ARTICLE_LAYOUT)
-        self.assertEqual(u'{}/{}/{}/index.{}'.format(cat_slug, cat2_slug, art_slug, view_functions.CONTENT_FILE_EXTENSION), art_path)
+        add_message, art_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, dir_path, art_title, constants.ARTICLE_LAYOUT)
+        self.assertEqual(u'{}/{}/{}/index.{}'.format(cat_slug, cat2_slug, art_slug, constants.CONTENT_FILE_EXTENSION), art_path)
         self.assertEqual(u'The "{art_title}" article was created\n\n[{{"action": "create", "file_path": "{file_path}", "display_type": "article", "title": "{art_title}"}}]'.format(art_title=art_title, file_path=art_path), add_message)
-        self.assertEqual(u'{}/{}/{}/index.{}'.format(cat_slug, cat2_slug, art_slug, view_functions.CONTENT_FILE_EXTENSION), redirect_path)
+        self.assertEqual(u'{}/{}/{}/index.{}'.format(cat_slug, cat2_slug, art_slug, constants.CONTENT_FILE_EXTENSION), redirect_path)
         self.assertEqual(True, do_save)
         # commit the article
         repo_functions.save_working_file(new_clone, art_path, add_message, new_clone.commit().hexsha, 'master')
@@ -1073,10 +1068,10 @@ class TestRepo (TestCase):
         # verify that the directory and index file exist
         art_index_path = join(new_clone.working_dir, art_path)
         self.assertTrue(exists(art_index_path))
-        self.assertTrue(exists(view_functions.strip_index_file(art_index_path)))
+        self.assertTrue(exists(repo_functions.strip_index_file(art_index_path)))
 
         # now delete the second category
-        browse_path = view_functions.strip_index_file(art_path)
+        browse_path = repo_functions.strip_index_file(art_path)
         redirect_path, do_save, commit_message = view_functions.delete_page(repo=new_clone, browse_path=browse_path, target_path=dir_path)
         self.assertEqual(cat_slug.rstrip('/'), redirect_path.rstrip('/'))
         self.assertEqual(True, do_save)
@@ -1086,9 +1081,9 @@ class TestRepo (TestCase):
 
         # verify that the files are gone
         self.assertFalse(exists(cat2_index_path))
-        self.assertFalse(exists(view_functions.strip_index_file(cat2_index_path)))
+        self.assertFalse(exists(repo_functions.strip_index_file(cat2_index_path)))
         self.assertFalse(exists(art_index_path))
-        self.assertFalse(exists(view_functions.strip_index_file(art_index_path)))
+        self.assertFalse(exists(repo_functions.strip_index_file(art_index_path)))
 
     # in TestRepo
     def test_activity_history_recorded(self):
@@ -1096,8 +1091,7 @@ class TestRepo (TestCase):
         '''
         # start a new branch
         fake_author_email = u'erica@example.com'
-        task_description = u'shake trees until coconuts fall off'
-        task_beneficiary = u'castaways'
+        task_description = u'shake trees until coconuts fall off for castaways'
 
         source_repo = self.origin
         first_commit = list(source_repo.iter_commits())[-1].hexsha
@@ -1114,19 +1108,19 @@ class TestRepo (TestCase):
         # tell git to ignore merge conflicts on the task metadata file
         repo_functions.ignore_task_metadata_on_merge(new_clone)
 
-        working_branch = repo_functions.get_start_branch(new_clone, 'master', task_description, task_beneficiary, fake_author_email)
+        working_branch = repo_functions.get_start_branch(new_clone, 'master', task_description, fake_author_email)
         self.assertTrue(working_branch.name in new_clone.branches)
         self.assertTrue(working_branch.name in self.origin.branches)
         working_branch.checkout()
 
         # create some category/article structure
         create_details = [
-            ('', 'Tree', view_functions.CATEGORY_LAYOUT),
-            ('tree', 'Coconut', view_functions.CATEGORY_LAYOUT),
-            ('tree/coconut', 'Coconut Milk', view_functions.ARTICLE_LAYOUT),
-            ('', 'Rock', view_functions.CATEGORY_LAYOUT),
-            ('rock', 'Barnacle', view_functions.CATEGORY_LAYOUT),
-            ('', 'Sand', view_functions.CATEGORY_LAYOUT)
+            ('', 'Tree', constants.CATEGORY_LAYOUT),
+            ('tree', 'Coconut', constants.CATEGORY_LAYOUT),
+            ('tree/coconut', 'Coconut Milk', constants.ARTICLE_LAYOUT),
+            ('', 'Rock', constants.CATEGORY_LAYOUT),
+            ('rock', 'Barnacle', constants.CATEGORY_LAYOUT),
+            ('', 'Sand', constants.CATEGORY_LAYOUT)
         ]
         updated_details = []
         for detail in create_details:
@@ -1152,13 +1146,14 @@ class TestRepo (TestCase):
         working_branch.checkout()
 
         # get and check the history
-        activity_history = view_functions.make_activity_history(repo=new_clone)
+        activity = chime_activity.ChimeActivity(repo=new_clone, branch_name=working_branch.name, default_branch_name='master', actor_email=fake_author_email)
+        activity_history = activity.history
         self.assertEqual(len(activity_history), 10)
 
         # check the creation of the activity
         check_item = activity_history.pop()
         self.assertEqual(u'The "{}" activity was started'.format(task_description), check_item['commit_subject'])
-        self.assertEqual(u'Created task metadata file "{}"\nSet author_email to {}\nSet task_description to {}\nSet task_beneficiary to {}'.format(repo_functions.TASK_METADATA_FILENAME, fake_author_email, task_description, task_beneficiary), check_item['commit_body'])
+        self.assertEqual(u'Created task metadata file "{}"\nSet author_email to {}\nSet task_description to {}'.format(repo_functions.TASK_METADATA_FILENAME, fake_author_email, task_description), check_item['commit_body'])
         self.assertEqual(constants.COMMIT_TYPE_ACTIVITY_UPDATE, check_item['commit_type'])
 
         # check the delete
@@ -1191,8 +1186,7 @@ class TestRepo (TestCase):
         '''
         # start a new branch
         fake_author_email = u'erica@example.com'
-        task_description = u'cling to a rock and scrape bacteria and algae off of it with a radula'
-        task_beneficiary = u'mollusks'
+        task_description = u'cling to a rock and scrape bacteria and algae off of it with a radula for mollusks'
 
         source_repo = self.origin
         first_commit = list(source_repo.iter_commits())[-1].hexsha
@@ -1209,7 +1203,7 @@ class TestRepo (TestCase):
         # tell git to ignore merge conflicts on the task metadata file
         repo_functions.ignore_task_metadata_on_merge(new_clone)
 
-        working_branch = repo_functions.get_start_branch(new_clone, 'master', task_description, task_beneficiary, fake_author_email)
+        working_branch = repo_functions.get_start_branch(new_clone, 'master', task_description, fake_author_email)
         self.assertTrue(working_branch.name in new_clone.branches)
         self.assertTrue(working_branch.name in self.origin.branches)
         working_branch.checkout()
@@ -1235,25 +1229,25 @@ class TestRepo (TestCase):
         ''' Make sure that full folders can be deleted, and that what's reported as deleted matches what's expected.
         '''
         # build some nested categories
-        view_functions.add_article_or_category(self.clone1, '', 'quick', view_functions.CATEGORY_LAYOUT)
-        view_functions.add_article_or_category(self.clone1, 'quick', 'brown', view_functions.CATEGORY_LAYOUT)
-        view_functions.add_article_or_category(self.clone1, 'quick/brown', 'fox', view_functions.CATEGORY_LAYOUT)
-        view_functions.add_article_or_category(self.clone1, 'quick', 'red', view_functions.CATEGORY_LAYOUT)
-        view_functions.add_article_or_category(self.clone1, 'quick', 'yellow', view_functions.CATEGORY_LAYOUT)
-        view_functions.add_article_or_category(self.clone1, 'quick/yellow', 'banana', view_functions.CATEGORY_LAYOUT)
-        view_functions.add_article_or_category(self.clone1, 'quick', 'orange', view_functions.CATEGORY_LAYOUT)
-        view_functions.add_article_or_category(self.clone1, 'quick/brown', 'potato', view_functions.CATEGORY_LAYOUT)
-        view_functions.add_article_or_category(self.clone1, 'quick/yellow', 'lemon', view_functions.CATEGORY_LAYOUT)
-        view_functions.add_article_or_category(self.clone1, 'quick/red', 'tomato', view_functions.CATEGORY_LAYOUT)
-        view_functions.add_article_or_category(self.clone1, 'quick/red', 'balloon', view_functions.CATEGORY_LAYOUT)
-        view_functions.add_article_or_category(self.clone1, 'quick/orange', 'peanut', view_functions.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, '', 'quick', constants.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, 'quick', 'brown', constants.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, 'quick/brown', 'fox', constants.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, 'quick', 'red', constants.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, 'quick', 'yellow', constants.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, 'quick/yellow', 'banana', constants.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, 'quick', 'orange', constants.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, 'quick/brown', 'potato', constants.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, 'quick/yellow', 'lemon', constants.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, 'quick/red', 'tomato', constants.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, 'quick/red', 'balloon', constants.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, 'quick/orange', 'peanut', constants.CATEGORY_LAYOUT)
         # add in some articles
-        view_functions.add_article_or_category(self.clone1, 'quick/brown/fox', 'fur', view_functions.ARTICLE_LAYOUT)
-        view_functions.add_article_or_category(self.clone1, 'quick/brown/fox', 'ears', view_functions.ARTICLE_LAYOUT)
-        view_functions.add_article_or_category(self.clone1, 'quick/yellow/lemon', 'rind', view_functions.ARTICLE_LAYOUT)
-        view_functions.add_article_or_category(self.clone1, 'quick/yellow/lemon', 'pulp', view_functions.ARTICLE_LAYOUT)
-        view_functions.add_article_or_category(self.clone1, 'quick/orange/peanut', 'shell', view_functions.ARTICLE_LAYOUT)
-        view_functions.add_article_or_category(self.clone1, 'quick/red/balloon', 'string', view_functions.ARTICLE_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, 'quick/brown/fox', 'fur', constants.ARTICLE_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, 'quick/brown/fox', 'ears', constants.ARTICLE_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, 'quick/yellow/lemon', 'rind', constants.ARTICLE_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, 'quick/yellow/lemon', 'pulp', constants.ARTICLE_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, 'quick/orange/peanut', 'shell', constants.ARTICLE_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, 'quick/red/balloon', 'string', constants.ARTICLE_LAYOUT)
 
         # add and commit
         self.clone1.index.add(['*'])
@@ -1281,8 +1275,8 @@ class TestRepo (TestCase):
         ''' The task metadata file is created when a branch is started, and contains the expected information.
         '''
         fake_author_email = u'erica@example.com'
-        task_description, task_beneficiary = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+        task_description = str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
         branch1_name = branch1.name
         branch1.checkout()
 
@@ -1298,16 +1292,14 @@ class TestRepo (TestCase):
         # validate the contents of the task metadata file
         self.assertEqual(task_metadata['author_email'], fake_author_email)
         self.assertEqual(task_metadata['task_description'], task_description)
-        self.assertEqual(task_metadata['task_beneficiary'], task_beneficiary)
 
     # in TestRepo
     def test_task_metadata_creation_with_unicode(self):
         ''' The task metadata file is created when a branch is started, and contains the expected information.
         '''
         fake_author_email = u'¯\_(ツ)_/¯@快速狐狸.com'
-        task_description = u'(╯°□°）╯︵ ┻━┻'
-        task_beneficiary = u'૮(꒦ິ ˙̫̮ ꒦ິ)ა'
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+        task_description = u'(╯°□°）╯︵ ┻━┻ for ૮(꒦ິ ˙̫̮ ꒦ິ)ა'
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
         branch1_name = branch1.name
         branch1.checkout()
 
@@ -1323,15 +1315,14 @@ class TestRepo (TestCase):
         # validate the contents of the task metadata file
         self.assertEqual(task_metadata['author_email'], fake_author_email)
         self.assertEqual(task_metadata['task_description'], task_description)
-        self.assertEqual(task_metadata['task_beneficiary'], task_beneficiary)
 
     # in TestRepo
     def test_task_metadata_update(self):
         ''' The task metadata file can be updated
         '''
         fake_author_email = u'erica@example.com'
-        task_description, task_beneficiary = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+        task_description = str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
         branch1_name = branch1.name
         branch1.checkout()
 
@@ -1347,7 +1338,6 @@ class TestRepo (TestCase):
         # validate the contents of the task metadata file
         self.assertEqual(task_metadata['author_email'], fake_author_email)
         self.assertEqual(task_metadata['task_description'], task_description)
-        self.assertEqual(task_metadata['task_beneficiary'], task_beneficiary)
 
         # write a new task name and some other arbitrary data
         metadata_update = {'task_description': u'Changed my mind', 'lead_singer': u'Johnny Rotten'}
@@ -1365,8 +1355,8 @@ class TestRepo (TestCase):
         ''' The task metadata file is deleted when a branch is completed, and isn't merged.
         '''
         fake_author_email = u'erica@example.com'
-        task_description, task_beneficiary = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, fake_author_email)
+        task_description = str(uuid4())
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description, fake_author_email)
         branch1_name = branch1.name
         branch1.checkout()
 
@@ -1394,9 +1384,8 @@ class TestRepo (TestCase):
         '''
         # start an activity on clone1
         erica_email = u'erica@example.com'
-        task_description = u'Attract Insects With Anthocyanin Pigments To The Cavity Formed By A Cupped Leaf'
-        task_beneficiary = u'Nepenthes'
-        clone1_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, task_beneficiary, erica_email)
+        task_description = u'Attract Insects With Anthocyanin Pigments To The Cavity Formed By A Cupped Leaf for Nepenthes'
+        clone1_branch = repo_functions.get_start_branch(self.clone1, 'master', task_description, erica_email)
         branch_name = clone1_branch.name
         clone1_branch.checkout()
         clone1_branch_task_metadata = repo_functions.get_task_metadata_for_branch(self.clone1, branch_name)
@@ -1468,9 +1457,8 @@ class TestRepo (TestCase):
         fake_author_email1 = u'erica@example.com'
         fake_author_email2 = u'nobody@example.com'
         task_description1, task_description2 = str(uuid4()), str(uuid4())
-        task_beneficiary1, task_beneficiary2 = str(uuid4()), str(uuid4())
-        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description1, task_beneficiary1, fake_author_email1)
-        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_description2, task_beneficiary2, fake_author_email2)
+        branch1 = repo_functions.get_start_branch(self.clone1, 'master', task_description1, fake_author_email1)
+        branch2 = repo_functions.get_start_branch(self.clone2, 'master', task_description2, fake_author_email2)
         branch1_name = branch1.name
 
         # Check out the branches
