@@ -194,7 +194,7 @@ def get_start_branch(clone, default_branch_name, task_description, author_email)
     # create the task metadata file in the new branch
     active_branch_name = clone.active_branch.name
     clone.git.checkout(new_branch_name)
-    metadata_values = {"author_email": author_email, "task_description": task_description}
+    metadata_values = {"author_email": author_email, "task_description": task_description, "branch_name": new_branch_name}
     save_task_metadata_for_branch(clone, default_branch_name, metadata_values)
     clone.git.checkout(active_branch_name)
 
@@ -236,16 +236,11 @@ def save_task_metadata_for_branch(clone, default_branch_name, values={}):
         return
 
     # craft the commit message
-    # :NOTE: changing the commit message may break tests
-    message_details = []
-    for change in values:
-        if change not in check_metadata or check_metadata[change] != values[change]:
-            message_details.append(u'Set {} to {}'.format(change, values[change]))
-
+    task_metadata_json = json.dumps(task_metadata, ensure_ascii=False)
     if check_metadata == {}:
-        message = u'The "{}" {}\n\nCreated task metadata file "{}"\n{}'.format(task_metadata['task_description'], ACTIVITY_CREATED_MESSAGE, TASK_METADATA_FILENAME, u'\n'.join(message_details))
+        message = u'The "{}" {}\n\n{}'.format(task_metadata['task_description'], ACTIVITY_CREATED_MESSAGE, task_metadata_json)
     else:
-        message = u'The "{}" {}\n\nUpdated task metadata file "{}"\n{}'.format(task_metadata['task_description'], ACTIVITY_UPDATED_MESSAGE, TASK_METADATA_FILENAME, u'\n'.join(message_details))
+        message = u'The "{}" {}\n\n{}'.format(task_metadata['task_description'], ACTIVITY_UPDATED_MESSAGE, task_metadata_json)
 
     # Dump the updated task metadata to disk
     # Use newline-preserving block literal form.
@@ -268,10 +263,12 @@ def delete_task_metadata_for_branch(clone, default_branch_name):
     '''
     task_metadata = get_task_metadata_for_branch(clone)
     _, do_save = edit_functions.delete_file(clone, TASK_METADATA_FILENAME)
+    message = u''
     if do_save:
-        message = u'The "{}" {}'.format(task_metadata['task_description'], ACTIVITY_DELETED_MESSAGE)
+        task_metadata_json = json.dumps(task_metadata, ensure_ascii=False)
+        message = u'The "{}" {}\n\n{}'.format(task_metadata['task_description'], ACTIVITY_DELETED_MESSAGE, task_metadata_json)
         save_working_file(clone, TASK_METADATA_FILENAME, message, clone.commit().hexsha, default_branch_name)
-    return task_metadata
+    return task_metadata, message
 
 def get_task_metadata_for_branch(clone, working_branch_name=None):
     ''' Retrieve task metadata from the file
@@ -436,17 +433,16 @@ def complete_branch(clone, default_branch_name, working_branch_name, comment_tex
 def abandon_branch(clone, default_branch_name, working_branch_name, comment_text=None):
     ''' Complete work on a branch by abandoning and deleting it.
     '''
-    message = u'Abandoned work from "{}"'.format(working_branch_name)
-
     #
-    # Add an empty commit with abandonment note.
+    # Delete the task metadata and commit an activity deletion message.
     #
-    clone.branches[default_branch_name].checkout()
-    clone.index.commit(message)
+    _, message = delete_task_metadata_for_branch(clone, default_branch_name)
 
     #
     # Delete the old branch.
     #
+    clone.branches[default_branch_name].checkout()
+    clone.index.commit(message)
     clone.remotes.origin.push(':' + working_branch_name)
 
     if working_branch_name in clone.branches:
