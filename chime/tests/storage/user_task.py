@@ -23,6 +23,7 @@ class TestFirst(TestCase):
         # one master commit, and one branch called task-xyz.
 
         self.origin_dirname = join(self.working_dirname, 'origin')
+        self.get_usertask_args = self.origin_dirname, self.working_dirname
         clone_dirname = join(self.working_dirname, 'clone')
 
         mkdir(self.origin_dirname)
@@ -46,22 +47,22 @@ class TestFirst(TestCase):
         rmtree(self.working_dirname)
 
     def testReadsExistingRepo(self):
-        with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:
+        with get_usertask(Erica, "task-xyz", *self.get_usertask_args) as usertask:
             self.assertEqual(usertask.read('parking.md'), '---\nold stuff')
 
     def testWriteWithImmediateRead(self):
-        with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:
+        with get_usertask(Erica, "task-xyz", *self.get_usertask_args) as usertask:
             usertask.write('parking.md', "---\nnew stuff")
             self.assertEqual(usertask.read('parking.md'), '---\nnew stuff')
 
     def testIsAlwaysClean(self):
-        with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:
+        with get_usertask(Erica, "task-xyz", *self.get_usertask_args) as usertask:
             usertask.write('parking.md', "---\nnew stuff")
-        with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:
+        with get_usertask(Erica, "task-xyz", *self.get_usertask_args) as usertask:
             self.assertEqual(usertask.read('parking.md'), '---\nold stuff')
 
     def testPublishable(self):
-        with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:
+        with get_usertask(Erica, "task-xyz", *self.get_usertask_args) as usertask:
             usertask.write('parking.md', "---\nnew stuff")
             self.assertIs(usertask.is_publishable("task-xyz"), False)
             usertask.commit('I wrote new things')
@@ -70,11 +71,11 @@ class TestFirst(TestCase):
             self.assertIs(usertask.is_publishable("task-xyz"), False)
 
     def testCommitWrite(self):
-        with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:
+        with get_usertask(Erica, "task-xyz", *self.get_usertask_args) as usertask:
             usertask.write('parking.md', "---\nnew stuff")
             usertask.commit('I wrote new things')
             usertask.publish("task-xyz")
-        with get_usertask(Frances, "task-xyz", self.origin_dirname) as usertask:
+        with get_usertask(Frances, "task-xyz", *self.get_usertask_args) as usertask:
             self.assertEqual(usertask.read('parking.md'), '---\nnew stuff')
             
             info = usertask.ref_info()
@@ -82,11 +83,11 @@ class TestFirst(TestCase):
             self.assertTrue('ago' in info['published_date'])
 
     def testCommitNewFile(self):
-        with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:
+        with get_usertask(Erica, "task-xyz", *self.get_usertask_args) as usertask:
             usertask.write('jobs.md', "---\nnew stuff")
             usertask.commit('I wrote new things')
             usertask.publish("task-xyz")
-        with get_usertask(Frances, "task-xyz", self.origin_dirname) as usertask:
+        with get_usertask(Frances, "task-xyz", *self.get_usertask_args) as usertask:
             self.assertEqual(usertask.read('jobs.md'), '---\nnew stuff')
             
             info = usertask.ref_info()
@@ -94,31 +95,31 @@ class TestFirst(TestCase):
             self.assertTrue('ago' in info['published_date'])
     
     def testMoveFile(self):
-        with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:
+        with get_usertask(Erica, "task-xyz", *self.get_usertask_args) as usertask:
             usertask.move('parking.md', 'carholing.md')
             usertask.commit('I moved a thing')
             usertask.publish("task-xyz")
-        with get_usertask(Frances, "task-xyz", self.origin_dirname) as usertask:
+        with get_usertask(Frances, "task-xyz", *self.get_usertask_args) as usertask:
             self.assertEqual(usertask.read('carholing.md'), '---\nold stuff')
 
     def testMoveFileFurther(self):
-        with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:
+        with get_usertask(Erica, "task-xyz", *self.get_usertask_args) as usertask:
             usertask.move('parking.md', 'carholing/carholes/parking.md')
             usertask.commit('I moved a thing')
             usertask.publish("task-xyz")
-        with get_usertask(Frances, "task-xyz", self.origin_dirname) as usertask:
+        with get_usertask(Frances, "task-xyz", *self.get_usertask_args) as usertask:
             self.assertEqual(usertask.read('carholing/carholes/parking.md'), '---\nold stuff')
 
     def testResubmitFileEdits(self):
         ''' Simulate a single user's preview, back-button, and re-save.
         '''
-        with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:
+        with get_usertask(Erica, "task-xyz", *self.get_usertask_args) as usertask:
             start_sha = usertask.commit_sha
             usertask.write('jobs.md', "---\nnew stuff")
             usertask.commit('I wrote new things')
             usertask.publish("task-xyz")
 
-        with get_usertask(Erica, start_sha, self.origin_dirname) as usertask:
+        with get_usertask(Erica, start_sha, *self.get_usertask_args) as usertask:
             usertask.write('jobs.md', "---\nnew stuff")
             usertask.commit('I wrote the same things')
             usertask.publish("task-xyz")
@@ -126,18 +127,18 @@ class TestFirst(TestCase):
     def testResubmitFileEdits(self):
         ''' Simulate a single user's preview, back-button, and conflicting re-save.
         '''
-        with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:
+        with get_usertask(Erica, "task-xyz", *self.get_usertask_args) as usertask:
             usertask.write('jobs.md', "---\nnew stuff\n")
             usertask.commit('I wrote new things')
             usertask.publish("task-xyz")
             start_sha = usertask.commit_sha
 
-        with get_usertask(Erica, start_sha, self.origin_dirname) as usertask:
+        with get_usertask(Erica, start_sha, *self.get_usertask_args) as usertask:
             usertask.write('jobs.md', "---\nnew stuff\n\nmore stuff\n")
             usertask.commit('I wrote more things')
             usertask.publish("task-xyz")
 
-        with get_usertask(Erica, start_sha, self.origin_dirname) as usertask:
+        with get_usertask(Erica, start_sha, *self.get_usertask_args) as usertask:
             usertask.write('jobs.md', "---\nnew stuff\n\nmore stuff\n\nfinal stuff\n")
             usertask.commit('I wrote final things')
             usertask.publish("task-xyz")
@@ -145,18 +146,18 @@ class TestFirst(TestCase):
     def testResubmitFileEditsWithInterloper(self):
         ''' Simulate two users' previews, back-buttons, and conflicting re-saves.
         '''
-        with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:
+        with get_usertask(Erica, "task-xyz", *self.get_usertask_args) as usertask:
             usertask.write('jobs.md', "---\nnew stuff\n")
             usertask.commit('I wrote new things')
             usertask.publish("task-xyz")
             start_sha = usertask.commit_sha
 
-        with get_usertask(Frances, start_sha, self.origin_dirname) as usertask:
+        with get_usertask(Frances, start_sha, *self.get_usertask_args) as usertask:
             usertask.write('jobs.md', "---\nnew stuff\n\nmore stuff\n")
             usertask.commit('I wrote more things')
             usertask.publish("task-xyz")
 
-        with get_usertask(Erica, start_sha, self.origin_dirname) as usertask:
+        with get_usertask(Erica, start_sha, *self.get_usertask_args) as usertask:
             usertask.write('jobs.md', "---\nnew stuff\n\nmore stuff\n\nfinal stuff\n")
             
             # Don't let Erica possibly clobber Frances's changes.
@@ -171,14 +172,14 @@ class TestFirst(TestCase):
     def testInterleavedFileEdits(self):
         ''' Simulate a single user editing in two browser windows.
         '''
-        with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:
+        with get_usertask(Erica, "task-xyz", *self.get_usertask_args) as usertask:
             usertask.write('jobs.md', "---\nnew stuff\n")
             usertask.commit('I wrote new things')
             usertask.publish("task-xyz")
             start_sha = usertask.commit_sha
 
-        with get_usertask(Erica, start_sha, self.origin_dirname) as usertask1, \
-             get_usertask(Erica, start_sha, self.origin_dirname) as usertask2:
+        with get_usertask(Erica, start_sha, *self.get_usertask_args) as usertask1, \
+             get_usertask(Erica, start_sha, *self.get_usertask_args) as usertask2:
             usertask1.write('jobs.md', "---\nnew stuff\n\nmore stuff\n")
             usertask1.commit('I wrote more things')
             usertask1.publish("task-xyz")
@@ -190,14 +191,14 @@ class TestFirst(TestCase):
     def testInterleavedFileEditsWithInterloper(self):
         ''' Simulate a two users editing in two browser windows.
         '''
-        with get_usertask(Erica, "task-xyz", self.origin_dirname) as usertask:
+        with get_usertask(Erica, "task-xyz", *self.get_usertask_args) as usertask:
             usertask.write('jobs.md', "---\nnew stuff\n")
             usertask.commit('I wrote new things')
             usertask.publish("task-xyz")
             start_sha = usertask.commit_sha
 
-        with get_usertask(Frances, start_sha, self.origin_dirname) as usertaskF, \
-             get_usertask(Erica, start_sha, self.origin_dirname) as usertaskE:
+        with get_usertask(Frances, start_sha, *self.get_usertask_args) as usertaskF, \
+             get_usertask(Erica, start_sha, *self.get_usertask_args) as usertaskE:
             usertaskF.write('jobs.md', "---\nnew stuff\n\nmore stuff\n")
             usertaskF.commit('I wrote more things')
             usertaskF.publish("task-xyz")

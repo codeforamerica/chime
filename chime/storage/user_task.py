@@ -22,7 +22,7 @@ class UserTask():
     committed = False
     published = False
 
-    def __init__(self, actor, start_point, origin_dirname):
+    def __init__(self, actor, start_point, origin_dirname, working_dirname):
         '''
         
             start_point: task ID or commit SHA.
@@ -32,7 +32,7 @@ class UserTask():
         origin = Repo(origin_dirname)
 
         # Clone origin to local checkout.
-        self.repo = origin.clone(mkdtemp())
+        self.repo = origin.clone(mkdtemp(dir=working_dirname))
 
         # Fetch all branches from origin.
         self.repo.git.fetch('origin')

@@ -613,7 +613,8 @@ def branch_save(branch_name, path):
     actor = Actor(' ', session['email'])
     start_point = request.form['hexsha']
     origin_dirname = current_app.config['REPO_PATH']
-    user_task = UserTask(actor, start_point, origin_dirname)
+    working_dirname = current_app.config['WORK_PATH']
+    user_task = UserTask(actor, start_point, origin_dirname, working_dirname)
     
     languages = load_languages(user_task.repo.working_dir)
     front, body = prep_jekyll_content(request.form, languages)
