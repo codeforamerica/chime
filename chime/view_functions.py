@@ -125,7 +125,7 @@ def get_repo(flask_app=None, repo_path=None, work_path=None, email=None):
 
     source_repo = ChimeRepo(repo_path)
     first_commit = list(source_repo.iter_commits())[-1].hexsha
-    dir_name = 'repo-{}-{}'.format(first_commit[:8], slugify(email))
+    dir_name = constants.GETREPO_DIRECTORY_PATTERN.format(sha=first_commit[:8], email=slugify(email))
     user_dir = realpath(join(work_path, quote(dir_name)))
 
     if isdir(user_dir):

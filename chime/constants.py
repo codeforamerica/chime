@@ -1,3 +1,10 @@
+# Pattern used in calculating directory names for UserTask.
+# This must be different from get_repo()'s, because they treat master differently.
+USERTASK_DIRECTORY_PATTERN = 'usertask-{sha}-{email}'
+
+# Pattern used in calculating directory names for old-style view_functions.get_repo().
+# This must be different from UserTask's, because they treat master differently.
+GETREPO_DIRECTORY_PATTERN = 'repo-{sha}-{email}'
 
 # the different review states for an activity
 # no changes have yet been made to the activity

@@ -1,13 +1,19 @@
 from contextlib import contextmanager
-from os.path import join, exists, dirname, relpath
+from os.path import join, exists, dirname, relpath, isdir, realpath
 from os import environ, makedirs
 from tempfile import mkdtemp
 
 from git import Repo, Actor, GitCommandError
+from slugify import slugify
 
 from ..repo_functions import MergeConflict
-from ..constants import WORKING_STATE_PUBLISHED, WORKING_STATE_DELETED
+from ..constants import WORKING_STATE_PUBLISHED, WORKING_STATE_DELETED, USERTASK_DIRECTORY_PATTERN
 
+def _calculate_dirname(actor, origin):
+    ''' Prepare a consistent directory for this user and this repository.
+    '''
+    first_commit = list(origin.iter_commits())[-1].hexsha
+    return USERTASK_DIRECTORY_PATTERN.format(sha=first_commit[:8], email=slugify(actor.email))
 
 @contextmanager
 def get_usertask(*args):
@@ -29,11 +35,19 @@ class UserTask():
         '''
         self.actor = actor
 
+        # Prepare a clone directory.
         origin = Repo(origin_dirname)
-
-        # Clone origin to local checkout.
-        self.repo = origin.clone(mkdtemp(dir=working_dirname))
-
+        dirname = _calculate_dirname(self.actor, origin)
+        clone_dirname = join(realpath(working_dirname), dirname)
+        
+        if isdir(clone_dirname):
+            self.repo = Repo(clone_dirname)
+            self.repo.git.checkout('master')
+            self.repo.git.reset('origin/master', hard=True)
+        else:
+            # Clone origin to local checkout.
+            self.repo = origin.clone(clone_dirname)
+        
         # Fetch all branches from origin.
         self.repo.git.fetch('origin')
         
