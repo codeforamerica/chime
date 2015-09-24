@@ -648,6 +648,10 @@ def branch_save(branch_name, path):
         elif publishable is WORKING_STATE_PUBLISHED:
             email, date = user_task.ref_info(task_id)
             flash_only(MESSAGE_ACTIVITY_PUBLISHED.format(published_date=date, published_by=email), u'warning')
+        elif publishable is WORKING_STATE_DELETED:
+            flash_only(MESSAGE_ACTIVITY_DELETED, u'warning')
+        else:
+            raise ValueError('Bad publishable state {}'.format(repr(publishable)))
     except repo_functions.MergeConflict as e:
         email, date = user_task.ref_info(e.remote_commit.hexsha)
         message = MESSAGE_PAGE_EDITED.format(published_date=date, published_by=email)
