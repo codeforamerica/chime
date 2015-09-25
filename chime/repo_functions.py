@@ -330,7 +330,7 @@ def verify_file_exists_in_branch(clone, file_path, working_branch_name=None):
 
 def make_shortened_task_description(task_description):
     ''' Shorten the passed description, cutting on a word boundary if possible
-        :NOTE: not used at the moment
+        NOTE: not used at the moment
     '''
     if len(task_description) <= DESCRIPTION_MAX_LENGTH:
         return task_description
@@ -379,7 +379,9 @@ def complete_branch(clone, default_branch_name, working_branch_name, comment_tex
     task_metadata = get_task_metadata_for_branch(clone)
 
     # build a standard publish commit message
-    message = make_commit_message(subject=REVIEW_STATE_COMMIT_PREFIX, body=ACTIVITY_PUBLISHED_MESSAGE)
+    branch_name = working_branch_name if working_branch_name else clone.active_branch.name
+    message_body = dict(branch_name=branch_name, message=ACTIVITY_PUBLISHED_MESSAGE)
+    message = make_commit_message(subject=REVIEW_STATE_COMMIT_PREFIX, body=json.dumps(message_body, ensure_ascii=False))
 
     # checkout master and make sure it's up-to-date
     clone.git.checkout(default_branch_name)
@@ -391,7 +393,7 @@ def complete_branch(clone, default_branch_name, working_branch_name, comment_tex
     try:
         # if comment text was passed, post the comment now
         if comment_text:
-            provide_feedback(clone=clone, comment_text=comment_text, push=False)
+            provide_feedback(clone=clone, working_branch_name=working_branch_name, comment_text=comment_text, push=False)
 
         # try to merge
         clone.git.merge(working_branch_name, '--no-ff', m=message)
@@ -639,11 +641,13 @@ def get_commit_classification(subject, body):
         return constants.COMMIT_CATEGORY_COMMENT, constants.COMMIT_TYPE_COMMENT, None
     elif re.search(r'{}$'.format(REVIEW_STATE_COMMIT_PREFIX), subject):
         message_action = None
-        if ACTIVITY_FEEDBACK_MESSAGE in body:
+        # NOTE: don't break if this is an old-style commit message
+        check_body = body['message'] if type(body) is dict and 'message' in body else body
+        if ACTIVITY_FEEDBACK_MESSAGE in check_body:
             message_action = constants.REVIEW_STATE_FEEDBACK
-        elif ACTIVITY_ENDORSED_MESSAGE in body:
+        elif ACTIVITY_ENDORSED_MESSAGE in check_body:
             message_action = constants.REVIEW_STATE_ENDORSED
-        elif ACTIVITY_PUBLISHED_MESSAGE in body:
+        elif ACTIVITY_PUBLISHED_MESSAGE in check_body:
             message_action = constants.REVIEW_STATE_PUBLISHED
         return constants.COMMIT_CATEGORY_INFO, constants.COMMIT_TYPE_REVIEW_UPDATE, message_action
     else:
@@ -732,11 +736,13 @@ def get_review_state_and_author_email(repo, default_branch_name, working_branch_
 
     # handle review state updates
     if commit_type == constants.COMMIT_TYPE_REVIEW_UPDATE:
-        if ACTIVITY_FEEDBACK_MESSAGE in commit_body:
+        # NOTE: don't break if this is an old-style commit message
+        check_body = commit_body['message'] if type(commit_body) is dict and 'message' in commit_body else commit_body
+        if ACTIVITY_FEEDBACK_MESSAGE in check_body:
             state = constants.REVIEW_STATE_FEEDBACK
-        elif ACTIVITY_ENDORSED_MESSAGE in commit_body:
+        elif ACTIVITY_ENDORSED_MESSAGE in check_body:
             state = constants.REVIEW_STATE_ENDORSED
-        elif ACTIVITY_PUBLISHED_MESSAGE in commit_body:
+        elif ACTIVITY_PUBLISHED_MESSAGE in check_body:
             state = constants.REVIEW_STATE_PUBLISHED
 
     # if the last commit is the creation of the activity, or if it is the same as the base commit, the state is fresh
@@ -770,7 +776,7 @@ def add_empty_commit(clone, subject, body, push=True):
 
     return clone.active_branch.commit
 
-def update_review_state(clone, new_review_state, push=True):
+def update_review_state(clone, working_branch_name, new_review_state, push=True):
     ''' Adds a new empty commit changing the review state
     '''
     if new_review_state not in (constants.REVIEW_STATE_FEEDBACK, constants.REVIEW_STATE_ENDORSED):
@@ -782,12 +788,16 @@ def update_review_state(clone, new_review_state, push=True):
     elif new_review_state == constants.REVIEW_STATE_ENDORSED:
         message_text = ACTIVITY_ENDORSED_MESSAGE
 
-    return add_empty_commit(clone=clone, subject=REVIEW_STATE_COMMIT_PREFIX, body=message_text, push=push)
+    branch_name = working_branch_name if working_branch_name else clone.active_branch.name
+    message_body = dict(branch_name=branch_name, message=message_text)
+    return add_empty_commit(clone=clone, subject=REVIEW_STATE_COMMIT_PREFIX, body=json.dumps(message_body, ensure_ascii=False), push=push)
 
-def provide_feedback(clone, comment_text, push=True):
+def provide_feedback(clone, working_branch_name, comment_text, push=True):
     ''' Adds a new empty commit adding a comment
     '''
-    return add_empty_commit(clone=clone, subject=COMMENT_COMMIT_PREFIX, body=comment_text, push=push)
+    branch_name = working_branch_name if working_branch_name else clone.active_branch.name
+    message_body = dict(branch_name=branch_name, message=comment_text)
+    return add_empty_commit(clone=clone, subject=COMMENT_COMMIT_PREFIX, body=json.dumps(message_body, ensure_ascii=False), push=push)
 
 def _remote_exists(repo, remote):
     ''' Check whether a named remote exists in a repository.

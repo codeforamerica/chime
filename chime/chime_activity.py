@@ -87,10 +87,17 @@ class ChimeActivity:
         pattern = re.compile(r'\x00Name: (.*?)\tEmail: (.*?)\tDate: (.*?)\tSubject: (.*?)\tBody: (.*?)\x00', re.DOTALL)
         for log_details in pattern.findall(log):
             name, email, date, subject, body = tuple([item for item in log_details])
+            # convert the body to a json object
+            try:
+                body = json.loads(body)
+                message = body['message'] if 'message' in body else u''
+            except ValueError:
+                # NOTE: don't break if this is an old-style commit message
+                message = body
             commit_category, commit_type, commit_action = repo_functions.get_commit_classification(subject, body)
             log_item = dict(author_name=name, author_email=email, commit_date=date, commit_subject=subject,
                             commit_body=body, commit_category=commit_category, commit_type=commit_type,
-                            commit_action=commit_action)
+                            commit_action=commit_action, message=message)
             history.append(log_item)
 
         return history
@@ -125,10 +132,9 @@ class ChimeActivity:
         edit_history = [action for action in reversed(self.history) if action['commit_category'] == constants.COMMIT_CATEGORY_EDIT]
         for action in edit_history:
             # get the list of changed files from the commit body
-            try:
-                commit_body = json.loads(action['commit_body'])
-            except:
-                # could't parse json in the commit body, keep moving
+            commit_body = action['commit_body']
+            # don't continue if the commit body's not a dict
+            if type(commit_body) is not dict:
                 continue
 
             # step through the changed files

@@ -896,14 +896,14 @@ def update_activity_review_state(safe_branch, comment_text, action_list, redirec
         else:
             # comment if comment text was sent and the action is authorized
             if comment_text:
-                provide_feedback(clone=repo, comment_text=comment_text, push=True)
+                provide_feedback(clone=repo, working_branch_name=safe_branch, comment_text=comment_text, push=True)
 
             # handle a review action
             if action != 'comment':
                 if action == 'request_feedback':
-                    update_review_state(clone=repo, new_review_state=current_app.config['REVIEW_STATE_FEEDBACK'], push=True)
+                    update_review_state(clone=repo, working_branch_name=safe_branch, new_review_state=current_app.config['REVIEW_STATE_FEEDBACK'], push=True)
                 elif action == 'endorse_edits':
-                    update_review_state(clone=repo, new_review_state=current_app.config['REVIEW_STATE_ENDORSED'], push=True)
+                    update_review_state(clone=repo, working_branch_name=safe_branch, new_review_state=current_app.config['REVIEW_STATE_ENDORSED'], push=True)
             elif not comment_text:
                 flash(u'You can\'t leave an empty comment!', u'warning')
 
@@ -1003,7 +1003,7 @@ def render_activities_list(task_description=None, show_new_activity_modal=False)
 def make_kwargs_for_activity_files_page(repo, branch_name, path):
     ''' Assemble the kwargs for a page that shows an activity's files.
     '''
-    # :NOTE: temporarily turning off filtering if 'showallfiles=true' is in the request
+    # NOTE: temporarily turning off filtering if 'showallfiles=true' is in the request
     showallfiles = request.args.get('showallfiles') == u'true'
 
     activity = chime_activity.ChimeActivity(repo=repo, branch_name=branch_name, default_branch_name=current_app.config['default_branch'], actor_email=session.get('email', None))
