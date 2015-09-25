@@ -1075,7 +1075,6 @@ class TestRepo (TestCase):
         redirect_path, do_save, commit_message = view_functions.delete_page(repo=new_clone, working_branch_name=working_branch.name, browse_path=browse_path, target_path=dir_path)
         self.assertEqual(cat_slug.rstrip('/'), redirect_path.rstrip('/'))
         self.assertEqual(True, do_save)
-        self.maxDiff = None
         self.assertEqual(u'The "{cat2_title}" topic (containing 1 article) was deleted\n\n{{"branch_name": "{branch_name}", "actions": [{{"action": "delete", "file_path": "{cat2_path}", "display_type": "category", "title": "{cat2_title}"}}, {{"action": "delete", "file_path": "{art_path}", "display_type": "article", "title": "{art_title}"}}]}}'.format(branch_name=working_branch.name, cat2_title=cat2_title, cat2_path=cat2_path, art_path=art_path, art_title=art_title), commit_message)
 
         repo_functions.save_working_file(clone=new_clone, path=dir_path, message=commit_message, base_sha=new_clone.commit().hexsha, default_branch_name='master')
