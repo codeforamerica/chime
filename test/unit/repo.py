@@ -824,7 +824,7 @@ class TestRepo (TestCase):
         self.assertTrue(review_authorized)
 
         # request feedback as Jim Content Creator
-        repo_functions.update_review_state(self.clone1, constants.REVIEW_STATE_FEEDBACK)
+        repo_functions.update_review_state(self.clone1, branch1_name, constants.REVIEW_STATE_FEEDBACK)
         # verify that the activity has feedback requested and that fake is authorized to endorse
         review_state, review_authorized = repo_functions.get_review_state_and_authorized(self.clone1, 'master', branch1_name, fake_author_email)
         self.assertEqual(review_state, constants.REVIEW_STATE_FEEDBACK)
@@ -840,7 +840,7 @@ class TestRepo (TestCase):
         environ['GIT_COMMITTER_EMAIL'] = fake_reviewer_email
 
         # endorse
-        repo_functions.update_review_state(self.clone1, constants.REVIEW_STATE_ENDORSED)
+        repo_functions.update_review_state(self.clone1, branch1_name, constants.REVIEW_STATE_ENDORSED)
         # verify that the activity has been endorsed and that Joe Reviewer is authorized to publish
         review_state, review_authorized = repo_functions.get_review_state_and_authorized(self.clone1, 'master', branch1_name, fake_reviewer_email)
         self.assertEqual(review_state, constants.REVIEW_STATE_ENDORSED)
@@ -861,7 +861,7 @@ class TestRepo (TestCase):
         self.assertTrue(review_authorized)
 
         # request feedback as Joe Reviewer
-        repo_functions.update_review_state(self.clone1, constants.REVIEW_STATE_FEEDBACK)
+        repo_functions.update_review_state(self.clone1, branch1_name, constants.REVIEW_STATE_FEEDBACK)
         # verify that the activity has feedback requested and that Joe Reviewer is not authorized to endorse
         review_state, review_authorized = repo_functions.get_review_state_and_authorized(self.clone1, 'master', branch1_name, fake_reviewer_email)
         self.assertEqual(review_state, constants.REVIEW_STATE_FEEDBACK)
@@ -877,7 +877,7 @@ class TestRepo (TestCase):
         environ['GIT_COMMITTER_EMAIL'] = fake_nonprofit_email
 
         # endorse
-        repo_functions.update_review_state(self.clone1, constants.REVIEW_STATE_ENDORSED)
+        repo_functions.update_review_state(self.clone1, branch1_name, constants.REVIEW_STATE_ENDORSED)
         # verify that the activity has been endorsed and that Jane Reviewer is authorized to publish
         review_state, review_authorized = repo_functions.get_review_state_and_authorized(self.clone1, 'master', branch1_name, fake_nonprofit_email)
         self.assertEqual(review_state, constants.REVIEW_STATE_ENDORSED)
@@ -1131,11 +1131,11 @@ class TestRepo (TestCase):
 
         # add a comment
         funny_comment = u'I like coconuts ᶘ ᵒᴥᵒᶅ'
-        repo_functions.provide_feedback(new_clone, funny_comment)
+        repo_functions.provide_feedback(new_clone, working_branch.name, funny_comment)
 
         # add another comment with newlines
         newline_comment = u'You wound me sir.\n\nI thought we were friends\nBut I guess we are not.'
-        repo_functions.provide_feedback(new_clone, newline_comment)
+        repo_functions.provide_feedback(new_clone, working_branch.name, newline_comment)
 
         # delete a category with stuff in it
         commit_message = view_functions.make_delete_display_commit_message(new_clone, working_branch.name, 'tree')
@@ -1154,10 +1154,8 @@ class TestRepo (TestCase):
         # check the creation of the activity
         check_item = activity_history.pop()
         self.assertEqual(u'The "{}" activity was started'.format(task_description), check_item['commit_subject'])
-        try:
-            check_task_metadata = json.loads(check_item['commit_body'])
-        except ValueError:
-            raise Exception(u'No valid json in commit body.')
+        self.assertEqual(type(check_item['commit_body']), dict, u'Commit body is not a dict.')
+        check_task_metadata = check_item['commit_body']
 
         self.assertEqual(check_task_metadata['author_email'], fake_author_email)
         self.assertEqual(check_task_metadata['task_description'], task_description)
@@ -1167,25 +1165,25 @@ class TestRepo (TestCase):
         # check the delete
         check_item = activity_history.pop(0)
         self.assertEqual(u'The "{}" topic (containing 1 topic and 1 article) was deleted'.format(updated_details[0][1]), check_item['commit_subject'])
-        self.assertEqual(u'{{"branch_name": "{branch_name}", "actions": [{{"action": "delete", "file_path": "{cat1_path}", "display_type": "category", "title": "{cat1_title}"}}, {{"action": "delete", "file_path": "{cat2_path}", "display_type": "category", "title": "{cat2_title}"}}, {{"action": "delete", "file_path": "{art1_path}", "display_type": "article", "title": "{art1_title}"}}]}}'.format(branch_name=working_branch.name, cat1_path=updated_details[0][3], cat1_title=updated_details[0][1], cat2_path=updated_details[1][3], cat2_title=updated_details[1][1], art1_path=updated_details[2][3], art1_title=updated_details[2][1]), check_item['commit_body'])
+        self.assertEqual(json.loads(u'{{"branch_name": "{branch_name}", "actions": [{{"action": "delete", "file_path": "{cat1_path}", "display_type": "category", "title": "{cat1_title}"}}, {{"action": "delete", "file_path": "{cat2_path}", "display_type": "category", "title": "{cat2_title}"}}, {{"action": "delete", "file_path": "{art1_path}", "display_type": "article", "title": "{art1_title}"}}]}}'.format(branch_name=working_branch.name, cat1_path=updated_details[0][3], cat1_title=updated_details[0][1], cat2_path=updated_details[1][3], cat2_title=updated_details[1][1], art1_path=updated_details[2][3], art1_title=updated_details[2][1])), check_item['commit_body'])
         self.assertEqual(constants.COMMIT_TYPE_EDIT, check_item['commit_type'])
 
         # check the comments
         check_item = activity_history.pop(0)
         self.assertEqual(u'Provided feedback.', check_item['commit_subject'])
-        self.assertEqual(newline_comment, check_item['commit_body'])
+        self.assertEqual(newline_comment, check_item['message'])
         self.assertEqual(constants.COMMIT_TYPE_COMMENT, check_item['commit_type'])
 
         check_item = activity_history.pop(0)
         self.assertEqual(u'Provided feedback.', check_item['commit_subject'])
-        self.assertEqual(funny_comment, check_item['commit_body'])
+        self.assertEqual(funny_comment, check_item['message'])
         self.assertEqual(constants.COMMIT_TYPE_COMMENT, check_item['commit_type'])
 
         # check the category & article creations
         for pos, check_item in list(enumerate(activity_history)):
             check_detail = updated_details[len(updated_details) - (pos + 1)]
             self.assertEqual(u'The "{}" {} was created'.format(check_detail[1], view_functions.file_display_name(check_detail[2])), check_item['commit_subject'])
-            self.assertEqual(u'{{"branch_name": "{branch_name}", "actions": [{{"action": "create", "file_path": "{file_path}", "display_type": "{display_type}", "title": "{title}"}}]}}'.format(branch_name=working_branch.name, file_path=check_detail[3], display_type=check_detail[2], title=check_detail[1]), check_item['commit_body'])
+            self.assertEqual(json.loads(u'{{"branch_name": "{branch_name}", "actions": [{{"action": "create", "file_path": "{file_path}", "display_type": "{display_type}", "title": "{title}"}}]}}'.format(branch_name=working_branch.name, file_path=check_detail[3], display_type=check_detail[2], title=check_detail[1])), check_item['commit_body'])
             self.assertEqual(constants.COMMIT_TYPE_EDIT, check_item['commit_type'])
 
     # in TestRepo
@@ -1218,10 +1216,10 @@ class TestRepo (TestCase):
 
         # add some comments with newlines
         striking_comment = u'A striking feature of molluscs is the use of the same organ for multiple functions.\n(و ˃̵ᴗ˂̵)و\n\nFor example, the heart and nephridia ("kidneys") are important parts of the reproductive system, as well as the circulatory and excretory systems\nᶘ ᵒᴥᵒᶅ'
-        repo_functions.provide_feedback(new_clone, striking_comment)
+        repo_functions.provide_feedback(new_clone, working_branch.name, striking_comment)
 
         universal_comment = u'The three most universal features defining modern molluscs are:\n\n1. A mantle with a significant cavity used for breathing and excretion,\n\n2. the presence of a radula, and\n\n3. the structure of the nervous system.'
-        repo_functions.provide_feedback(new_clone, universal_comment)
+        repo_functions.provide_feedback(new_clone, working_branch.name, universal_comment)
 
         # checkout
         working_branch.checkout()

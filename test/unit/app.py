@@ -1439,7 +1439,7 @@ class TestApp (TestCase):
             repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email='erica@example.com')
             activity = chime_activity.ChimeActivity(repo=repo, branch_name=branch_name, default_branch_name='master', actor_email=erica_email)
             activity_history = activity.history
-            delete_history = json.loads(activity_history[0]['commit_body'])['actions']
+            delete_history = activity_history[0]['commit_body']['actions']
             for item in delete_history:
                 self.assertEqual(item['action'], u'delete')
                 if item['title'] in category_names:
