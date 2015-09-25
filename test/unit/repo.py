@@ -1226,8 +1226,11 @@ class TestRepo (TestCase):
         _, universal_body = repo_functions.get_commit_message_subject_and_body(working_branch.commit)
         _, striking_body = repo_functions.get_commit_message_subject_and_body(working_branch.commit.parents[0])
 
-        self.assertEqual(universal_comment, universal_body)
-        self.assertEqual(striking_comment, striking_body)
+        universal_message = json.loads(universal_body)['message']
+        striking_message = json.loads(striking_body)['message']
+
+        self.assertEqual(universal_comment, universal_message)
+        self.assertEqual(striking_comment, striking_message)
 
     # in TestRepo
     def test_delete_full_folders(self):
