@@ -144,7 +144,11 @@
                 </div>
                 {% else %}
                 <div class="activity-log-item__content">
+                    {% if log_item.message %}
+                    <p>{{ log_item.message }}</p>
+                    {% else %}
                     <p>{{ log_item.commit_subject }} by {{ log_item.author_email }}.</p>
+                    {% endif %}
                     <div class="activity-log-item__datetime">{{ log_item.commit_date }}</div>
                 </div>
                 {% endif %}

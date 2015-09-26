@@ -23,6 +23,7 @@ REVIEW_STATE_COMMIT_PREFIX = u'Updated review state.'
 ACTIVITY_FEEDBACK_MESSAGE = u'requested feedback on this activity.'
 ACTIVITY_ENDORSED_MESSAGE = u'endorsed this activity.'
 ACTIVITY_PUBLISHED_MESSAGE = u'published this activity.'
+ACTIVITY_MERGED_MESSAGE = u'Merged changes from another activity.'
 
 # Name of file in running state dir that signals a need to push upstream.
 NEEDS_PUSH_FILE = 'needs-push'
@@ -477,11 +478,13 @@ def clobber_default_branch(clone, default_branch_name, working_branch_name, comm
 def sync_with_branch(clone, working_branch_name, sync_branch_name):
     ''' Sync the passed branch with default and upstream branches.
     '''
-    msg = 'Merged work from "%s"' % sync_branch_name
     clone.git.fetch('origin', sync_branch_name)
 
     try:
-        clone.git.merge('FETCH_HEAD', '--no-ff', m=msg)
+        branch_name = working_branch_name if working_branch_name else clone.active_branch.name
+        message_body = dict(branch_name=branch_name, sync_branch_name=sync_branch_name, message=ACTIVITY_MERGED_MESSAGE)
+        message = make_commit_message(subject=ACTIVITY_MERGED_MESSAGE, body=json.dumps(message_body, ensure_ascii=False))
+        clone.git.merge('FETCH_HEAD', '--no-ff', m=message)
 
     except GitCommandError:
         # raise the two commits in conflict.
@@ -635,7 +638,7 @@ def get_commit_classification(subject, body):
                 if the commit changes the review state of an activity, this is the state
                 it was changed to.
     '''
-    if re.search(r'{}$|{}$|{}$'.format(ACTIVITY_CREATED_MESSAGE, ACTIVITY_UPDATED_MESSAGE, ACTIVITY_DELETED_MESSAGE), subject):
+    if re.search(r'{}$|{}$|{}$|{}$'.format(ACTIVITY_CREATED_MESSAGE, ACTIVITY_UPDATED_MESSAGE, ACTIVITY_DELETED_MESSAGE, ACTIVITY_MERGED_MESSAGE), subject):
         return constants.COMMIT_CATEGORY_INFO, constants.COMMIT_TYPE_ACTIVITY_UPDATE, None
     elif re.search(r'{}$'.format(COMMENT_COMMIT_PREFIX), subject):
         return constants.COMMIT_CATEGORY_COMMENT, constants.COMMIT_TYPE_COMMENT, None
