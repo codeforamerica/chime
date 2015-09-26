@@ -39,7 +39,7 @@ from .repo_functions import (
     clobber_default_branch, get_review_state_and_authorized, update_review_state,
     provide_feedback, move_existing_file, mark_upstream_push_needed, MergeConflict,
     get_activity_working_state, make_branch_name, save_local_working_file,
-    sync_with_default_and_upstream_branches, strip_index_file
+    sync_with_branch, strip_index_file
 )
 from . import constants
 
@@ -1284,7 +1284,7 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
             repo.git.reset(rebase_commit, hard=True)
             repo.git.branch('-D', tmp_branch_name)
 
-    sync_with_default_and_upstream_branches(repo, working_branch_name)
+    sync_with_branch(repo, working_branch_name, working_branch_name)
 
     repo.git.push('origin', working_branch_name)
 

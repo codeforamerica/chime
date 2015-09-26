@@ -474,7 +474,7 @@ def clobber_default_branch(clone, default_branch_name, working_branch_name, comm
     clone.remotes.origin.push(':' + working_branch_name)
     clone.delete_head([working_branch_name])
 
-def sync_with_default_and_upstream_branches(clone, sync_branch_name):
+def sync_with_branch(clone, working_branch_name, sync_branch_name):
     ''' Sync the passed branch with default and upstream branches.
     '''
     msg = 'Merged work from "%s"' % sync_branch_name
@@ -527,7 +527,7 @@ def save_working_file(clone, path, message, base_sha, default_branch_name):
     #
     for sync_branch_name in (active_branch_name, ):
         try:
-            sync_with_default_and_upstream_branches(clone, sync_branch_name)
+            sync_with_branch(clone, active_branch_name, sync_branch_name)
         except MergeConflict as conflict:
             raise conflict
 
@@ -611,7 +611,7 @@ def move_existing_file(clone, old_path, new_path, base_sha, default_branch_name)
     #
     for sync_branch_name in (active_branch_name, default_branch_name):
         try:
-            sync_with_default_and_upstream_branches(clone, sync_branch_name)
+            sync_with_branch(clone, active_branch_name, sync_branch_name)
         except MergeConflict as conflict:
             raise conflict
 
@@ -767,7 +767,7 @@ def add_empty_commit(clone, subject, body, push=True):
     #
     for sync_branch_name in (active_branch_name, ):
         try:
-            sync_with_default_and_upstream_branches(clone, sync_branch_name)
+            sync_with_branch(clone, active_branch_name, sync_branch_name)
         except MergeConflict as conflict:
             raise conflict
 
