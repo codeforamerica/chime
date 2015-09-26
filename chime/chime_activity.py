@@ -254,8 +254,13 @@ class ChimePublishedActivity(ChimeActivity):
         edited_history = []
         # crop the history to the beginning of this published activity
         for log_item in full_history:
-            edited_history.append(log_item)
-            if log_item['commit_type'] == constants.COMMIT_TYPE_ACTIVITY_UPDATE and log_item['commit_subject'] == u'The "{}" {}'.format(self.task_description, repo_functions.ACTIVITY_CREATED_MESSAGE):
-                break
+            # filter by branch name, if it's there
+            commit_body = log_item['commit_body']
+            has_branch_name = type(commit_body) is dict and 'branch_name' in commit_body
+            is_eligible = has_branch_name and commit_body['branch_name'] == self.safe_branch
+            if is_eligible or not has_branch_name:
+                edited_history.append(log_item)
+                if log_item['commit_type'] == constants.COMMIT_TYPE_ACTIVITY_UPDATE and log_item['commit_subject'] == u'The "{}" {}'.format(self.task_description, repo_functions.ACTIVITY_CREATED_MESSAGE):
+                    break
 
         return edited_history
