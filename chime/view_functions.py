@@ -39,7 +39,7 @@ from .repo_functions import (
     clobber_default_branch, get_review_state_and_authorized, update_review_state,
     provide_feedback, move_existing_file, mark_upstream_push_needed, MergeConflict,
     get_activity_working_state, make_branch_name, save_local_working_file,
-    sync_with_branch, strip_index_file
+    sync_with_branch, strip_index_file, make_commit_message
 )
 from . import constants
 
@@ -721,9 +721,8 @@ def make_delete_display_commit_message(repo, working_branch_name, request_path):
         action_descriptions.append(file_description)
     branch_name = working_branch_name if working_branch_name else repo.active_branch.name
     message_body = dict(branch_name=branch_name, actions=action_descriptions)
-    commit_message = commit_message + u'\n\n' + json.dumps(message_body, ensure_ascii=False)
 
-    return commit_message
+    return make_commit_message(subject=commit_message, body=json.dumps(message_body, ensure_ascii=False))
 
 def make_list_of_published_activities(repo, limit=10):
     ''' Make a list of recently published activities.
@@ -1108,7 +1107,7 @@ def add_article_or_category(repo, working_branch_name, dir_path, request_path, c
     action_descriptions = [{'action': u'create', 'title': display_name, 'display_type': create_what, 'file_path': file_path}]
     branch_name = working_branch_name if working_branch_name else repo.active_branch.name
     message_body = dict(branch_name=branch_name, actions=action_descriptions)
-    commit_message = u'The "{}" {} was created\n\n{}'.format(display_name, display_what, json.dumps(message_body, ensure_ascii=False))
+    commit_message = make_commit_message(subject=u'The "{}" {} was created'.format(display_name, display_what), body=json.dumps(message_body, ensure_ascii=False))
 
     return commit_message, file_path, redirect_path, True
 
@@ -1262,7 +1261,7 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
     action_descriptions = [{'action': u'edit', 'title': display_name, 'display_type': display_type, 'file_path': file_path}]
     branch_name = working_branch_name if working_branch_name else repo.active_branch.name
     message_body = dict(branch_name=branch_name, actions=action_descriptions)
-    commit_message = u'The "{}" {} was edited\n\n{}'.format(display_name, display_type, json.dumps(message_body, ensure_ascii=False))
+    commit_message = make_commit_message(subject=u'The "{}" {} was edited'.format(display_name, display_type), body=json.dumps(message_body, ensure_ascii=False))
     c2 = save_local_working_file(repo, file_path, commit_message)
 
     if possible_conflict:

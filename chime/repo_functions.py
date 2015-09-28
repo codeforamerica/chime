@@ -239,9 +239,9 @@ def save_task_metadata_for_branch(clone, default_branch_name, values={}):
     # craft the commit message
     task_metadata_json = json.dumps(task_metadata, ensure_ascii=False)
     if check_metadata == {}:
-        message = u'The "{}" {}\n\n{}'.format(task_metadata['task_description'], ACTIVITY_CREATED_MESSAGE, task_metadata_json)
+        message = make_commit_message(subject=u'The "{}" {}'.format(task_metadata['task_description'], ACTIVITY_CREATED_MESSAGE), body=task_metadata_json)
     else:
-        message = u'The "{}" {}\n\n{}'.format(task_metadata['task_description'], ACTIVITY_UPDATED_MESSAGE, task_metadata_json)
+        message = make_commit_message(subject=u'The "{}" {}'.format(task_metadata['task_description'], ACTIVITY_UPDATED_MESSAGE), body=task_metadata_json)
 
     # Dump the updated task metadata to disk
     # Use newline-preserving block literal form.
@@ -267,7 +267,7 @@ def delete_task_metadata_for_branch(clone, default_branch_name):
     message = u''
     if do_save:
         task_metadata_json = json.dumps(task_metadata, ensure_ascii=False)
-        message = u'The "{}" {}\n\n{}'.format(task_metadata['task_description'], ACTIVITY_DELETED_MESSAGE, task_metadata_json)
+        message = make_commit_message(subject=u'The "{}" {}'.format(task_metadata['task_description'], ACTIVITY_DELETED_MESSAGE), body=task_metadata_json)
         save_working_file(clone, TASK_METADATA_FILENAME, message, clone.commit().hexsha, default_branch_name)
     return task_metadata, message
 
