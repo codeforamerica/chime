@@ -133,8 +133,8 @@ class ChimeActivity:
         for action in edit_history:
             # get the list of changed files from the commit body
             commit_body = action['commit_body']
-            # don't continue if the commit body's not a dict
-            if type(commit_body) is not dict:
+            # don't continue if the commit body's not a dict or list
+            if type(commit_body) is not dict and type(commit_body) is not list:
                 continue
 
             # step through the changed files
