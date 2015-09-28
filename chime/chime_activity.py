@@ -87,17 +87,20 @@ class ChimeActivity:
         pattern = re.compile(r'\x00Name: (.*?)\tEmail: (.*?)\tDate: (.*?)\tSubject: (.*?)\tBody: (.*?)\x00', re.DOTALL)
         for log_details in pattern.findall(log):
             name, email, date, subject, body = tuple([item for item in log_details])
-            # convert the body to a json object
+            # convert the body to a json object and use it as the basis for the log item
             try:
-                body = json.loads(body)
-                message = body['message'] if 'message' in body else u''
+                log_item = json.loads(body)
+                # NOTE: old-style commit messages may've had a list of actions as the body
+                if type(log_item) is list:
+                    log_item = dict(actions=log_item)
+                if 'message' not in log_item:
+                    log_item['message'] = u''
             except ValueError:
                 # NOTE: don't break if this is an old-style commit message
-                message = body
+                log_item = dict(message=body)
+
             commit_category, commit_type, commit_action = repo_functions.get_commit_classification(subject, body)
-            log_item = dict(author_name=name, author_email=email, commit_date=date, commit_subject=subject,
-                            commit_body=body, commit_category=commit_category, commit_type=commit_type,
-                            commit_action=commit_action, message=message)
+            log_item.update(dict(author_name=name, author_email=email, commit_date=date, commit_subject=subject, commit_category=commit_category, commit_type=commit_type, commit_action=commit_action))
             history.append(log_item)
 
         return history
@@ -105,8 +108,7 @@ class ChimeActivity:
     def _make_history(self):
         ''' Make an easily-parsable history of the activity since it was created.
         '''
-        history = self._construct_history()
-        return history
+        return self._construct_history()
 
     def _make_history_summary(self):
         ''' Make an object that summarizes the activity's history.
@@ -129,17 +131,15 @@ class ChimeActivity:
         change_lookup = {}
         display_types_encountered = []
         # we only care about edits
-        edit_history = [action for action in reversed(self.history) if action['commit_category'] == constants.COMMIT_CATEGORY_EDIT]
-        for action in edit_history:
-            # get the list of changed files from the commit body
-            commit_body = action['commit_body']
-            # don't continue if the commit body's not a dict or list
-            if type(commit_body) is not dict and type(commit_body) is not list:
+        edit_history = [log_item for log_item in reversed(self.history) if log_item['commit_category'] == constants.COMMIT_CATEGORY_EDIT]
+        for log_item in edit_history:
+            # don't continue if there's not a list of actions
+            if 'actions' not in log_item or type(log_item['actions']) is not list:
                 continue
 
             # step through the changed files
             # NOTE: don't break if this is an old-style commit message
-            actions = commit_body['actions'] if 'actions' in commit_body else commit_body
+            actions = log_item['actions']
             for file_change in actions:
                 # the passed title or the filename if no title is there
                 title = file_change['title'] or file_change['file_path'].split('/')[-1]
@@ -255,10 +255,9 @@ class ChimePublishedActivity(ChimeActivity):
         # crop the history to the beginning of this published activity
         for log_item in full_history:
             # filter by branch name, if it's there
-            commit_body = log_item['commit_body']
-            has_branch_name = type(commit_body) is dict and 'branch_name' in commit_body
-            is_eligible = has_branch_name and commit_body['branch_name'] == self.safe_branch
-            # include it if it doesn't have a branch name, for backwards-compatibility
+            has_branch_name = 'branch_name' in log_item and log_item['branch_name']
+            is_eligible = has_branch_name and log_item['branch_name'] == self.safe_branch
+            # NOTE: include it if it doesn't have a branch name, for backwards-compatibility
             if is_eligible or not has_branch_name:
                 edited_history.append(log_item)
                 if log_item['commit_type'] == constants.COMMIT_TYPE_ACTIVITY_UPDATE and log_item['commit_subject'] == u'The "{}" {}'.format(self.task_description, repo_functions.ACTIVITY_CREATED_MESSAGE):

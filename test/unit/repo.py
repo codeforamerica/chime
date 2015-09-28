@@ -1093,6 +1093,9 @@ class TestRepo (TestCase):
         fake_author_email = u'erica@example.com'
         task_description = u'shake trees until coconuts fall off for castaways'
 
+        environ['GIT_AUTHOR_EMAIL'] = fake_author_email
+        environ['GIT_COMMITTER_EMAIL'] = fake_author_email
+
         source_repo = self.origin
         first_commit = list(source_repo.iter_commits())[-1].hexsha
         dir_name = 'repo-{}-{}'.format(first_commit[:8], slugify(fake_author_email))
@@ -1153,18 +1156,16 @@ class TestRepo (TestCase):
         # check the creation of the activity
         check_item = activity_history.pop()
         self.assertEqual(u'The "{}" activity was started'.format(task_description), check_item['commit_subject'])
-        self.assertEqual(type(check_item['commit_body']), dict, u'Commit body is not a dict.')
-        check_task_metadata = check_item['commit_body']
-
-        self.assertEqual(check_task_metadata['author_email'], fake_author_email)
-        self.assertEqual(check_task_metadata['task_description'], task_description)
-        self.assertEqual(check_task_metadata['branch_name'], working_branch.name)
+        self.assertEqual(check_item['author_email'], fake_author_email)
+        self.assertEqual(check_item['task_description'], task_description)
+        self.assertEqual(check_item['branch_name'], working_branch.name)
         self.assertEqual(constants.COMMIT_TYPE_ACTIVITY_UPDATE, check_item['commit_type'])
 
         # check the delete
         check_item = activity_history.pop(0)
         self.assertEqual(u'The "{}" topic (containing 1 topic and 1 article) was deleted'.format(updated_details[0][1]), check_item['commit_subject'])
-        self.assertEqual(json.loads(u'{{"branch_name": "{branch_name}", "actions": [{{"action": "delete", "file_path": "{cat1_path}", "display_type": "category", "title": "{cat1_title}"}}, {{"action": "delete", "file_path": "{cat2_path}", "display_type": "category", "title": "{cat2_title}"}}, {{"action": "delete", "file_path": "{art1_path}", "display_type": "article", "title": "{art1_title}"}}]}}'.format(branch_name=working_branch.name, cat1_path=updated_details[0][3], cat1_title=updated_details[0][1], cat2_path=updated_details[1][3], cat2_title=updated_details[1][1], art1_path=updated_details[2][3], art1_title=updated_details[2][1])), check_item['commit_body'])
+        self.assertEqual(working_branch.name, check_item['branch_name'])
+        self.assertEqual(json.loads(u'[{{"action": "delete", "file_path": "{cat1_path}", "display_type": "category", "title": "{cat1_title}"}}, {{"action": "delete", "file_path": "{cat2_path}", "display_type": "category", "title": "{cat2_title}"}}, {{"action": "delete", "file_path": "{art1_path}", "display_type": "article", "title": "{art1_title}"}}]'.format(cat1_path=updated_details[0][3], cat1_title=updated_details[0][1], cat2_path=updated_details[1][3], cat2_title=updated_details[1][1], art1_path=updated_details[2][3], art1_title=updated_details[2][1])), check_item['actions'])
         self.assertEqual(constants.COMMIT_TYPE_EDIT, check_item['commit_type'])
 
         # check the comments
@@ -1182,7 +1183,8 @@ class TestRepo (TestCase):
         for pos, check_item in list(enumerate(activity_history)):
             check_detail = updated_details[len(updated_details) - (pos + 1)]
             self.assertEqual(u'The "{}" {} was created'.format(check_detail[1], view_functions.file_display_name(check_detail[2])), check_item['commit_subject'])
-            self.assertEqual(json.loads(u'{{"branch_name": "{branch_name}", "actions": [{{"action": "create", "file_path": "{file_path}", "display_type": "{display_type}", "title": "{title}"}}]}}'.format(branch_name=working_branch.name, file_path=check_detail[3], display_type=check_detail[2], title=check_detail[1])), check_item['commit_body'])
+            self.assertEqual(working_branch.name, check_item['branch_name'])
+            self.assertEqual(json.loads(u'[{{"action": "create", "file_path": "{file_path}", "display_type": "{display_type}", "title": "{title}"}}]'.format(file_path=check_detail[3], display_type=check_detail[2], title=check_detail[1])), check_item['actions'])
             self.assertEqual(constants.COMMIT_TYPE_EDIT, check_item['commit_type'])
 
     # in TestRepo
