@@ -479,11 +479,11 @@ def sync_with_branch(clone, working_branch_name, sync_branch_name):
     ''' Sync the passed branch with default and upstream branches.
     '''
     clone.git.fetch('origin', sync_branch_name)
+    branch_name = working_branch_name if working_branch_name else clone.active_branch.name
+    message_body = dict(branch_name=branch_name, sync_branch_name=sync_branch_name, message=ACTIVITY_MERGED_MESSAGE)
+    message = make_commit_message(subject=ACTIVITY_MERGED_MESSAGE, body=json.dumps(message_body, ensure_ascii=False))
 
     try:
-        branch_name = working_branch_name if working_branch_name else clone.active_branch.name
-        message_body = dict(branch_name=branch_name, sync_branch_name=sync_branch_name, message=ACTIVITY_MERGED_MESSAGE)
-        message = make_commit_message(subject=ACTIVITY_MERGED_MESSAGE, body=json.dumps(message_body, ensure_ascii=False))
         clone.git.merge('FETCH_HEAD', '--no-ff', m=message)
 
     except GitCommandError:
