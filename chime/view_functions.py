@@ -1261,7 +1261,7 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
     action_descriptions = [{'action': u'edit', 'title': display_name, 'display_type': display_type, 'file_path': file_path}]
     branch_name = working_branch_name if working_branch_name else repo.active_branch.name
     message_body = dict(branch_name=branch_name, actions=action_descriptions)
-    commit_message = make_commit_message(subject=u'The "{}" {} was edited'.format(display_name, display_type), body=json.dumps(message_body, ensure_ascii=False))
+    commit_message = make_commit_message(subject=u'The "{}" {} was edited'.format(display_name, file_display_name(display_type)), body=json.dumps(message_body, ensure_ascii=False))
     c2 = save_local_working_file(repo, file_path, commit_message)
 
     if possible_conflict:
