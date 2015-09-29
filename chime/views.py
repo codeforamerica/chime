@@ -607,16 +607,16 @@ def branch_save(branch_name, path):
         title_layout = request.form.get('en-title'), request.form.get('layout')
         message = view_functions.format_commit_message(end_path, *title_layout)
         user_task.commit(message)
-        publishable = user_task.is_publishable()
-        if publishable is True:
-            user_task.publish()
-        elif publishable is constants.WORKING_STATE_PUBLISHED:
+        pushable = user_task.is_pushable()
+        if pushable is True:
+            user_task.push()
+        elif pushable is constants.WORKING_STATE_PUBLISHED:
             ref_info = user_task.ref_info()
             view_functions.flash_only(view_functions.MESSAGE_ACTIVITY_PUBLISHED.format(**ref_info), u'warning')
-        elif publishable is constants.WORKING_STATE_DELETED:
+        elif pushable is constants.WORKING_STATE_DELETED:
             view_functions.flash_only(view_functions.MESSAGE_ACTIVITY_DELETED, u'warning')
         else:
-            raise ValueError('Bad publishable state {}'.format(repr(publishable)))
+            raise ValueError('Bad pushable state {}'.format(repr(pushable)))
     except repo_functions.MergeConflict as e:
         ref_info = user_task.ref_info(e.remote_commit.hexsha)
         view_functions.flash(view_functions.MESSAGE_PAGE_EDITED.format(**ref_info), u'error')

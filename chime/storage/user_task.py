@@ -29,7 +29,7 @@ class UserTask():
     commit_sha = None
     writeable = True
     committed = False
-    published = False
+    pushed = False
 
     def __init__(self, actor, task_id, origin_dirname, working_dirname, start_point=None):
         '''
@@ -104,14 +104,14 @@ class UserTask():
             return file.read()
 
     def write(self, filename, content):
-        assert self.writeable and not (self.committed or self.published)
+        assert self.writeable and not (self.committed or self.pushed)
     
         with self._open(filename, 'w') as file:
             file.write(content)
         self.repo.git.add(filename)
 
     def move(self, old_path, new_path):
-        assert self.writeable and not (self.committed or self.published)
+        assert self.writeable and not (self.committed or self.pushed)
         
         dir_path = join(self.repo.working_dir, dirname(new_path))
         
@@ -132,20 +132,20 @@ class UserTask():
         self.repo.git.mv(old_path, new_path)
 
     def commit(self, message):
-        assert self.writeable and not (self.committed or self.published)
+        assert self.writeable and not (self.committed or self.pushed)
         self.committed = True
     
         # Commit to local master, push to origin task ID.
         self._set_author_env()
         self.repo.git.commit(m=message, a=True)
     
-    def is_publishable(self):
-        ''' Return publishable status: True, False, or a working state constant.
+    def is_pushable(self):
+        ''' Return pushable status: True, False, or a working state constant.
         '''
         if not self.writeable:
             return False
         
-        if self.published:
+        if self.pushed:
             return False
 
         if not self.committed:
@@ -159,9 +159,9 @@ class UserTask():
 
         return True
     
-    def publish(self):
-        assert self.committed and not self.published
-        self.published = True
+    def push(self):
+        assert self.committed and not self.pushed
+        self.pushed = True
 
         # See if we are behind the origin branch, for example because we are
         # using the back button for editing, and starting from an older commit.
