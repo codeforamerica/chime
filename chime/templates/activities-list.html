@@ -42,7 +42,7 @@
       {{ activity_box(activities.published, "published")}}
     </div>
 
-    <div class="modal-container {% if show_new_activity_modal %}is-open{% endif %}">
+    <div class="modal-container{% if show_new_activity_modal %} is-open{% endif %}">
     <div class="new-activity modal">
       <h3>Let teammates know what public need you are addressing.</h3>
       <form action="/start" method="POST">

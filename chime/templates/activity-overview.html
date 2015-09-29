@@ -60,26 +60,26 @@
             {% set review_step = 4 %}
         {% endif %}
 
-        <li class="activity-progress__item  activity-progress__item--edited {% if review_step > 0 %}is-completed{% endif %} grid__item width-one-fourth">
+        <li class="activity-progress__item activity-progress__item--edited{% if review_step > 0 %} is-completed{% endif %} grid__item width-one-fourth">
             <div class="activity-progress__icon"></div>
             <p class="activity-progress__label">Edits Made</p>
         </li>
-        <li class="activity-progress__item  activity-progress__item--requested {% if review_step > 1 %}is-completed{% endif %} grid__item width-one-fourth">
+        <li class="activity-progress__item activity-progress__item--requested{% if review_step > 1 %} is-completed{% endif %} grid__item width-one-fourth">
             <div class="activity-progress__icon"></div>
             <p class="activity-progress__label">Feedback Requested</p>
         </li>
-        <li class="activity-progress__item  activity-progress__item--endorsed {% if review_step > 2 %}is-completed{% endif %} grid__item width-one-fourth">
+        <li class="activity-progress__item activity-progress__item--endorsed{% if review_step > 2 %} is-completed{% endif %} grid__item width-one-fourth">
             <div class="activity-progress__icon"></div>
             <p class="activity-progress__label">Edits Endorsed</p>
         </li>
-        <li class="activity-progress__item activity-progress__item--published {% if review_step > 3 %}is-completed{% endif %} grid__item width-one-fourth end-row">
-            <div class="activity-progress__icon "></div>
+        <li class="activity-progress__item activity-progress__item--published{% if review_step > 3 %} is-completed{% endif %} grid__item width-one-fourth end-row">
+            <div class="activity-progress__icon"></div>
             <p class="activity-progress__label">Published</p>
         </li>
     </ul>
 
     <div class="activity-summary activity-overview__row  activity-overview__row">
-        <p class="activity-overview__header">{% if activity.history_summary.changes|length > 0 %}{{ activity.history_summary.summary }}{% else %}No changes in this activity yet{% endif %}</p>        
+        <p class="activity-overview__header">{% if activity.history_summary.changes|length > 0 %}{{ activity.history_summary.summary }}{% else %}No changes in this activity yet{% endif %}</p>
         <ul class="activity-summary__changes">
             {% for change in activity.history_summary.changes %}
             <li class="activity-change">
@@ -107,7 +107,7 @@
                     <textarea class="comment__input" name="comment_text" placeholder="Leave your comment here"></textarea>
                 </div>
                 <div class="comment__actions toolbar toolbar--left">
-                    <button class="toolbar__item button " type="submit" name="comment" value="Leave a Comment">Leave a Comment</button>
+                    <button class="toolbar__item button" type="submit" name="comment" value="Leave a Comment">Leave a Comment</button>
                 </div>
             </form>
         </div>
@@ -137,7 +137,7 @@
     </div>
 </div>
 
-<div class="modal-container {% if show_rename_modal %}is-open{% endif %}">
+<div class="modal-container{% if show_rename_modal %} is-open{% endif %}">
     <div class="modal rename-modal">
         <h3 class="modal__header">Change your activity name</h3>
         <form action="." method="POST">

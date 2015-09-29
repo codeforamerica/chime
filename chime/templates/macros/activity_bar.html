@@ -23,7 +23,7 @@
     </div>
   {% endif %}
 </div>
-<div class="modal-container {% if show_review_modal %}is-open{% endif %}">
+<div class="modal-container{% if show_review_modal %} is-open{% endif %}">
   {% set review_action_text = "Requesting feedback on" %}
   {% set review_description_text = "Your work needs to be endorsed before publishing." %}
   {% if activity.review_state == config.REVIEW_STATE_FEEDBACK %}
@@ -44,7 +44,7 @@
             {% for change in activity.history_summary.changes|batch(3)|first %}
             <li class="activity-change">
                 {% if change.edit_path %}<a href="{{ change.edit_path }}" class="activity-change__link">{% endif %}
-                <h3 class="activity-change__filename {% if not change.edit_path %}is-deleted{% endif %}">{{ change.title }}</h3>
+                <h3 class="activity-change__filename{% if not change.edit_path %} is-deleted{% endif %}">{{ change.title }}</h3>
                 <p class="activity-change__changes">{{ change.actions }}</p>
                 <div class="activity-change__filetype activity-change__filetype--{{change.display_type|lower}}">{{ change.display_type }}</div>
                 {% if change.edit_path %}</a>{% endif %}
