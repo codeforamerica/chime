@@ -24,16 +24,16 @@ def get_usertask(*args, **kwargs):
     task.cleanup()
 
 
-class UserTaskPublished(Exception): pass
-class UserTaskDeleted(Exception): pass
-class UserTaskUnpushable(Exception): pass
+class UserTaskPublished(RuntimeError): pass
+class UserTaskDeleted(RuntimeError): pass
+class UserTaskUnpushable(RuntimeError): pass
 
 class UserTask():
     actor = None
     commit_sha = None
-    writeable = True
-    committed = False
-    pushed = False
+    _writeable = True
+    _committed = False
+    _pushed = False
 
     def __init__(self, actor, task_id, origin_dirname, working_dirname, start_point=None):
         '''
@@ -45,8 +45,10 @@ class UserTask():
 
         # Prepare a clone directory.
         origin = Repo(origin_dirname)
-        dirname = _calculate_dirname(self.actor, origin)
-        clone_dirname = join(realpath(working_dirname), dirname)
+        user_dirname = _calculate_dirname(self.actor, origin)
+        clone_dirname = join(realpath(working_dirname), user_dirname)
+        
+        self._lock(clone_dirname)
         
         if isdir(clone_dirname):
             self.repo = Repo(clone_dirname)
@@ -56,15 +58,13 @@ class UserTask():
             # Clone origin to local checkout.
             self.repo = origin.clone(clone_dirname)
         
-        self._lock()
-        
         # Fetch all branches from origin.
         self.repo.git.fetch('origin')
         
         # Determine if a start-point was passed or needs to be inferred.
         if start_point is None:
             start_point = task_id
-            self.writeable = False
+            self._writeable = False
         
         # Figure out what start_point is.
         if 'origin/{}'.format(start_point) in self.repo.refs:
@@ -79,8 +79,8 @@ class UserTask():
     def __repr__(self):
         return '<UserTask {} in {}>'.format(self.actor.email, self.repo.working_dir)
     
-    def _lock(self):
-        self._lockfile = open('{}.lock'.format(self.repo.working_dir), 'a')
+    def _lock(self, clone_dirname):
+        self._lockfile = open('{}.lock'.format(clone_dirname), 'a')
         timeout = time() + 1.
         
         while True:
@@ -108,16 +108,14 @@ class UserTask():
             return file.read()
 
     def write(self, filename, content):
-        assert self.writeable and not (self.committed or self.pushed)
+        assert self._writeable and not (self._committed or self._pushed)
     
         with self._open(filename, 'w') as file:
             file.write(content)
         self.repo.git.add(filename)
 
     def move(self, old_path, new_path):
-        assert self.writeable and not (self.committed or self.pushed)
-        
-        dir_path = join(self.repo.working_dir, dirname(new_path))
+        assert self._writeable and not (self._committed or self._pushed)
         
         #
         # Make sure we're not trying to move a directory inside itself.
@@ -129,6 +127,8 @@ class UserTask():
         if old_dirname:
             if not relpath(new_dirname, old_dirname).startswith('..'):
                 raise ValueError(u'I cannot move a directory inside itself!', u'warning')
+        
+        dir_path = join(self.repo.working_dir, dirname(new_path))
 
         if not exists(dir_path):
             makedirs(dir_path)
@@ -136,8 +136,8 @@ class UserTask():
         self.repo.git.mv(old_path, new_path)
 
     def commit(self, message):
-        assert self.writeable and not (self.committed or self.pushed)
-        self.committed = True
+        assert self._writeable and not (self._committed or self._pushed)
+        self._committed = True
     
         # Commit to local master, push to origin task ID.
         self._set_author_env()
@@ -146,13 +146,13 @@ class UserTask():
     def is_pushable(self):
         ''' Return pushable status: True, False, or a working state constant.
         '''
-        if not self.writeable:
+        if not self._writeable:
             return False
         
-        if self.pushed:
+        if self._pushed:
             return False
 
-        if not self.committed:
+        if not self._committed:
             return False
         
         if self.task_id in self.repo.tags:
@@ -164,11 +164,11 @@ class UserTask():
         return True
     
     def push(self):
-        assert self.committed and not self.pushed
+        assert self._committed and not self._pushed
         pushable = self.is_pushable()
         
         if pushable is True:
-            self.pushed = True
+            self._pushed = True
         if pushable is WORKING_STATE_PUBLISHED:
             raise UserTaskPublished()
         elif pushable is WORKING_STATE_DELETED:
