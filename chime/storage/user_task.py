@@ -27,6 +27,7 @@ def get_usertask(*args, **kwargs):
 class UserTask():
     actor = None
     commit_sha = None
+    writeable = True
     committed = False
     published = False
 
@@ -55,6 +56,11 @@ class UserTask():
         
         # Fetch all branches from origin.
         self.repo.git.fetch('origin')
+        
+        # Determine if a start-point was passed or needs to be inferred.
+        if start_point is None:
+            start_point = task_id
+            self.writeable = False
         
         # Figure out what start_point is.
         if 'origin/{}'.format(start_point) in self.repo.refs:
@@ -98,14 +104,14 @@ class UserTask():
             return file.read()
 
     def write(self, filename, content):
-        assert not (self.committed or self.published)
+        assert self.writeable and not (self.committed or self.published)
     
         with self._open(filename, 'w') as file:
             file.write(content)
         self.repo.git.add(filename)
 
     def move(self, old_path, new_path):
-        assert not (self.committed or self.published)
+        assert self.writeable and not (self.committed or self.published)
         
         dir_path = join(self.repo.working_dir, dirname(new_path))
         
@@ -126,7 +132,7 @@ class UserTask():
         self.repo.git.mv(old_path, new_path)
 
     def commit(self, message):
-        assert not (self.committed or self.published)
+        assert self.writeable and not (self.committed or self.published)
         self.committed = True
     
         # Commit to local master, push to origin task ID.
@@ -136,6 +142,9 @@ class UserTask():
     def is_publishable(self):
         ''' Return publishable status: True, False, or a working state constant.
         '''
+        if not self.writeable:
+            return False
+        
         if self.published:
             return False
 

@@ -51,6 +51,11 @@ class TestFirst(TestCase):
         with get_usertask(Erica, self.task_id, *self.get_usertask_args, start_point=self.task_id) as usertask:
             self.assertEqual(usertask.read('parking.md'), '---\nold stuff')
 
+    def testWriteNotAllowed(self):
+        with get_usertask(Erica, self.task_id, *self.get_usertask_args) as usertask:
+            with self.assertRaises(Exception):
+                usertask.write('parking.md', "---\nnew stuff")
+
     def testWriteWithImmediateRead(self):
         with get_usertask(Erica, self.task_id, *self.get_usertask_args, start_point=self.task_id) as usertask:
             usertask.write('parking.md', "---\nnew stuff")
