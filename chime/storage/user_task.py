@@ -24,6 +24,10 @@ def get_usertask(*args, **kwargs):
     task.cleanup()
 
 
+class UserTaskPublished(Exception): pass
+class UserTaskDeleted(Exception): pass
+class UserTaskUnpushable(Exception): pass
+
 class UserTask():
     actor = None
     commit_sha = None
@@ -161,7 +165,16 @@ class UserTask():
     
     def push(self):
         assert self.committed and not self.pushed
-        self.pushed = True
+        pushable = self.is_pushable()
+        
+        if pushable is True:
+            self.pushed = True
+        if pushable is WORKING_STATE_PUBLISHED:
+            raise UserTaskPublished()
+        elif pushable is WORKING_STATE_DELETED:
+            raise UserTaskDeleted()
+        elif pushable is False:
+            raise UserTaskUnpushable()
 
         # See if we are behind the origin branch, for example because we are
         # using the back button for editing, and starting from an older commit.
