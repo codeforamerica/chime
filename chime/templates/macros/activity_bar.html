@@ -76,11 +76,11 @@
       <a href="{{activity.overview_path}}" class="toolbar__item button button--close-review-modal button--medium">Cancel</a>
       {% if activity.review_authorized %}
       {% if activity.review_state == config.REVIEW_STATE_EDITED %}
-      <button class="toolbar__item button button--medium button--orange" type="submit" name="request_feedback" value="Request Feedback">Request Feedback</button>
+      <button data-test-id="request-feedback-button" class="toolbar__item button button--medium button--orange" type="submit" name="request_feedback" value="Request Feedback">Request Feedback</button>
       {% elif activity.review_state == config.REVIEW_STATE_FEEDBACK %}
-      <button class="toolbar__item button button--medium button--green" type="submit" name="endorse_edits" value="Endorse Edits">Endorse Edits</button>
+      <button data-test-id="endorse-edits-button" class="toolbar__item button button--medium button--green" type="submit" name="endorse_edits" value="Endorse Edits">Endorse Edits</button>
       {% elif activity.review_state == config.REVIEW_STATE_ENDORSED %}
-      <button class="toolbar__item button button--medium button--blue" type="submit" name="merge" value="Publish">Publish</button>
+      <button data-test-id="publish-button" class="toolbar__item button button--medium button--blue" type="submit" name="merge" value="Publish">Publish</button>
       {% endif %}
       {% endif %}
     </div>
