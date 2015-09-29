@@ -579,7 +579,8 @@ def branch_save(branch_name, path):
     start_point = request.form['hexsha']
     origin_dirname = current_app.config['REPO_PATH']
     working_dirname = current_app.config['WORK_PATH']
-    user_task = UserTask(actor, start_point, origin_dirname, working_dirname)
+    task_id = view_functions.branch_name2path(view_functions.branch_var2name(branch_name))
+    user_task = UserTask(actor, task_id, origin_dirname, working_dirname, start_point)
     
     languages = load_languages(user_task.repo.working_dir)
     front, body = view_functions.prep_jekyll_content(request.form, languages)
@@ -602,17 +603,15 @@ def branch_save(branch_name, path):
             else:
                 end_path = new_path
     
-    task_id = view_functions.branch_name2path(view_functions.branch_var2name(branch_name))
-
     try:
         title_layout = request.form.get('en-title'), request.form.get('layout')
         message = view_functions.format_commit_message(end_path, *title_layout)
         user_task.commit(message)
-        publishable = user_task.is_publishable(task_id)
+        publishable = user_task.is_publishable()
         if publishable is True:
-            user_task.publish(task_id)
+            user_task.publish()
         elif publishable is constants.WORKING_STATE_PUBLISHED:
-            ref_info = user_task.ref_info(task_id)
+            ref_info = user_task.ref_info()
             view_functions.flash_only(view_functions.MESSAGE_ACTIVITY_PUBLISHED.format(**ref_info), u'warning')
         elif publishable is constants.WORKING_STATE_DELETED:
             view_functions.flash_only(view_functions.MESSAGE_ACTIVITY_DELETED, u'warning')

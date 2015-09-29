@@ -18,8 +18,8 @@ def _calculate_dirname(actor, origin):
     return USERTASK_DIRECTORY_PATTERN.format(sha=first_commit[:8], email=slugify(actor.email))
 
 @contextmanager
-def get_usertask(*args):
-    task = UserTask(*args)
+def get_usertask(*args, **kwargs):
+    task = UserTask(*args, **kwargs)
     yield task
     task.cleanup()
 
@@ -30,12 +30,13 @@ class UserTask():
     committed = False
     published = False
 
-    def __init__(self, actor, start_point, origin_dirname, working_dirname):
+    def __init__(self, actor, task_id, origin_dirname, working_dirname, start_point=None):
         '''
         
             start_point: task ID or commit SHA.
         '''
         self.actor = actor
+        self.task_id = task_id
 
         # Prepare a clone directory.
         origin = Repo(origin_dirname)
@@ -132,7 +133,7 @@ class UserTask():
         self._set_author_env()
         self.repo.git.commit(m=message, a=True)
     
-    def is_publishable(self, task_id):
+    def is_publishable(self):
         ''' Return publishable status: True, False, or a working state constant.
         '''
         if self.published:
@@ -141,21 +142,21 @@ class UserTask():
         if not self.committed:
             return False
         
-        if task_id in self.repo.tags:
+        if self.task_id in self.repo.tags:
             return WORKING_STATE_PUBLISHED
 
-        if 'origin/{}'.format(task_id) not in self.repo.refs:
+        if 'origin/{}'.format(self.task_id) not in self.repo.refs:
             return WORKING_STATE_DELETED
 
         return True
     
-    def publish(self, task_id):
+    def publish(self):
         assert self.committed and not self.published
         self.published = True
 
         # See if we are behind the origin branch, for example because we are
         # using the back button for editing, and starting from an older commit.
-        task_sha = self._get_task_sha(task_id)
+        task_sha = self._get_task_sha()
         
         # Rebase if necessary.
         if task_sha != self.commit_sha:
@@ -163,16 +164,16 @@ class UserTask():
         
         try:
             # Push to origin; we think this is safe to do.
-            self.repo.git.push('origin', 'master:{}'.format(task_id))
+            self.repo.git.push('origin', 'master:{}'.format(self.task_id))
 
         except GitCommandError:
             # Push failed, possibly because origin has
             # been modified due to rapid concurrent editing.
             self.repo.git.fetch('origin')
-            self._rebase_with_author_check(self._get_task_sha(task_id))
+            self._rebase_with_author_check(self._get_task_sha())
         
         # Re-point self.commit_sha to the new one.
-        self.commit_sha = self._get_task_sha(task_id)
+        self.commit_sha = self._get_task_sha()
     
     def ref_info(self, ref=None):
         ''' Return dict with author email and a relative date for a given reference.
@@ -211,10 +212,10 @@ class UserTask():
 
         return False
     
-    def _get_task_sha(self, task_id):
+    def _get_task_sha(self):
         ''' Get local commit SHA for a given task ID.
         '''
-        branch = self.repo.refs['origin/{}'.format(task_id)]
+        branch = self.repo.refs['origin/{}'.format(self.task_id)]
         return branch.commit.hexsha
     
     def _rebase_with_author_check(self, task_sha):

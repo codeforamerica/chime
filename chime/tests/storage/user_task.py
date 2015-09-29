@@ -17,6 +17,7 @@ Frances = Actor('Frances', 'frances@example.com')
 
 class TestFirst(TestCase):
     def setUp(self):
+        self.task_id = 'task-xyz'
         self.working_dirname = mkdtemp(prefix='storage-test-')
 
         # Make a mostly-empty repo with parking.md file,
@@ -33,49 +34,49 @@ class TestFirst(TestCase):
 
         call_git('commit -m First --allow-empty', clone_dirname)
         call_git('push origin master', clone_dirname)
-        call_git('checkout -b task-xyz', clone_dirname)
+        call_git('checkout -b {}'.format(self.task_id), clone_dirname)
 
         with open(join(clone_dirname, 'parking.md'), 'w') as file:
             file.write('---\nold stuff')
 
         call_git('add parking.md', clone_dirname)
         call_git('commit -m Second', clone_dirname)
-        call_git('push origin task-xyz', clone_dirname)
+        call_git('push origin {}'.format(self.task_id), clone_dirname)
         rmtree(clone_dirname)
 
     def tearDown(self):
         rmtree(self.working_dirname)
 
     def testReadsExistingRepo(self):
-        with get_usertask(Erica, "task-xyz", *self.get_usertask_args) as usertask:
+        with get_usertask(Erica, self.task_id, *self.get_usertask_args, start_point=self.task_id) as usertask:
             self.assertEqual(usertask.read('parking.md'), '---\nold stuff')
 
     def testWriteWithImmediateRead(self):
-        with get_usertask(Erica, "task-xyz", *self.get_usertask_args) as usertask:
+        with get_usertask(Erica, self.task_id, *self.get_usertask_args, start_point=self.task_id) as usertask:
             usertask.write('parking.md', "---\nnew stuff")
             self.assertEqual(usertask.read('parking.md'), '---\nnew stuff')
 
     def testIsAlwaysClean(self):
-        with get_usertask(Erica, "task-xyz", *self.get_usertask_args) as usertask:
+        with get_usertask(Erica, self.task_id, *self.get_usertask_args, start_point=self.task_id) as usertask:
             usertask.write('parking.md', "---\nnew stuff")
-        with get_usertask(Erica, "task-xyz", *self.get_usertask_args) as usertask:
+        with get_usertask(Erica, self.task_id, *self.get_usertask_args, start_point=self.task_id) as usertask:
             self.assertEqual(usertask.read('parking.md'), '---\nold stuff')
 
     def testPublishable(self):
-        with get_usertask(Erica, "task-xyz", *self.get_usertask_args) as usertask:
+        with get_usertask(Erica, self.task_id, *self.get_usertask_args, start_point=self.task_id) as usertask:
             usertask.write('parking.md', "---\nnew stuff")
-            self.assertIs(usertask.is_publishable("task-xyz"), False)
+            self.assertIs(usertask.is_publishable(), False)
             usertask.commit('I wrote new things')
-            self.assertIs(usertask.is_publishable("task-xyz"), True)
-            usertask.publish("task-xyz")
-            self.assertIs(usertask.is_publishable("task-xyz"), False)
+            self.assertIs(usertask.is_publishable(), True)
+            usertask.publish()
+            self.assertIs(usertask.is_publishable(), False)
 
     def testCommitWrite(self):
-        with get_usertask(Erica, "task-xyz", *self.get_usertask_args) as usertask:
+        with get_usertask(Erica, self.task_id, *self.get_usertask_args, start_point=self.task_id) as usertask:
             usertask.write('parking.md', "---\nnew stuff")
             usertask.commit('I wrote new things')
-            usertask.publish("task-xyz")
-        with get_usertask(Frances, "task-xyz", *self.get_usertask_args) as usertask:
+            usertask.publish()
+        with get_usertask(Frances, self.task_id, *self.get_usertask_args, start_point=self.task_id) as usertask:
             self.assertEqual(usertask.read('parking.md'), '---\nnew stuff')
             
             info = usertask.ref_info()
@@ -83,11 +84,11 @@ class TestFirst(TestCase):
             self.assertTrue('ago' in info['published_date'])
 
     def testCommitNewFile(self):
-        with get_usertask(Erica, "task-xyz", *self.get_usertask_args) as usertask:
+        with get_usertask(Erica, self.task_id, *self.get_usertask_args, start_point=self.task_id) as usertask:
             usertask.write('jobs.md', "---\nnew stuff")
             usertask.commit('I wrote new things')
-            usertask.publish("task-xyz")
-        with get_usertask(Frances, "task-xyz", *self.get_usertask_args) as usertask:
+            usertask.publish()
+        with get_usertask(Frances, self.task_id, *self.get_usertask_args, start_point=self.task_id) as usertask:
             self.assertEqual(usertask.read('jobs.md'), '---\nnew stuff')
             
             info = usertask.ref_info()
@@ -95,76 +96,76 @@ class TestFirst(TestCase):
             self.assertTrue('ago' in info['published_date'])
     
     def testMoveFile(self):
-        with get_usertask(Erica, "task-xyz", *self.get_usertask_args) as usertask:
+        with get_usertask(Erica, self.task_id, *self.get_usertask_args, start_point=self.task_id) as usertask:
             usertask.move('parking.md', 'carholing.md')
             usertask.commit('I moved a thing')
-            usertask.publish("task-xyz")
-        with get_usertask(Frances, "task-xyz", *self.get_usertask_args) as usertask:
+            usertask.publish()
+        with get_usertask(Frances, self.task_id, *self.get_usertask_args, start_point=self.task_id) as usertask:
             self.assertEqual(usertask.read('carholing.md'), '---\nold stuff')
 
     def testMoveFileFurther(self):
-        with get_usertask(Erica, "task-xyz", *self.get_usertask_args) as usertask:
+        with get_usertask(Erica, self.task_id, *self.get_usertask_args, start_point=self.task_id) as usertask:
             usertask.move('parking.md', 'carholing/carholes/parking.md')
             usertask.commit('I moved a thing')
-            usertask.publish("task-xyz")
-        with get_usertask(Frances, "task-xyz", *self.get_usertask_args) as usertask:
+            usertask.publish()
+        with get_usertask(Frances, self.task_id, *self.get_usertask_args, start_point=self.task_id) as usertask:
             self.assertEqual(usertask.read('carholing/carholes/parking.md'), '---\nold stuff')
 
     def testResubmitFileEdits(self):
         ''' Simulate a single user's preview, back-button, and re-save.
         '''
-        with get_usertask(Erica, "task-xyz", *self.get_usertask_args) as usertask:
+        with get_usertask(Erica, self.task_id, *self.get_usertask_args, start_point=self.task_id) as usertask:
             start_sha = usertask.commit_sha
             usertask.write('jobs.md', "---\nnew stuff")
             usertask.commit('I wrote new things')
-            usertask.publish("task-xyz")
+            usertask.publish()
 
-        with get_usertask(Erica, start_sha, *self.get_usertask_args) as usertask:
+        with get_usertask(Erica, self.task_id, *self.get_usertask_args, start_point=start_sha) as usertask:
             usertask.write('jobs.md', "---\nnew stuff")
             usertask.commit('I wrote the same things')
-            usertask.publish("task-xyz")
+            usertask.publish()
 
     def testResubmitFileEdits(self):
         ''' Simulate a single user's preview, back-button, and conflicting re-save.
         '''
-        with get_usertask(Erica, "task-xyz", *self.get_usertask_args) as usertask:
+        with get_usertask(Erica, self.task_id, *self.get_usertask_args, start_point=self.task_id) as usertask:
             usertask.write('jobs.md', "---\nnew stuff\n")
             usertask.commit('I wrote new things')
-            usertask.publish("task-xyz")
+            usertask.publish()
             start_sha = usertask.commit_sha
 
-        with get_usertask(Erica, start_sha, *self.get_usertask_args) as usertask:
+        with get_usertask(Erica, self.task_id, *self.get_usertask_args, start_point=start_sha) as usertask:
             usertask.write('jobs.md', "---\nnew stuff\n\nmore stuff\n")
             usertask.commit('I wrote more things')
-            usertask.publish("task-xyz")
+            usertask.publish()
 
-        with get_usertask(Erica, start_sha, *self.get_usertask_args) as usertask:
+        with get_usertask(Erica, self.task_id, *self.get_usertask_args, start_point=start_sha) as usertask:
             usertask.write('jobs.md', "---\nnew stuff\n\nmore stuff\n\nfinal stuff\n")
             usertask.commit('I wrote final things')
-            usertask.publish("task-xyz")
+            usertask.publish()
 
     def testResubmitFileEditsWithInterloper(self):
         ''' Simulate two users' previews, back-buttons, and conflicting re-saves.
         '''
-        with get_usertask(Erica, "task-xyz", *self.get_usertask_args) as usertask:
+        with get_usertask(Erica, self.task_id, *self.get_usertask_args, start_point=self.task_id) as usertask:
             usertask.write('jobs.md', "---\nnew stuff\n")
             usertask.commit('I wrote new things')
-            usertask.publish("task-xyz")
+            usertask.publish()
             start_sha = usertask.commit_sha
 
-        with get_usertask(Frances, start_sha, *self.get_usertask_args) as usertask:
+        with get_usertask(Frances, self.task_id, *self.get_usertask_args, start_point=start_sha) as usertask:
             usertask.write('jobs.md', "---\nnew stuff\n\nmore stuff\n")
             usertask.commit('I wrote more things')
-            usertask.publish("task-xyz")
+            usertask.publish()
 
-        with get_usertask(Erica, start_sha, *self.get_usertask_args) as usertask:
+        with get_usertask(Erica, self.task_id, *self.get_usertask_args, start_point=start_sha) as usertask:
             usertask.write('jobs.md', "---\nnew stuff\n\nmore stuff\n\nfinal stuff\n")
             
             # Don't let Erica possibly clobber Frances's changes.
             # Kick this conflict upstairs.
             with self.assertRaises(MergeConflict) as conflict:
                 usertask.commit('I wrote final things')
-                usertask.publish("task-xyz")
+                usertask.publish()
             
             self.assertEqual(conflict.exception.local_commit.author, Erica)
             self.assertEqual(conflict.exception.remote_commit.author, Frances)
@@ -172,32 +173,32 @@ class TestFirst(TestCase):
     def testInterleavedFileEdits(self):
         ''' Simulate a single user editing in two browser windows.
         '''
-        with get_usertask(Erica, "task-xyz", *self.get_usertask_args) as usertask:
+        with get_usertask(Erica, self.task_id, *self.get_usertask_args, start_point=self.task_id) as usertask:
             usertask.write('jobs.md', "---\nnew stuff\n")
             usertask.commit('I wrote new things')
-            usertask.publish("task-xyz")
+            usertask.publish()
             start_sha = usertask.commit_sha
 
-        with get_usertask(Erica, start_sha, *self.get_usertask_args) as usertask1:
+        with get_usertask(Erica, self.task_id, *self.get_usertask_args, start_point=start_sha) as usertask1:
             # Lock contention will bubble up as an IOError.
             with self.assertRaises(IOError) as error:
-                with get_usertask(Erica, start_sha, *self.get_usertask_args) as usertask2:
+                with get_usertask(Erica, self.task_id, *self.get_usertask_args, start_point=start_sha) as usertask2:
                     pass
 
     def testInterleavedFileEditsWithInterloper(self):
         ''' Simulate a two users editing in two browser windows.
         '''
-        with get_usertask(Erica, "task-xyz", *self.get_usertask_args) as usertask:
+        with get_usertask(Erica, self.task_id, *self.get_usertask_args, start_point=self.task_id) as usertask:
             usertask.write('jobs.md', "---\nnew stuff\n")
             usertask.commit('I wrote new things')
-            usertask.publish("task-xyz")
+            usertask.publish()
             start_sha = usertask.commit_sha
 
-        with get_usertask(Frances, start_sha, *self.get_usertask_args) as usertaskF, \
-             get_usertask(Erica, start_sha, *self.get_usertask_args) as usertaskE:
+        with get_usertask(Frances, self.task_id, *self.get_usertask_args, start_point=start_sha) as usertaskF, \
+             get_usertask(Erica, self.task_id, *self.get_usertask_args, start_point=start_sha) as usertaskE:
             usertaskF.write('jobs.md', "---\nnew stuff\n\nmore stuff\n")
             usertaskF.commit('I wrote more things')
-            usertaskF.publish("task-xyz")
+            usertaskF.publish()
 
             usertaskE.write('jobs.md', "---\nnew stuff\n\nother stuff\n")
 
@@ -205,7 +206,7 @@ class TestFirst(TestCase):
             # Kick this conflict upstairs.
             with self.assertRaises(MergeConflict) as conflict:
                 usertaskE.commit('I wrote different things')
-                usertaskE.publish("task-xyz")
+                usertaskE.publish()
             
             self.assertEqual(conflict.exception.local_commit.author, Erica)
             self.assertEqual(conflict.exception.remote_commit.author, Frances)
