@@ -100,7 +100,7 @@ def get_repo(flask_app=None, repo_path=None, work_path=None, email=None):
 
     source_repo = ChimeRepo(repo_path)
     first_commit = list(source_repo.iter_commits())[-1].hexsha
-    dir_name = 'repo-{}-{}'.format(first_commit[:8], slugify(email))
+    dir_name = constants.GETREPO_DIRECTORY_PATTERN.format(sha=first_commit[:8], email=slugify(email))
     user_dir = realpath(join(work_path, quote(dir_name)))
 
     if isdir(user_dir):
@@ -1235,6 +1235,64 @@ def get_preview_asset_response(working_dir, path):
 
     return Response(open(local_path).read(), 200, {'Content-Type': mime_type})
 
+def prep_jekyll_content(new_values, languages):
+    '''
+    '''
+    # make sure order is an integer; otherwise default to 0
+    try:
+        order = int(dos2unix(new_values.get('order', '0')))
+    except ValueError:
+        order = 0
+
+    # populate the jekyll front matter
+    front = {
+        'layout': dos2unix(new_values.get('layout')),
+        'order': order,
+        'title': dos2unix(new_values.get('en-title', '')),
+        'description': dos2unix(new_values.get('en-description', ''))
+    }
+    for iso in languages:
+        if iso != constants.ISO_CODE_ENGLISH:
+            front['title-' + iso] = dos2unix(new_values.get(iso + '-title', ''))
+            front['description-' + iso] = dos2unix(new_values.get(iso + '-description', ''))
+            front['body-' + iso] = dos2unix(new_values.get(iso + '-body', ''))
+    
+    body = dos2unix(new_values.get('en-body', ''))
+
+    return front, body
+
+def calculate_new_slug(file_path, new_slug):
+    '''
+    '''
+    # they may've renamed the page by editing the URL slug
+    original_slug = file_path
+    #if re.search(r'\/index.{}$'.format(CONTENT_FILE_EXTENSION), file_path):
+    #    original_slug = re.sub(ur'index.{}$'.format(CONTENT_FILE_EXTENSION), u'', file_path)
+
+    # do some simple input cleaning
+    newer_slug = re.sub(r'\/+', '/', new_slug)
+    
+    # We may need to treat this as a directory name, with an index.whatever inside.
+    _, ext = splitext(basename(newer_slug))
+    if not ext:
+        newer_slug = join(newer_slug, u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
+
+    if newer_slug != original_slug:
+        from sys import stderr; print >> stderr, newer_slug, '!=', original_slug
+        return newer_slug
+    
+    return None
+
+def format_commit_message(file_path, en_title, layout):
+    '''
+    '''
+    display_name = en_title
+    display_type = layout
+    action_descriptions = [{'action': u'edit', 'title': display_name, 'display_type': display_type, 'file_path': file_path}]
+    commit_message = u'The "{}" {} was edited\n\n{}'.format(display_name, display_type, json.dumps(action_descriptions, ensure_ascii=False))
+    
+    return commit_message
+
 def save_page(repo, default_branch_name, working_branch_name, file_path, new_values):
     ''' Save the page with the passed values
     '''
@@ -1258,29 +1316,10 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
         existing_branch.checkout()
         possible_conflict = False
     
-    # make sure order is an integer; otherwise default to 0
-    try:
-        order = int(dos2unix(new_values.get('order', '0')))
-    except ValueError:
-        order = 0
-
-    # populate the jekyll front matter
-    front = {
-        'layout': dos2unix(new_values.get('layout')),
-        'order': order,
-        'title': dos2unix(new_values.get('en-title', '')),
-        'description': dos2unix(new_values.get('en-description', ''))
-    }
-    for iso in load_languages(repo.working_dir):
-        if iso != constants.ISO_CODE_ENGLISH:
-            front['title-' + iso] = dos2unix(new_values.get(iso + '-title', ''))
-            front['description-' + iso] = dos2unix(new_values.get(iso + '-description', ''))
-            front['body-' + iso] = dos2unix(new_values.get(iso + '-body', ''))
-
     #
     # Write changes.
     #
-    body = dos2unix(new_values.get('en-body', ''))
+    front, body = prep_jekyll_content(new_values, load_languages(repo.working_dir))
     update_page(repo, file_path, front, body)
     
     #

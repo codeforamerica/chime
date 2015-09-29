@@ -4,16 +4,21 @@ Logger = getLogger('chime.views')
 
 from os.path import join, isdir, exists
 from re import compile, MULTILINE, sub, search
+from io import BytesIO
 
 from requests import post
 from slugify import slugify
 from datetime import datetime
 from flask import current_app, flash, render_template, redirect, request, Response, session, abort
+from git import Actor
 
 from . import chime as app
 from . import constants, repo_functions, edit_functions, chime_activity
 from . import publish
-from .jekyll_functions import load_jekyll_doc, load_languages
+from .jekyll_functions import load_jekyll_doc, dump_jekyll_doc, load_languages
+from .storage.user_task import UserTask, UserTaskPublished, UserTaskDeleted
+
+from . import constants
 
 # the decorator functions
 from .view_functions import login_required, lock_on_user, browserid_hostname_required, synch_required, synched_checkout_required, log_application_errors
@@ -567,20 +572,58 @@ def branch_history(branch_name, path=None):
 @log_application_errors
 @login_required
 @lock_on_user
-@synch_required
 def branch_save(branch_name, path):
     ''' Handle a submission from the article-edit form.
     '''
-    repo = view_functions.get_repo(flask_app=current_app)
-    safe_branch = view_functions.branch_name2path(view_functions.branch_var2name(branch_name))
-    new_path, did_save = view_functions.save_page(repo, current_app.config['default_branch'], branch_name, path, request.form)
-    if did_save:
-        flash(u'Saved changes to the {} article! Remember to submit this change for feedback when you\'re ready to go live.'.format(request.form['en-title']), u'notice')
+    actor = Actor(' ', session['email'])
+    start_point = request.form['hexsha']
+    origin_dirname = current_app.config['REPO_PATH']
+    working_dirname = current_app.config['WORK_PATH']
+    task_id = view_functions.branch_name2path(view_functions.branch_var2name(branch_name))
+    user_task = UserTask(actor, task_id, origin_dirname, working_dirname, start_point)
+    
+    languages = load_languages(user_task.repo.working_dir)
+    front, body = view_functions.prep_jekyll_content(request.form, languages)
+    
+    data = BytesIO()
+    dump_jekyll_doc(front, body, data)
+    user_task.write(path, data.getvalue())
 
-    if request.form.get('action', '').lower() == 'preview':
-        return redirect('/tree/{}/view/{}'.format(safe_branch, new_path), code=303)
+    end_path = path
+    
+    if request.form.get('url-slug'):
+        new_path = view_functions.calculate_new_slug(path, request.form['url-slug'])
+        
+        if new_path:
+            try:
+                user_task.move(path, new_path)
+            except ValueError as e:
+                e_message, e_type = e.args[0], e.args[1] if len(e.args) > 1 else None
+                view_functions.flash(e_message, e_type)
+            else:
+                end_path = new_path
+    
+    try:
+        title_layout = request.form.get('en-title'), request.form.get('layout')
+        message = view_functions.format_commit_message(end_path, *title_layout)
+        user_task.commit(message)
+        user_task.push()
+    except UserTaskPublished as e:
+        ref_info = user_task.ref_info()
+        view_functions.flash_only(view_functions.MESSAGE_ACTIVITY_PUBLISHED.format(**ref_info), u'warning')
+    except UserTaskDeleted as e:
+        view_functions.flash_only(view_functions.MESSAGE_ACTIVITY_DELETED, u'warning')
+    except repo_functions.MergeConflict as e:
+        ref_info = user_task.ref_info(e.remote_commit.hexsha)
+        view_functions.flash(view_functions.MESSAGE_PAGE_EDITED.format(**ref_info), u'error')
     else:
-        return redirect('/tree/{}/edit/{}'.format(safe_branch, new_path), code=303)
+        message = u'Saved changes to the {} article! Remember to submit this change for feedback when you\'re ready to go live.'.format(request.form['en-title'])
+        view_functions.flash(message, u'notice')
+    
+    if request.form.get('action', '').lower() == 'preview':
+        return redirect('/tree/{}/view/{}'.format(task_id, end_path), code=303)
+    else:
+        return redirect('/tree/{}/edit/{}'.format(task_id, end_path), code=303)
 
 @app.route('/.well-known/deploy-key.txt')
 @log_application_errors
