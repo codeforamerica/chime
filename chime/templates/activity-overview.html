@@ -91,7 +91,7 @@
             </li>
             {% endfor %}
             <li class="activity-change activity-change--new">
-                <a class="activity-change__link" href="{{activity.edit_path}}">Add a change to this activity</a>
+                <a data-test-id="change-link" class="activity-change__link" href="{{activity.edit_path}}">{{ config.TEXT_ADD_CHANGE }}</a>
             </li>
         </ul>
     </div>

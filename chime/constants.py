@@ -62,3 +62,6 @@ LAYOUT_PLURAL_LOOKUP = {
     FILE_FILE_TYPE: 'files',
     IMAGE_FILE_TYPE: 'images'
 }
+
+# interface text
+TEXT_ADD_CHANGE = u'Add a change to this activity'
