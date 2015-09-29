@@ -100,12 +100,12 @@ class ChimeActivity:
 
             The object looks like this:
             {
-                'summary': u'3 articles and 1 category have been changed',
+                'summary': u'3 articles and 1 topic have been changed',
                 'changes': [
                     {'edit_path': u'', 'display_type': u'Article', 'actions': u'Created, Edited, Deleted', 'title': u'How to Find Us'},
                     {'edit_path': u'/tree/34246e3/edit/contact/hours-of-operation/', 'display_type': u'Article', 'actions': u'Created, Edited', 'title': u'Hours of Operation'},
                     {'edit_path': u'/tree/34246e3/edit/contact/driving-directions/', 'display_type': u'Article', 'actions': u'Created, Edited', 'title': u'Driving Directions'},
-                    {'edit_path': u'/tree/34246e3/edit/contact/', 'display_type': u'Category', 'actions': u'Created', 'title': u'Contact'}
+                    {'edit_path': u'/tree/34246e3/edit/contact/', 'display_type': u'Topic', 'actions': u'Created', 'title': u'Contact'}
                 ]
             }
         '''
