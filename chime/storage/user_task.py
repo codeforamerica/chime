@@ -52,11 +52,13 @@ class UserTask():
         
         if isdir(clone_dirname):
             self.repo = Repo(clone_dirname)
-            self.repo.git.checkout('master')
+            self.repo.git.checkout('zelig')
             self.repo.git.reset('origin/master', hard=True)
         else:
             # Clone origin to local checkout.
             self.repo = origin.clone(clone_dirname)
+            self.repo.git.checkout('zelig', orphan=True)
+            self.repo.git.reset('origin/master', hard=True)
         
         # Fetch all branches from origin.
         self.repo.git.fetch('origin')
@@ -73,7 +75,7 @@ class UserTask():
         else:
             self.commit_sha = start_point
         
-        # Point local master to start_point.
+        # Point local zelig to start_point.
         self.repo.git.reset(self.commit_sha, hard=True)
     
     def __repr__(self):
@@ -139,7 +141,7 @@ class UserTask():
         assert self._writeable and not (self._committed or self._pushed)
         self._committed = True
     
-        # Commit to local master, push to origin task ID.
+        # Commit to local zelig, push to origin task ID.
         self._set_author_env()
         self.repo.git.commit(m=message, a=True)
     
@@ -186,7 +188,7 @@ class UserTask():
         
         try:
             # Push to origin; we think this is safe to do.
-            self.repo.git.push('origin', 'master:{}'.format(self.task_id))
+            self.repo.git.push('origin', 'zelig:{}'.format(self.task_id))
 
         except GitCommandError:
             # Push failed, possibly because origin has
