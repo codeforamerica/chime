@@ -51,11 +51,8 @@ PATTERN_FORM_CATEGORY_TITLE = u'<input name="en-title" type="text" value="{title
 PATTERN_FORM_CATEGORY_DESCRIPTION = u'<textarea name="en-description" class="directory-modify__description" placeholder="Crime statistics and reports by district and map">{description}</textarea>'
 
 # review stuff
-PATTERN_REQUEST_FEEDBACK_BUTTON = u'<button class="toolbar__item button button--orange" type="submit" name="request_feedback">Request Feedback</button>'
 PATTERN_UNREVIEWED_EDITS_LINK = u'<a href="/tree/{branch_name}/" class="toolbar__item button">Unreviewed Edits</a>'
-PATTERN_ENDORSE_BUTTON = u'<button class="toolbar__item button button--green" type="submit" name="endorse_edits">Endorse Edits</button>'
 PATTERN_FEEDBACK_REQUESTED_LINK = u'<a href="/tree/{branch_name}/" class="toolbar__item button">Feedback requested</a>'
-PATTERN_PUBLISH_BUTTON = u'<button class="toolbar__item button button--blue" type="submit" name="merge">Publish</button>'
 PATTERN_READY_TO_PUBLISH_LINK = u'<a href="/tree/{branch_name}/" class="toolbar__item button">Ready to publish</a>'
 
 class TestRepo (TestCase):

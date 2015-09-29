@@ -61,11 +61,8 @@ PATTERN_FORM_CATEGORY_TITLE = u'<input name="en-title" type="text" value="{title
 PATTERN_FORM_CATEGORY_DESCRIPTION = u'<textarea name="en-description" class="directory-modify__description" placeholder="Crime statistics and reports by district and map">{description}</textarea>'
 
 # review stuff
-PATTERN_REQUEST_FEEDBACK_BUTTON = u'<button class="toolbar__item button button--orange" type="submit" name="request_feedback" value="Request Feedback">Request Feedback</button>'
 PATTERN_UNREVIEWED_EDITS_LINK = u'<a href="/tree/{branch_name}/edit/">'
-PATTERN_ENDORSE_BUTTON = u'<button class="toolbar__item button button--green" type="submit" name="endorse_edits" value="Endorse Edits">Endorse Edits</button>'
 PATTERN_FEEDBACK_REQUESTED_LINK = u'<a href="/tree/{branch_name}/" class="toolbar__item button">Feedback requested</a>'
-PATTERN_PUBLISH_BUTTON = u'<button class="toolbar__item button button--blue" type="submit" name="merge" value="Publish">Publish</button>'
 PATTERN_READY_TO_PUBLISH_LINK = u'<a href="/tree/{branch_name}/" class="toolbar__item button">Ready to publish</a>'
 
 class TestAppConfig (TestCase):
@@ -700,13 +697,15 @@ class TestApp (TestCase):
             response = self.test_client.get('/tree/{}/edit/'.format(generated_branch_name), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # verify that there's a 'request feedback' button
-            self.assertTrue(PATTERN_REQUEST_FEEDBACK_BUTTON in response.data)
+            soup = BeautifulSoup(response.data)
+            self.assertIsNotNone(soup.find("button", {"data-test-id": "request-feedback-button"}))
 
             # get the overview page for the branch
             response = self.test_client.get('/tree/{}/'.format(generated_branch_name), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # verify that there's a 'request feedback' button
-            self.assertTrue(PATTERN_REQUEST_FEEDBACK_BUTTON in response.data)
+            soup = BeautifulSoup(response.data)
+            self.assertIsNotNone(soup.find("button", {"data-test-id": "request-feedback-button"}))
 
             # get the activity list page
             response = self.test_client.get('/', follow_redirects=True)
@@ -743,13 +742,15 @@ class TestApp (TestCase):
             response = self.test_client.get('/tree/{}/edit/'.format(generated_branch_name), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # verify that there's a 'Endorse Edits' button
-            self.assertTrue(PATTERN_ENDORSE_BUTTON in response.data)
+            soup = BeautifulSoup(response.data)
+            self.assertIsNotNone(soup.find("button", {"data-test-id": "endorse-edits-button"}))
 
             # get the overview page for the branch
             response = self.test_client.get('/tree/{}/'.format(generated_branch_name), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # verify that there's a 'Endorse Edits' button
-            self.assertTrue(PATTERN_ENDORSE_BUTTON in response.data)
+            soup = BeautifulSoup(response.data)
+            self.assertIsNotNone(soup.find("button", {"data-test-id": "endorse-edits-button"}))
 
             # get the activity list page
             response = self.test_client.get('/', follow_redirects=True)
@@ -779,13 +780,15 @@ class TestApp (TestCase):
             response = self.test_client.get('/tree/{}/edit/'.format(generated_branch_name), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # verify that there's a 'publish' button
-            self.assertTrue(PATTERN_PUBLISH_BUTTON in response.data)
+            soup = BeautifulSoup(response.data)
+            self.assertIsNotNone(soup.find("button", {"data-test-id": "publish-button"}))
 
             # get the overview page for the branch
             response = self.test_client.get('/tree/{}/'.format(generated_branch_name), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # verify that there's a 'publish' button
-            self.assertTrue(PATTERN_PUBLISH_BUTTON in response.data)
+            soup = BeautifulSoup(response.data)
+            self.assertIsNotNone(soup.find("button", {"data-test-id": "publish-button"}))
 
             # get the activity list page
             response = self.test_client.get('/', follow_redirects=True)
