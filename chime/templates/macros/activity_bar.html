@@ -41,10 +41,10 @@
     <div class="activity-summary">       
         <ul class="activity-summary__changes">
           {% if activity.history_summary.changes|length > 4 %}
-            {% for change  in activity.history_summary.changes|batch(3)|first %}
+            {% for change in activity.history_summary.changes|batch(3)|first %}
             <li class="activity-change">
                 {% if change.edit_path %}<a href="{{ change.edit_path }}" class="activity-change__link">{% endif %}
-                <h3 class="activity-change__filename">{{ change.title }}</h3>
+                <h3 class="activity-change__filename {% if not change.edit_path %}is-deleted{% endif %}">{{ change.title }}</h3>
                 <p class="activity-change__changes">{{ change.actions }}</p>
                 <div class="activity-change__filetype activity-change__filetype--{{change.display_type|lower}}">{{ change.display_type }}</div>
                 {% if change.edit_path %}</a>{% endif %}
