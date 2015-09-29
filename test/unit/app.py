@@ -2036,40 +2036,47 @@ class TestApp (TestCase):
             # Load the activity overview page
             erica.open_link(url='/tree/{}/'.format(branch_name))
             # there is a summary
-            summary_div = erica.soup.find("div", class_="activity-summary")
+            summary_div = erica.soup.find("div", {"data-test-id": "summary-div"})
             self.assertIsNotNone(summary_div)
             # it's right about what's changed
             self.assertIsNotNone(summary_div.find(lambda tag: bool(tag.name == 'p' and '2 articles and 2 topics' in tag.text)))
+
             # grab all the list items
             check_rows = summary_div.find_all('li')
 
-            # make sure they match what we did above
+            # the link to create a new change
+            change_row = check_rows.pop()
+            self.assertIsNotNone(change_row.find("a", {"data-test-id": "change-link"}))
+            self.assertEqual(change_row.find("a", {"data-test-id": "change-link"}).text, constants.TEXT_ADD_CHANGE)
+
+            # make sure the list items match what we did above
             category_row = check_rows.pop()
-            self.assertIsNotNone(category_row.find('a', 'activity-change__link'))
-            self.assertEqual(category_row.find('a', 'activity-change__filename').text, category_name)
-            self.assertEqual(category_row.find('a', 'activity-change__filetype').text, u'Category')
-            self.assertEqual(category_row.find('a', 'activity-change__changes').text, u'Created')
+            self.assertIsNotNone(category_row.find("a", {"data-test-id": "change-link"}))
+            self.assertEqual(category_row.find('h3', {"data-test-id": "change-title"}).text, category_name)
+            self.assertEqual(category_row.find('div', {"data-test-id": "change-display-type"}).text, u'Category')
+            self.assertEqual(category_row.find('p', {"data-test-id": "change-actions"}).text, u'Created')
 
             subcategory_row = check_rows.pop()
-            self.assertIsNotNone(subcategory_cells[0].find('a'))
-            self.assertEqual(subcategory_row.find('a', 'activity-change__filename').text, subcategory_name)
-            self.assertEqual(subcategory_row.find('a', 'activity-change__filetype').text, u'Category')
-            self.assertEqual(subcategory_row.find('a', 'activity-change__changes').text, u'Created')
+            self.assertIsNotNone(subcategory_row.find("a", {"data-test-id": "change-link"}))
+            self.assertEqual(subcategory_row.find('h3', {"data-test-id": "change-title"}).text, subcategory_name)
+            self.assertEqual(subcategory_row.find('div', {"data-test-id": "change-display-type"}).text, u'Category')
+            self.assertEqual(subcategory_row.find('p', {"data-test-id": "change-actions"}).text, u'Created')
 
             article_1_row = check_rows.pop()
-            self.assertIsNotNone(article_1_row.find('a', 'activity-change__link'))
-            self.assertEqual(article_1_row.find('a', 'activity-change__filename').text, article_names[0])
-            self.assertEqual(article_1_row.find('a', 'activity-change__filetype').text, u'Article')
-            self.assertEqual(article_1_row.find('a', 'activity-change__changes').text, u'Created, Edited')
+            self.assertIsNotNone(article_1_row.find("a", {"data-test-id": "change-link"}))
+            self.assertEqual(article_1_row.find('h3', {"data-test-id": "change-title"}).text, article_names[0])
+            self.assertEqual(article_1_row.find('div', {"data-test-id": "change-display-type"}).text, u'Article')
+            self.assertEqual(article_1_row.find('p', {"data-test-id": "change-actions"}).text, u'Created, Edited')
 
             article_2_row = check_rows.pop()
-            self.assertIsNone(article_2_row.find('a', 'activity-change__filename').find('a'))
-            self.assertEqual(article_2_row.find('a', 'activity-change__filename').text, article_names[1])
-            self.assertEqual(article_2_row.find('a', 'activity-change__filetype').text, u'Article')
-            self.assertEqual(article_2_row.find('a', 'activity-change__changes').text, u'Created, Deleted')
+            self.assertIsNone(article_2_row.find("a", {"data-test-id": "change-link"}))
+            self.assertIsNone(article_2_row.find('h3', {"data-test-id": "change-title"}).find('a'))
+            self.assertEqual(article_2_row.find('h3', {"data-test-id": "change-title"}).text, article_names[1])
+            self.assertEqual(article_2_row.find('div', {"data-test-id": "change-display-type"}).text, u'Article')
+            self.assertEqual(article_2_row.find('p', {"data-test-id": "change-actions"}).text, u'Created, Deleted')
 
-            # only the header row's left
-            self.assertEqual(len(check_rows), 1)
+            # no rows left
+            self.assertEqual(len(check_rows), 0)
 
     # in TestApp
     def test_create_page_creates_directory_containing_index(self):
