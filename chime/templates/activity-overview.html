@@ -21,6 +21,7 @@
 <div class="activity-overview__container">
     <h1 class="activity-overview__title">{{ activity.task_description | title }}</h1>
 
+    {% if activity.working_state == config.WORKING_STATE_ACTIVE %}
     <div class="activity-overview__actions activity-overview__row">
         <div class="row__left toolbar toolbar--left">
             <a href="#" class="toolbar__item button button--medium button--text button--open-rename-modal"><span class="button__icon--left fa fa-pencil"></span> Rename</a>
@@ -47,6 +48,7 @@
           {% endif %}
         </div>
     </div>
+    {% endif %}
 
     <ul class="activity-progress grid activity-overview__row">
         {% set review_step = 0 %}
@@ -99,7 +101,7 @@
     <div class="activity-log activity-overview__row" id="activity-log">
         <p class="activity-overview__header">History and discussion</p>
 
-        {% if activity.review_state != config.REVIEW_STATE_PUBLISHED and activity.working_state == config.WORKING_STATE_ACTIVE %}
+        {% if activity.working_state == config.WORKING_STATE_ACTIVE %}
         <div class="activity-log-item activity-log-item--comment">
             <form action="." method="POST" class="comment comment--new">
                 <div class="comment__author">{% if email %}{{ email }}{% else %}unknown{% endif %}</div>
