@@ -247,7 +247,7 @@ def update_activity():
     task_description = u''
     action_list = [item for item in request.form if item != 'comment_text']
     safe_branch = view_functions.branch_name2path(view_functions.branch_var2name(request.form.get('branch')))
-    return view_functions.update_activity_review_state(safe_branch=safe_branch, default_branch_name=current_app.config['default_branch'], comment_text=comment_text, task_description=task_description, action_list=action_list, redirect_path='/tree/{}/'.format(safe_branch))
+    return view_functions.update_activity_review_state(working_branch_name=safe_branch, default_branch_name=current_app.config['default_branch'], comment_text=comment_text, task_description=task_description, action_list=action_list, redirect_path='/tree/{}/'.format(safe_branch))
 
 @app.route('/checkouts/<ref>.zip')
 @log_application_errors
@@ -588,7 +588,7 @@ def edit_activity_overview(branch_name):
     task_description = sub(r'\s+', ' ', request.form.get('task_description', u'')).strip()
     action_list = [item for item in request.form if item not in ('comment_text', 'task_description')]
     safe_branch = view_functions.branch_name2path(view_functions.branch_var2name(branch_name))
-    return view_functions.update_activity_review_state(safe_branch=safe_branch, default_branch_name=current_app.config['default_branch'], comment_text=comment_text, task_description=task_description, action_list=action_list, redirect_path='/tree/{}/'.format(safe_branch))
+    return view_functions.update_activity_review_state(working_branch_name=safe_branch, default_branch_name=current_app.config['default_branch'], comment_text=comment_text, task_description=task_description, action_list=action_list, redirect_path='/tree/{}/'.format(safe_branch))
 
 @app.route('/tree/<branch_name>/history/', methods=['GET'])
 @app.route('/tree/<branch_name>/history/<path:path>', methods=['GET'])

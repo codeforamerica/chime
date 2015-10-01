@@ -912,16 +912,16 @@ def publish_commit(repo, publish_path):
         else:
             del environ['GIT_WORK_TREE']
 
-def update_activity_review_state(safe_branch, default_branch_name, comment_text, task_description, action_list, redirect_path):
+def update_activity_review_state(working_branch_name, default_branch_name, comment_text, task_description, action_list, redirect_path):
     ''' Update the activity review state, which may include merging, abandoning, or clobbering
         the associated branch.
     '''
     repo = get_repo(flask_app=current_app)
-    action, action_authorized = get_activity_action_and_authorized(branch_name=safe_branch, comment_text=comment_text, action_list=action_list)
+    action, action_authorized = get_activity_action_and_authorized(working_branch_name=working_branch_name, default_branch_name=default_branch_name, action_list=action_list)
     if action_authorized:
         if action in ('merge', 'abandon', 'clobber'):
             try:
-                return_redirect = publish_or_destroy_activity(safe_branch, action, comment_text)
+                return_redirect = publish_or_destroy_activity(working_branch_name, action, comment_text)
             except MergeConflict as conflict:
                 raise conflict
         else:
@@ -1178,7 +1178,7 @@ def delete_page(repo, browse_path, target_path):
 
     return redirect_path, do_save, commit_message
 
-def get_activity_action_and_authorized(branch_name, comment_text, action_list):
+def get_activity_action_and_authorized(working_branch_name, default_branch_name, action_list):
     ''' Return the proposed action and whether it's authorized
     '''
     repo = get_repo(flask_app=current_app)
@@ -1192,8 +1192,8 @@ def get_activity_action_and_authorized(branch_name, comment_text, action_list):
 
     # get the current review state and authorized status
     review_state, review_authorized = get_review_state_and_authorized(
-        repo=repo, default_branch_name=current_app.config['default_branch'],
-        working_branch_name=branch_name, actor_email=session.get('email', None)
+        repo=repo, default_branch_name=default_branch_name,
+        working_branch_name=working_branch_name, actor_email=session.get('email', None)
     )
     # these actions are all authorized independent of review state
     action_authorized = (action in ('comment', 'rename', 'clobber', 'abandon'))
