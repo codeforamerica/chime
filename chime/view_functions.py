@@ -947,7 +947,8 @@ def update_activity_review_state(safe_branch, comment_text, action_list, redirec
             'endorse_edits': u'endorse the edits',
             'merge': u'publish the edits'
         }
-        flash(u'Something changed behind the scenes and we couldn\'t {}! Please try again.'.format(action_lookup[action]), u'error')
+        action_description = action_lookup[action] if action and action in action_lookup else u'complete that action'
+        flash(u'Something changed behind the scenes and we couldn\'t {}! Please try again.'.format(action_description), u'error')
 
         return_redirect = redirect(redirect_path, code=303)
 
