@@ -233,7 +233,7 @@ def save_task_metadata_for_branch(clone, default_branch_name, values={}):
 
     # Don't write if there haven't been any changes
     if check_metadata == task_metadata:
-        return
+        return None
 
     # craft the commit message
     # :NOTE: changing the commit message may break tests
