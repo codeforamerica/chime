@@ -672,8 +672,8 @@ def get_last_review_commit(repo, working_branch_name, base_commit_hexsha):
 
     commit_subject, commit_body = get_commit_message_subject_and_body(last_commit)
     _, commit_type, _ = get_commit_classification(commit_subject, commit_body)
-    # use the most recent non-comment commit that's not the base commit
-    while commit_type == constants.COMMIT_TYPE_COMMENT and last_commit.hexsha != base_commit_hexsha:
+    # use the most recent non-comment and non-activity update commit that's not the base commit
+    while commit_type in (constants.COMMIT_TYPE_COMMENT, constants.COMMIT_TYPE_ACTIVITY_UPDATE) and last_commit.hexsha != base_commit_hexsha:
         last_commit = last_commit.parents[0]
         commit_subject, commit_body = get_commit_message_subject_and_body(last_commit)
         _, commit_type, _ = get_commit_classification(commit_subject, commit_body)
