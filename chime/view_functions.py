@@ -39,7 +39,7 @@ from .repo_functions import (
     clobber_default_branch, get_review_state_and_authorized, update_review_state,
     provide_feedback, move_existing_file, mark_upstream_push_needed, MergeConflict,
     get_activity_working_state, make_branch_name, save_local_working_file,
-    sync_with_default_and_upstream_branches, strip_index_file
+    sync_with_default_and_upstream_branches, strip_index_file, save_task_metadata_for_branch
 )
 from . import constants
 
@@ -912,7 +912,7 @@ def publish_commit(repo, publish_path):
         else:
             del environ['GIT_WORK_TREE']
 
-def update_activity_review_state(safe_branch, comment_text, action_list, redirect_path):
+def update_activity_review_state(safe_branch, default_branch_name, comment_text, task_description, action_list, redirect_path):
     ''' Update the activity review state, which may include merging, abandoning, or clobbering
         the associated branch.
     '''
@@ -925,22 +925,30 @@ def update_activity_review_state(safe_branch, comment_text, action_list, redirec
             except MergeConflict as conflict:
                 raise conflict
         else:
-            # comment if comment text was sent and the action is authorized
+            # comment if comment text was sent
             if comment_text:
                 provide_feedback(clone=repo, comment_text=comment_text, push=True)
 
-            # handle a review action
-            if action != 'comment':
+            # rename if a new task description was sent
+            if task_description:
+                save_commit = save_task_metadata_for_branch(repo, default_branch_name, {'task_description': task_description})
+                if save_commit:
+                    flash(u'Changed activity name to "{}"!'.format(task_description), u'notice')
+
+            # handle a review or rename action
+            if action not in ('comment', 'rename'):
                 if action == 'request_feedback':
                     update_review_state(clone=repo, new_review_state=current_app.config['REVIEW_STATE_FEEDBACK'], push=True)
                 elif action == 'endorse_edits':
                     update_review_state(clone=repo, new_review_state=current_app.config['REVIEW_STATE_ENDORSED'], push=True)
-            elif not comment_text:
+            elif action == 'coment' and not comment_text:
                 flash(u'You can\'t leave an empty comment!', u'warning')
+            elif action == 'rename' and not task_description:
+                flash(u'You can\'t give the activity an empty name!', u'warning')
 
             return_redirect = redirect(redirect_path, code=303)
     else:
-        # flash a message if the action wasn't authorized
+        # the action wasn't authorized, flash a message
         action_lookup = {
             'comment': u'leave a comment',
             'request_feedback': u'request feedback',
@@ -1176,7 +1184,7 @@ def get_activity_action_and_authorized(branch_name, comment_text, action_list):
     repo = get_repo(flask_app=current_app)
     # which submit button was pressed?
     action = u''
-    possible_actions = ['comment', 'request_feedback', 'endorse_edits', 'merge', 'abandon', 'clobber']
+    possible_actions = ['comment', 'rename', 'request_feedback', 'endorse_edits', 'merge', 'abandon', 'clobber']
     for check_action in possible_actions:
         if check_action in action_list:
             action = check_action
@@ -1187,10 +1195,11 @@ def get_activity_action_and_authorized(branch_name, comment_text, action_list):
         repo=repo, default_branch_name=current_app.config['default_branch'],
         working_branch_name=branch_name, actor_email=session.get('email', None)
     )
-    action_authorized = (action == 'comment')
+    # these actions are all authorized independent of review state
+    action_authorized = (action in ('comment', 'rename', 'clobber', 'abandon'))
 
     # handle a review action
-    if action != 'comment':
+    if not action_authorized:
         if action == 'request_feedback':
             if review_state == current_app.config['REVIEW_STATE_EDITED'] and review_authorized:
                 action_authorized = True
@@ -1200,8 +1209,6 @@ def get_activity_action_and_authorized(branch_name, comment_text, action_list):
         elif action == 'merge':
             if review_state == current_app.config['REVIEW_STATE_ENDORSED'] and review_authorized:
                 action_authorized = True
-        elif action == 'clobber' or action == 'abandon':
-            action_authorized = True
 
     if not action:
         action_authorized = False
