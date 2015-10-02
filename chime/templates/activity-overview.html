@@ -142,7 +142,7 @@
 <div class="modal-container{% if show_rename_modal %} is-open{% endif %}">
     <div class="modal rename-modal">
         <h3 class="modal__header">Change your activity name</h3>
-        <form action="." method="POST">
+        <form data-test-id="rename-activity-form" action="." method="POST">
             <textarea name="task_description">{{activity.task_description}}</textarea>
             <div class="toolbar toolbar--right">
                 <a href="{{activity.overview_path}}" class="toolbar__item button button--close-rename-modal">Cancel</a>
