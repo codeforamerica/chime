@@ -2662,6 +2662,33 @@ class TestApp (TestCase):
             # and the activity title wrapped in an a tag
             self.assertIsNotNone(pub_li.find('a', text=activity_title))
 
+    # in TestApp
+    def test_renaming_activity(self):
+        ''' We can rename an activity
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
+
+            # Start a new task
+            erica.open_link('/')
+            erica.start_task('Ingest Wolffish, Capelin, Skate Eggs And Sometimes Rocks')
+            erica_branchname = erica.get_branch_name()
+
+            # rename the task
+            new_description = u'Eat Greenland Halibut, Polar And Arctic Cod, Cuttlefish, Shrimp And Armhook Squid'
+            erica.follow_link('/tree/{}/'.format(erica_branchname))
+            erica.rename_activity(task_description=new_description)
+
+            # the new name is on the page
+            self.assertIsNotNone(erica.soup.find(lambda tag: new_description in tag.text))
+
+            # the new name is in the task metadata
+            repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email='erica@example.com')
+            task_metadata = repo_functions.get_task_metadata_for_branch(repo, erica_branchname)
+            self.assertEqual(task_metadata['task_description'], new_description)
+
 class TestPublishApp (TestCase):
 
     def setUp(self):
