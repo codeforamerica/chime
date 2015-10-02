@@ -38,7 +38,7 @@
 
 
   {% if activity.working_state == config.WORKING_STATE_ACTIVE %}
-  <form action="{{activity.overview_path}}" method="POST" class="modal review-modal review-modal--{{activity.review_state|replace(' ', '-')}}">
+  <form data-test-id="request-feedback-form" action="{{activity.overview_path}}" method="POST" class="modal review-modal review-modal--{{activity.review_state|replace(' ', '-')}}">
     <h2 class="review-modal__title">{{ review_action_text }} {{activity.history_summary.changes|length}} files</h2>
     <p class="review-modal__subtitle">{{ review_description_text }}  See more details on the <a href="{{activity.overview_path}}">overview page</a>.</p>
     <div class="activity-summary">       

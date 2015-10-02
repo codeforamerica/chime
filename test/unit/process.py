@@ -246,13 +246,13 @@ class TestProcess (TestCase):
 
             # Ask for feedback
             erica.follow_link(href='/tree/{}/'.format(branch_name))
-            erica.request_feedback(feedback_str='Is this okay?')
+            erica.request_feedback(comment_text='Is this okay?')
 
             #
             # Switch users and publish the article.
             #
             frances.open_link(url=erica.path)
-            frances.leave_feedback(feedback_str='It is super-great.')
+            frances.leave_feedback(comment_text='It is super-great.')
             frances.approve_activity()
             frances.publish_activity()
 
@@ -298,13 +298,13 @@ class TestProcess (TestCase):
 
             # Ask for feedback
             erica.follow_link(href='/tree/{}/'.format(e_branch_name))
-            erica.request_feedback(feedback_str='Is this okay?')
+            erica.request_feedback(comment_text='Is this okay?')
 
             #
             # Switch users and publish the article.
             #
             frances.open_link(url=erica.path)
-            frances.leave_feedback(feedback_str='It is super-great.')
+            frances.leave_feedback(comment_text='It is super-great.')
             frances.approve_activity()
             frances.publish_activity()
             
@@ -378,13 +378,13 @@ class TestProcess (TestCase):
 
             # Ask for feedback
             erica.follow_link(href='/tree/{}/'.format(e_branch_name))
-            erica.request_feedback(feedback_str='Is this okay?')
+            erica.request_feedback(comment_text='Is this okay?')
 
             #
             # Switch users and publish the article.
             #
             frances.open_link(url=erica.path)
-            frances.leave_feedback(feedback_str='It is super-great.')
+            frances.leave_feedback(comment_text='It is super-great.')
             frances.approve_activity()
             frances.publish_activity()
             
@@ -474,7 +474,7 @@ class TestProcess (TestCase):
 
             # Ask for feedback
             erica.follow_link(href='/tree/{}/'.format(erica_branch_name))
-            erica.request_feedback(feedback_str='Is this okay?')
+            erica.request_feedback(comment_text='Is this okay?')
 
             #
             # Switch users
@@ -497,18 +497,18 @@ class TestProcess (TestCase):
 
             # Ask for feedback
             frances.follow_link(href='/tree/{}/'.format(frances_branch_name))
-            frances.request_feedback(feedback_str='Is this okay?')
+            frances.request_feedback(comment_text='Is this okay?')
             frances_overview_path = frances.path
 
             # frances approves and publishes erica's changes
             frances.open_link(url=erica.path)
-            frances.leave_feedback(feedback_str='It is perfect.')
+            frances.leave_feedback(comment_text='It is perfect.')
             frances.approve_activity()
             frances.publish_activity()
 
             # erica approves and publishes frances's changes
             erica.open_link(url=frances_overview_path)
-            erica.leave_feedback(feedback_str='It is not bad.')
+            erica.leave_feedback(comment_text='It is not bad.')
             erica.approve_activity()
             erica.publish_activity(expected_status_code=500)
 
@@ -553,14 +553,14 @@ class TestProcess (TestCase):
 
             # Ask for feedback
             erica.follow_link(href='/tree/{}/'.format(erica_branch_name))
-            erica.request_feedback(feedback_str='Is this okay?')
+            erica.request_feedback(comment_text='Is this okay?')
 
             #
             # Switch users
             #
             # approve and publish erica's changes
             frances.open_link(url=erica.path)
-            frances.leave_feedback(feedback_str='It is perfect.')
+            frances.leave_feedback(comment_text='It is perfect.')
             frances.approve_activity()
             frances.publish_activity()
 
@@ -606,14 +606,14 @@ class TestProcess (TestCase):
 
             # Ask for feedback
             erica.follow_link(href='/tree/{}/'.format(erica_branch_name))
-            erica.request_feedback(feedback_str='Is this okay?')
+            erica.request_feedback(comment_text='Is this okay?')
 
             #
             # Switch users
             #
             # approve and publish erica's changes
             frances.open_link(url=erica.path)
-            frances.leave_feedback(feedback_str='It is perfect.')
+            frances.leave_feedback(comment_text='It is perfect.')
             frances.approve_activity()
             frances.publish_activity()
 
@@ -673,7 +673,7 @@ class TestProcess (TestCase):
 
             # Ask for feedback
             erica.follow_link(href='/tree/{}/'.format(erica_branch_name))
-            erica.request_feedback(feedback_str='Is this okay?')
+            erica.request_feedback(comment_text='Is this okay?')
 
             # verify that the branch exists locally and remotely
             repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email='erica@example.com')
@@ -687,7 +687,7 @@ class TestProcess (TestCase):
             #
             # approve and publish erica's changes
             frances.open_link(url=erica.path)
-            frances.leave_feedback(feedback_str='It is perfect.')
+            frances.leave_feedback(comment_text='It is perfect.')
             frances.approve_activity()
             frances.publish_activity()
 

@@ -103,7 +103,7 @@
 
         {% if activity.working_state == config.WORKING_STATE_ACTIVE %}
         <div class="activity-log-item activity-log-item--comment">
-            <form action="." method="POST" class="comment comment--new">
+            <form data-test-id="leave-comment-form" action="." method="POST" class="comment comment--new">
                 <div class="comment__author">{% if email %}{{ email }}{% else %}unknown{% endif %}</div>
                 <div class="comment__body">
                     <textarea class="comment__input" name="comment_text" placeholder="Leave your comment here"></textarea>

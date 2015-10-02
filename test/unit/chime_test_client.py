@@ -318,18 +318,17 @@ class ChimeTestClient:
 
         self.follow_redirect(response, 303)
 
-    def request_feedback(self, feedback_str=u''):
+    def request_feedback(self, comment_text=u'', task_description=u''):
         ''' Look for form to request feedback, submit it.
         '''
-        body = self.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'comment_text'))
-        form = body.find_parent('form')
+        form = self.soup.find('form', {'data-test-id': 'request-feedback-form'})
         self.test.assertEqual(form['method'].upper(), 'POST')
 
-        data = {i['name']: i.get('value', u'')
-                for i in form.find_all(['input', 'button', 'textarea'])
-                if i.get('value') != 'Leave a Comment'}
+        data = {i['name']: i.get('value', u'') for i in form.find_all(['input', 'button', 'textarea'])}
 
-        data[body['name']] = feedback_str
+        data['comment_text'] = comment_text
+        if task_description:
+            data['task_description'] = task_description
 
         save_feedback_path = urlparse(urljoin(self.path, form['action'])).path
         response = self.client.post(save_feedback_path, data=data)
@@ -337,18 +336,15 @@ class ChimeTestClient:
         # View the saved feedback.
         self.follow_redirect(response, 303)
 
-    def leave_feedback(self, feedback_str=u''):
+    def leave_feedback(self, comment_text=u''):
         ''' Look for form to leave feedback, submit it.
         '''
-        body = self.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'comment_text'))
-        form = body.find_parent('form')
+        form = self.soup.find('form', {'data-test-id': 'leave-comment-form'})
         self.test.assertEqual(form['method'].upper(), 'POST')
 
-        data = {i['name']: i.get('value', u'')
-                for i in form.find_all(['input', 'button', 'textarea'])
-                if i.get('value') != 'Endorse Edits'}
+        data = {i['name']: i.get('value', u'') for i in form.find_all(['input', 'button', 'textarea'])}
 
-        data[body['name']] = feedback_str
+        data['comment_text'] = comment_text
 
         save_feedback_path = urlparse(urljoin(self.path, form['action'])).path
         response = self.client.post(save_feedback_path, data=data)
