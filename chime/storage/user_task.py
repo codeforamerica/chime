@@ -140,11 +140,14 @@ class UserTask():
     def commit(self, message):
         assert self._writeable and not (self._committed or self._pushed)
         self._committed = True
-    
+
         # Commit to local zelig, push to origin task ID.
         self._set_author_env()
-        self.repo.git.commit(m=message, a=True)
-    
+        dirty = self.repo.is_dirty()
+        if dirty:
+            self.repo.git.commit(m=message, a=True)
+        return dirty
+
     def is_pushable(self):
         ''' Return pushable status: True, False, or a working state constant.
         '''
