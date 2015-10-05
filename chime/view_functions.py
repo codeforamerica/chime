@@ -843,7 +843,7 @@ def make_edit_path(branch, path, dir_name):
 
 def make_directory_columns(clone, branch_name, repo_path=None, showallfiles=False):
     ''' Get a list of lists of dicts for the passed path, with file listings for each level.
-        example: passing 'hello/world/wide' will return something like:
+        example: passing repo_path='hello/world/wide' will return something like:
             [
                 {'base_path': '',
                  'files':
@@ -872,17 +872,19 @@ def make_directory_columns(clone, branch_name, repo_path=None, showallfiles=Fals
     modify_path_root = u'/tree/{}/modify'.format(branch_name)
     dir_listings = []
     for i in range(len(dirs)):
+        last = False
         try:
             current_dir = dirs[i + 1]
         except IndexError:
             current_dir = dirs[-1]
+            last = True
 
         base_path = sep.join(dirs[1:i + 1])
         current_edit_path = join(edit_path_root, base_path)
         current_modify_path = join(modify_path_root, base_path)
         files = sorted_paths(clone, branch_name, base_path, showallfiles)
         # name, title, base_path, file_path, edit_path, view_path, display_type, is_editable, modified_date, selected
-        listing = [{'name': item['name'], 'title': item['title'], 'base_path': base_path, 'file_path': join(base_path, item['link_name']), 'edit_path': join(current_edit_path, item['link_name']), 'modify_path': join(current_modify_path, item['link_name']), 'view_path': item['view_path'], 'display_type': item['display_type'], 'is_editable': item['is_editable'], 'modified_date': item['modified_date'], 'selected': (current_dir == item['name'])} for item in files]
+        listing = [{'name': item['name'], 'title': item['title'], 'base_path': base_path, 'file_path': join(base_path, item['link_name']), 'edit_path': join(current_edit_path, item['link_name']), 'modify_path': join(current_modify_path, item['link_name']), 'view_path': item['view_path'], 'display_type': item['display_type'], 'is_editable': item['is_editable'], 'modified_date': item['modified_date'], 'selected': (current_dir == item['name'] and not last)} for item in files]
         # explicitly sort the list alphabetically by title
         listing.sort(key=lambda k: k['title'])
         dir_listings.append({'base_path': base_path, 'files': listing})
