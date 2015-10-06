@@ -217,14 +217,18 @@ def authorization_failed():
     kwargs = view_functions.common_template_args(current_app.config, session)
     return render_template('authorization-failed.html', **kwargs)
 
-@app.route('/start', methods=['POST'])
+@app.route('/start', methods=['GET', 'POST'])
 @log_application_errors
 @login_required
 @lock_on_user
 @synch_required
 def start_branch():
     repo = view_functions.get_repo(flask_app=current_app)
-    task_description = sub(r'\s+', ' ', request.form.get('task_description', u'')).strip()
+    if request.method == 'POST':
+        task_description = sub(r'\s+', ' ', request.form.get('task_description', u'')).strip()
+    else:
+        task_description = view_functions.make_new_activity_description(author_email=session['email'])
+
     master_name = current_app.config['default_branch']
 
     # require a task description
