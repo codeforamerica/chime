@@ -634,11 +634,18 @@ def get_commit_classification(subject, body):
                 an activity or review update;
 
             commit_action:
-                if the commit changes the review state of an activity, this is the state
-                it was changed to.
+                what sort of change the commit represents
+
     '''
     if re.search(r'{}$|{}$|{}$'.format(ACTIVITY_CREATED_MESSAGE, ACTIVITY_UPDATED_MESSAGE, ACTIVITY_DELETED_MESSAGE), subject):
-        return constants.COMMIT_CATEGORY_INFO, constants.COMMIT_TYPE_ACTIVITY_UPDATE, None
+        message_action = None
+        if ACTIVITY_CREATED_MESSAGE in subject:
+            message_action = constants.ACTIVITY_COMMIT_CREATED
+        elif ACTIVITY_UPDATED_MESSAGE in subject:
+            message_action = constants.ACTIVITY_COMMIT_UPDATED
+        elif ACTIVITY_DELETED_MESSAGE in subject:
+            message_action = constants.ACTIVITY_COMMIT_DELETED
+        return constants.COMMIT_CATEGORY_INFO, constants.COMMIT_TYPE_ACTIVITY_UPDATE, message_action
     elif re.search(r'{}$'.format(COMMENT_COMMIT_PREFIX), subject):
         return constants.COMMIT_CATEGORY_COMMENT, constants.COMMIT_TYPE_COMMENT, None
     elif re.search(r'{}$'.format(REVIEW_STATE_COMMIT_PREFIX), subject):
@@ -663,6 +670,13 @@ def get_commit_message_subject_and_body(commit):
     commit_body = commit_split[1] if len(commit_split) > 1 else u''
     return commit_subject, commit_body
 
+def is_review_commit(commit, base_commit_hexsha):
+    ''' Can this commit be used to determine the review state of an activity?
+    '''
+    commit_subject, commit_body = get_commit_message_subject_and_body(commit)
+    _, commit_type, commit_action = get_commit_classification(commit_subject, commit_body)
+    return not (commit_type == constants.COMMIT_TYPE_COMMENT or (commit_type == constants.COMMIT_TYPE_ACTIVITY_UPDATE and commit_action != constants.ACTIVITY_COMMIT_CREATED)) and commit.hexsha != base_commit_hexsha
+
 def get_last_review_commit(repo, working_branch_name, base_commit_hexsha):
     ''' Returns the most recent commit that can be used to determine the review state
     '''
@@ -670,13 +684,8 @@ def get_last_review_commit(repo, working_branch_name, base_commit_hexsha):
     if last_commit.hexsha == base_commit_hexsha:
         return last_commit
 
-    commit_subject, commit_body = get_commit_message_subject_and_body(last_commit)
-    _, commit_type, _ = get_commit_classification(commit_subject, commit_body)
-    # use the most recent non-comment and non-activity update commit that's not the base commit
-    while commit_type in (constants.COMMIT_TYPE_COMMENT, constants.COMMIT_TYPE_ACTIVITY_UPDATE) and last_commit.hexsha != base_commit_hexsha:
+    while not is_review_commit(last_commit, base_commit_hexsha):
         last_commit = last_commit.parents[0]
-        commit_subject, commit_body = get_commit_message_subject_and_body(last_commit)
-        _, commit_type, _ = get_commit_classification(commit_subject, commit_body)
 
     return last_commit
 
@@ -685,19 +694,7 @@ def get_last_edited_email(repo, default_branch_name, working_branch_name):
         or the person who started the branch if there are no edits.
     '''
     base_commit_hexsha = repo.git.merge_base(default_branch_name, working_branch_name)
-    last_commit = repo.branches[working_branch_name].commit
-    if last_commit.hexsha == base_commit_hexsha:
-        return last_commit.author.email
-
-    commit_subject, commit_body = get_commit_message_subject_and_body(last_commit)
-    _, commit_type, _ = get_commit_classification(commit_subject, commit_body)
-    # use the most recent non-comment commit that's not the base commit
-    while commit_type == constants.COMMIT_TYPE_COMMENT and last_commit.hexsha != base_commit_hexsha:
-        last_commit = last_commit.parents[0]
-        commit_subject, commit_body = get_commit_message_subject_and_body(last_commit)
-        _, commit_type, _ = get_commit_classification(commit_subject, commit_body)
-
-    return last_commit.author.email
+    return get_last_review_commit(repo, working_branch_name, base_commit_hexsha).author.email
 
 def get_review_state_and_authorized(repo, default_branch_name, working_branch_name, actor_email):
     ''' Returns the review state and a boolean indicating whether the passed person is authorized

@@ -19,6 +19,14 @@ WORKING_STATE_PUBLISHED = u'published'
 # the activity has been deleted
 WORKING_STATE_DELETED = u'deleted'
 
+# different classifications for commits that modify an activity
+# the commit represents the creation of an activity
+ACTIVITY_COMMIT_CREATED = u'created'
+# the commit represents the updating of an activity
+ACTIVITY_COMMIT_UPDATED = u'updated'
+# the commit represents the deletion of an activity
+ACTIVITY_COMMIT_DELETED = u'deleted'
+
 # the different categories and types of messages that can be displayed in the activity overview
 # info messages, like starting an activity or changing its review or working state
 COMMIT_CATEGORY_INFO = u'info'
