@@ -2689,6 +2689,37 @@ class TestApp (TestCase):
             task_metadata = repo_functions.get_task_metadata_for_branch(repo, erica_branchname)
             self.assertEqual(task_metadata['task_description'], new_description)
 
+    # in TestApp
+    def test_request_feedback_with_activity_rename(self):
+        ''' We can rename an activity by submitting a new name via the request feedback form
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in(erica_email)
+
+            # Start a new task and create a topic
+            erica.open_link('/')
+            args = u'Skates are cartilaginous fish', u'The Two Subfamilies Are Rajinae And Arhynchobatinae'
+            branch_name = erica.quick_activity_setup(*args)
+
+            # request feedback for the task with a new activity description
+            new_description = u'Skates Are Oviparous, That Is They Lay Eggs'
+            erica.request_feedback(task_description=new_description)
+
+            # the 'requested feedback' message is on the page
+            self.assertIsNotNone(erica.soup.find(text=u'{} {}'.format(erica_email, repo_functions.ACTIVITY_FEEDBACK_MESSAGE)))
+
+            # the new description is on the page
+            self.assertIsNotNone(erica.soup.find(lambda tag: new_description in tag.text))
+
+            # the new description is in the task metadata
+            repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email='erica@example.com')
+            task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch_name)
+            self.assertEqual(task_metadata['task_description'], new_description)
+
+
 class TestPublishApp (TestCase):
 
     def setUp(self):
