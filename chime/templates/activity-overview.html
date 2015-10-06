@@ -141,7 +141,7 @@
 
 <div class="modal-container{% if show_rename_modal %} is-open{% endif %}">
     <div class="modal rename-modal">
-        <h3 class="modal__header">Change your activity name</h3>
+        <label for="activity-name">Update the activity name to communicate the public need you're addressing.</label>
         <form data-test-id="rename-activity-form" action="{{activity.overview_path}}" method="POST">
             <textarea name="task_description">{{activity.task_description}}</textarea>
             <div class="toolbar toolbar--right">
