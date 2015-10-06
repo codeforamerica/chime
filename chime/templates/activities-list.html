@@ -3,16 +3,12 @@
 {% set template_name = 'activities-list' %}
 {% block body_class %}{{template_name}}{% endblock %}
 
-{% block scripts %}
-<script src="static/javascript/activities-list.js"></script>
-{% endblock %}
-
 {% block content %}
     <!-- template name: {{ template_name }} -->
     <div class="row row--main activities-list__header">
       <p class="row__left">A view of work in progress by you and your colleagues</p>
       <div class="toolbar toobar--right row__right">
-        <a id="submit-start-activity" class="button button--green button--medium button--new-activity" href="/start-activity">Start a new activity</a>
+        <a id="submit-start-activity" class="button button--green button--medium button--new-activity" href="/start">Start a new activity</a>
       </div>
     </div>
 
