@@ -562,9 +562,9 @@ def branch_history(branch_name, path=None):
         app_authorized = True
 
     # see <http://git-scm.com/docs/git-log> for placeholders
-    log_format = '%x00Name: %an\tEmail: %ae\tDate: %ad\tSubject: %s'
+    log_format = '%x00Name: %an\tEmail: %ae\tDate: %ar\tSubject: %s'
     pattern = compile(r'^\x00Name: (.*?)\tEmail: (.*?)\tDate: (.*?)\tSubject: (.*?)$', MULTILINE)
-    log = repo.git.log('-30', '--format={}'.format(log_format), '--date=relative', path)
+    log = repo.git.log('-30', '--format={}'.format(log_format), path)
 
     history = []
 

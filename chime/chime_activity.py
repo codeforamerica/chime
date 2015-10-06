@@ -27,8 +27,8 @@ class ChimeActivity:
             working_branch_name=self.safe_branch, actor_email=actor_email
         )
 
-        self.date_created = self.repo.git.log(self.safe_branch, '--format=%ad', '--date=relative', '--', repo_functions.TASK_METADATA_FILENAME).split('\n')[-1]
-        self.date_updated = self.repo.git.log(self.safe_branch, '-1', '--format=%ad', '--date=relative')
+        self.date_created = self.repo.git.log(self.safe_branch, '--format=%ar', '--', repo_functions.TASK_METADATA_FILENAME).split('\n')[-1]
+        self.date_updated = self.repo.git.log(self.safe_branch, '-1', '--format=%ar')
 
         # the email of the last person who edited the activity
         self.last_edited_email = repo_functions.get_last_edited_email(
@@ -78,8 +78,8 @@ class ChimeActivity:
         ''' Make an easily-parsable history of the activity since it was created.
         '''
         # see <http://git-scm.com/docs/git-log> for placeholders
-        log_format = '%x00Name: %an\tEmail: %ae\tDate: %ad\tSubject: %s\tBody: %b%x00'
-        log = self.repo.git.log('--format={}'.format(log_format), '--date=relative')
+        log_format = '%x00Name: %an\tEmail: %ae\tDate: %ar\tSubject: %s\tBody: %b%x00'
+        log = self.repo.git.log('--format={}'.format(log_format))
 
         history = []
         pattern = re.compile(r'\x00Name: (.*?)\tEmail: (.*?)\tDate: (.*?)\tSubject: (.*?)\tBody: (.*?)\x00', re.DOTALL)

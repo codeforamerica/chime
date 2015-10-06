@@ -584,7 +584,7 @@ def synch_required(route_function):
             if working_state == constants.WORKING_STATE_PUBLISHED:
                 tag_ref = repo.tag('refs/tags/{}'.format(branch_name))
                 commit = tag_ref.commit
-                published_date = repo.git.show('--format=%ad', '--date=relative', commit.hexsha).strip()
+                published_date = repo.git.show('--format=%ar', commit.hexsha).strip()
                 published_by = commit.committer.email
                 flash_only(MESSAGE_ACTIVITY_PUBLISHED.format(published_date=published_date, published_by=published_by), u'warning')
 
@@ -627,7 +627,7 @@ def synched_checkout_required(route_function):
         if working_state == constants.WORKING_STATE_PUBLISHED:
             tag_ref = repo.tag('refs/tags/{}'.format(branch_name))
             commit = tag_ref.commit
-            published_date = repo.git.show('--format=%ad', '--date=relative', commit.hexsha).strip()
+            published_date = repo.git.show('--format=%ar', commit.hexsha).strip()
             published_by = commit.committer.email
             flash_only(MESSAGE_ACTIVITY_PUBLISHED.format(published_date=published_date, published_by=published_by), u'warning')
 
@@ -685,7 +685,7 @@ def flash_only(message, category, by_category=False):
 def get_relative_date(repo, file_path):
     ''' Return the relative modified date for the passed path in the passed repo
     '''
-    return repo.git.log('-1', '--format=%ad', '--date=relative', '--', file_path)
+    return repo.git.log('-1', '--format=%ar', '--', file_path)
 
 def make_ordinal_number(number_in):
     ''' Turn the passed number into an ordinal string representation
@@ -1327,7 +1327,7 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
         try:
             repo.git.rebase(existing_branch.commit)
         except GitCommandError:
-            published_date = repo.git.show('--format=%ad', '--date=relative', existing_branch.commit.hexsha).split('\n')[0]
+            published_date = repo.git.show('--format=%ar', existing_branch.commit.hexsha).split('\n')[0]
             published_by = existing_branch.commit.committer.email
             flash(MESSAGE_PAGE_EDITED.format(published_date=published_date, published_by=published_by), u'error')
             did_save = False
