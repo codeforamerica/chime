@@ -602,11 +602,12 @@ def branch_save(branch_name, path):
                 view_functions.flash(e_message, e_type)
             else:
                 end_path = new_path
-    
+
+    committed = False
     try:
         title_layout = request.form.get('en-title'), request.form.get('layout')
         message = view_functions.format_commit_message(end_path, *title_layout)
-        user_task.commit(message)
+        committed = user_task.commit(message)
         user_task.push()
     except UserTaskPublished as e:
         ref_info = user_task.ref_info()
@@ -617,9 +618,11 @@ def branch_save(branch_name, path):
         ref_info = user_task.ref_info(e.remote_commit.hexsha)
         view_functions.flash(view_functions.MESSAGE_PAGE_EDITED.format(**ref_info), u'error')
     else:
-        message = u'Saved changes to the {} article! Remember to submit this change for feedback when you\'re ready to go live.'.format(request.form['en-title'])
-        view_functions.flash(message, u'notice')
-    
+        if committed:
+            view_functions.flash(u'Saved changes to the {} article! Remember to submit this change for feedback when you\'re ready to go live.'.format(request.form['en-title']), u'notice')
+        else:
+            view_functions.flash(u'No changes to save!', u'warning')
+
     if request.form.get('action', '').lower() == 'preview':
         return redirect('/tree/{}/view/{}'.format(task_id, end_path), code=303)
     else:

@@ -2659,6 +2659,30 @@ class TestApp (TestCase):
             # and the activity title wrapped in an a tag
             self.assertIsNotNone(pub_li.find('a', text=activity_title))
 
+    # in TestApp
+    def test_save_unchanged_article(self):
+        ''' Saving an unchanged article doesn't raise any errors.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in(erica_email)
+
+            # Start a new task and create a topic, subtopic and article
+            erica.open_link('/')
+            article_title = u'Open-Ocean'
+            args = u'The Eggs Are Spherical And Buoyant', u'The Fry Are Tiny', u'Pelagic', article_title
+            erica.quick_activity_setup(*args)
+
+            # Edit the article
+            article_text = u'Although most puffers are drab, many have bright colors and distinctive markings.'
+            erica.edit_article(article_title, article_text)
+
+            # Edit the article again with the same variables
+            erica.edit_article(article_title, article_text)
+
+
 class TestPublishApp (TestCase):
 
     def setUp(self):
