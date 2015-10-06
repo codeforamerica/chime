@@ -23,7 +23,7 @@ from httmock import response, HTTMock
 from mock import MagicMock
 from bs4 import Comment
 
-from chime import create_app, repo_functions, google_api_functions, view_functions
+from chime import create_app, repo_functions, google_api_functions, view_functions, constants
 
 from unit.chime_test_client import ChimeTestClient
 
@@ -224,8 +224,8 @@ class TestProcess (TestCase):
             self.assertIsNone(frances.soup.find(text='Dollars'), 'Should not see first published category')
 
     # in TestProcess
-    def test_editing_process_with_outdated_publish(self):
-        ''' Check edit process with a user attempting to change an activity that's been published.
+    def test_notified_when_saving_article_in_published_activity(self):
+        ''' You're notified and redirected when trying to save an article in a published activity.
         '''
         with HTTMock(self.auth_csv_example_allowed):
             erica_email = u'erica@example.com'
@@ -251,8 +251,11 @@ class TestProcess (TestCase):
             erica.follow_link(href='/tree/{}'.format(branch_name))
             erica.request_feedback(feedback_str='Is this okay?')
 
+            # Re-load the article page
+            erica.open_link(article_path)
+
             #
-            # Switch users and publish the article.
+            # Switch users and publish the activity.
             #
             frances.open_link(url=erica.path)
             frances.leave_feedback(feedback_str='It is super-great.')
@@ -262,8 +265,134 @@ class TestProcess (TestCase):
             #
             # Switch back and try to make another edit.
             #
-            erica.open_link(article_path)
             erica.edit_article(title_str='Just Awful', body_str='It was the worst of times.')
+
+            # we should've been redirected to the activity overview page
+            self.assertEqual(erica.path, '/tree/{}/'.format(branch_name))
+
+            # a warning is flashed about working in a published branch
+            # we can't get the date exactly right, so test for every other part of the message
+            message_published = view_functions.MESSAGE_ACTIVITY_PUBLISHED.format(published_date=u'xxx', published_by=frances_email)
+            message_published_split = message_published.split(u'xxx')
+            for part in message_published_split:
+                self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and part in tag.text))
+
+    # in TestProcess
+    def test_published_branch_not_resurrected_on_save(self):
+        ''' Saving a change on a branch that exists locally but isn't at origin because it was published doesn't re-create the branch.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            frances_email = u'frances@example.com'
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in(erica_email)
+
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in(frances_email)
+
+            # Start a new task, topic, subtopic, article
+            erica.open_link('/')
+            task_description = u'Squeeze A School Of Fish Into A Bait Ball for Dolphins'
+            article_name = u'Stunned Fish'
+            args = task_description, u'Plowing Through', u'Feeding On', article_name
+            branch_name = erica.quick_activity_setup(*args)
+            article_path = erica.path
+
+            # Ask for feedback
+            erica.follow_link(href='/tree/{}'.format(branch_name))
+            erica.request_feedback(feedback_str='Is this okay?')
+
+            # Re-load the article page
+            erica.open_link(url=article_path)
+
+            # verify that the branch exists locally and remotely
+            repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email='erica@example.com')
+            self.assertTrue(branch_name in repo.branches)
+            # there's a remote branch with the branch name, but no tag
+            self.assertFalse('refs/tags/{}'.format(branch_name) in repo.git.ls_remote('origin', branch_name).split())
+            self.assertTrue('refs/heads/{}'.format(branch_name) in repo.git.ls_remote('origin', branch_name).split())
+
+            #
+            # Switch to frances, approve and publish erica's changes
+            #
+            frances.open_link(url=erica.path)
+            frances.leave_feedback(feedback_str='It is perfect.')
+            frances.approve_activity()
+            frances.publish_activity()
+
+            #
+            # Switch to erica, try to submit an edit to the article
+            #
+
+            erica.edit_article(title_str=article_name, body_str=u'Chase fish into shallow water to catch them.')
+
+            # we should've been redirected to the activity overview page
+            self.assertEqual(erica.path, '/tree/{}/'.format(branch_name))
+
+            # a warning is flashed about working in a published branch
+            # we can't get the date exactly right, so test for every other part of the message
+            message_published = view_functions.MESSAGE_ACTIVITY_PUBLISHED.format(published_date=u'xxx', published_by=frances_email)
+            message_published_split = message_published.split(u'xxx')
+            for part in message_published_split:
+                self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and part in tag.text))
+
+            # verify that the branch exists locally and not remotely
+            self.assertTrue(branch_name in repo.branches)
+            # there's a remote tag with the branch name, but no branch
+            self.assertTrue('refs/tags/{}'.format(branch_name) in repo.git.ls_remote('origin', branch_name).split())
+            self.assertFalse('refs/heads/{}'.format(branch_name) in repo.git.ls_remote('origin', branch_name).split())
+
+    # in TestProcess
+    def test_notified_when_browsing_in_published_activity(self):
+        ''' You're notified and redirected when trying to browse a published activity.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            frances_email = u'frances@example.com'
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in(erica_email)
+
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in(frances_email)
+
+            # Start a new task
+            erica.open_link('/')
+            erica.start_task(description='Eating Carrion for Vultures')
+            erica_branch_name = erica.get_branch_name()
+
+            # Enter the "other" folder
+            erica.follow_link(href='/tree/{}/edit/other/'.format(erica_branch_name))
+
+            # Create a new category
+            category_name = u'Forage'
+            category_slug = slugify(category_name)
+            erica.add_category(category_name=category_name)
+
+            # Ask for feedback
+            erica.follow_link(href='/tree/{}'.format(erica_branch_name))
+            erica.request_feedback(feedback_str='Is this okay?')
+
+            #
+            # Switch users
+            #
+            # approve and publish erica's changes
+            frances.open_link(url=erica.path)
+            frances.leave_feedback(feedback_str='It is perfect.')
+            frances.approve_activity()
+            frances.publish_activity()
+
+            #
+            # Switch users
+            #
+            # try to open an edit page (but anticipate a redirect)
+            erica.open_link(url='/tree/{}/edit/other/{}/'.format(erica_branch_name, category_slug), expected_status_code=303)
+
+            # we should've been redirected to the activity overview page
+            self.assertEqual(erica.path, '/tree/{}/'.format(erica_branch_name))
 
             # a warning is flashed about working in a published branch
             # we can't get the date exactly right, so test for every other part of the message
@@ -304,7 +433,7 @@ class TestProcess (TestCase):
             erica.request_feedback(feedback_str='Is this okay?')
 
             #
-            # Switch users and publish the article.
+            # Switch users and publish the activity.
             #
             frances.open_link(url=erica.path)
             frances.leave_feedback(feedback_str='It is super-great.')
@@ -384,7 +513,7 @@ class TestProcess (TestCase):
             erica.request_feedback(feedback_str='Is this okay?')
 
             #
-            # Switch users and publish the article.
+            # Switch users and publish the activity.
             #
             frances.open_link(url=erica.path)
             frances.leave_feedback(feedback_str='It is super-great.')
@@ -527,61 +656,9 @@ class TestProcess (TestCase):
             self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'button' and tag['value'] == u'Publish'))
 
     # in TestProcess
-    def test_notified_when_working_in_published_task(self):
-        ''' When someone else publishes a task you're working in, you're notified.
-        '''
-        with HTTMock(self.auth_csv_example_allowed):
-            erica_email = u'erica@example.com'
-            frances_email = u'frances@example.com'
-            with HTTMock(self.mock_persona_verify_erica):
-                erica = ChimeTestClient(self.app.test_client(), self)
-                erica.sign_in(erica_email)
-
-            with HTTMock(self.mock_persona_verify_frances):
-                frances = ChimeTestClient(self.app.test_client(), self)
-                frances.sign_in(frances_email)
-
-            # Start a new task
-            erica.open_link('/')
-            erica.start_task(description='Eating Carrion for Vultures')
-            erica_branch_name = erica.get_branch_name()
-
-            # Enter the "other" folder
-            erica.follow_link(href='/tree/{}/edit/other/'.format(erica_branch_name))
-
-            # Create a new category
-            category_name = u'Forage'
-            category_slug = slugify(category_name)
-            erica.add_category(category_name=category_name)
-
-            # Ask for feedback
-            erica.follow_link(href='/tree/{}'.format(erica_branch_name))
-            erica.request_feedback(feedback_str='Is this okay?')
-
-            #
-            # Switch users
-            #
-            # approve and publish erica's changes
-            frances.open_link(url=erica.path)
-            frances.leave_feedback(feedback_str='It is perfect.')
-            frances.approve_activity()
-            frances.publish_activity()
-
-            #
-            # Switch users
-            #
-            # load an edit page
-            erica.open_link(url='/tree/{}/edit/other/{}/'.format(erica_branch_name, category_slug))
-            # a warning is flashed about working in a published branch
-            # we can't get the date exactly right, so test for every other part of the message
-            message_published = view_functions.MESSAGE_ACTIVITY_PUBLISHED.format(published_date=u'xxx', published_by=frances_email)
-            message_published_split = message_published.split(u'xxx')
-            for part in message_published_split:
-                self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and part in tag.text))
-
-    # in TestProcess
-    def test_page_not_found_when_branch_published(self):
-        ''' When you're working in a published branch and don't have a local copy, you get a 404 error
+    def test_redirect_to_overview_when_branch_published(self):
+        ''' When you're working in a published branch and don't have a local copy, you're redirected to
+            that activity's overview page.
         '''
         with HTTMock(self.auth_csv_example_allowed):
             erica_email = u'erica@example.com'
@@ -630,7 +707,7 @@ class TestProcess (TestCase):
             # Switch users
             #
             # load an edit page
-            erica.open_link(url='/tree/{}/edit/other/{}/'.format(erica_branch_name, category_slug), expected_status_code=404)
+            erica.open_link(url='/tree/{}/edit/other/{}/'.format(erica_branch_name, category_slug), expected_status_code=303)
             # a warning is flashed about working in a published branch
             # we can't get the date exactly right, so test for every other part of the message
             message_published = view_functions.MESSAGE_ACTIVITY_PUBLISHED.format(published_date=u'xxx', published_by=frances_email)
@@ -638,82 +715,10 @@ class TestProcess (TestCase):
             for part in message_published_split:
                 self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and part in tag.text))
 
-            # the 404 page was loaded
+            # the overview page was loaded
             pattern_template_comment_stripped = sub(ur'<!--|-->', u'', PATTERN_TEMPLATE_COMMENT)
             comments = erica.soup.find_all(text=lambda text: isinstance(text, Comment))
-            self.assertTrue(pattern_template_comment_stripped.format(u'error-404') in comments)
-
-    # in TestProcess
-    def test_published_branch_not_resurrected_on_save(self):
-        ''' Saving a change on a branch that exists locally but isn't at origin because it was published doesn't re-create the branch.
-        '''
-        with HTTMock(self.auth_csv_example_allowed):
-            erica_email = u'erica@example.com'
-            frances_email = u'frances@example.com'
-            with HTTMock(self.mock_persona_verify_erica):
-                erica = ChimeTestClient(self.app.test_client(), self)
-                erica.sign_in(erica_email)
-
-            with HTTMock(self.mock_persona_verify_frances):
-                frances = ChimeTestClient(self.app.test_client(), self)
-                frances.sign_in(frances_email)
-
-            # Start a new task
-            erica.open_link('/')
-            task_description = u'Squeeze A School Of Fish Into A Bait Ball for Dolphins'
-            erica.start_task(description=task_description)
-            erica_branch_name = erica.get_branch_name()
-
-            # Enter the "other" folder
-            erica.follow_link(href='/tree/{}/edit/other/'.format(erica_branch_name))
-
-            # Create a category, subcategory, and article
-            article_name = u'Stunned Fish'
-            erica.add_category(category_name=u'Plowing Through')
-            erica.add_subcategory(subcategory_name=u'Feeding On')
-            erica.add_article(article_name=article_name)
-            erica_article_path = erica.path
-
-            # Ask for feedback
-            erica.follow_link(href='/tree/{}'.format(erica_branch_name))
-            erica.request_feedback(feedback_str='Is this okay?')
-
-            # verify that the branch exists locally and remotely
-            repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email='erica@example.com')
-            self.assertTrue(erica_branch_name in repo.branches)
-            # there's a remote branch with the branch name, but no tag
-            self.assertFalse('refs/tags/{}'.format(erica_branch_name) in repo.git.ls_remote('origin', erica_branch_name).split())
-            self.assertTrue('refs/heads/{}'.format(erica_branch_name) in repo.git.ls_remote('origin', erica_branch_name).split())
-
-            #
-            # Switch users
-            #
-            # approve and publish erica's changes
-            frances.open_link(url=erica.path)
-            frances.leave_feedback(feedback_str='It is perfect.')
-            frances.approve_activity()
-            frances.publish_activity()
-
-            #
-            # Switch users
-            #
-            # load the article edit page
-            erica.open_link(url=erica_article_path)
-            # a warning is flashed about working in a published branch
-            # we can't get the date exactly right, so test for every other part of the message
-            message_published = view_functions.MESSAGE_ACTIVITY_PUBLISHED.format(published_date=u'xxx', published_by=frances_email)
-            message_published_split = message_published.split(u'xxx')
-            for part in message_published_split:
-                self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and part in tag.text))
-
-            # submit an edit to the article
-            erica.edit_article(title_str=article_name, body_str=u'Chase fish into shallow water to catch them.')
-
-            # verify that the branch exists locally and not remotely
-            self.assertTrue(erica_branch_name in repo.branches)
-            # there's a remote tag with the branch name, but no branch
-            self.assertTrue('refs/tags/{}'.format(erica_branch_name) in repo.git.ls_remote('origin', erica_branch_name).split())
-            self.assertFalse('refs/heads/{}'.format(erica_branch_name) in repo.git.ls_remote('origin', erica_branch_name).split())
+            self.assertTrue(pattern_template_comment_stripped.format(u'activity-overview') in comments)
 
     # in TestProcess
     def test_notified_when_working_in_deleted_task(self):
@@ -1023,6 +1028,7 @@ class TestProcess (TestCase):
             save_button = edit_form.find('button', value='Save')
             self.assertIsNone(save_button)
 
+    # in TestProcess
     def test_editing_out_of_date_article(self):
         ''' Check edit process with a user attempting to edit an out-of-date article.
         '''
@@ -1050,6 +1056,283 @@ class TestProcess (TestCase):
             
             # Meanwhile, Erica completes her edits.
             erica.edit_article(title_str='So, So Awesome', body_str='It was the best of times.\n\nBut also the worst of times.')
+
+    # in TestProcess
+    def test_published_activity_history_accuracy(self):
+        ''' A published activity's history is constructed as expected.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            frances_email = u'frances@example.com'
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in(email=erica_email)
+
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in(email=frances_email)
+
+            # Erica starts a new task, topic, sub-topic, article
+            erica.open_link('/')
+            activity_description = u'Reef-Associated Roving Coralgroupers'
+            topic_name = u'Plectropomus Pessuliferus'
+            subtopic_name = u'Recruit Giant Morays'
+            article_name = u'In Hunting For Food'
+            args = activity_description, topic_name, subtopic_name, article_name
+            branch_name = erica.quick_activity_setup(*args)
+
+            # edit the article
+            erica.edit_article(title_str=article_name, body_str=u'This is the only known instance of interspecies cooperative hunting among fish.')
+
+            # Load the activity overview page
+            erica.open_link(url='/tree/{}/'.format(branch_name))
+
+            # Leave a comment
+            comment_body = u'The invitation to hunt is initiated by head-shaking.'
+            erica.leave_feedback(feedback_str=comment_body)
+            # Request feedback
+            erica.request_feedback()
+
+            #
+            # Switch users and publish the activity.
+            #
+            frances.open_link(url=erica.path)
+            frances.approve_activity()
+            frances.publish_activity()
+
+            #
+            # Switch users and load the activity page.
+            #
+            erica.open_link(url='/')
+            # verify that the project is listed in the recently published column
+            pub_ul = erica.soup.select("#activity-list-published")[0]
+            # there should be an HTML comment with the branch name
+            comment = pub_ul.findAll(text=lambda text: isinstance(text, Comment))[0]
+            self.assertTrue(branch_name in comment)
+            pub_li = comment.find_parent('li')
+            # and the activity title wrapped in an a tag
+            self.assertIsNotNone(pub_li.find('a', text=activity_description))
+
+            # load the published activitiy's overview page
+            erica.open_link(url='/tree/{}/'.format(branch_name))
+
+            # a warning is flashed about working in a published branch
+            # we can't get the date exactly right, so test for every other part of the message
+            message_published = view_functions.MESSAGE_ACTIVITY_PUBLISHED.format(published_date=u'xxx', published_by=frances_email)
+            message_published_split = message_published.split(u'xxx')
+            for part in message_published_split:
+                self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and part in tag.text))
+
+            # there is a summary
+            summary_div = erica.soup.find("div", class_="activity-summary")
+            self.assertIsNotNone(summary_div)
+            # it's right about what's changed
+            self.assertIsNotNone(summary_div.find(lambda tag: bool(tag.name == 'p' and '1 article and 2 topics' in tag.text)))
+            # grab all the table rows
+            check_rows = summary_div.find_all('tr')
+
+            # make sure they match what we did above
+            category_row = check_rows.pop()
+            category_cells = category_row.find_all('td')
+            self.assertIsNotNone(category_cells[0].find('a'))
+            self.assertEqual(category_cells[0].text, topic_name)
+            self.assertEqual(category_cells[1].text, constants.LAYOUT_DISPLAY_LOOKUP[constants.CATEGORY_LAYOUT].title())
+            self.assertEqual(category_cells[2].text, u'Created')
+
+            subcategory_row = check_rows.pop()
+            subcategory_cells = subcategory_row.find_all('td')
+            self.assertIsNotNone(subcategory_cells[0].find('a'))
+            self.assertEqual(subcategory_cells[0].text, subtopic_name)
+            self.assertEqual(subcategory_cells[1].text, constants.LAYOUT_DISPLAY_LOOKUP[constants.CATEGORY_LAYOUT].title())
+            self.assertEqual(subcategory_cells[2].text, u'Created')
+
+            article_1_row = check_rows.pop()
+            article_1_cells = article_1_row.find_all('td')
+            self.assertIsNotNone(article_1_cells[0].find('a'))
+            self.assertEqual(article_1_cells[0].text, article_name)
+            self.assertEqual(article_1_cells[1].text, constants.LAYOUT_DISPLAY_LOOKUP[constants.ARTICLE_LAYOUT].title())
+            self.assertEqual(article_1_cells[2].text, u'Created, Edited')
+
+            # only the header row's left
+            self.assertEqual(len(check_rows), 1)
+
+            # also check the full history
+            history_div = erica.soup.find("div", class_="activity-log")
+            check_rows = history_div.find_all('div', class_='activity-log-item')
+            self.assertEqual(len(check_rows), 9)
+
+            # activity started
+            started_row = check_rows.pop()
+            # The "Reef-Associated Roving Coralgroupers" activity was started by erica@example.com.
+            self.assertEqual(started_row.find('p').text.strip(), u'The "{}" {} by {}.'.format(activity_description, repo_functions.ACTIVITY_CREATED_MESSAGE, erica_email))
+
+            topic_row = check_rows.pop()
+            # The "Plectropomus Pessuliferus" topic was created by erica@example.com.
+            self.assertEqual(topic_row.find('p').text.strip(), u'The "{}" topic was created by {}.'.format(topic_name, erica_email))
+
+            subtopic_row = check_rows.pop()
+            # The "Recruit Giant Morays" topic was created by erica@example.com.
+            self.assertEqual(subtopic_row.find('p').text.strip(), u'The "{}" topic was created by {}.'.format(subtopic_name, erica_email))
+
+            article_created_row = check_rows.pop()
+            # The "In Hunting For Food" article was created by erica@example.com.
+            self.assertEqual(article_created_row.find('p').text.strip(), u'The "{}" article was created by {}.'.format(article_name, erica_email))
+
+            article_edited_row = check_rows.pop()
+            # The "In Hunting For Food" article was edited by erica@example.com.
+            self.assertEqual(article_edited_row.find('p').text.strip(), u'The "{}" article was edited by {}.'.format(article_name, erica_email))
+
+            comment_row = check_rows.pop()
+            self.assertEqual(comment_row.find('div', class_='comment__author').text, erica_email)
+            self.assertEqual(comment_row.find('div', class_='comment__body').text, comment_body)
+
+            feedback_requested_row = check_rows.pop()
+            # erica@example.com requested feedback on this activity.
+            self.assertEqual(feedback_requested_row.find('p').text.strip(), u'{} {}'.format(erica_email, repo_functions.ACTIVITY_FEEDBACK_MESSAGE))
+
+            endorsed_row = check_rows.pop()
+            # frances@example.com endorsed this activity.
+            self.assertEqual(endorsed_row.find('p').text.strip(), u'{} {}'.format(frances_email, repo_functions.ACTIVITY_ENDORSED_MESSAGE))
+
+            published_row = check_rows.pop()
+            # frances@example.com published this activity.
+            self.assertEqual(published_row.find('p').text.strip(), u'{} {}'.format(frances_email, repo_functions.ACTIVITY_PUBLISHED_MESSAGE))
+
+    # in TestProcess
+    def test_published_activities_dont_mix_histories(self):
+        ''' The histories of two published activities that were worked on simultaneously don't leak into each other.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            frances_email = u'frances@example.com'
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in(email=erica_email)
+
+            with HTTMock(self.mock_persona_verify_frances):
+                frances = ChimeTestClient(self.app.test_client(), self)
+                frances.sign_in(email=frances_email)
+
+            # Erica starts two new tasks
+            erica.open_link('/')
+            first_activity_description = u'Use Gestures To Coordinate Hunts'
+            first_branch_name = erica.quick_activity_setup(first_activity_description)
+            first_edit_path = erica.path
+
+            erica.open_link('/')
+            second_activity_description = u'Come To The Coral Trout\'s Aid When Signalled'
+            second_branch_name = erica.quick_activity_setup(second_activity_description)
+            second_edit_path = erica.path
+
+            # Erica creates a new topic in the two tasks
+            erica.open_link(first_edit_path)
+            first_topic_name = u'Plectropomus Leopardus'
+            erica.add_category(category_name=first_topic_name)
+
+            erica.open_link(second_edit_path)
+            second_topic_name = u'Cheilinus Undulatus'
+            erica.add_category(category_name=second_topic_name)
+
+            # Erica leaves comments on the two tasks and requests feedback
+            erica.open_link(url='/tree/{}/'.format(first_branch_name))
+            first_comment_body = u'Testing their interactions with Napolean wrasse decoys.'
+            erica.leave_feedback(feedback_str=first_comment_body)
+            # Request feedback
+            erica.request_feedback()
+
+            erica.open_link(url='/tree/{}/'.format(second_branch_name))
+            second_comment_body = u'The "good" wrasse would come to the trout\'s aid when signalled, whereas the "bad" one would swim in the opposite direction.'
+            erica.leave_feedback(feedback_str=second_comment_body)
+            # Request feedback
+            erica.request_feedback()
+
+            #
+            # Switch users and publish the activities.
+            #
+            frances.open_link(url='/tree/{}/'.format(first_branch_name))
+            frances.approve_activity()
+            frances.publish_activity()
+            frances.open_link(url='/tree/{}/'.format(second_branch_name))
+            frances.approve_activity()
+            frances.publish_activity()
+
+            #
+            # Switch users and check the first overview page.
+            #
+            erica.open_link(url='/tree/{}/'.format(first_branch_name))
+
+            # there is a summary
+            summary_div = erica.soup.find("div", class_="activity-summary")
+            self.assertIsNotNone(summary_div)
+            # it's right about what's changed
+            self.assertIsNotNone(summary_div.find(lambda tag: bool(tag.name == 'p' and '1 topic has been changed' in tag.text)))
+            # grab all the table rows and make sure they match what we did above
+            check_rows = summary_div.find_all('tr')
+            category_row = check_rows.pop()
+            category_cells = category_row.find_all('td')
+            self.assertIsNotNone(category_cells[0].find('a'))
+            self.assertEqual(category_cells[0].text, first_topic_name)
+            self.assertEqual(category_cells[1].text, constants.LAYOUT_DISPLAY_LOOKUP[constants.CATEGORY_LAYOUT].title())
+            self.assertEqual(category_cells[2].text, u'Created')
+
+            # only the header row's left
+            self.assertEqual(len(check_rows), 1)
+
+            # also check the full history
+            history_div = erica.soup.find("div", class_="activity-log")
+            check_rows = history_div.find_all('div', class_='activity-log-item')
+            self.assertEqual(len(check_rows), 6)
+            # The "Use Gestures To Coordinate Hunts" activity was started by erica@example.com.
+            self.assertEqual(check_rows.pop().find('p').text.strip(), u'The "{}" {} by {}.'.format(first_activity_description, repo_functions.ACTIVITY_CREATED_MESSAGE, erica_email))
+            # The "Plectropomus Leopardus" topic was created by erica@example.com.
+            self.assertEqual(check_rows.pop().find('p').text.strip(), u'The "{}" topic was created by {}.'.format(first_topic_name, erica_email))
+            # Testing their interactions with Napolean wrasse decoys.
+            self.assertEqual(check_rows.pop().find('div', class_='comment__body').text, first_comment_body)
+            # erica@example.com requested feedback on this activity.
+            self.assertEqual(check_rows.pop().find('p').text.strip(), u'{} {}'.format(erica_email, repo_functions.ACTIVITY_FEEDBACK_MESSAGE))
+            # frances@example.com endorsed this activity.
+            self.assertEqual(check_rows.pop().find('p').text.strip(), u'{} {}'.format(frances_email, repo_functions.ACTIVITY_ENDORSED_MESSAGE))
+            # frances@example.com published this activity.
+            self.assertEqual(check_rows.pop().find('p').text.strip(), u'{} {}'.format(frances_email, repo_functions.ACTIVITY_PUBLISHED_MESSAGE))
+
+            #
+            # Check the second overview page.
+            #
+            erica.open_link(url='/tree/{}/'.format(second_branch_name))
+
+            # there is a summary
+            summary_div = erica.soup.find("div", class_="activity-summary")
+            self.assertIsNotNone(summary_div)
+            # it's right about what's changed
+            self.assertIsNotNone(summary_div.find(lambda tag: bool(tag.name == 'p' and '1 topic has been changed' in tag.text)))
+            # grab all the table rows and make sure they match what we did above
+            check_rows = summary_div.find_all('tr')
+            category_row = check_rows.pop()
+            category_cells = category_row.find_all('td')
+            self.assertIsNotNone(category_cells[0].find('a'))
+            self.assertEqual(category_cells[0].text, second_topic_name)
+            self.assertEqual(category_cells[1].text, constants.LAYOUT_DISPLAY_LOOKUP[constants.CATEGORY_LAYOUT].title())
+            self.assertEqual(category_cells[2].text, u'Created')
+
+            # only the header row's left
+            self.assertEqual(len(check_rows), 1)
+
+            # also check the full history
+            history_div = erica.soup.find("div", class_="activity-log")
+            check_rows = history_div.find_all('div', class_='activity-log-item')
+            self.assertEqual(len(check_rows), 6)
+            # The "Use Gestures To Coordinate Hunts" activity was started by erica@example.com.
+            self.assertEqual(check_rows.pop().find('p').text.strip(), u'The "{}" {} by {}.'.format(second_activity_description, repo_functions.ACTIVITY_CREATED_MESSAGE, erica_email))
+            # The "Plectropomus Leopardus" topic was created by erica@example.com.
+            self.assertEqual(check_rows.pop().find('p').text.strip(), u'The "{}" topic was created by {}.'.format(second_topic_name, erica_email))
+            # Testing their interactions with Napolean wrasse decoys.
+            self.assertEqual(check_rows.pop().find('div', class_='comment__body').text, second_comment_body)
+            # erica@example.com requested feedback on this activity.
+            self.assertEqual(check_rows.pop().find('p').text.strip(), u'{} {}'.format(erica_email, repo_functions.ACTIVITY_FEEDBACK_MESSAGE))
+            # frances@example.com endorsed this activity.
+            self.assertEqual(check_rows.pop().find('p').text.strip(), u'{} {}'.format(frances_email, repo_functions.ACTIVITY_ENDORSED_MESSAGE))
+            # frances@example.com published this activity.
+            self.assertEqual(check_rows.pop().find('p').text.strip(), u'{} {}'.format(frances_email, repo_functions.ACTIVITY_PUBLISHED_MESSAGE))
 
 if __name__ == '__main__':
     main()

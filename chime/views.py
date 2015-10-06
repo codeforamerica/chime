@@ -286,6 +286,13 @@ def branch_view(branch_name, path=None):
 def branch_edit(branch_name, path=None):
     repo = view_functions.get_repo(flask_app=current_app)
     branch_name = view_functions.branch_var2name(branch_name)
+    safe_branch = view_functions.branch_name2path(branch_name)
+
+    # if this is a published branch, redirect to overview
+    if repo_functions.get_activity_working_state(repo, current_app.config['default_branch'], safe_branch) == constants.WORKING_STATE_PUBLISHED:
+        return redirect('/tree/{}/'.format(safe_branch), code=303)
+
+    # flash a conflict warning if necessary
     if repo_functions.get_conflict(repo, current_app.config['default_branch']):
         view_functions.flash_unique(repo_functions.MERGE_CONFLICT_WARNING_FLASH_MESSAGE, u'warning')
 
@@ -299,11 +306,11 @@ def branch_edit(branch_name, path=None):
         # if this is a directory representing an article, redirect to edit
         if view_functions.is_article_dir(full_path):
             index_path = join(path or u'', u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
-            return redirect('/tree/{}/edit/{}'.format(view_functions.branch_name2path(branch_name), index_path))
+            return redirect('/tree/{}/edit/{}'.format(safe_branch, index_path))
 
         # if the directory path didn't end with a slash, add it and redirect
         if path and not path.endswith('/'):
-            return redirect('/tree/{}/edit/{}/'.format(view_functions.branch_name2path(branch_name), path), code=302)
+            return redirect('/tree/{}/edit/{}/'.format(safe_branch, path), code=302)
 
         # redirect inside solo directories if necessary
         redirect_path = view_functions.get_redirect_path_for_solo_directory(repo, branch_name, path)
@@ -365,7 +372,7 @@ def branch_modify_category(branch_name, path=u''):
     # delete the passed category
     if 'delete' in request.form:
         # delete the page
-        redirect_path, do_save, commit_message = view_functions.delete_page(repo=repo, browse_path=path, target_path=path)
+        redirect_path, do_save, commit_message = view_functions.delete_page(repo=repo, working_branch_name=branch_name, browse_path=path, target_path=path)
         # save and redirect
         if do_save:
             master_name = current_app.config['default_branch']
@@ -456,7 +463,7 @@ def branch_edit_file(branch_name, path=None):
                 flash(u'Please enter a name to create {}!'.format(describe_what), u'warning')
             return redirect('/tree/{}/edit/{}'.format(safe_branch, file_path), code=303)
 
-        add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(repo, create_path, request.form['request_path'], create_what)
+        add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(repo, branch_name, create_path, request.form['request_path'], create_what)
         if do_save:
             commit = repo.commit()
             commit_message = add_message
@@ -466,7 +473,7 @@ def branch_edit_file(branch_name, path=None):
             flash(add_message, u'notice')
 
     elif action == 'delete' and 'request_path' in request.form:
-        redirect_path, do_save, commit_message = view_functions.delete_page(repo=repo, browse_path=path, target_path=request.form['request_path'])
+        redirect_path, do_save, commit_message = view_functions.delete_page(repo=repo, working_branch_name=branch_name, browse_path=path, target_path=request.form['request_path'])
         if do_save:
             # flash the human-readable part of the commit message
             flash(u'{}! Remember to submit this change for feedback when you\'re ready to go live.'.format(commit_message.split('\n')[0]), u'notice')
@@ -494,11 +501,6 @@ def show_activity_overview(branch_name):
     if repo_functions.get_conflict(repo, current_app.config['default_branch']):
         view_functions.flash_unique(repo_functions.MERGE_CONFLICT_WARNING_FLASH_MESSAGE, u'warning')
 
-    # contains 'author_email', 'task_description'
-    activity = repo_functions.get_task_metadata_for_branch(repo, branch_name)
-    activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
-    activity['task_description'] = activity['task_description'] if 'task_description' in activity else u''
-
     kwargs = view_functions.common_template_args(current_app.config, session)
 
     languages = load_languages(repo.working_dir)
@@ -508,7 +510,10 @@ def show_activity_overview(branch_name):
     if ga_config.get('access_token'):
         app_authorized = True
 
-    activity = chime_activity.ChimeActivity(repo=repo, branch_name=safe_branch, default_branch_name=current_app.config['default_branch'], actor_email=session.get('email', None))
+    if repo_functions.get_activity_working_state(repo, current_app.config['default_branch'], safe_branch) == constants.WORKING_STATE_ACTIVE:
+        activity = chime_activity.ChimeActivity(repo=repo, branch_name=safe_branch, default_branch_name=current_app.config['default_branch'], actor_email=session.get('email', None))
+    else:
+        activity = chime_activity.ChimePublishedActivity(repo=repo, branch_name=safe_branch, default_branch_name=current_app.config['default_branch'])
 
     kwargs.update(activity=activity, app_authorized=app_authorized, languages=languages)
 
@@ -561,7 +566,7 @@ def branch_history(branch_name, path=None):
         history.append(dict(name=name, email=email, date=date, subject=subject))
 
     kwargs = view_functions.common_template_args(current_app.config, session)
-    kwargs.update(branch=branch_name, safe_branch=safe_branch,
+    kwargs.update(safe_branch=safe_branch,
                   history=history, path=path, languages=languages,
                   app_authorized=app_authorized, article_edit_path=article_edit_path,
                   activity=activity)

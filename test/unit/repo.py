@@ -243,12 +243,12 @@ class TestRepo (TestCase):
     def test_try_to_create_existing_category(self):
         ''' We can't create a category that exists already.
         '''
-        first_result = view_functions.add_article_or_category(self.clone1, 'categories', 'My New Category', constants.CATEGORY_LAYOUT)
-        self.assertEqual(u'The "My New Category" topic was created\n\n[{"action": "create", "file_path": "categories/my-new-category/index.markdown", "display_type": "category", "title": "My New Category"}]', first_result[0])
+        first_result = view_functions.add_article_or_category(self.clone1, None, 'categories', 'My New Category', constants.CATEGORY_LAYOUT)
+        self.assertEqual(u'The "My New Category" topic was created\n\n{"branch_name": "master", "actions": [{"action": "create", "file_path": "categories/my-new-category/index.markdown", "display_type": "category", "title": "My New Category"}]}', first_result[0])
         self.assertEqual(u'categories/my-new-category/index.markdown', first_result[1])
         self.assertEqual(u'categories/my-new-category/', first_result[2])
         self.assertEqual(True, first_result[3])
-        second_result = view_functions.add_article_or_category(self.clone1, 'categories', 'My New Category', constants.CATEGORY_LAYOUT)
+        second_result = view_functions.add_article_or_category(self.clone1, None, 'categories', 'My New Category', constants.CATEGORY_LAYOUT)
         self.assertEqual('Topic "My New Category" already exists', second_result[0])
         self.assertEqual(u'categories/my-new-category/index.markdown', second_result[1])
         self.assertEqual(u'categories/my-new-category/', second_result[2])
@@ -258,12 +258,12 @@ class TestRepo (TestCase):
     def test_try_to_create_existing_article(self):
         ''' We can't create an article that exists already
         '''
-        first_result = view_functions.add_article_or_category(self.clone1, 'categories/example', 'New Article', constants.ARTICLE_LAYOUT)
-        self.assertEqual(u'The "New Article" article was created\n\n[{"action": "create", "file_path": "categories/example/new-article/index.markdown", "display_type": "article", "title": "New Article"}]', first_result[0])
+        first_result = view_functions.add_article_or_category(self.clone1, None, 'categories/example', 'New Article', constants.ARTICLE_LAYOUT)
+        self.assertEqual(u'The "New Article" article was created\n\n{"branch_name": "master", "actions": [{"action": "create", "file_path": "categories/example/new-article/index.markdown", "display_type": "article", "title": "New Article"}]}', first_result[0])
         self.assertEqual(u'categories/example/new-article/index.markdown', first_result[1])
         self.assertEqual(u'categories/example/new-article/index.markdown', first_result[2])
         self.assertEqual(True, first_result[3])
-        second_result = view_functions.add_article_or_category(self.clone1, 'categories/example', 'New Article', constants.ARTICLE_LAYOUT)
+        second_result = view_functions.add_article_or_category(self.clone1, None, 'categories/example', 'New Article', constants.ARTICLE_LAYOUT)
         self.assertEqual('Article "New Article" already exists', second_result[0])
         self.assertEqual(u'categories/example/new-article/index.markdown', first_result[1])
         self.assertEqual(u'categories/example/new-article/index.markdown', first_result[2])
@@ -275,8 +275,8 @@ class TestRepo (TestCase):
         '''
         category_name = u'Kristen/Melissa/Kate/Leslie'
         category_slug = slugify(category_name)
-        add_result = view_functions.add_article_or_category(self.clone1, 'categories', category_name, constants.CATEGORY_LAYOUT)
-        self.assertEqual(u'The "{category_name}" topic was created\n\n[{{"action": "create", "file_path": "categories/{category_slug}/index.markdown", "display_type": "category", "title": "{category_name}"}}]'.format(category_name=category_name, category_slug=category_slug), add_result[0])
+        add_result = view_functions.add_article_or_category(self.clone1, None, 'categories', category_name, constants.CATEGORY_LAYOUT)
+        self.assertEqual(u'The "{category_name}" topic was created\n\n{{"branch_name": "{branch_name}", "actions": [{{"action": "create", "file_path": "categories/{category_slug}/index.markdown", "display_type": "category", "title": "{category_name}"}}]}}'.format(branch_name='master', category_name=category_name, category_slug=category_slug), add_result[0])
         self.assertEqual(u'categories/{category_slug}/index.markdown'.format(category_slug=category_slug), add_result[1])
         self.assertEqual(u'categories/{category_slug}/'.format(category_slug=category_slug), add_result[2])
         self.assertEqual(True, add_result[3])
@@ -288,8 +288,8 @@ class TestRepo (TestCase):
         article_name = u'Erin/Abby/Jillian/Patty'
         article_slug = slugify(article_name)
 
-        add_result = view_functions.add_article_or_category(self.clone1, 'categories/example', article_name, constants.ARTICLE_LAYOUT)
-        self.assertEqual(u'The "{article_name}" article was created\n\n[{{"action": "create", "file_path": "categories/example/{article_slug}/index.markdown", "display_type": "article", "title": "{article_name}"}}]'.format(article_name=article_name, article_slug=article_slug), add_result[0])
+        add_result = view_functions.add_article_or_category(self.clone1, None, 'categories/example', article_name, constants.ARTICLE_LAYOUT)
+        self.assertEqual(u'The "{article_name}" article was created\n\n{{"branch_name": "{branch_name}", "actions": [{{"action": "create", "file_path": "categories/example/{article_slug}/index.markdown", "display_type": "article", "title": "{article_name}"}}]}}'.format(branch_name='master', article_name=article_name, article_slug=article_slug), add_result[0])
         self.assertEqual(u'categories/example/{article_slug}/index.markdown'.format(article_slug=article_slug), add_result[1])
         self.assertEqual(u'categories/example/{article_slug}/index.markdown'.format(article_slug=article_slug), add_result[2])
         self.assertEqual(True, add_result[3])
@@ -787,7 +787,7 @@ class TestRepo (TestCase):
 
         # If goner.md is still around, then the branch wasn't fully abandoned.
         self.assertFalse(exists(join(self.clone2.working_dir, 'goner.md')))
-        self.assertTrue(self.clone2.commit().message.startswith('Abandoned work from'))
+        self.assertTrue(self.clone2.commit().message.startswith(u'The "{}" {}'.format(task_description, repo_functions.ACTIVITY_DELETED_MESSAGE)))
 
     # in TestRepo
     def test_peer_review(self):
@@ -824,7 +824,7 @@ class TestRepo (TestCase):
         self.assertTrue(review_authorized)
 
         # request feedback as Jim Content Creator
-        repo_functions.update_review_state(self.clone1, constants.REVIEW_STATE_FEEDBACK)
+        repo_functions.update_review_state(self.clone1, branch1_name, constants.REVIEW_STATE_FEEDBACK)
         # verify that the activity has feedback requested and that fake is authorized to endorse
         review_state, review_authorized = repo_functions.get_review_state_and_authorized(self.clone1, 'master', branch1_name, fake_author_email)
         self.assertEqual(review_state, constants.REVIEW_STATE_FEEDBACK)
@@ -840,7 +840,7 @@ class TestRepo (TestCase):
         environ['GIT_COMMITTER_EMAIL'] = fake_reviewer_email
 
         # endorse
-        repo_functions.update_review_state(self.clone1, constants.REVIEW_STATE_ENDORSED)
+        repo_functions.update_review_state(self.clone1, branch1_name, constants.REVIEW_STATE_ENDORSED)
         # verify that the activity has been endorsed and that Joe Reviewer is authorized to publish
         review_state, review_authorized = repo_functions.get_review_state_and_authorized(self.clone1, 'master', branch1_name, fake_reviewer_email)
         self.assertEqual(review_state, constants.REVIEW_STATE_ENDORSED)
@@ -861,7 +861,7 @@ class TestRepo (TestCase):
         self.assertTrue(review_authorized)
 
         # request feedback as Joe Reviewer
-        repo_functions.update_review_state(self.clone1, constants.REVIEW_STATE_FEEDBACK)
+        repo_functions.update_review_state(self.clone1, branch1_name, constants.REVIEW_STATE_FEEDBACK)
         # verify that the activity has feedback requested and that Joe Reviewer is not authorized to endorse
         review_state, review_authorized = repo_functions.get_review_state_and_authorized(self.clone1, 'master', branch1_name, fake_reviewer_email)
         self.assertEqual(review_state, constants.REVIEW_STATE_FEEDBACK)
@@ -877,7 +877,7 @@ class TestRepo (TestCase):
         environ['GIT_COMMITTER_EMAIL'] = fake_nonprofit_email
 
         # endorse
-        repo_functions.update_review_state(self.clone1, constants.REVIEW_STATE_ENDORSED)
+        repo_functions.update_review_state(self.clone1, branch1_name, constants.REVIEW_STATE_ENDORSED)
         # verify that the activity has been endorsed and that Jane Reviewer is authorized to publish
         review_state, review_authorized = repo_functions.get_review_state_and_authorized(self.clone1, 'master', branch1_name, fake_nonprofit_email)
         self.assertEqual(review_state, constants.REVIEW_STATE_ENDORSED)
@@ -924,9 +924,9 @@ class TestRepo (TestCase):
         # create an article
         art_title = u'快速狐狸'
         art_slug = slugify(art_title)
-        add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, u'', art_title, constants.ARTICLE_LAYOUT)
+        add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, None, u'', art_title, constants.ARTICLE_LAYOUT)
         self.assertEqual(u'{}/index.{}'.format(art_slug, constants.CONTENT_FILE_EXTENSION), file_path)
-        self.assertEqual(u'The "{art_title}" article was created\n\n[{{"action": "create", "file_path": "{file_path}", "display_type": "article", "title": "{art_title}"}}]'.format(art_title=art_title, file_path=file_path), add_message)
+        self.assertEqual(u'The "{art_title}" article was created\n\n{{"branch_name": "{branch_name}", "actions": [{{"action": "create", "file_path": "{file_path}", "display_type": "article", "title": "{art_title}"}}]}}'.format(branch_name=working_branch.name, art_title=art_title, file_path=file_path), add_message)
         self.assertEqual(u'{}/index.{}'.format(art_slug, constants.CONTENT_FILE_EXTENSION), redirect_path)
         self.assertEqual(True, do_save)
         # commit the article
@@ -963,9 +963,9 @@ class TestRepo (TestCase):
         # create a category
         cat_title = u'快速狐狸'
         cat_slug = slugify(cat_title)
-        add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, u'', cat_title, constants.CATEGORY_LAYOUT)
+        add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, working_branch.name, u'', cat_title, constants.CATEGORY_LAYOUT)
         self.assertEqual(u'{}/index.{}'.format(cat_slug, constants.CONTENT_FILE_EXTENSION), file_path)
-        self.assertEqual(u'The "{cat_title}" topic was created\n\n[{{"action": "create", "file_path": "{file_path}", "display_type": "category", "title": "{cat_title}"}}]'.format(cat_title=cat_title, file_path=file_path), add_message)
+        self.assertEqual(u'The "{cat_title}" topic was created\n\n{{"branch_name": "{branch_name}", "actions": [{{"action": "create", "file_path": "{file_path}", "display_type": "category", "title": "{cat_title}"}}]}}'.format(branch_name=working_branch.name, cat_title=cat_title, file_path=file_path), add_message)
         self.assertEqual(u'{}/'.format(cat_slug), redirect_path)
         self.assertEqual(True, do_save)
         # commit the category
@@ -1024,9 +1024,9 @@ class TestRepo (TestCase):
         # create a category
         cat_title = u'Daffodils and Drop Cloths'
         cat_slug = slugify(cat_title)
-        add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, u'', cat_title, constants.CATEGORY_LAYOUT)
+        add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, working_branch.name, u'', cat_title, constants.CATEGORY_LAYOUT)
         self.assertEqual(u'{}/index.{}'.format(cat_slug, constants.CONTENT_FILE_EXTENSION), file_path)
-        self.assertEqual(u'The "{cat_title}" topic was created\n\n[{{"action": "create", "file_path": "{file_path}", "display_type": "category", "title": "{cat_title}"}}]'.format(cat_title=cat_title, file_path=file_path), add_message)
+        self.assertEqual(u'The "{cat_title}" topic was created\n\n{{"branch_name": "{branch_name}", "actions": [{{"action": "create", "file_path": "{file_path}", "display_type": "category", "title": "{cat_title}"}}]}}'.format(branch_name=working_branch.name, cat_title=cat_title, file_path=file_path), add_message)
         self.assertEqual(u'{}/'.format(cat_slug), redirect_path)
         self.assertEqual(True, do_save)
         # commit the category
@@ -1040,9 +1040,9 @@ class TestRepo (TestCase):
         # create a category inside that
         cat2_title = u'Drain Bawlers'
         cat2_slug = slugify(cat2_title)
-        add_message, cat2_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, cat_slug, cat2_title, constants.CATEGORY_LAYOUT)
+        add_message, cat2_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, working_branch.name, cat_slug, cat2_title, constants.CATEGORY_LAYOUT)
         self.assertEqual(u'{}/{}/index.{}'.format(cat_slug, cat2_slug, constants.CONTENT_FILE_EXTENSION), cat2_path)
-        self.assertEqual(u'The "{cat_title}" topic was created\n\n[{{"action": "create", "file_path": "{file_path}", "display_type": "category", "title": "{cat_title}"}}]'.format(cat_title=cat2_title, file_path=cat2_path), add_message)
+        self.assertEqual(u'The "{cat_title}" topic was created\n\n{{"branch_name": "{branch_name}", "actions": [{{"action": "create", "file_path": "{file_path}", "display_type": "category", "title": "{cat_title}"}}]}}'.format(branch_name=working_branch.name, cat_title=cat2_title, file_path=cat2_path), add_message)
         self.assertEqual(u'{}/{}/'.format(cat_slug, cat2_slug), redirect_path)
         self.assertEqual(True, do_save)
         # commit the category
@@ -1057,9 +1057,9 @@ class TestRepo (TestCase):
         art_title = u'သံပုရာဖျော်ရည်'
         art_slug = slugify(art_title)
         dir_path = redirect_path.rstrip('/')
-        add_message, art_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, dir_path, art_title, constants.ARTICLE_LAYOUT)
+        add_message, art_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, working_branch.name, dir_path, art_title, constants.ARTICLE_LAYOUT)
         self.assertEqual(u'{}/{}/{}/index.{}'.format(cat_slug, cat2_slug, art_slug, constants.CONTENT_FILE_EXTENSION), art_path)
-        self.assertEqual(u'The "{art_title}" article was created\n\n[{{"action": "create", "file_path": "{file_path}", "display_type": "article", "title": "{art_title}"}}]'.format(art_title=art_title, file_path=art_path), add_message)
+        self.assertEqual(u'The "{art_title}" article was created\n\n{{"branch_name": "{branch_name}", "actions": [{{"action": "create", "file_path": "{file_path}", "display_type": "article", "title": "{art_title}"}}]}}'.format(branch_name=working_branch.name, art_title=art_title, file_path=art_path), add_message)
         self.assertEqual(u'{}/{}/{}/index.{}'.format(cat_slug, cat2_slug, art_slug, constants.CONTENT_FILE_EXTENSION), redirect_path)
         self.assertEqual(True, do_save)
         # commit the article
@@ -1072,10 +1072,10 @@ class TestRepo (TestCase):
 
         # now delete the second category
         browse_path = repo_functions.strip_index_file(art_path)
-        redirect_path, do_save, commit_message = view_functions.delete_page(repo=new_clone, browse_path=browse_path, target_path=dir_path)
+        redirect_path, do_save, commit_message = view_functions.delete_page(repo=new_clone, working_branch_name=working_branch.name, browse_path=browse_path, target_path=dir_path)
         self.assertEqual(cat_slug.rstrip('/'), redirect_path.rstrip('/'))
         self.assertEqual(True, do_save)
-        self.assertEqual(u'The "{cat2_title}" topic (containing 1 article) was deleted\n\n[{{"action": "delete", "file_path": "{cat2_path}", "display_type": "category", "title": "{cat2_title}"}}, {{"action": "delete", "file_path": "{art_path}", "display_type": "article", "title": "{art_title}"}}]'.format(cat2_title=cat2_title, cat2_path=cat2_path, art_path=art_path, art_title=art_title), commit_message)
+        self.assertEqual(u'The "{cat2_title}" topic (containing 1 article) was deleted\n\n{{"branch_name": "{branch_name}", "actions": [{{"action": "delete", "file_path": "{cat2_path}", "display_type": "category", "title": "{cat2_title}"}}, {{"action": "delete", "file_path": "{art_path}", "display_type": "article", "title": "{art_title}"}}]}}'.format(branch_name=working_branch.name, cat2_title=cat2_title, cat2_path=cat2_path, art_path=art_path, art_title=art_title), commit_message)
 
         repo_functions.save_working_file(clone=new_clone, path=dir_path, message=commit_message, base_sha=new_clone.commit().hexsha, default_branch_name='master')
 
@@ -1092,6 +1092,9 @@ class TestRepo (TestCase):
         # start a new branch
         fake_author_email = u'erica@example.com'
         task_description = u'shake trees until coconuts fall off for castaways'
+
+        environ['GIT_AUTHOR_EMAIL'] = fake_author_email
+        environ['GIT_COMMITTER_EMAIL'] = fake_author_email
 
         source_repo = self.origin
         first_commit = list(source_repo.iter_commits())[-1].hexsha
@@ -1124,20 +1127,20 @@ class TestRepo (TestCase):
         ]
         updated_details = []
         for detail in create_details:
-            add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, detail[0], detail[1], detail[2])
+            add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(new_clone, working_branch.name, detail[0], detail[1], detail[2])
             updated_details.append(detail + (file_path,))
             repo_functions.save_working_file(new_clone, file_path, add_message, new_clone.commit().hexsha, 'master')
 
         # add a comment
         funny_comment = u'I like coconuts ᶘ ᵒᴥᵒᶅ'
-        repo_functions.provide_feedback(new_clone, funny_comment)
+        repo_functions.provide_feedback(new_clone, working_branch.name, funny_comment)
 
         # add another comment with newlines
         newline_comment = u'You wound me sir.\n\nI thought we were friends\nBut I guess we are not.'
-        repo_functions.provide_feedback(new_clone, newline_comment)
+        repo_functions.provide_feedback(new_clone, working_branch.name, newline_comment)
 
         # delete a category with stuff in it
-        commit_message = view_functions.make_delete_display_commit_message(new_clone, 'tree')
+        commit_message = view_functions.make_delete_display_commit_message(new_clone, working_branch.name, 'tree')
         deleted_file_paths, do_save = edit_functions.delete_file(new_clone, 'tree')
         # commit
         repo_functions.save_working_file(new_clone, 'tree', commit_message, new_clone.commit().hexsha, 'master')
@@ -1153,31 +1156,35 @@ class TestRepo (TestCase):
         # check the creation of the activity
         check_item = activity_history.pop()
         self.assertEqual(u'The "{}" activity was started'.format(task_description), check_item['commit_subject'])
-        self.assertEqual(u'Created task metadata file "{}"\nSet author_email to {}\nSet task_description to {}'.format(repo_functions.TASK_METADATA_FILENAME, fake_author_email, task_description), check_item['commit_body'])
+        self.assertEqual(check_item['author_email'], fake_author_email)
+        self.assertEqual(check_item['task_description'], task_description)
+        self.assertEqual(check_item['branch_name'], working_branch.name)
         self.assertEqual(constants.COMMIT_TYPE_ACTIVITY_UPDATE, check_item['commit_type'])
 
         # check the delete
         check_item = activity_history.pop(0)
         self.assertEqual(u'The "{}" topic (containing 1 topic and 1 article) was deleted'.format(updated_details[0][1]), check_item['commit_subject'])
-        self.assertEqual(u'[{{"action": "delete", "file_path": "{cat1_path}", "display_type": "category", "title": "{cat1_title}"}}, {{"action": "delete", "file_path": "{cat2_path}", "display_type": "category", "title": "{cat2_title}"}}, {{"action": "delete", "file_path": "{art1_path}", "display_type": "article", "title": "{art1_title}"}}]'.format(cat1_path=updated_details[0][3], cat1_title=updated_details[0][1], cat2_path=updated_details[1][3], cat2_title=updated_details[1][1], art1_path=updated_details[2][3], art1_title=updated_details[2][1]), check_item['commit_body'])
+        self.assertEqual(working_branch.name, check_item['branch_name'])
+        self.assertEqual(json.loads(u'[{{"action": "delete", "file_path": "{cat1_path}", "display_type": "category", "title": "{cat1_title}"}}, {{"action": "delete", "file_path": "{cat2_path}", "display_type": "category", "title": "{cat2_title}"}}, {{"action": "delete", "file_path": "{art1_path}", "display_type": "article", "title": "{art1_title}"}}]'.format(cat1_path=updated_details[0][3], cat1_title=updated_details[0][1], cat2_path=updated_details[1][3], cat2_title=updated_details[1][1], art1_path=updated_details[2][3], art1_title=updated_details[2][1])), check_item['actions'])
         self.assertEqual(constants.COMMIT_TYPE_EDIT, check_item['commit_type'])
 
         # check the comments
         check_item = activity_history.pop(0)
         self.assertEqual(u'Provided feedback.', check_item['commit_subject'])
-        self.assertEqual(newline_comment, check_item['commit_body'])
+        self.assertEqual(newline_comment, check_item['message'])
         self.assertEqual(constants.COMMIT_TYPE_COMMENT, check_item['commit_type'])
 
         check_item = activity_history.pop(0)
         self.assertEqual(u'Provided feedback.', check_item['commit_subject'])
-        self.assertEqual(funny_comment, check_item['commit_body'])
+        self.assertEqual(funny_comment, check_item['message'])
         self.assertEqual(constants.COMMIT_TYPE_COMMENT, check_item['commit_type'])
 
         # check the category & article creations
         for pos, check_item in list(enumerate(activity_history)):
             check_detail = updated_details[len(updated_details) - (pos + 1)]
             self.assertEqual(u'The "{}" {} was created'.format(check_detail[1], view_functions.file_display_name(check_detail[2])), check_item['commit_subject'])
-            self.assertEqual(u'[{{"action": "create", "file_path": "{file_path}", "display_type": "{display_type}", "title": "{title}"}}]'.format(file_path=check_detail[3], display_type=check_detail[2], title=check_detail[1]), check_item['commit_body'])
+            self.assertEqual(working_branch.name, check_item['branch_name'])
+            self.assertEqual(json.loads(u'[{{"action": "create", "file_path": "{file_path}", "display_type": "{display_type}", "title": "{title}"}}]'.format(file_path=check_detail[3], display_type=check_detail[2], title=check_detail[1])), check_item['actions'])
             self.assertEqual(constants.COMMIT_TYPE_EDIT, check_item['commit_type'])
 
     # in TestRepo
@@ -1210,10 +1217,10 @@ class TestRepo (TestCase):
 
         # add some comments with newlines
         striking_comment = u'A striking feature of molluscs is the use of the same organ for multiple functions.\n(و ˃̵ᴗ˂̵)و\n\nFor example, the heart and nephridia ("kidneys") are important parts of the reproductive system, as well as the circulatory and excretory systems\nᶘ ᵒᴥᵒᶅ'
-        repo_functions.provide_feedback(new_clone, striking_comment)
+        repo_functions.provide_feedback(new_clone, working_branch.name, striking_comment)
 
         universal_comment = u'The three most universal features defining modern molluscs are:\n\n1. A mantle with a significant cavity used for breathing and excretion,\n\n2. the presence of a radula, and\n\n3. the structure of the nervous system.'
-        repo_functions.provide_feedback(new_clone, universal_comment)
+        repo_functions.provide_feedback(new_clone, working_branch.name, universal_comment)
 
         # checkout
         working_branch.checkout()
@@ -1221,33 +1228,36 @@ class TestRepo (TestCase):
         _, universal_body = repo_functions.get_commit_message_subject_and_body(working_branch.commit)
         _, striking_body = repo_functions.get_commit_message_subject_and_body(working_branch.commit.parents[0])
 
-        self.assertEqual(universal_comment, universal_body)
-        self.assertEqual(striking_comment, striking_body)
+        universal_message = json.loads(universal_body)['message']
+        striking_message = json.loads(striking_body)['message']
+
+        self.assertEqual(universal_comment, universal_message)
+        self.assertEqual(striking_comment, striking_message)
 
     # in TestRepo
     def test_delete_full_folders(self):
         ''' Make sure that full folders can be deleted, and that what's reported as deleted matches what's expected.
         '''
         # build some nested categories
-        view_functions.add_article_or_category(self.clone1, '', 'quick', constants.CATEGORY_LAYOUT)
-        view_functions.add_article_or_category(self.clone1, 'quick', 'brown', constants.CATEGORY_LAYOUT)
-        view_functions.add_article_or_category(self.clone1, 'quick/brown', 'fox', constants.CATEGORY_LAYOUT)
-        view_functions.add_article_or_category(self.clone1, 'quick', 'red', constants.CATEGORY_LAYOUT)
-        view_functions.add_article_or_category(self.clone1, 'quick', 'yellow', constants.CATEGORY_LAYOUT)
-        view_functions.add_article_or_category(self.clone1, 'quick/yellow', 'banana', constants.CATEGORY_LAYOUT)
-        view_functions.add_article_or_category(self.clone1, 'quick', 'orange', constants.CATEGORY_LAYOUT)
-        view_functions.add_article_or_category(self.clone1, 'quick/brown', 'potato', constants.CATEGORY_LAYOUT)
-        view_functions.add_article_or_category(self.clone1, 'quick/yellow', 'lemon', constants.CATEGORY_LAYOUT)
-        view_functions.add_article_or_category(self.clone1, 'quick/red', 'tomato', constants.CATEGORY_LAYOUT)
-        view_functions.add_article_or_category(self.clone1, 'quick/red', 'balloon', constants.CATEGORY_LAYOUT)
-        view_functions.add_article_or_category(self.clone1, 'quick/orange', 'peanut', constants.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, None, '', 'quick', constants.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, None, 'quick', 'brown', constants.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, None, 'quick/brown', 'fox', constants.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, None, 'quick', 'red', constants.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, None, 'quick', 'yellow', constants.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, None, 'quick/yellow', 'banana', constants.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, None, 'quick', 'orange', constants.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, None, 'quick/brown', 'potato', constants.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, None, 'quick/yellow', 'lemon', constants.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, None, 'quick/red', 'tomato', constants.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, None, 'quick/red', 'balloon', constants.CATEGORY_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, None, 'quick/orange', 'peanut', constants.CATEGORY_LAYOUT)
         # add in some articles
-        view_functions.add_article_or_category(self.clone1, 'quick/brown/fox', 'fur', constants.ARTICLE_LAYOUT)
-        view_functions.add_article_or_category(self.clone1, 'quick/brown/fox', 'ears', constants.ARTICLE_LAYOUT)
-        view_functions.add_article_or_category(self.clone1, 'quick/yellow/lemon', 'rind', constants.ARTICLE_LAYOUT)
-        view_functions.add_article_or_category(self.clone1, 'quick/yellow/lemon', 'pulp', constants.ARTICLE_LAYOUT)
-        view_functions.add_article_or_category(self.clone1, 'quick/orange/peanut', 'shell', constants.ARTICLE_LAYOUT)
-        view_functions.add_article_or_category(self.clone1, 'quick/red/balloon', 'string', constants.ARTICLE_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, None, 'quick/brown/fox', 'fur', constants.ARTICLE_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, None, 'quick/brown/fox', 'ears', constants.ARTICLE_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, None, 'quick/yellow/lemon', 'rind', constants.ARTICLE_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, None, 'quick/yellow/lemon', 'pulp', constants.ARTICLE_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, None, 'quick/orange/peanut', 'shell', constants.ARTICLE_LAYOUT)
+        view_functions.add_article_or_category(self.clone1, None, 'quick/red/balloon', 'string', constants.ARTICLE_LAYOUT)
 
         # add and commit
         self.clone1.index.add(['*'])
@@ -1280,9 +1290,8 @@ class TestRepo (TestCase):
         branch1_name = branch1.name
         branch1.checkout()
 
-        # verify that the most recent commit on the new branch is for the task metadata file
-        # by checking for the name of the file in the commit message
-        self.assertTrue(repo_functions.TASK_METADATA_FILENAME in branch1.commit.message)
+        # verify that the most recent commit on the new branch is for starting the activity
+        self.assertTrue(repo_functions.ACTIVITY_CREATED_MESSAGE in branch1.commit.message)
 
         # validate the existence of the task metadata file
         task_metadata = repo_functions.get_task_metadata_for_branch(self.clone1, branch1_name)
@@ -1303,9 +1312,8 @@ class TestRepo (TestCase):
         branch1_name = branch1.name
         branch1.checkout()
 
-        # verify that the most recent commit on the new branch is for the task metadata file
-        # by checking for the name of the file in the commit message
-        self.assertTrue(repo_functions.TASK_METADATA_FILENAME in branch1.commit.message)
+        # verify that the most recent commit on the new branch is for starting the activity
+        self.assertTrue(repo_functions.ACTIVITY_CREATED_MESSAGE in branch1.commit.message)
 
         # validate the existence of the task metadata file
         task_metadata = repo_functions.get_task_metadata_for_branch(self.clone1, branch1_name)
@@ -1326,9 +1334,8 @@ class TestRepo (TestCase):
         branch1_name = branch1.name
         branch1.checkout()
 
-        # verify that the most recent commit on the new branch is for the task metadata file
-        # by checking for the name of the file in the commit message
-        self.assertTrue(repo_functions.TASK_METADATA_FILENAME in branch1.commit.message)
+        # verify that the most recent commit on the new branch is for starting the activity
+        self.assertTrue(repo_functions.ACTIVITY_CREATED_MESSAGE in branch1.commit.message)
 
         # validate the existence of the task metadata file
         task_metadata = repo_functions.get_task_metadata_for_branch(self.clone1, branch1_name)

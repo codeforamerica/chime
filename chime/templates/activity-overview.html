@@ -102,7 +102,7 @@
 
             {% if activity.working_state == config.WORKING_STATE_ACTIVE %}
             <p class="activity-overview__description"><a href="{{ activity.edit_path }}">Do more work on this activity</a> or {{ comment_note }}.</p>
-            {% else %}
+            {% elif activity.edit_path %}
             <p class="activity-overview__description"><a href="{{ activity.edit_path }}">Browse this activity.</a></p>
             {% endif %}
 
@@ -134,17 +134,21 @@
                 {% if log_item.commit_type == config.COMMIT_TYPE_COMMENT %}
                 <div class="comment">
                     <div class="comment__author">{{ log_item.author_email }}</div>
-                    <div class="comment__body">{{ log_item.commit_body }}</div>
+                    <div class="comment__body">{{ log_item.message }}</div>
                     <div class="comment__datetime">{{ log_item.commit_date }}</div>
                 </div>
                 {% elif log_item.commit_type == config.COMMIT_TYPE_REVIEW_UPDATE %}
                 <div class="activity-log-item__content">
-                    <p class="text-{% if log_item.commit_action == config.REVIEW_STATE_FEEDBACK %}orange{% elif log_item.commit_action == config.REVIEW_STATE_ENDORSED %}green{% else %}blue{% endif %}">{{ log_item.author_email }} {{ log_item.commit_body }}</p>
+                    <p class="text-{% if log_item.commit_action == config.REVIEW_STATE_FEEDBACK %}orange{% elif log_item.commit_action == config.REVIEW_STATE_ENDORSED %}green{% else %}blue{% endif %}">{{ log_item.author_email }} {{ log_item.message }}</p>
                     <div class="activity-log-item__datetime">{{ log_item.commit_date }}</div>
                 </div>
                 {% else %}
                 <div class="activity-log-item__content">
+                    {% if log_item.message %}
+                    <p>{{ log_item.message }}</p>
+                    {% else %}
                     <p>{{ log_item.commit_subject }} by {{ log_item.author_email }}.</p>
+                    {% endif %}
                     <div class="activity-log-item__datetime">{{ log_item.commit_date }}</div>
                 </div>
                 {% endif %}

@@ -204,10 +204,11 @@ class TestLogger(LogTestCase):
                 erica.sign_in('erica@example.com')
 
         with self.assertLogs('chime.view_functions', level='INFO') as cm:
-            erica.open_link_blindly(url='/nothinghere')
+            erica.open_link(url='/nothinghere', expected_status_code=404)
 
         self.assertEqual(cm.output, ['INFO:chime.view_functions:404: Not Found'])
 
+    # in TestLogger
     def test_logging_failure_format(self):
         from chime.view_functions import log_application_errors
 
@@ -222,7 +223,7 @@ class TestLogger(LogTestCase):
                 erica.sign_in('erica@example.com')
 
         with self.assertLogs('chime.view_functions', level='DEBUG', formatter=ChimeErrorReportFormatter()) as cm:
-            erica.open_link_blindly(url='/fail')
+            erica.open_link(url='/fail', expected_status_code=500)
 
         self.assertEqual(1, len(cm.output))
 
