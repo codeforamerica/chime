@@ -1052,6 +1052,10 @@ def render_activities_list(task_description=None, show_new_activity_modal=False)
         elif activity.review_state == constants.REVIEW_STATE_ENDORSED:
             activities['endorsed'].append(activity)
 
+    # sort the non-published activities
+    for activity_key in activities:
+        activities[activity_key].sort(key=lambda k: k.datetime_updated, reverse=True)
+
     activities['published'] = make_list_of_published_activities(repo=repo, limit=10)
 
     kwargs = common_template_args(current_app.config, session)

@@ -29,6 +29,7 @@ class ChimeActivity:
 
         self.date_created = self.repo.git.log(self.safe_branch, '--format=%ar', '--', repo_functions.TASK_METADATA_FILENAME).split('\n')[-1]
         self.date_updated = self.repo.git.log(self.safe_branch, '-1', '--format=%ar')
+        self.datetime_updated = datetime.fromtimestamp(float(self.repo.git.log(self.safe_branch, '-1', '--format=%at')))
 
         # the email of the last person who edited the activity
         self.last_edited_email = repo_functions.get_last_edited_email(
