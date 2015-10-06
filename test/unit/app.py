@@ -2674,11 +2674,11 @@ class TestApp (TestCase):
             # Start a new task
             erica.open_link('/')
             erica.start_task('Ingest Wolffish, Capelin, Skate Eggs And Sometimes Rocks')
-            erica_branchname = erica.get_branch_name()
+            branch_name = erica.get_branch_name()
 
             # rename the task
             new_description = u'Eat Greenland Halibut, Polar And Arctic Cod, Cuttlefish, Shrimp And Armhook Squid'
-            erica.follow_link('/tree/{}/'.format(erica_branchname))
+            erica.follow_link('/tree/{}/'.format(branch_name))
             erica.rename_activity(task_description=new_description)
 
             # the new name is on the page
@@ -2686,8 +2686,43 @@ class TestApp (TestCase):
 
             # the new name is in the task metadata
             repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email='erica@example.com')
-            task_metadata = repo_functions.get_task_metadata_for_branch(repo, erica_branchname)
+            task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch_name)
             self.assertEqual(task_metadata['task_description'], new_description)
+
+    # in TestApp
+    def test_renaming_activity_doesnt_affect_review_state(self):
+        ''' Renaming the activity shouldn't reset the review state.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
+
+            # Start a new task and create a topic
+            erica.open_link('/')
+            args = u'Their Diets Consist Of Almost Any Creature They Are Capable Of Overpowering', u'When Living Near Water, They Will Eat Other Aquatic Animals'
+            branch_name = erica.quick_activity_setup(*args)
+
+            # request feedback for the task
+            erica.request_feedback()
+
+            # verify the feedback state
+            repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email='erica@example.com')
+            state, _ = repo_functions.get_review_state_and_author_email(repo, 'master', branch_name)
+            self.assertEqual(state, constants.REVIEW_STATE_FEEDBACK)
+
+            # change the activity description
+            new_description = u'Food is swallowed whole'
+            erica.follow_link('/tree/{}/'.format(branch_name))
+            erica.rename_activity(task_description=new_description)
+
+            # the new name is in the task metadata
+            task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch_name)
+            self.assertEqual(task_metadata['task_description'], new_description)
+
+            # the state hasn't changed
+            state, _ = repo_functions.get_review_state_and_author_email(repo, 'master', branch_name)
+            self.assertEqual(state, constants.REVIEW_STATE_FEEDBACK)
 
     # in TestApp
     def test_request_feedback_with_activity_rename(self):
