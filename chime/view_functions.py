@@ -687,6 +687,29 @@ def get_relative_date(repo, file_path):
     '''
     return repo.git.log('-1', '--format=%ad', '--date=relative', '--', file_path)
 
+def make_ordinal_number(number_in):
+    ''' Turn the passed number into an ordinal string representation
+
+        Adapted from solution by Gareth on StackExchange, here: http://codegolf.stackexchange.com/a/4712
+    '''
+    try:
+        number_in = int(number_in)
+    except ValueError:
+        number_in = 1
+    return "{num}{suffix}".format(num=number_in, suffix="tsnrhtdd"[(number_in / 10 % 10 != 1) * (number_in % 10 < 4) * number_in % 10::4])
+
+def make_new_activity_description(author_email=None):
+    ''' Make a generic new activity description
+    '''
+    # make a friendly date like "Tuesday, Oct. 6th"
+    now = datetime.now()
+    ordinal_day = make_ordinal_number(now.strftime('%d'))
+    friendly_now = u'{} {}'.format(now.strftime('%A, %b.'), ordinal_day)
+    if author_email:
+        return u'{}\'s activity, started on {}'.format(author_email, friendly_now)
+    else:
+        return u'Activity started on {}'.format(friendly_now)
+
 def make_delete_display_commit_message(repo, request_path):
     ''' Build a commit message about file deletion for display in the activity history
     '''
