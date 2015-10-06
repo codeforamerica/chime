@@ -698,17 +698,15 @@ def make_ordinal_number(number_in):
         number_in = 1
     return "{num}{suffix}".format(num=number_in, suffix="tsnrhtdd"[(number_in / 10 % 10 != 1) * (number_in % 10 < 4) * number_in % 10::4])
 
-def make_new_activity_description(author_email=None):
+def make_new_activity_description():
     ''' Make a generic new activity description
     '''
-    # make a friendly date like "Tuesday, Oct. 6th"
+    # make a friendly date like "Tuesday, October 6th, at 4:10PM"
     now = datetime.now()
     ordinal_day = make_ordinal_number(now.strftime('%d'))
-    friendly_now = u'{} {}'.format(now.strftime('%A, %b.'), ordinal_day)
-    if author_email:
-        return u'{}\'s activity, started on {}'.format(author_email, friendly_now)
-    else:
-        return u'Activity started on {}'.format(friendly_now)
+    friendly_time = u'{}{}'.format(int(now.strftime('%I')), now.strftime(':%M%p'))
+    friendly_now = u'{} {}, at {}'.format(now.strftime('%A, %B'), ordinal_day, friendly_time)
+    return u'Changes started on {}'.format(friendly_now)
 
 def make_delete_display_commit_message(repo, request_path):
     ''' Build a commit message about file deletion for display in the activity history

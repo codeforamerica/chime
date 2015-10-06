@@ -227,7 +227,7 @@ def start_branch():
     if request.method == 'POST':
         task_description = sub(r'\s+', ' ', request.form.get('task_description', u'')).strip()
     else:
-        task_description = view_functions.make_new_activity_description(author_email=session['email'])
+        task_description = view_functions.make_new_activity_description()
 
     master_name = current_app.config['default_branch']
 
