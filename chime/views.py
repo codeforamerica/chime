@@ -8,6 +8,7 @@ from re import compile, MULTILINE, sub, search
 from requests import post
 from slugify import slugify
 from datetime import datetime
+from urlparse import urlparse
 from flask import current_app, flash, render_template, redirect, request, Response, session, abort
 
 from . import chime as app
@@ -478,6 +479,8 @@ def branch_edit_file(branch_name, path=None):
     return redirect('/tree/{}/edit/{}'.format(safe_branch, redirect_path), code=303)
 
 @app.route('/tree/<branch_name>/', methods=['GET'])
+@app.route('/tree/<branch_name>/rename/', methods=['GET'])
+@app.route('/tree/<branch_name>/review/', methods=['GET'])
 @log_application_errors
 @login_required
 @lock_on_user
@@ -508,71 +511,12 @@ def show_activity_overview(branch_name):
 
     kwargs.update(branch=branch_name, activity=activity, app_authorized=app_authorized, languages=languages)
 
-    return render_template('activity-overview.html', **kwargs)
-
-@app.route('/tree/<branch_name>/rename', methods=['GET'])
-@log_application_errors
-@login_required
-@lock_on_user
-@synched_checkout_required
-def show_rename_modal(branch_name):
-    branch_name = view_functions.branch_var2name(branch_name)
-    repo = view_functions.get_repo(flask_app=current_app)
-    safe_branch = view_functions.branch_name2path(branch_name)
-
-    if repo_functions.get_conflict(repo, current_app.config['default_branch']):
-        view_functions.flash_unique(repo_functions.MERGE_CONFLICT_WARNING_FLASH_MESSAGE, u'warning')
-
-    # contains 'author_email', 'task_description'
-    activity = repo_functions.get_task_metadata_for_branch(repo, branch_name)
-    activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
-    activity['task_description'] = activity['task_description'] if 'task_description' in activity else u''
-
-    kwargs = view_functions.common_template_args(current_app.config, session)
-
-    languages = load_languages(repo.working_dir)
-
-    app_authorized = False
-    ga_config = read_ga_config(current_app.config['RUNNING_STATE_DIR'])
-    if ga_config.get('access_token'):
-        app_authorized = True
-
-    activity = chime_activity.ChimeActivity(repo=repo, branch_name=safe_branch, default_branch_name=current_app.config['default_branch'], actor_email=session.get('email', None))
-
-    kwargs.update(branch=branch_name, activity=activity, app_authorized=app_authorized, languages=languages, show_rename_modal=True)
-
-    return render_template('activity-overview.html', **kwargs)
-
-@app.route('/tree/<branch_name>/review/', methods=['GET'])
-@log_application_errors
-@login_required
-@lock_on_user
-@synched_checkout_required
-def show_activity_review(branch_name):
-    branch_name = view_functions.branch_var2name(branch_name)
-    repo = view_functions.get_repo(flask_app=current_app)
-    safe_branch = view_functions.branch_name2path(branch_name)
-
-    if repo_functions.get_conflict(repo, current_app.config['default_branch']):
-        view_functions.flash_unique(repo_functions.MERGE_CONFLICT_WARNING_FLASH_MESSAGE, u'warning')
-
-    # contains 'author_email', 'task_description'
-    activity = repo_functions.get_task_metadata_for_branch(repo, branch_name)
-    activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
-    activity['task_description'] = activity['task_description'] if 'task_description' in activity else u''
-
-    kwargs = view_functions.common_template_args(current_app.config, session)
-
-    languages = load_languages(repo.working_dir)
-
-    app_authorized = False
-    ga_config = read_ga_config(current_app.config['RUNNING_STATE_DIR'])
-    if ga_config.get('access_token'):
-        app_authorized = True
-
-    activity = chime_activity.ChimeActivity(repo=repo, branch_name=safe_branch, default_branch_name=current_app.config['default_branch'], actor_email=session.get('email', None))
-
-    kwargs.update(branch=branch_name, activity=activity, app_authorized=app_authorized, languages=languages, show_review_modal=True)
+    # check the request's base URL for modals
+    modal_type = urlparse(request.base_url).path.rstrip('/').split('/')[-1]
+    if modal_type == 'rename':
+        kwargs.update(show_rename_modal=True)
+    elif modal_type == 'review':
+        kwargs.update(show_review_modal=True)
 
     return render_template('activity-overview.html', **kwargs)
 

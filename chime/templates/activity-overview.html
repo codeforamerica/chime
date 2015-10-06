@@ -24,7 +24,7 @@
     {% if activity.working_state == config.WORKING_STATE_ACTIVE %}
     <div class="activity-overview__actions activity-overview__row">
         <div class="row__left toolbar toolbar--left">
-            <a href="#" class="toolbar__item button button--medium button--text button--open-rename-modal"><span class="button__icon--left fa fa-pencil"></span> Rename</a>
+            <a href="{{ activity.rename_path }}" class="toolbar__item button button--medium button--text button--open-rename-modal"><span class="button__icon--left fa fa-pencil"></span> Rename</a>
             <form action="/update" method="POST" class="toolbar__item">
               <button class="button button--medium button--text" type="submit" name="abandon" value="Delete" id="{{ activity.safe_branch }}-delete"><span class="button__icon--left fa fa-trash"></span> Delete</button>
               <input type="hidden" name="branch" value="{{ activity.safe_branch }}">
@@ -142,7 +142,7 @@
 <div class="modal-container{% if show_rename_modal %} is-open{% endif %}">
     <div class="modal rename-modal">
         <h3 class="modal__header">Change your activity name</h3>
-        <form data-test-id="rename-activity-form" action="." method="POST">
+        <form data-test-id="rename-activity-form" action="{{activity.overview_path}}" method="POST">
             <textarea name="task_description">{{activity.task_description}}</textarea>
             <div class="toolbar toolbar--right">
                 <a href="{{activity.overview_path}}" class="toolbar__item button button--close-rename-modal">Cancel</a>
