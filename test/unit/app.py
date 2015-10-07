@@ -1029,9 +1029,8 @@ class TestApp (TestCase):
         branch1_name = branch1.name
         branch1.checkout()
 
-        # verify that the most recent commit on the new branch is for the task metadata file
-        # by checking for the name of the file in the commit message
-        self.assertTrue(repo_functions.TASK_METADATA_FILENAME in branch1.commit.message)
+        # verify that the most recent commit on the new branch is for starting the activity
+        self.assertTrue(repo_functions.ACTIVITY_CREATED_MESSAGE in branch1.commit.message)
 
         # validate the existence of the task metadata file
         self.assertTrue(repo_functions.verify_file_exists_in_branch(self.clone1, repo_functions.TASK_METADATA_FILENAME, branch1_name))
@@ -1461,7 +1460,7 @@ class TestApp (TestCase):
             repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email='erica@example.com')
             activity = chime_activity.ChimeActivity(repo=repo, branch_name=branch_name, default_branch_name='master', actor_email=erica_email)
             activity_history = activity.history
-            delete_history = json.loads(activity_history[0]['commit_body'])
+            delete_history = activity_history[0]['actions']
             for item in delete_history:
                 self.assertEqual(item['action'], u'delete')
                 if item['title'] in category_names:
@@ -2771,6 +2770,28 @@ class TestApp (TestCase):
             repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email='erica@example.com')
             task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch_name)
             self.assertEqual(task_metadata['task_description'], new_description)
+
+    def test_save_unchanged_article(self):
+        ''' Saving an unchanged article doesn't raise any errors.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in(erica_email)
+
+            # Start a new task and create a topic, subtopic and article
+            erica.open_link('/')
+            article_title = u'Open-Ocean'
+            args = u'The Eggs Are Spherical And Buoyant', u'The Fry Are Tiny', u'Pelagic', article_title
+            erica.quick_activity_setup(*args)
+
+            # Edit the article
+            article_text = u'Although most puffers are drab, many have bright colors and distinctive markings.'
+            erica.edit_article(article_title, article_text)
+
+            # Edit the article again with the same variables
+            erica.edit_article(article_title, article_text)
 
 
 class TestPublishApp (TestCase):

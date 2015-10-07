@@ -19,8 +19,7 @@ class ChimeActivity:
         self.default_branch_name = default_branch_name
 
         task_metadata = repo_functions.get_task_metadata_for_branch(self.repo, self.safe_branch)
-        self.author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
-        self.task_description = task_metadata['task_description'] if 'task_description' in task_metadata else self.safe_branch
+        self.author_email, self.task_description = self._process_task_metadata(task_metadata)
 
         self.review_state, self.review_authorized = repo_functions.get_review_state_and_authorized(
             repo=self.repo, default_branch_name=self.default_branch_name,
@@ -75,27 +74,44 @@ class ChimeActivity:
 
         return self._working_state
 
-    def _make_history(self):
-        ''' Make an easily-parsable history of the activity since it was created.
+    def _get_history_log(self, log_format):
+        ''' Get a git log from which to create the activity's history
+        '''
+        hexsha = self.repo.branches[self.safe_branch].commit.hexsha
+        return self.repo.git.log('--format={}'.format(log_format), 'master..{}'.format(hexsha))
+
+    def _construct_history(self):
+        ''' Create a list of log items from the raw history log
         '''
         # see <http://git-scm.com/docs/git-log> for placeholders
-        log_format = '%x00Name: %an\tEmail: %ae\tDate: %ar\tSubject: %s\tBody: %b%x00'
-        log = self.repo.git.log('--format={}'.format(log_format))
+        log = self._get_history_log(log_format='%x00Name: %an\tEmail: %ae\tDate: %ar\tSubject: %s\tBody: %b%x00')
 
         history = []
         pattern = re.compile(r'\x00Name: (.*?)\tEmail: (.*?)\tDate: (.*?)\tSubject: (.*?)\tBody: (.*?)\x00', re.DOTALL)
         for log_details in pattern.findall(log):
             name, email, date, subject, body = tuple([item for item in log_details])
+            # convert the body to a json object and use it as the basis for the log item
+            try:
+                log_item = json.loads(body)
+                # NOTE: old-style commit messages may've had a list of actions as the body
+                if type(log_item) is list:
+                    log_item = dict(actions=log_item)
+                if 'message' not in log_item:
+                    log_item['message'] = u''
+            except ValueError:
+                # NOTE: don't break if this is an old-style commit message
+                log_item = dict(message=body)
+
             commit_category, commit_type, commit_action = repo_functions.get_commit_classification(subject, body)
-            log_item = dict(author_name=name, author_email=email, commit_date=date, commit_subject=subject,
-                            commit_body=body, commit_category=commit_category, commit_type=commit_type,
-                            commit_action=commit_action)
+            log_item.update(dict(author_name=name, author_email=email, commit_date=date, commit_subject=subject, commit_category=commit_category, commit_type=commit_type, commit_action=commit_action))
             history.append(log_item)
-            # don't get any history beyond the creation of the task metadata file, which is the beginning of the activity
-            if re.search(r'{}$'.format(repo_functions.ACTIVITY_CREATED_MESSAGE), subject):
-                break
 
         return history
+
+    def _make_history(self):
+        ''' Make an easily-parsable history of the activity since it was created.
+        '''
+        return self._construct_history()
 
     def _make_history_summary(self):
         ''' Make an object that summarizes the activity's history.
@@ -122,26 +138,30 @@ class ChimeActivity:
         change_lookup = {}
         display_types_encountered = []
         # we only care about edits
-        edit_history = [action for action in reversed(self.history) if action['commit_category'] == constants.COMMIT_CATEGORY_EDIT]
-        for action in edit_history:
-            # get the list of changed files from the commit body
-            try:
-                commit_body = json.loads(action['commit_body'])
-            except:
-                # could't parse json in the commit body, keep moving
+        edit_history = [log_item for log_item in reversed(self.history) if log_item['commit_category'] == constants.COMMIT_CATEGORY_EDIT]
+        for log_item in edit_history:
+            # don't continue if there's not a list of actions
+            if 'actions' not in log_item or type(log_item['actions']) is not list:
                 continue
 
             # step through the changed files
-            for file_change in commit_body:
+            # NOTE: don't break if this is an old-style commit message
+            actions = log_item['actions']
+            for file_change in actions:
                 # the passed title or the filename if no title is there
                 title = file_change['title'] or file_change['file_path'].split('/')[-1]
                 # the passed display type or Unknown if no type is there
-                display_type = file_change['display_type'].title() or u'Unknown'
+                display_type = file_change['display_type'] or u'unknown'
+                # how to represent the display type in the interface (i.e. Category -> Topic)
+                show_type = constants.LAYOUT_DISPLAY_LOOKUP[display_type] if display_type in constants.LAYOUT_DISPLAY_LOOKUP else display_type
+                display_type = display_type.title()
+                show_type = show_type.title()
                 try:
                     action = ed_lookup[file_change['action']].title()
                 except:
                     action = file_change['action'].title()
                 file_path = file_change['file_path']
+
                 # if the last action is delete, we don't want an edit_path to a file that no longer exists
                 edit_path = join(u'/tree/{}/edit/'.format(self.safe_branch), repo_functions.strip_index_file(file_path)) if action != u'Deleted' else u''
                 sort_time = datetime.now()
@@ -153,9 +173,9 @@ class ChimeActivity:
                     # add the other variables, which may've changed
                     change_lookup[file_path]['edit_path'] = edit_path
                     change_lookup[file_path]['title'] = title
-                    change_lookup[file_path]['display_type'] = display_type
+                    change_lookup[file_path]['display_type'] = show_type
                 else:
-                    change_lookup[file_path] = dict(title=title, display_type=display_type, actions=action, edit_path=edit_path, sort_time=sort_time)
+                    change_lookup[file_path] = dict(title=title, display_type=show_type, actions=action, edit_path=edit_path, sort_time=sort_time)
                     display_types_encountered.append(display_type)
 
         # flatten and sort the changes
@@ -169,8 +189,8 @@ class ChimeActivity:
             long_description_parts = []
             display_type_tally = Counter(display_types_encountered)
             display_lookup = (
-                (display_type_tally[constants.ARTICLE_LAYOUT.title()], unicode(constants.ARTICLE_LAYOUT), unicode(constants.LAYOUT_PLURAL_LOOKUP[constants.ARTICLE_LAYOUT])),
-                (display_type_tally[constants.CATEGORY_LAYOUT.title()], unicode(constants.CATEGORY_LAYOUT), unicode(constants.LAYOUT_PLURAL_LOOKUP[constants.CATEGORY_LAYOUT]))
+                (display_type_tally[constants.ARTICLE_LAYOUT.title()], unicode(constants.LAYOUT_DISPLAY_LOOKUP[constants.ARTICLE_LAYOUT]), unicode(constants.LAYOUT_PLURAL_LOOKUP[constants.ARTICLE_LAYOUT])),
+                (display_type_tally[constants.CATEGORY_LAYOUT.title()], unicode(constants.LAYOUT_DISPLAY_LOOKUP[constants.CATEGORY_LAYOUT]), unicode(constants.LAYOUT_PLURAL_LOOKUP[constants.CATEGORY_LAYOUT]))
             )
             for tally, singular, plural in display_lookup:
                 if tally:
@@ -184,3 +204,74 @@ class ChimeActivity:
         history_summary['description']['short'] = u'{} {}'.format(len_changes, u'change' if len_changes == 1 else u'changes')
 
         return history_summary
+
+    def _process_task_metadata(self, task_metadata):
+        ''' Extract and return values from the task metadata.
+        '''
+        author_email = task_metadata['author_email'] if 'author_email' in task_metadata else u''
+        task_description = task_metadata['task_description'] if 'task_description' in task_metadata else self.safe_branch
+        return author_email, task_description
+
+
+class ChimePublishedActivity(ChimeActivity):
+    ''' A representation of a published activity in Chime
+    '''
+    def __init__(self, repo, branch_name, default_branch_name):
+        ''' Create a new activity
+        '''
+        self.repo = repo
+        self.safe_branch = branch_name
+        self.default_branch_name = default_branch_name
+
+        task_metadata = repo_functions.get_task_metadata_from_tag(clone=self.repo, working_branch_name=self.safe_branch)
+        self.author_email, self.task_description = self._process_task_metadata(task_metadata)
+
+        # we know the current review state and authorized status
+        self.review_state = constants.REVIEW_STATE_PUBLISHED
+        self.review_authorized = False
+
+        # get date updated and last edited email from the tag's git log
+        hexsha = repo.tags[self.safe_branch].tag.hexsha
+        date_updated, last_edited_email = repo.git.log('--format=%ar\t%ae', '{}^!'.format(hexsha)).split('\t')
+
+        # set date created and updated the same for now
+        self.date_updated = date_updated
+        self.date_created = date_updated
+
+        # the email of the last person who edited the activity (stripping angle brackets if they're there)
+        self.last_edited_email = last_edited_email.lstrip(u'<').rstrip(u'>')
+
+        self.overview_path = u'/tree/{}/'.format(self.safe_branch)
+
+        # You can't edit or view a published activity
+        self.edit_path = None
+        self.view_path = None
+
+        # only build history and working state if requested
+        self._history = None
+        self._history_summary = None
+        self._working_state = None
+
+    def _get_history_log(self, log_format):
+        ''' Get a git log from which to create the activity's history
+        '''
+        hexsha = self.repo.tags[self.safe_branch].commit.hexsha
+        return self.repo.git.log('--format={}'.format(log_format), hexsha)
+
+    def _make_history(self):
+        ''' Make an easily-parsable history of the activity since it was created.
+        '''
+        full_history = self._construct_history()
+        edited_history = []
+        # crop the history to the beginning of this published activity
+        for log_item in full_history:
+            # filter by branch name, if it's there
+            has_branch_name = 'branch_name' in log_item and log_item['branch_name']
+            is_eligible = has_branch_name and log_item['branch_name'] == self.safe_branch
+            # NOTE: include it if it doesn't have a branch name, for backwards-compatibility
+            if is_eligible or not has_branch_name:
+                edited_history.append(log_item)
+                if log_item['commit_type'] == constants.COMMIT_TYPE_ACTIVITY_UPDATE and log_item['commit_subject'] == u'The "{}" {}'.format(self.task_description, repo_functions.ACTIVITY_CREATED_MESSAGE):
+                    break
+
+        return edited_history

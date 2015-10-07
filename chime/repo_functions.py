@@ -23,6 +23,7 @@ REVIEW_STATE_COMMIT_PREFIX = u'Updated review state.'
 ACTIVITY_FEEDBACK_MESSAGE = u'requested feedback on this activity.'
 ACTIVITY_ENDORSED_MESSAGE = u'endorsed this activity.'
 ACTIVITY_PUBLISHED_MESSAGE = u'published this activity.'
+ACTIVITY_MERGED_MESSAGE = u'Merged changes from another activity.'
 
 # Name of file in running state dir that signals a need to push upstream.
 NEEDS_PUSH_FILE = 'needs-push'
@@ -194,7 +195,7 @@ def get_start_branch(clone, default_branch_name, task_description, author_email)
     # create the task metadata file in the new branch
     active_branch_name = clone.active_branch.name
     clone.git.checkout(new_branch_name)
-    metadata_values = {"author_email": author_email, "task_description": task_description}
+    metadata_values = {"author_email": author_email, "task_description": task_description, "branch_name": new_branch_name}
     save_task_metadata_for_branch(clone, default_branch_name, metadata_values)
     clone.git.checkout(active_branch_name)
 
@@ -236,16 +237,11 @@ def save_task_metadata_for_branch(clone, default_branch_name, values={}):
         return None
 
     # craft the commit message
-    # :NOTE: changing the commit message may break tests
-    message_details = []
-    for change in values:
-        if change not in check_metadata or check_metadata[change] != values[change]:
-            message_details.append(u'Set {} to {}'.format(change, values[change]))
-
+    task_metadata_json = json.dumps(task_metadata, ensure_ascii=False)
     if check_metadata == {}:
-        message = u'The "{}" {}\n\nCreated task metadata file "{}"\n{}'.format(task_metadata['task_description'], ACTIVITY_CREATED_MESSAGE, TASK_METADATA_FILENAME, u'\n'.join(message_details))
+        message = make_commit_message(subject=u'The "{}" {}'.format(task_metadata['task_description'], ACTIVITY_CREATED_MESSAGE), body=task_metadata_json)
     else:
-        message = u'The "{}" {}\n\nUpdated task metadata file "{}"\n{}'.format(task_metadata['task_description'], ACTIVITY_UPDATED_MESSAGE, TASK_METADATA_FILENAME, u'\n'.join(message_details))
+        message = make_commit_message(subject=u'The "{}" {}'.format(task_metadata['task_description'], ACTIVITY_UPDATED_MESSAGE), body=task_metadata_json)
 
     # Dump the updated task metadata to disk
     # Use newline-preserving block literal form.
@@ -268,10 +264,12 @@ def delete_task_metadata_for_branch(clone, default_branch_name):
     '''
     task_metadata = get_task_metadata_for_branch(clone)
     _, do_save = edit_functions.delete_file(clone, TASK_METADATA_FILENAME)
+    message = u''
     if do_save:
-        message = u'The "{}" {}'.format(task_metadata['task_description'], ACTIVITY_DELETED_MESSAGE)
+        task_metadata_json = json.dumps(task_metadata, ensure_ascii=False)
+        message = make_commit_message(subject=u'The "{}" {}'.format(task_metadata['task_description'], ACTIVITY_DELETED_MESSAGE), body=task_metadata_json)
         save_working_file(clone, TASK_METADATA_FILENAME, message, clone.commit().hexsha, default_branch_name)
-    return task_metadata
+    return task_metadata, message
 
 def get_task_metadata_for_branch(clone, working_branch_name=None):
     ''' Retrieve task metadata from the file
@@ -333,7 +331,7 @@ def verify_file_exists_in_branch(clone, file_path, working_branch_name=None):
 
 def make_shortened_task_description(task_description):
     ''' Shorten the passed description, cutting on a word boundary if possible
-        :NOTE: not used at the moment
+        NOTE: not used at the moment
     '''
     if len(task_description) <= DESCRIPTION_MAX_LENGTH:
         return task_description
@@ -382,7 +380,9 @@ def complete_branch(clone, default_branch_name, working_branch_name, comment_tex
     task_metadata = get_task_metadata_for_branch(clone)
 
     # build a standard publish commit message
-    message = make_commit_message(subject=REVIEW_STATE_COMMIT_PREFIX, body=ACTIVITY_PUBLISHED_MESSAGE)
+    branch_name = working_branch_name if working_branch_name else clone.active_branch.name
+    message_body = dict(branch_name=branch_name, message=ACTIVITY_PUBLISHED_MESSAGE)
+    message = make_commit_message(subject=REVIEW_STATE_COMMIT_PREFIX, body=json.dumps(message_body, ensure_ascii=False))
 
     # checkout master and make sure it's up-to-date
     clone.git.checkout(default_branch_name)
@@ -394,7 +394,7 @@ def complete_branch(clone, default_branch_name, working_branch_name, comment_tex
     try:
         # if comment text was passed, post the comment now
         if comment_text:
-            provide_feedback(clone=clone, comment_text=comment_text, push=False)
+            provide_feedback(clone=clone, working_branch_name=working_branch_name, comment_text=comment_text, push=False)
 
         # try to merge
         clone.git.merge(working_branch_name, '--no-ff', m=message)
@@ -436,17 +436,16 @@ def complete_branch(clone, default_branch_name, working_branch_name, comment_tex
 def abandon_branch(clone, default_branch_name, working_branch_name, comment_text=None):
     ''' Complete work on a branch by abandoning and deleting it.
     '''
-    message = u'Abandoned work from "{}"'.format(working_branch_name)
-
     #
-    # Add an empty commit with abandonment note.
+    # Delete the task metadata and commit an activity deletion message.
     #
-    clone.branches[default_branch_name].checkout()
-    clone.index.commit(message)
+    _, message = delete_task_metadata_for_branch(clone, default_branch_name)
 
     #
     # Delete the old branch.
     #
+    clone.branches[default_branch_name].checkout()
+    clone.index.commit(message)
     clone.remotes.origin.push(':' + working_branch_name)
 
     if working_branch_name in clone.branches:
@@ -476,14 +475,16 @@ def clobber_default_branch(clone, default_branch_name, working_branch_name, comm
     clone.remotes.origin.push(':' + working_branch_name)
     clone.delete_head([working_branch_name])
 
-def sync_with_default_and_upstream_branches(clone, sync_branch_name):
+def sync_with_branch(clone, working_branch_name, sync_branch_name):
     ''' Sync the passed branch with default and upstream branches.
     '''
-    msg = 'Merged work from "%s"' % sync_branch_name
     clone.git.fetch('origin', sync_branch_name)
+    branch_name = working_branch_name if working_branch_name else clone.active_branch.name
+    message_body = dict(branch_name=branch_name, sync_branch_name=sync_branch_name, message=ACTIVITY_MERGED_MESSAGE)
+    message = make_commit_message(subject=ACTIVITY_MERGED_MESSAGE, body=json.dumps(message_body, ensure_ascii=False))
 
     try:
-        clone.git.merge('FETCH_HEAD', '--no-ff', m=msg)
+        clone.git.merge('FETCH_HEAD', '--no-ff', m=message)
 
     except GitCommandError:
         # raise the two commits in conflict.
@@ -529,7 +530,7 @@ def save_working_file(clone, path, message, base_sha, default_branch_name):
     #
     for sync_branch_name in (active_branch_name, ):
         try:
-            sync_with_default_and_upstream_branches(clone, sync_branch_name)
+            sync_with_branch(clone, active_branch_name, sync_branch_name)
         except MergeConflict as conflict:
             raise conflict
 
@@ -613,7 +614,7 @@ def move_existing_file(clone, old_path, new_path, base_sha, default_branch_name)
     #
     for sync_branch_name in (active_branch_name, default_branch_name):
         try:
-            sync_with_default_and_upstream_branches(clone, sync_branch_name)
+            sync_with_branch(clone, active_branch_name, sync_branch_name)
         except MergeConflict as conflict:
             raise conflict
 
@@ -637,7 +638,7 @@ def get_commit_classification(subject, body):
                 what sort of change the commit represents
 
     '''
-    if re.search(r'{}$|{}$|{}$'.format(ACTIVITY_CREATED_MESSAGE, ACTIVITY_UPDATED_MESSAGE, ACTIVITY_DELETED_MESSAGE), subject):
+    if re.search(r'{}$|{}$|{}$|{}$'.format(ACTIVITY_CREATED_MESSAGE, ACTIVITY_UPDATED_MESSAGE, ACTIVITY_DELETED_MESSAGE, ACTIVITY_MERGED_MESSAGE), subject):
         message_action = None
         if ACTIVITY_CREATED_MESSAGE in subject:
             message_action = constants.ACTIVITY_COMMIT_CREATED
@@ -645,16 +646,20 @@ def get_commit_classification(subject, body):
             message_action = constants.ACTIVITY_COMMIT_UPDATED
         elif ACTIVITY_DELETED_MESSAGE in subject:
             message_action = constants.ACTIVITY_COMMIT_DELETED
+        elif ACTIVITY_MERGED_MESSAGE in subject:
+            message_action = constants.ACTIVITY_COMMIT_MERGED
         return constants.COMMIT_CATEGORY_INFO, constants.COMMIT_TYPE_ACTIVITY_UPDATE, message_action
     elif re.search(r'{}$'.format(COMMENT_COMMIT_PREFIX), subject):
         return constants.COMMIT_CATEGORY_COMMENT, constants.COMMIT_TYPE_COMMENT, None
     elif re.search(r'{}$'.format(REVIEW_STATE_COMMIT_PREFIX), subject):
         message_action = None
-        if ACTIVITY_FEEDBACK_MESSAGE in body:
+        # NOTE: don't break if this is an old-style commit message
+        check_body = body['message'] if type(body) is dict and 'message' in body else body
+        if ACTIVITY_FEEDBACK_MESSAGE in check_body:
             message_action = constants.REVIEW_STATE_FEEDBACK
-        elif ACTIVITY_ENDORSED_MESSAGE in body:
+        elif ACTIVITY_ENDORSED_MESSAGE in check_body:
             message_action = constants.REVIEW_STATE_ENDORSED
-        elif ACTIVITY_PUBLISHED_MESSAGE in body:
+        elif ACTIVITY_PUBLISHED_MESSAGE in check_body:
             message_action = constants.REVIEW_STATE_PUBLISHED
         return constants.COMMIT_CATEGORY_INFO, constants.COMMIT_TYPE_REVIEW_UPDATE, message_action
     else:
@@ -733,11 +738,13 @@ def get_review_state_and_author_email(repo, default_branch_name, working_branch_
 
     # handle review state updates
     if commit_type == constants.COMMIT_TYPE_REVIEW_UPDATE:
-        if ACTIVITY_FEEDBACK_MESSAGE in commit_body:
+        # NOTE: don't break if this is an old-style commit message
+        check_body = commit_body['message'] if type(commit_body) is dict and 'message' in commit_body else commit_body
+        if ACTIVITY_FEEDBACK_MESSAGE in check_body:
             state = constants.REVIEW_STATE_FEEDBACK
-        elif ACTIVITY_ENDORSED_MESSAGE in commit_body:
+        elif ACTIVITY_ENDORSED_MESSAGE in check_body:
             state = constants.REVIEW_STATE_ENDORSED
-        elif ACTIVITY_PUBLISHED_MESSAGE in commit_body:
+        elif ACTIVITY_PUBLISHED_MESSAGE in check_body:
             state = constants.REVIEW_STATE_PUBLISHED
 
     # if the last commit is the creation of the activity, or if it is the same as the base commit, the state is fresh
@@ -762,7 +769,7 @@ def add_empty_commit(clone, subject, body, push=True):
     #
     for sync_branch_name in (active_branch_name, ):
         try:
-            sync_with_default_and_upstream_branches(clone, sync_branch_name)
+            sync_with_branch(clone, active_branch_name, sync_branch_name)
         except MergeConflict as conflict:
             raise conflict
 
@@ -771,7 +778,7 @@ def add_empty_commit(clone, subject, body, push=True):
 
     return clone.active_branch.commit
 
-def update_review_state(clone, new_review_state, push=True):
+def update_review_state(clone, working_branch_name, new_review_state, push=True):
     ''' Adds a new empty commit changing the review state
     '''
     if new_review_state not in (constants.REVIEW_STATE_FEEDBACK, constants.REVIEW_STATE_ENDORSED):
@@ -783,12 +790,16 @@ def update_review_state(clone, new_review_state, push=True):
     elif new_review_state == constants.REVIEW_STATE_ENDORSED:
         message_text = ACTIVITY_ENDORSED_MESSAGE
 
-    return add_empty_commit(clone=clone, subject=REVIEW_STATE_COMMIT_PREFIX, body=message_text, push=push)
+    branch_name = working_branch_name if working_branch_name else clone.active_branch.name
+    message_body = dict(branch_name=branch_name, message=message_text)
+    return add_empty_commit(clone=clone, subject=REVIEW_STATE_COMMIT_PREFIX, body=json.dumps(message_body, ensure_ascii=False), push=push)
 
-def provide_feedback(clone, comment_text, push=True):
+def provide_feedback(clone, working_branch_name, comment_text, push=True):
     ''' Adds a new empty commit adding a comment
     '''
-    return add_empty_commit(clone=clone, subject=COMMENT_COMMIT_PREFIX, body=comment_text, push=push)
+    branch_name = working_branch_name if working_branch_name else clone.active_branch.name
+    message_body = dict(branch_name=branch_name, message=comment_text)
+    return add_empty_commit(clone=clone, subject=COMMENT_COMMIT_PREFIX, body=json.dumps(message_body, ensure_ascii=False), push=push)
 
 def _remote_exists(repo, remote):
     ''' Check whether a named remote exists in a repository.

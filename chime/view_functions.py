@@ -39,7 +39,7 @@ from .repo_functions import (
     clobber_default_branch, get_review_state_and_authorized, update_review_state,
     provide_feedback, move_existing_file, mark_upstream_push_needed, MergeConflict,
     get_activity_working_state, make_branch_name, save_local_working_file,
-    sync_with_default_and_upstream_branches, strip_index_file, save_task_metadata_for_branch
+    sync_with_branch, strip_index_file, save_task_metadata_for_branch, make_commit_message
 )
 from . import constants
 
@@ -100,7 +100,7 @@ def get_repo(flask_app=None, repo_path=None, work_path=None, email=None):
 
     source_repo = ChimeRepo(repo_path)
     first_commit = list(source_repo.iter_commits())[-1].hexsha
-    dir_name = 'repo-{}-{}'.format(first_commit[:8], slugify(email))
+    dir_name = constants.GETREPO_DIRECTORY_PATTERN.format(sha=first_commit[:8], email=slugify(email))
     user_dir = realpath(join(work_path, quote(dir_name)))
 
     if isdir(user_dir):
@@ -631,10 +631,6 @@ def synched_checkout_required(route_function):
             published_by = commit.committer.email
             flash_only(MESSAGE_ACTIVITY_PUBLISHED.format(published_date=published_date, published_by=published_by), u'warning')
 
-            # if the published branch doesn't exist locally, raise a 404
-            if not local_branch:
-                abort(404)
-
         elif working_state == constants.WORKING_STATE_DELETED:
             flash_only(MESSAGE_ACTIVITY_DELETED, u'warning')
 
@@ -708,7 +704,7 @@ def make_new_activity_description():
     friendly_now = u'{} {}, at {}'.format(now.strftime('%A, %B'), ordinal_day, friendly_time)
     return u'Changes started on {}'.format(friendly_now)
 
-def make_delete_display_commit_message(repo, request_path):
+def make_delete_display_commit_message(repo, working_branch_name, request_path):
     ''' Build a commit message about file deletion for display in the activity history
     '''
     # construct the commit message
@@ -739,14 +735,15 @@ def make_delete_display_commit_message(repo, request_path):
     commit_message = commit_message + u' was deleted'
 
     # alter targeted_files and dump it to the message body as json
-    altered_files = []
+    action_descriptions = []
     for file_description in targeted_files:
         del file_description['is_root']
         file_description['action'] = u'delete'
-        altered_files.append(file_description)
-    commit_message = commit_message + u'\n\n' + json.dumps(altered_files, ensure_ascii=False)
+        action_descriptions.append(file_description)
+    branch_name = working_branch_name if working_branch_name else repo.active_branch.name
+    message_body = dict(branch_name=branch_name, actions=action_descriptions)
 
-    return commit_message
+    return make_commit_message(subject=commit_message, body=json.dumps(message_body, ensure_ascii=False))
 
 def make_list_of_published_activities(repo, limit=10):
     ''' Make a list of recently published activities.
@@ -757,46 +754,17 @@ def make_list_of_published_activities(repo, limit=10):
     #   subject = task metadata json
     #   taggerdate:relative = published date in relative format
     #   *authoremail = the email of the person who published the activity
-    ref_list = repo.git.for_each_ref('--count={}'.format(limit), '--format=%(refname:short)\t%(subject)\t%(taggerdate:relative)\t%(*authoremail)', '--sort=-taggerdate', 'refs/tags').split('\n')
+    branch_names = repo.git.for_each_ref('--count={}'.format(limit), '--format=%(refname:short)', '--sort=-taggerdate', 'refs/tags').split('\n')
 
     published = []
-    for ref in ref_list:
-        ref_split = ref.split('\t')
-        # skip if we didn't get a fully formed line of data
-        if len(ref_split) < 4:
-            continue
+    for branch_name in branch_names:
+        safe_branch = branch_name2path(branch_name)
 
-        safe_branch = branch_name2path(ref_split[0])
-
-        # if there's no parsable task metadata in the tag's subject, this isn't a viable published activity
         try:
-            # contains 'author_email', 'task_description'
-            activity = json.loads(ref_split[1])
-        except ValueError:
+            # create a new ChimePublishedActivity and append it to published
+            activity = chime_activity.ChimePublishedActivity(repo=repo, branch_name=safe_branch, default_branch_name=current_app.config['default_branch'])
+        except:
             continue
-        activity['author_email'] = activity['author_email'] if 'author_email' in activity else u''
-        activity['task_description'] = activity['task_description'] if 'task_description' in activity else safe_branch
-        # add the beneficiary to the description if it's there
-        try:
-            activity['task_description'] = u'{} for {}'.format(activity['task_description'], activity['task_beneficiary'])
-        except KeyError:
-            pass
-
-        # we know the current review state and authorized status
-        review_state = constants.WORKING_STATE_PUBLISHED
-        review_authorized = False
-
-        # set date created and updated the same for now
-        date_updated = ref_split[2]
-        date_created = date_updated
-
-        # the email of the person who published the activity (stripping angle brackets if they're there)
-        last_edited_email = ref_split[3].lstrip(u'<').rstrip(u'>')
-
-        activity.update(date_created=date_created, date_updated=date_updated,
-                        edit_path=u'#', overview_path=u'#',
-                        safe_branch=safe_branch, review_state=review_state,
-                        review_authorized=review_authorized, last_edited_email=last_edited_email)
 
         published.append(activity)
 
@@ -864,7 +832,7 @@ def make_edit_path(branch, path, dir_name):
 
 def make_directory_columns(clone, branch_name, repo_path=None, showallfiles=False):
     ''' Get a list of lists of dicts for the passed path, with file listings for each level.
-        example: passing 'hello/world/wide' will return something like:
+        example: passing repo_path='hello/world/wide' will return something like:
             [
                 {'base_path': '',
                  'files':
@@ -893,17 +861,19 @@ def make_directory_columns(clone, branch_name, repo_path=None, showallfiles=Fals
     modify_path_root = u'/tree/{}/modify'.format(branch_name)
     dir_listings = []
     for i in range(len(dirs)):
+        last = False
         try:
             current_dir = dirs[i + 1]
         except IndexError:
             current_dir = dirs[-1]
+            last = True
 
         base_path = sep.join(dirs[1:i + 1])
         current_edit_path = join(edit_path_root, base_path)
         current_modify_path = join(modify_path_root, base_path)
         files = sorted_paths(clone, branch_name, base_path, showallfiles)
         # name, title, base_path, file_path, edit_path, view_path, display_type, is_editable, modified_date, selected
-        listing = [{'name': item['name'], 'title': item['title'], 'base_path': base_path, 'file_path': join(base_path, item['link_name']), 'edit_path': join(current_edit_path, item['link_name']), 'modify_path': join(current_modify_path, item['link_name']), 'view_path': item['view_path'], 'display_type': item['display_type'], 'is_editable': item['is_editable'], 'modified_date': item['modified_date'], 'selected': (current_dir == item['name'])} for item in files]
+        listing = [{'name': item['name'], 'title': item['title'], 'base_path': base_path, 'file_path': join(base_path, item['link_name']), 'edit_path': join(current_edit_path, item['link_name']), 'modify_path': join(current_modify_path, item['link_name']), 'view_path': item['view_path'], 'display_type': item['display_type'], 'is_editable': item['is_editable'], 'modified_date': item['modified_date'], 'selected': (current_dir == item['name'] and not last)} for item in files]
         # explicitly sort the list alphabetically by title
         listing.sort(key=lambda k: k['title'])
         dir_listings.append({'base_path': base_path, 'files': listing})
@@ -948,7 +918,7 @@ def update_activity_review_state(working_branch_name, default_branch_name, comme
         else:
             # comment if comment text was sent
             if comment_text:
-                provide_feedback(clone=repo, comment_text=comment_text, push=True)
+                provide_feedback(clone=repo, working_branch_name=working_branch_name, comment_text=comment_text, push=True)
 
             # rename if a new task description was sent
             if task_description:
@@ -959,10 +929,10 @@ def update_activity_review_state(working_branch_name, default_branch_name, comme
             # handle a review or rename action
             if action not in ('comment', 'rename'):
                 if action == 'request_feedback':
-                    update_review_state(clone=repo, new_review_state=current_app.config['REVIEW_STATE_FEEDBACK'], push=True)
+                    update_review_state(clone=repo, working_branch_name=working_branch_name, new_review_state=current_app.config['REVIEW_STATE_FEEDBACK'], push=True)
                 elif action == 'endorse_edits':
-                    update_review_state(clone=repo, new_review_state=current_app.config['REVIEW_STATE_ENDORSED'], push=True)
-            elif action == 'coment' and not comment_text:
+                    update_review_state(clone=repo, working_branch_name=working_branch_name, new_review_state=current_app.config['REVIEW_STATE_ENDORSED'], push=True)
+            elif action == 'comment' and not comment_text:
                 flash(u'You can\'t leave an empty comment!', u'warning')
             elif action == 'rename' and not task_description:
                 flash(u'You can\'t give the activity an empty name!', u'warning')
@@ -1068,13 +1038,13 @@ def render_activities_list(task_description=None, show_new_activity_modal=False)
 def make_kwargs_for_activity_files_page(repo, branch_name, path):
     ''' Assemble the kwargs for a page that shows an activity's files.
     '''
-    # :NOTE: temporarily turning off filtering if 'showallfiles=true' is in the request
+    # NOTE: temporarily turning off filtering if 'showallfiles=true' is in the request
     showallfiles = request.args.get('showallfiles') == u'true'
 
     activity = chime_activity.ChimeActivity(repo=repo, branch_name=branch_name, default_branch_name=current_app.config['default_branch'], actor_email=session.get('email', None))
 
     kwargs = common_template_args(current_app.config, session)
-    kwargs.update(branch=branch_name, safe_branch=branch_name2path(branch_name),
+    kwargs.update(safe_branch=branch_name2path(branch_name),
                   breadcrumb_paths=make_breadcrumb_paths(branch_name, path),
                   dir_columns=make_directory_columns(repo, branch_name, path, showallfiles),
                   activity=activity)
@@ -1135,7 +1105,7 @@ def render_edit_view(repo, branch_name, path, file):
     activity = chime_activity.ChimeActivity(repo=repo, branch_name=branch_name, default_branch_name=current_app.config['default_branch'], actor_email=session.get('email', None))
 
     kwargs = common_template_args(current_app.config, session)
-    kwargs.update(branch=branch_name, safe_branch=branch_name2path(branch_name),
+    kwargs.update(safe_branch=branch_name2path(branch_name),
                   body=body, hexsha=commit.hexsha, url_slug=url_slug,
                   front=front, view_path=view_path, edit_path=path,
                   history_path=history_path, save_path=save_path, languages=languages,
@@ -1144,7 +1114,7 @@ def render_edit_view(repo, branch_name, path, file):
     kwargs.update(analytics_dict)
     return render_template('article-edit.html', **kwargs)
 
-def add_article_or_category(repo, dir_path, request_path, create_what):
+def add_article_or_category(repo, working_branch_name, dir_path, request_path, create_what):
     ''' Add an article or category
     '''
     if create_what not in (constants.ARTICLE_LAYOUT, constants.CATEGORY_LAYOUT):
@@ -1171,11 +1141,13 @@ def add_article_or_category(repo, dir_path, request_path, create_what):
 
     file_path = create_new_page(clone=repo, dir_path=dir_path, request_path=name, front=create_front, body=u'')
     action_descriptions = [{'action': u'create', 'title': display_name, 'display_type': create_what, 'file_path': file_path}]
-    commit_message = u'The "{}" {} was created\n\n{}'.format(display_name, display_what, json.dumps(action_descriptions, ensure_ascii=False))
+    branch_name = working_branch_name if working_branch_name else repo.active_branch.name
+    message_body = dict(branch_name=branch_name, actions=action_descriptions)
+    commit_message = make_commit_message(subject=u'The "{}" {} was created'.format(display_name, display_what), body=json.dumps(message_body, ensure_ascii=False))
 
     return commit_message, file_path, redirect_path, True
 
-def delete_page(repo, browse_path, target_path):
+def delete_page(repo, working_branch_name, browse_path, target_path):
     ''' Delete a category or article.
 
         browse_path is where you are when issuing the deletion request; it's
@@ -1185,7 +1157,7 @@ def delete_page(repo, browse_path, target_path):
         target_path is the location of the object that needs to be deleted.
     '''
     # construct the commit message
-    commit_message = make_delete_display_commit_message(repo, target_path)
+    commit_message = make_delete_display_commit_message(repo, working_branch_name, target_path)
 
     # delete the file(s)
     deleted_file_paths, do_save = delete_file(repo, target_path)
@@ -1268,6 +1240,64 @@ def get_preview_asset_response(working_dir, path):
 
     return Response(open(local_path).read(), 200, {'Content-Type': mime_type})
 
+def prep_jekyll_content(new_values, languages):
+    '''
+    '''
+    # make sure order is an integer; otherwise default to 0
+    try:
+        order = int(dos2unix(new_values.get('order', '0')))
+    except ValueError:
+        order = 0
+
+    # populate the jekyll front matter
+    front = {
+        'layout': dos2unix(new_values.get('layout')),
+        'order': order,
+        'title': dos2unix(new_values.get('en-title', '')),
+        'description': dos2unix(new_values.get('en-description', ''))
+    }
+    for iso in languages:
+        if iso != constants.ISO_CODE_ENGLISH:
+            front['title-' + iso] = dos2unix(new_values.get(iso + '-title', ''))
+            front['description-' + iso] = dos2unix(new_values.get(iso + '-description', ''))
+            front['body-' + iso] = dos2unix(new_values.get(iso + '-body', ''))
+    
+    body = dos2unix(new_values.get('en-body', ''))
+
+    return front, body
+
+def calculate_new_slug(file_path, new_slug):
+    '''
+    '''
+    # they may've renamed the page by editing the URL slug
+    original_slug = file_path
+    #if re.search(r'\/index.{}$'.format(CONTENT_FILE_EXTENSION), file_path):
+    #    original_slug = re.sub(ur'index.{}$'.format(CONTENT_FILE_EXTENSION), u'', file_path)
+
+    # do some simple input cleaning
+    newer_slug = re.sub(r'\/+', '/', new_slug)
+    
+    # We may need to treat this as a directory name, with an index.whatever inside.
+    _, ext = splitext(basename(newer_slug))
+    if not ext:
+        newer_slug = join(newer_slug, u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
+
+    if newer_slug != original_slug:
+        from sys import stderr; print >> stderr, newer_slug, '!=', original_slug
+        return newer_slug
+    
+    return None
+
+def format_commit_message(file_path, en_title, layout):
+    '''
+    '''
+    display_name = en_title
+    display_type = layout
+    action_descriptions = [{'action': u'edit', 'title': display_name, 'display_type': display_type, 'file_path': file_path}]
+    commit_message = u'The "{}" {} was edited\n\n{}'.format(display_name, display_type, json.dumps(action_descriptions, ensure_ascii=False))
+    
+    return commit_message
+
 def save_page(repo, default_branch_name, working_branch_name, file_path, new_values):
     ''' Save the page with the passed values
     '''
@@ -1291,29 +1321,10 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
         existing_branch.checkout()
         possible_conflict = False
     
-    # make sure order is an integer; otherwise default to 0
-    try:
-        order = int(dos2unix(new_values.get('order', '0')))
-    except ValueError:
-        order = 0
-
-    # populate the jekyll front matter
-    front = {
-        'layout': dos2unix(new_values.get('layout')),
-        'order': order,
-        'title': dos2unix(new_values.get('en-title', '')),
-        'description': dos2unix(new_values.get('en-description', ''))
-    }
-    for iso in load_languages(repo.working_dir):
-        if iso != constants.ISO_CODE_ENGLISH:
-            front['title-' + iso] = dos2unix(new_values.get(iso + '-title', ''))
-            front['description-' + iso] = dos2unix(new_values.get(iso + '-description', ''))
-            front['body-' + iso] = dos2unix(new_values.get(iso + '-body', ''))
-
     #
     # Write changes.
     #
-    body = dos2unix(new_values.get('en-body', ''))
+    front, body = prep_jekyll_content(new_values, load_languages(repo.working_dir))
     update_page(repo, file_path, front, body)
     
     #
@@ -1322,7 +1333,9 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
     display_name = new_values.get('en-title')
     display_type = new_values.get('layout')
     action_descriptions = [{'action': u'edit', 'title': display_name, 'display_type': display_type, 'file_path': file_path}]
-    commit_message = u'The "{}" {} was edited\n\n{}'.format(display_name, display_type, json.dumps(action_descriptions, ensure_ascii=False))
+    branch_name = working_branch_name if working_branch_name else repo.active_branch.name
+    message_body = dict(branch_name=branch_name, actions=action_descriptions)
+    commit_message = make_commit_message(subject=u'The "{}" {} was edited'.format(display_name, file_display_name(display_type)), body=json.dumps(message_body, ensure_ascii=False))
     c2 = save_local_working_file(repo, file_path, commit_message)
 
     if possible_conflict:
@@ -1344,7 +1357,7 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
             repo.git.reset(rebase_commit, hard=True)
             repo.git.branch('-D', tmp_branch_name)
 
-    sync_with_default_and_upstream_branches(repo, working_branch_name)
+    sync_with_branch(repo, working_branch_name, working_branch_name)
 
     repo.git.push('origin', working_branch_name)
 

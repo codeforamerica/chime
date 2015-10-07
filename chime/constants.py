@@ -1,3 +1,10 @@
+# Pattern used in calculating directory names for UserTask.
+# This must be different from get_repo()'s, because they treat master differently.
+USERTASK_DIRECTORY_PATTERN = 'usertask-{sha}-{email}'
+
+# Pattern used in calculating directory names for old-style view_functions.get_repo().
+# This must be different from UserTask's, because they treat master differently.
+GETREPO_DIRECTORY_PATTERN = 'repo-{sha}-{email}'
 
 # the different review states for an activity
 # no changes have yet been made to the activity
@@ -26,6 +33,8 @@ ACTIVITY_COMMIT_CREATED = u'created'
 ACTIVITY_COMMIT_UPDATED = u'updated'
 # the commit represents the deletion of an activity
 ACTIVITY_COMMIT_DELETED = u'deleted'
+# the commit represents a merging into an activity
+ACTICITY_COMMIT_MERGED = u'merged'
 
 # the different categories and types of messages that can be displayed in the activity overview
 # info messages, like starting an activity or changing its review or working state
