@@ -175,6 +175,8 @@ class UserTask():
         if pushable is True:
             self._pushed = True
         if pushable is WORKING_STATE_PUBLISHED:
+            # point self.commit_sha to the publish commit
+            self.commit_sha = self.repo.tags[self.task_id].commit.hexsha
             raise UserTaskPublished()
         elif pushable is WORKING_STATE_DELETED:
             raise UserTaskDeleted()
@@ -214,7 +216,7 @@ class UserTask():
             # there are notes attached.
             ref = self.repo.tags[ref].commit.hexsha
         
-        raw = self.repo.git.show('--format=%ae %ad', '--date=relative', ref)
+        raw = self.repo.git.show('--format=%ae %ar', ref)
         email, date = raw.split('\n')[0].split(' ', 1)
 
         return dict(published_date=date, published_by=email)
