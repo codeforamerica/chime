@@ -175,6 +175,8 @@ class UserTask():
         if pushable is True:
             self._pushed = True
         if pushable is WORKING_STATE_PUBLISHED:
+            # point self.commit_sha to the publish commit
+            self.commit_sha = self.repo.tags[self.task_id].commit.hexsha
             raise UserTaskPublished()
         elif pushable is WORKING_STATE_DELETED:
             raise UserTaskDeleted()
