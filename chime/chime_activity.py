@@ -102,7 +102,11 @@ class ChimeActivity:
 
             The object looks like this:
             {
-                'summary': u'3 articles and 1 topic have been changed',
+                'description':
+                    {
+                        'long': u'3 articles and 1 topic have been changed',
+                        'short': u'4 changes'
+                    },
                 'changes': [
                     {'edit_path': u'', 'display_type': u'Article', 'actions': u'Created, Edited, Deleted', 'title': u'How to Find Us'},
                     {'edit_path': u'/tree/34246e3/edit/contact/hours-of-operation/', 'display_type': u'Article', 'actions': u'Created, Edited', 'title': u'Hours of Operation'},
@@ -112,7 +116,7 @@ class ChimeActivity:
             }
         '''
         # an empty summary object
-        history_summary = dict(summary=u'', changes=[])
+        history_summary = dict(description=dict(long=u'', short=u''), changes=[])
 
         ed_lookup = {'create': u'created', 'edit': u'edited', 'delete': u'deleted'}
         change_lookup = {}
@@ -156,12 +160,13 @@ class ChimeActivity:
 
         # flatten and sort the changes
         changes = [change_lookup[item] for item in change_lookup]
-        if len(changes):
+        len_changes = len(changes)
+        if len_changes:
             changes.sort(key=lambda k: k['sort_time'], reverse=True)
             history_summary['changes'] = changes
 
-            # now construct the summary sentence
-            summary_sentence_parts = []
+            # now construct the summary sentences
+            long_description_parts = []
             display_type_tally = Counter(display_types_encountered)
             display_lookup = (
                 (display_type_tally[constants.ARTICLE_LAYOUT.title()], unicode(constants.ARTICLE_LAYOUT), unicode(constants.LAYOUT_PLURAL_LOOKUP[constants.ARTICLE_LAYOUT])),
@@ -169,10 +174,13 @@ class ChimeActivity:
             )
             for tally, singular, plural in display_lookup:
                 if tally:
-                    summary_sentence_parts.append("{} {}".format(tally, singular if tally == 1 else plural))
-            has_have = u''
-            has_have = u'have' if len(changes) > 1 else u'has'
-            summary_sentence = u'{} {} been changed'.format(u', '.join(summary_sentence_parts[:-2] + [u' and '.join(summary_sentence_parts[-2:])]), has_have)
-            history_summary['summary'] = summary_sentence
+                    long_description_parts.append("{} {}".format(tally, singular if tally == 1 else plural))
+            has_have = u'have' if len_changes > 1 else u'has'
+            long_description = u'{} {} been changed'.format(u', '.join(long_description_parts[:-2] + [u' and '.join(long_description_parts[-2:])]), has_have)
+            history_summary['description']['long'] = long_description
+        else:
+            history_summary['description']['long'] = u'No changes in this activity yet'
+
+        history_summary['description']['short'] = u'{} {}'.format(len_changes, u'change' if len_changes == 1 else u'changes')
 
         return history_summary

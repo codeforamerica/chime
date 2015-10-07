@@ -1,7 +1,7 @@
 {% macro activity_bar(branch, activity, show_review_modal=False) -%}
 {% if branch %}
 <div class="activity-bar activity-bar--{{activity.review_state|replace(' ', '-')}} row row--main">
-  <h2 class="activity-bar__title row__left">{{ activity.task_description | title }} <span class="activity-bar__subtitle">({{activity.history_summary.changes|length}} changes)</span></h2>
+  <h2 class="activity-bar__title row__left">{{ activity.task_description | title }} <span class="activity-bar__subtitle">({{ activity.history_summary.description.short }})</span></h2>
     <div class="toolbar toolbar--right">
     {% if activity.working_state == config.WORKING_STATE_ACTIVE %}
       <a href="{{activity.edit_path}}" class="button button--text toolbar__item"><span class="button__icon--left fa fa-files-o"></span> Content</a>
