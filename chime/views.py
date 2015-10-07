@@ -523,7 +523,7 @@ def show_activity_overview(branch_name):
     else:
         activity = chime_activity.ChimePublishedActivity(repo=repo, branch_name=safe_branch, default_branch_name=current_app.config['default_branch'])
 
-    kwargs.update(branch=branch_name, activity=activity, app_authorized=app_authorized, languages=languages)
+    kwargs.update(safe_branch=branch_name, activity=activity, app_authorized=app_authorized, languages=languages)
 
     # check the request's base URL for modals
     modal_type = urlparse(request.base_url).path.rstrip('/').split('/')[-1]
