@@ -254,7 +254,7 @@ class TestProcess (TestCase):
             #
             # Switch users and publish the activity.
             #
-            frances.open_link(url=erica.path)
+            frances.open_link(url='/tree/{}/'.format(branch_name))
             frances.leave_feedback(comment_text='It is super-great.')
             frances.approve_activity()
             frances.publish_activity()
@@ -314,7 +314,7 @@ class TestProcess (TestCase):
             #
             # Switch to frances, approve and publish erica's changes
             #
-            frances.open_link(url=erica.path)
+            frances.open_link(url='/tree/{}/'.format(branch_name))
             frances.leave_feedback(comment_text='It is perfect.')
             frances.approve_activity()
             frances.publish_activity()
@@ -1121,37 +1121,42 @@ class TestProcess (TestCase):
                 self.assertIsNotNone(erica.soup.find(lambda tag: tag.name == 'li' and part in tag.text))
 
             # there is a summary
-            summary_div = erica.soup.find("div", class_="activity-summary")
+            summary_div = erica.soup.find("div", {"data-test-id": "summary-div"})
             self.assertIsNotNone(summary_div)
             # it's right about what's changed
-            self.assertIsNotNone(summary_div.find(lambda tag: bool(tag.name == 'p' and '1 article and 2 topics' in tag.text)))
-            # grab all the table rows
-            check_rows = summary_div.find_all('tr')
+            self.assertIsNotNone(summary_div.find(lambda tag: bool(tag.name == 'p' and '1 article and 2 topics have been changed' in tag.text)))
 
-            # make sure they match what we did above
+            # grab all the list items and make sure they match what we did above
+            check_rows = summary_div.find_all('li')
+
+            # the link to create a new change
+            change_row = check_rows.pop()
+            self.assertIsNotNone(change_row.find("a", {"data-test-id": "change-link"}))
+            self.assertEqual(change_row.find("a", {"data-test-id": "change-link"}).text, constants.TEXT_ADD_CHANGE)
+
+            # the topic creation
             category_row = check_rows.pop()
-            category_cells = category_row.find_all('td')
-            self.assertIsNotNone(category_cells[0].find('a'))
-            self.assertEqual(category_cells[0].text, topic_name)
-            self.assertEqual(category_cells[1].text, constants.LAYOUT_DISPLAY_LOOKUP[constants.CATEGORY_LAYOUT].title())
-            self.assertEqual(category_cells[2].text, u'Created')
+            self.assertIsNotNone(category_row.find("a", {"data-test-id": "change-link"}))
+            self.assertEqual(category_row.find('h3', {"data-test-id": "change-title"}).text, topic_name)
+            self.assertEqual(category_row.find('div', {"data-test-id": "change-display-type"}).text, constants.LAYOUT_DISPLAY_LOOKUP[constants.CATEGORY_LAYOUT].title())
+            self.assertEqual(category_row.find('p', {"data-test-id": "change-actions"}).text, u'Created')
 
+            # the subtopic creation
             subcategory_row = check_rows.pop()
-            subcategory_cells = subcategory_row.find_all('td')
-            self.assertIsNotNone(subcategory_cells[0].find('a'))
-            self.assertEqual(subcategory_cells[0].text, subtopic_name)
-            self.assertEqual(subcategory_cells[1].text, constants.LAYOUT_DISPLAY_LOOKUP[constants.CATEGORY_LAYOUT].title())
-            self.assertEqual(subcategory_cells[2].text, u'Created')
+            self.assertIsNotNone(subcategory_row.find("a", {"data-test-id": "change-link"}))
+            self.assertEqual(subcategory_row.find('h3', {"data-test-id": "change-title"}).text, subtopic_name)
+            self.assertEqual(subcategory_row.find('div', {"data-test-id": "change-display-type"}).text, constants.LAYOUT_DISPLAY_LOOKUP[constants.CATEGORY_LAYOUT].title())
+            self.assertEqual(subcategory_row.find('p', {"data-test-id": "change-actions"}).text, u'Created')
 
+            # the article creation & edit
             article_1_row = check_rows.pop()
-            article_1_cells = article_1_row.find_all('td')
-            self.assertIsNotNone(article_1_cells[0].find('a'))
-            self.assertEqual(article_1_cells[0].text, article_name)
-            self.assertEqual(article_1_cells[1].text, constants.LAYOUT_DISPLAY_LOOKUP[constants.ARTICLE_LAYOUT].title())
-            self.assertEqual(article_1_cells[2].text, u'Created, Edited')
+            self.assertIsNotNone(article_1_row.find("a", {"data-test-id": "change-link"}))
+            self.assertEqual(article_1_row.find('h3', {"data-test-id": "change-title"}).text, article_name)
+            self.assertEqual(article_1_row.find('div', {"data-test-id": "change-display-type"}).text, constants.LAYOUT_DISPLAY_LOOKUP[constants.ARTICLE_LAYOUT].title())
+            self.assertEqual(article_1_row.find('p', {"data-test-id": "change-actions"}).text, u'Created, Edited')
 
-            # only the header row's left
-            self.assertEqual(len(check_rows), 1)
+            # no rows left
+            self.assertEqual(len(check_rows), 0)
 
             # also check the full history
             history_div = erica.soup.find("div", class_="activity-log")
@@ -1259,21 +1264,28 @@ class TestProcess (TestCase):
             erica.open_link(url='/tree/{}/'.format(first_branch_name))
 
             # there is a summary
-            summary_div = erica.soup.find("div", class_="activity-summary")
+            summary_div = erica.soup.find("div", {"data-test-id": "summary-div"})
             self.assertIsNotNone(summary_div)
             # it's right about what's changed
             self.assertIsNotNone(summary_div.find(lambda tag: bool(tag.name == 'p' and '1 topic has been changed' in tag.text)))
-            # grab all the table rows and make sure they match what we did above
-            check_rows = summary_div.find_all('tr')
-            category_row = check_rows.pop()
-            category_cells = category_row.find_all('td')
-            self.assertIsNotNone(category_cells[0].find('a'))
-            self.assertEqual(category_cells[0].text, first_topic_name)
-            self.assertEqual(category_cells[1].text, constants.LAYOUT_DISPLAY_LOOKUP[constants.CATEGORY_LAYOUT].title())
-            self.assertEqual(category_cells[2].text, u'Created')
 
-            # only the header row's left
-            self.assertEqual(len(check_rows), 1)
+            # grab all the list items and make sure they match what we did above
+            check_rows = summary_div.find_all('li')
+
+            # the link to create a new change
+            change_row = check_rows.pop()
+            self.assertIsNotNone(change_row.find("a", {"data-test-id": "change-link"}))
+            self.assertEqual(change_row.find("a", {"data-test-id": "change-link"}).text, constants.TEXT_ADD_CHANGE)
+
+            # the topic creation
+            category_row = check_rows.pop()
+            self.assertIsNotNone(category_row.find("a", {"data-test-id": "change-link"}))
+            self.assertEqual(category_row.find('h3', {"data-test-id": "change-title"}).text, first_topic_name)
+            self.assertEqual(category_row.find('div', {"data-test-id": "change-display-type"}).text, constants.LAYOUT_DISPLAY_LOOKUP[constants.CATEGORY_LAYOUT].title())
+            self.assertEqual(category_row.find('p', {"data-test-id": "change-actions"}).text, u'Created')
+
+            # no rows left
+            self.assertEqual(len(check_rows), 0)
 
             # also check the full history
             history_div = erica.soup.find("div", class_="activity-log")
@@ -1298,21 +1310,28 @@ class TestProcess (TestCase):
             erica.open_link(url='/tree/{}/'.format(second_branch_name))
 
             # there is a summary
-            summary_div = erica.soup.find("div", class_="activity-summary")
+            summary_div = erica.soup.find("div", {"data-test-id": "summary-div"})
             self.assertIsNotNone(summary_div)
             # it's right about what's changed
             self.assertIsNotNone(summary_div.find(lambda tag: bool(tag.name == 'p' and '1 topic has been changed' in tag.text)))
-            # grab all the table rows and make sure they match what we did above
-            check_rows = summary_div.find_all('tr')
-            category_row = check_rows.pop()
-            category_cells = category_row.find_all('td')
-            self.assertIsNotNone(category_cells[0].find('a'))
-            self.assertEqual(category_cells[0].text, second_topic_name)
-            self.assertEqual(category_cells[1].text, constants.LAYOUT_DISPLAY_LOOKUP[constants.CATEGORY_LAYOUT].title())
-            self.assertEqual(category_cells[2].text, u'Created')
 
-            # only the header row's left
-            self.assertEqual(len(check_rows), 1)
+            # grab all the list items and make sure they match what we did above
+            check_rows = summary_div.find_all('li')
+
+            # the link to create a new change
+            change_row = check_rows.pop()
+            self.assertIsNotNone(change_row.find("a", {"data-test-id": "change-link"}))
+            self.assertEqual(change_row.find("a", {"data-test-id": "change-link"}).text, constants.TEXT_ADD_CHANGE)
+
+            # the topic creation
+            category_row = check_rows.pop()
+            self.assertIsNotNone(category_row.find("a", {"data-test-id": "change-link"}))
+            self.assertEqual(category_row.find('h3', {"data-test-id": "change-title"}).text, second_topic_name)
+            self.assertEqual(category_row.find('div', {"data-test-id": "change-display-type"}).text, constants.LAYOUT_DISPLAY_LOOKUP[constants.CATEGORY_LAYOUT].title())
+            self.assertEqual(category_row.find('p', {"data-test-id": "change-actions"}).text, u'Created')
+
+            # no rows left
+            self.assertEqual(len(check_rows), 0)
 
             # also check the full history
             history_div = erica.soup.find("div", class_="activity-log")

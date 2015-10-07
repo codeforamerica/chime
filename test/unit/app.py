@@ -1464,15 +1464,15 @@ class TestApp (TestCase):
             for item in delete_history:
                 self.assertEqual(item['action'], u'delete')
                 if item['title'] in category_names:
-                    self.assertEqual(item['display_type'], u'category')
+                    self.assertEqual(item['display_type'], constants.CATEGORY_LAYOUT)
                     category_names.remove(item['title'])
 
                 elif item['title'] in subcategory_names:
-                    self.assertEqual(item['display_type'], u'category')
+                    self.assertEqual(item['display_type'], constants.CATEGORY_LAYOUT)
                     subcategory_names.remove(item['title'])
 
                 elif item['title'] in article_names:
-                    self.assertEqual(item['display_type'], u'article')
+                    self.assertEqual(item['display_type'], constants.ARTICLE_LAYOUT)
                     article_names.remove(item['title'])
 
             # we should have fewer category, subcategory, and article names
@@ -2073,26 +2073,26 @@ class TestApp (TestCase):
             category_row = check_rows.pop()
             self.assertIsNotNone(category_row.find("a", {"data-test-id": "change-link"}))
             self.assertEqual(category_row.find('h3', {"data-test-id": "change-title"}).text, category_name)
-            self.assertEqual(category_row.find('div', {"data-test-id": "change-display-type"}).text, u'Category')
+            self.assertEqual(category_row.find('div', {"data-test-id": "change-display-type"}).text, constants.LAYOUT_DISPLAY_LOOKUP[constants.CATEGORY_LAYOUT].title())
             self.assertEqual(category_row.find('p', {"data-test-id": "change-actions"}).text, u'Created')
 
             subcategory_row = check_rows.pop()
             self.assertIsNotNone(subcategory_row.find("a", {"data-test-id": "change-link"}))
             self.assertEqual(subcategory_row.find('h3', {"data-test-id": "change-title"}).text, subcategory_name)
-            self.assertEqual(subcategory_row.find('div', {"data-test-id": "change-display-type"}).text, u'Category')
+            self.assertEqual(subcategory_row.find('div', {"data-test-id": "change-display-type"}).text, constants.LAYOUT_DISPLAY_LOOKUP[constants.CATEGORY_LAYOUT].title())
             self.assertEqual(subcategory_row.find('p', {"data-test-id": "change-actions"}).text, u'Created')
 
             article_1_row = check_rows.pop()
             self.assertIsNotNone(article_1_row.find("a", {"data-test-id": "change-link"}))
             self.assertEqual(article_1_row.find('h3', {"data-test-id": "change-title"}).text, article_names[0])
-            self.assertEqual(article_1_row.find('div', {"data-test-id": "change-display-type"}).text, u'Article')
+            self.assertEqual(article_1_row.find('div', {"data-test-id": "change-display-type"}).text, constants.LAYOUT_DISPLAY_LOOKUP[constants.ARTICLE_LAYOUT].title())
             self.assertEqual(article_1_row.find('p', {"data-test-id": "change-actions"}).text, u'Created, Edited')
 
             article_2_row = check_rows.pop()
             self.assertIsNone(article_2_row.find("a", {"data-test-id": "change-link"}))
             self.assertIsNone(article_2_row.find('h3', {"data-test-id": "change-title"}).find('a'))
             self.assertEqual(article_2_row.find('h3', {"data-test-id": "change-title"}).text, article_names[1])
-            self.assertEqual(article_2_row.find('div', {"data-test-id": "change-display-type"}).text, u'Article')
+            self.assertEqual(article_2_row.find('div', {"data-test-id": "change-display-type"}).text, constants.LAYOUT_DISPLAY_LOOKUP[constants.ARTICLE_LAYOUT].title())
             self.assertEqual(article_2_row.find('p', {"data-test-id": "change-actions"}).text, u'Created, Deleted')
 
             # no rows left
