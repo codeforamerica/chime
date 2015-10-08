@@ -42,6 +42,9 @@ class ChimeActivity:
         self.review_path = u'/tree/{}/review/'.format(self.safe_branch)
         self.rename_path = u'/tree/{}/rename/'.format(self.safe_branch)
 
+        self.comment_action = u'/tree/{}/comment/'.format(self.safe_branch)
+        self.rename_action = u'/tree/{}/rename/'.format(self.safe_branch)
+
         # only build history and working state if requested
         self._history = None
         self._history_summary = None

@@ -342,7 +342,7 @@ class ChimeTestClient:
     def rename_activity(self, task_description=None):
         ''' Look for form to rename an activity, submit it.
         '''
-        form = self.soup.find('form', {'data-test-id': 'leave-comment-form'})
+        form = self.soup.find('form', {'data-test-id': 'rename-activity-form'})
         self.test.assertEqual(form['method'].upper(), 'POST')
 
         data = {i['name']: i.get('value', u'') for i in form.find_all(['input', 'button', 'textarea'])}

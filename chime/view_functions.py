@@ -903,11 +903,31 @@ def publish_commit(repo, publish_path):
         else:
             del environ['GIT_WORK_TREE']
 
-def update_activity_review_state(working_branch_name, default_branch_name, comment_text, task_description, action_list, redirect_path):
+def submit_comment(repo, working_branch_name, comment_text):
+    ''' Submit a comment.
+    '''
+    if comment_text:
+        provide_feedback(clone=repo, working_branch_name=working_branch_name, comment_text=comment_text, push=True)
+    else:
+        # don't allow empty comments
+        flash(u'You can\'t leave an empty comment!', u'warning')
+
+def submit_description(repo, default_branch_name, working_branch_name, task_description):
+    ''' Submit a new activity description
+    '''
+    if task_description:
+        save_commit = save_task_metadata_for_branch(repo, default_branch_name, {'task_description': task_description})
+        # save_commit will be None if no change was made
+        if save_commit:
+            flash(u'Changed activity name to "{}"!'.format(task_description), u'notice')
+    else:
+        # don't allow empty descriptions
+        flash(u'You can\'t give the activity an empty name!', u'warning')
+
+def update_activity_review_state(repo, working_branch_name, default_branch_name, comment_text, task_description, action_list, redirect_path):
     ''' Update the activity review state, which may include merging, abandoning, or clobbering
         the associated branch.
     '''
-    repo = get_repo(flask_app=current_app)
     action, action_authorized = get_activity_action_and_authorized(working_branch_name=working_branch_name, default_branch_name=default_branch_name, action_list=action_list)
     if action_authorized:
         if action in ('merge', 'abandon', 'clobber'):
@@ -926,22 +946,16 @@ def update_activity_review_state(working_branch_name, default_branch_name, comme
                 if save_commit:
                     flash(u'Changed activity name to "{}"!'.format(task_description), u'notice')
 
-            # handle a review or rename action
-            if action not in ('comment', 'rename'):
-                if action == 'request_feedback':
-                    update_review_state(clone=repo, working_branch_name=working_branch_name, new_review_state=current_app.config['REVIEW_STATE_FEEDBACK'], push=True)
-                elif action == 'endorse_edits':
-                    update_review_state(clone=repo, working_branch_name=working_branch_name, new_review_state=current_app.config['REVIEW_STATE_ENDORSED'], push=True)
-            elif action == 'comment' and not comment_text:
-                flash(u'You can\'t leave an empty comment!', u'warning')
-            elif action == 'rename' and not task_description:
-                flash(u'You can\'t give the activity an empty name!', u'warning')
+            # handle a request feedback or endorse edits action
+            if action == 'request_feedback':
+                update_review_state(clone=repo, working_branch_name=working_branch_name, new_review_state=current_app.config['REVIEW_STATE_FEEDBACK'], push=True)
+            elif action == 'endorse_edits':
+                update_review_state(clone=repo, working_branch_name=working_branch_name, new_review_state=current_app.config['REVIEW_STATE_ENDORSED'], push=True)
 
             return_redirect = redirect(redirect_path, code=303)
     else:
         # the action wasn't authorized, flash a message
         action_lookup = {
-            'comment': u'leave a comment',
             'request_feedback': u'request feedback',
             'endorse_edits': u'endorse the edits',
             'merge': u'publish the edits'
@@ -952,7 +966,6 @@ def update_activity_review_state(working_branch_name, default_branch_name, comme
             action_description = u'complete that action'
             Logger.error("Got an unfamiliar action in update_activity_review_state: {}".format(action))
 
-        action_description = action_lookup[action] if action and action in action_lookup else u'complete that action'
         flash(u'Something changed behind the scenes and we couldn\'t {}! Please try again.'.format(action_description), u'error')
 
         return_redirect = redirect(redirect_path, code=303)

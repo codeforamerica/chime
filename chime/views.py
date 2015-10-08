@@ -257,7 +257,7 @@ def update_activity():
     task_description = u''
     action_list = [item for item in request.form if item != 'comment_text']
     safe_branch = view_functions.branch_name2path(view_functions.branch_var2name(request.form.get('branch')))
-    return view_functions.update_activity_review_state(working_branch_name=safe_branch, default_branch_name=current_app.config['default_branch'], comment_text=comment_text, task_description=task_description, action_list=action_list, redirect_path='/tree/{}/'.format(safe_branch))
+    return view_functions.update_activity_review_state(repo=view_functions.get_repo(flask_app=current_app), working_branch_name=safe_branch, default_branch_name=current_app.config['default_branch'], comment_text=comment_text, task_description=task_description, action_list=action_list, redirect_path='/tree/{}/'.format(safe_branch))
 
 @app.route('/checkouts/<ref>.zip')
 @log_application_errors
@@ -534,6 +534,32 @@ def show_activity_overview(branch_name):
 
     return render_template('activity-overview.html', **kwargs)
 
+@app.route('/tree/<branch_name>/comment/', methods=['POST'])
+@log_application_errors
+@login_required
+@lock_on_user
+@synched_checkout_required
+def handle_comment_form(branch_name):
+    ''' Handle the comment form on the overview page
+    '''
+    comment_text = request.form.get('comment_text', u'').strip() or u''
+    safe_branch = view_functions.branch_name2path(view_functions.branch_var2name(branch_name))
+    view_functions.submit_comment(repo=view_functions.get_repo(flask_app=current_app), working_branch_name=safe_branch, comment_text=comment_text)
+    return redirect('/tree/{}/'.format(safe_branch), code=303)
+
+@app.route('/tree/<branch_name>/rename/', methods=['POST'])
+@log_application_errors
+@login_required
+@lock_on_user
+@synched_checkout_required
+def handle_rename_form(branch_name):
+    ''' Handle the rename form on the overview page
+    '''
+    task_description = sub(r'\s+', ' ', request.form.get('task_description', u'')).strip()
+    safe_branch = view_functions.branch_name2path(view_functions.branch_var2name(branch_name))
+    view_functions.submit_description(repo=view_functions.get_repo(flask_app=current_app), default_branch_name=current_app.config['default_branch'], working_branch_name=safe_branch, task_description=task_description)
+    return redirect('/tree/{}/'.format(safe_branch), code=303)
+
 @app.route('/tree/<branch_name>/', methods=['POST'])
 @log_application_errors
 @login_required
@@ -546,7 +572,7 @@ def edit_activity_overview(branch_name):
     task_description = sub(r'\s+', ' ', request.form.get('task_description', u'')).strip()
     action_list = [item for item in request.form if item not in ('comment_text', 'task_description')]
     safe_branch = view_functions.branch_name2path(view_functions.branch_var2name(branch_name))
-    return view_functions.update_activity_review_state(working_branch_name=safe_branch, default_branch_name=current_app.config['default_branch'], comment_text=comment_text, task_description=task_description, action_list=action_list, redirect_path='/tree/{}/'.format(safe_branch))
+    return view_functions.update_activity_review_state(repo=view_functions.get_repo(flask_app=current_app), working_branch_name=safe_branch, default_branch_name=current_app.config['default_branch'], comment_text=comment_text, task_description=task_description, action_list=action_list, redirect_path='/tree/{}/'.format(safe_branch))
 
 @app.route('/tree/<branch_name>/history/', methods=['GET'])
 @app.route('/tree/<branch_name>/history/<path:path>', methods=['GET'])
