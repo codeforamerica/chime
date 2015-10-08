@@ -1,32 +1,113 @@
-.activity-summary {
-	margin-top: -1px;
+.activity-summary__changes {
+	@include clearfix();
+	margin: 0;
 }
 
-.activity-summary__toggle {
+.activity-change {
+	background-color: $color-grey-100;
+	
+	width: 22%;
+	height: 125px;
+	float: left;
+	margin-right: 4%;
+	margin-bottom: 4%;
 	position: relative;
-	display: block;
-	font-size: $text-font-size;
-	font-weight: 400;
-	color: $color-grey-800;
-	&:after {
-		content: '\f107';
-		font-family: 'FontAwesome';
-		display: inline-block;
-		position: relative;
-		top: .1em;
-		margin-left: .5em;
+	border: 1px solid $color-grey-200;
+	&:nth-child(4n) {
+		margin-right: 0;
 	}
-	&.is-open {
-		&:after {
-			content: '\f106';
+
+	&--new, &--more {
+		background-color: transparent;
+		border: 2px dotted $color-grey-200;
+		padding: .5em;
+		text-align: center;
+		&:hover {
+			box-shadow: none;
 		}
 	}
 }
 
-.activity-summary__table {
-	margin-top: 1em;
+.activity-change__link {
+	box-shadow: $box-shadow-1;
+	padding: .5em;
+	color: inherit;
+	text-decoration: none;
+	display: block;
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+
+	&:hover {
+		box-shadow: $box-shadow-1-hover;
+	}
+
+	.activity-change--new &, .activity-change--more & {
+		top: 50%;
+		bottom: auto;
+		transform: translateY(-50%);
+		color: $color-link;
+		font-weight: 400;
+		cursor: pointer;
+		box-shadow: none;
+		font-size: $base-font-size;
+	}
+
 }
 
-.activity-summary__name {
+.activity-change__filename {
+	margin: 0;
+	font-size: $base-font-size;
+	max-height: 4em;
+	overflow: hidden;
+	position: absolute;
+	top: .5rem;
+	left: .5rem;
+	right: .5rem;
+	&.is-deleted {
+		text-decoration: line-through;
+		color: $color-grey-500;
+	}
+}
+
+.activity-change__changes {
+	font-size: $small-font-size;
+	color: $color-grey-600;
+	position: absolute;
+	bottom: 1.5rem;
+	left: .5rem;
+	right: .5rem;
 	font-weight: 400;
+}
+
+.activity-change__filetype {
+	background-color: #fff;
+	position: absolute;
+	height: 2rem;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	font-size: $small-font-size;
+	font-weight: 400;
+	padding: .5rem;
+
+	&:before {
+		font-family: "FontAwesome";
+		font-size: $small-font-size;
+		display: inline-block;
+		margin-right: .5em;
+	}
+
+	&--category {
+		&:before {
+			content: '\f114';
+		}
+	}
+	&--article {
+		&:before {
+			content: '\f0f6';
+		}
+	}
 }

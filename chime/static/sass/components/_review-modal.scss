@@ -1,0 +1,55 @@
+.review-modal {
+	border-top: 4px solid $color-grey-100;
+
+	&--unreviewed-edits {
+		border-color: $color-orange-300;
+		.review-modal__title {
+			color: $color-orange-300;
+		}
+	}
+	&--feedback-requested {
+		border-color: $color-green-300;
+		.review-modal__title {
+			color: $color-green-300;
+		}
+	}
+	&--edits-endorsed {
+
+		border-color: $color-blue-300;
+		.review-modal__title {
+			color: $color-blue-300;
+		}
+	}
+
+	.activity-summary {
+		border-radius: $border-radius;
+		box-shadow: inset $box-shadow-1;
+		background-color: $color-grey-50;
+		padding: 1em;
+		margin-bottom: 1em;
+	}
+	.activity-change {
+		margin-bottom: 0;
+	}
+}
+
+.review-modal__title {
+	margin-top: 0;
+}
+
+.review-modal__description-input {
+	resize: none;
+	padding: .5em;
+}
+
+.review-modal__title {
+	margin-bottom: 0;
+}
+
+.review-modal__subtitle {
+	color: $color-grey-600;
+	font-weight: 400;
+	font-size: $base-font-size;
+	margin: 0;
+	margin-bottom: 1em;
+}

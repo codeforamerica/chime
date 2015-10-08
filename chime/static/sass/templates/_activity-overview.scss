@@ -1,6 +1,7 @@
 .activity-overview__container {
-	background-color: $color-grey-100;
+	background-color: $color-grey-50;
 	overflow: auto;
+	padding-bottom: 4em;
 }
 
 .activity-overview__subtitle {
@@ -15,35 +16,46 @@
 	color: $color-grey-600;
 }
 
-.activity-overview__title {
-	margin-top: 0;
-}
 
-.activity-overview__main {
-	margin: 3em auto;
+.activity-overview__row {
+	@include clearfix();
+	margin: 2em auto;
 	max-width: 680px;
-	box-shadow: $box-shadow-1;
+	padding: .5em $site-margins;
+	border: 1px solid $color-grey-200;
 	background-color: #fff;
-	.row {
-		padding: 2em $site-margins;
-		border-top: 1px solid $color-grey-200;
-	}
+	position: relative;
 }
 
-
-.activity-overview {
-	.activity-log.row {
-		background-color: $color-grey-50;
-		margin-top: -1px;
-	}
+.activity-overview__header {
+	font-size: $h4-font-size;
+	font-weight: 700;
+	margin-bottom: 2em;
+	padding-bottom: 1em;
+	border-bottom: 1px solid $color-grey-200;
 }
 
-.activity-overview__description {
-	font-size: $text-font-size;
-	font-weight: 600;
-	margin-top: 0;
+.activity-overview__title {
+	font-size: $h2-font-size;
+	font-weight: 700;
+	max-width: 680px;
+	margin: 1.5em auto .5em auto;
 	a {
 		color: inherit;
 		text-decoration: underline;
+	}
+}
+
+.activity-overview__actions {
+	padding: 0;
+	background-color: transparent;
+	border: 0;
+}
+
+.rename-modal {
+	textarea {
+		font-size: $h4-font-size;
+		resize: none;
+		padding: .5em;
 	}
 }

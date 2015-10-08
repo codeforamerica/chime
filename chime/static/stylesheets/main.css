@@ -717,7 +717,7 @@ body {
   left: 0;
   right: 0;
   min-width: 1000px;
-  background-color: #fafafa;
+  background-color: #f5f5f5;
 }
 
 /* line 23, ../sass/core/_base.scss */
@@ -1062,24 +1062,23 @@ textarea {
   padding: 0 .7em;
   height: 2em;
   line-height: 1.5em;
+  margin-bottom: 1em;
 }
 
-/* line 30, ../sass/components/_forms.scss */
+/* line 31, ../sass/components/_forms.scss */
 label {
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
-  font-size: 12px;
-  font-weight: 400;
+  font-size: 14px;
+  font-weight: 600;
   display: block;
   margin-bottom: .5em;
-  text-transform: uppercase;
-  letter-spacing: .1em;
   color: #616161;
 }
 
-/* line 41, ../sass/components/_forms.scss */
+/* line 40, ../sass/components/_forms.scss */
 select {
   color: #000;
   box-sizing: border-box;
@@ -1091,12 +1090,12 @@ select {
   border-radius: 3px;
 }
 
-/* line 52, ../sass/components/_forms.scss */
+/* line 51, ../sass/components/_forms.scss */
 textarea {
   height: auto;
 }
 
-/* line 57, ../sass/components/_forms.scss */
+/* line 56, ../sass/components/_forms.scss */
 input[type="checkbox"],
 input[type="radio"],
 input[type="checkbox"] {
@@ -1105,7 +1104,7 @@ input[type="checkbox"] {
   margin-right: .5em;
 }
 
-/* line 68, ../sass/components/_forms.scss */
+/* line 67, ../sass/components/_forms.scss */
 input[type="button"],
 input[type="submit"],
 input[type="reset"],
@@ -1117,21 +1116,21 @@ button[type="reset"] {
   outline: none;
 }
 
-/* line 79, ../sass/components/_forms.scss */
+/* line 78, ../sass/components/_forms.scss */
 input[type="submit"]:disabled {
   color: #616161;
 }
-/* line 81, ../sass/components/_forms.scss */
+/* line 80, ../sass/components/_forms.scss */
 input[type="submit"]:disabled:hover {
   background-color: #e0e0e0;
 }
 
-/* line 86, ../sass/components/_forms.scss */
+/* line 85, ../sass/components/_forms.scss */
 .selection-box {
   text-align: left;
   margin-right: 1em;
 }
-/* line 89, ../sass/components/_forms.scss */
+/* line 88, ../sass/components/_forms.scss */
 .selection-box select {
   border: 1px solid #ddd;
   font-family: "Source Sans Pro", "Helvetiva", "Arial", sans-serif;
@@ -1139,7 +1138,7 @@ input[type="submit"]:disabled:hover {
   font-weight: 300;
 }
 
-/* line 97, ../sass/components/_forms.scss */
+/* line 96, ../sass/components/_forms.scss */
 .form-one-line {
   display: -webkit-box;
   display: -moz-box;
@@ -1158,7 +1157,7 @@ input[type="submit"]:disabled:hover {
 .lt-ie10 .form-one-line:after {
   clear: both;
 }
-/* line 102, ../sass/components/_forms.scss */
+/* line 101, ../sass/components/_forms.scss */
 .form-one-line .form-one-line__input {
   -webkit-box-flex: 1;
   -moz-box-flex: 1;
@@ -1167,21 +1166,22 @@ input[type="submit"]:disabled:hover {
   -moz-flex: 1;
   -ms-flex: 1;
   flex: 1;
+  margin-bottom: 0;
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
 }
-/* line 108, ../sass/components/_forms.scss */
+/* line 107, ../sass/components/_forms.scss */
 .lt-ie10 .form-one-line .form-one-line__input {
   float: left;
   width: 75%;
 }
-/* line 114, ../sass/components/_forms.scss */
+/* line 113, ../sass/components/_forms.scss */
 .form-one-line .form-one-line__submit {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
   margin-left: -1px;
 }
-/* line 118, ../sass/components/_forms.scss */
+/* line 117, ../sass/components/_forms.scss */
 .lt-ie10 .form-one-line .form-one-line__submit {
   float: left;
   width: 25%;
@@ -1373,6 +1373,12 @@ input[type="submit"]:disabled:hover {
   margin-top: 0;
 }
 
+/* line 155, ../sass/components/_buttons.scss */
+.button__icon--left {
+  display: inline-block;
+  margin-right: .2em;
+}
+
 /* line 1, ../sass/components/_modal.scss */
 .modal-container {
   -webkit-animation: modal-container 0.2s ease-out;
@@ -1408,21 +1414,28 @@ input[type="submit"]:disabled:hover {
   bottom: 0;
   left: 0;
   right: 0;
+  z-index: 10000;
   background-color: #424242;
-  background-color: rgba(0, 0, 0, 0.15);
+  background-color: rgba(0, 0, 0, 0.3);
   opacity: 0;
   margin-top: -2em;
   display: none;
 }
-/* line 16, ../sass/components/_modal.scss */
+/* line 17, ../sass/components/_modal.scss */
 .modal-container.is-open {
   display: block;
+  display: -webkit-box;
+  display: -moz-box;
+  display: box;
+  display: -webkit-flex;
+  display: -moz-flex;
+  display: -ms-flexbox;
   display: flex;
   margin-top: 0;
   opacity: 1;
 }
 
-/* line 23, ../sass/components/_modal.scss */
+/* line 24, ../sass/components/_modal.scss */
 .modal {
   -webkit-animation: modal 0.2s ease-out;
   -moz-animation: modal 0.2s ease-out;
@@ -1443,9 +1456,14 @@ input[type="submit"]:disabled:hover {
 .modal:after {
   clear: both;
 }
-/* line 32, ../sass/components/_modal.scss */
+/* line 33, ../sass/components/_modal.scss */
 .lt-ie10 .modal {
   margin-top: 4em;
+}
+
+/* line 38, ../sass/components/_modal.scss */
+.modal__header {
+  margin-top: 0;
 }
 
 /* line 1, ../sass/components/_tooltip.scss */
@@ -1704,18 +1722,20 @@ input[type="submit"]:disabled:hover {
   padding-bottom: 1em;
   padding-left: 40px;
   padding-right: 40px;
+  position: relative;
+  z-index: 9999;
   background-color: #2b93d1;
   color: #fff;
   padding-top: 0;
   padding-bottom: 0;
   padding-right: 0;
 }
-/* line 10, ../sass/components/_global-header.scss */
+/* line 12, ../sass/components/_global-header.scss */
 .global-header .breadcrumb {
   margin-top: .75em;
 }
 
-/* line 15, ../sass/components/_global-header.scss */
+/* line 17, ../sass/components/_global-header.scss */
 .global-header__title {
   background-image: url("../images/chime_logo.png");
   background-repeat: no-repeat;
@@ -1730,14 +1750,14 @@ input[type="submit"]:disabled:hover {
   width: 55px;
 }
 @media only screen and (-webkit-min-device-pixel-ratio: 1.3), only screen and (min--moz-device-pixel-ratio: 1.3), only screen and (-o-min-device-pixel-ratio: 1.3 / 1), only screen and (min-resolution: 125dpi), only screen and (min-resolution: 1.3dppx) {
-  /* line 15, ../sass/components/_global-header.scss */
+  /* line 17, ../sass/components/_global-header.scss */
   .global-header__title {
     background-image: url("../images/chime_logo_2x.png");
     background-size: 100% auto;
   }
 }
 
-/* line 30, ../sass/components/_global-header.scss */
+/* line 32, ../sass/components/_global-header.scss */
 .global-header__link.toolbar__item {
   text-decoration: none;
   color: #fff;
@@ -1747,70 +1767,84 @@ input[type="submit"]:disabled:hover {
   margin: 0;
   line-height: 1em;
 }
-/* line 38, ../sass/components/_global-header.scss */
+/* line 40, ../sass/components/_global-header.scss */
 .global-header__link.toolbar__item:hover {
   color: #fff;
   text-decoration: underline;
   background-color: #2684bc;
 }
 
-/* line 45, ../sass/components/_global-header.scss */
-.activity-dropdown.global-header__link {
-  background-color: #55a8da;
-  width: 30em;
-  padding-right: 4em;
+/* line 1, ../sass/components/_activity-bar.scss */
+.activity-bar {
+  background-color: #fff;
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.25);
+  position: relative;
+  z-index: 2;
 }
-
-/* line 51, ../sass/components/_global-header.scss */
-.activity-dropdown__link {
+/* line 7, ../sass/components/_activity-bar.scss */
+.activity-bar:before {
+  content: '';
   display: block;
-  color: #fff;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  overflow: hidden;
-  height: 1.2em;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 4px;
+  z-index: 2;
 }
-/* line 58, ../sass/components/_global-header.scss */
-.activity-dropdown__link:hover {
-  color: #fff;
+/* line 18, ../sass/components/_activity-bar.scss */
+.activity-bar--unreviewed-edits:before {
+  background-color: #757575;
+}
+/* line 21, ../sass/components/_activity-bar.scss */
+.activity-bar--feedback-requested:before {
+  background-color: #757575;
+}
+/* line 24, ../sass/components/_activity-bar.scss */
+.activity-bar--edits-endorsed:before {
+  background-color: #757575;
+}
+/* line 27, ../sass/components/_activity-bar.scss */
+.activity-bar--changes-published:before {
+  background-color: #757575;
 }
 
-/* line 63, ../sass/components/_global-header.scss */
-.activity-dropdown__subtitle {
-  margin: 0em;
-}
-
-/* line 67, ../sass/components/_global-header.scss */
-.activity-dropdown__title {
+/* line 33, ../sass/components/_activity-bar.scss */
+.activity-bar__title {
   font-weight: 600;
-  padding-bottom: 1em;
-  margin-top: .2em;
-  margin-bottom: 1em;
-  border-bottom: 1px solid #e0e0e0;
   color: #212121;
-  line-height: 1.3em;
+  margin: 0;
+  font-size: 18px;
 }
 
-/* line 77, ../sass/components/_global-header.scss */
-.activity-dropdown__button {
+/* line 40, ../sass/components/_activity-bar.scss */
+.activity-bar__subtitle {
+  font-weight: 300;
+}
+
+/* line 44, ../sass/components/_activity-bar.scss */
+.activity-bar__status {
+  border: 1px solid #e0e0e0;
+  border-radius: 3px;
+  padding: .1em .6em;
+  color: #9e9e9e;
+}
+
+/* line 51, ../sass/components/_activity-bar.scss */
+.activity-bar__button {
   width: 100%;
   margin-bottom: 2em;
   text-align: center;
 }
 
 /* line 1, ../sass/components/_activity-log.scss */
-.activity-log {
-  padding-left: 40px;
-}
-
-/* line 5, ../sass/components/_activity-log.scss */
 .activity-log-item {
   position: relative;
-  border-left: 4px solid #e0e0e0;
-  padding-left: 3em;
-  padding-bottom: 3em;
-  margin-left: -40px;
+  padding-left: 2.5em;
+  padding-bottom: 2em;
   font-weight: 400;
+  border-left: 1px dotted #e0e0e0;
+  margin-left: 1em;
 }
 /* line 7, ../sass/core/_utilities.scss */
 .activity-log-item:before, .activity-log-item:after {
@@ -1821,82 +1855,70 @@ input[type="submit"]:disabled:hover {
 .activity-log-item:after {
   clear: both;
 }
-/* line 13, ../sass/components/_activity-log.scss */
-.activity-log-item:last-child {
-  border: 0;
-  padding-bottom: 0;
-}
-/* line 17, ../sass/components/_activity-log.scss */
+/* line 9, ../sass/components/_activity-log.scss */
 .activity-log-item:before {
   content: '';
   position: absolute;
   display: block;
-  height: 2.5em;
-  width: 2.5em;
-  z-index: 2;
+  left: -1em;
+  height: 2em;
+  width: 2em;
+  line-height: 2em;
   background-color: #fff;
-  border: 1px solid #bdbdbd;
-  border-radius: 50%;
-  left: -1.25em;
-  margin-left: -2px;
   font-family: 'FontAwesome';
   font-size: 14px;
   text-align: center;
-  line-height: 2.5em;
-  color: #424242;
+  margin-top: -.2em;
+  color: #757575;
+}
+/* line 24, ../sass/components/_activity-log.scss */
+.activity-log-item:last-child {
+  border-left: 0;
+}
+/* line 27, ../sass/components/_activity-log.scss */
+.activity-log-item p {
+  font-size: 14px;
 }
 
-/* line 38, ../sass/components/_activity-log.scss */
+/* line 33, ../sass/components/_activity-log.scss */
 .activity-log-item--info:before {
   content: '\f129';
 }
 
-/* line 44, ../sass/components/_activity-log.scss */
+/* line 39, ../sass/components/_activity-log.scss */
 .activity-log-item--edit:before {
   content: '\f040';
 }
 
-/* line 50, ../sass/components/_activity-log.scss */
+/* line 45, ../sass/components/_activity-log.scss */
 .activity-log-item--comment:before {
   line-height: 2.25em;
   content: '\f075';
 }
 
-/* line 57, ../sass/components/_activity-log.scss */
+/* line 52, ../sass/components/_activity-log.scss */
 .activity-log-item__content p {
   margin: 0;
 }
 
-/* line 62, ../sass/components/_activity-log.scss */
+/* line 57, ../sass/components/_activity-log.scss */
 .activity-log-item__datetime {
-  margin-top: .5em;
+  margin-top: .3em;
   font-size: 12px;
   color: #757575;
 }
 
 /* line 1, ../sass/components/_activity-progress.scss */
-.activity-overview__main .activity-progress.row {
-  margin: 0;
-  margin-top: -1px;
-  padding-right: 0;
-  padding-left: 0;
-}
-/* line 7, ../sass/core/_utilities.scss */
-.activity-overview__main .activity-progress.row:before, .activity-overview__main .activity-progress.row:after {
-  content: " ";
-  display: table;
-}
-/* line 11, ../sass/core/_utilities.scss */
-.activity-overview__main .activity-progress.row:after {
-  clear: both;
+.activity-progress.activity-overview__row {
+  padding: 1.5em 0 1em 0;
 }
 
-/* line 11, ../sass/components/_activity-progress.scss */
+/* line 5, ../sass/components/_activity-progress.scss */
 .activity-progress__item {
   text-align: center;
   position: relative;
 }
-/* line 14, ../sass/components/_activity-progress.scss */
+/* line 8, ../sass/components/_activity-progress.scss */
 .activity-progress__item:before {
   content: '';
   display: block;
@@ -1911,7 +1933,7 @@ input[type="submit"]:disabled:hover {
   background-color: #eeeeee;
   z-index: 0;
 }
-/* line 28, ../sass/components/_activity-progress.scss */
+/* line 22, ../sass/components/_activity-progress.scss */
 .activity-progress__item:after {
   position: absolute;
   display: block;
@@ -1926,15 +1948,15 @@ input[type="submit"]:disabled:hover {
   border-bottom: 6px solid transparent;
   border-top: 6px solid transparent;
 }
-/* line 38, ../sass/components/_activity-progress.scss */
+/* line 32, ../sass/components/_activity-progress.scss */
 .activity-progress__item:first-child:before, .activity-progress__item:first-child:after {
   display: none;
 }
-/* line 43, ../sass/components/_activity-progress.scss */
+/* line 37, ../sass/components/_activity-progress.scss */
 .activity-progress__item.is-completed:before {
   background-color: #757575;
 }
-/* line 46, ../sass/components/_activity-progress.scss */
+/* line 40, ../sass/components/_activity-progress.scss */
 .activity-progress__item.is-completed:after {
   width: 0;
   height: 0;
@@ -1943,28 +1965,28 @@ input[type="submit"]:disabled:hover {
   border-bottom: 6px solid transparent;
   border-top: 6px solid transparent;
 }
-/* line 52, ../sass/components/_activity-progress.scss */
+/* line 46, ../sass/components/_activity-progress.scss */
 .activity-progress__item--edited.is-completed .activity-progress__icon {
   border-color: #616161;
   color: #616161;
 }
-/* line 60, ../sass/components/_activity-progress.scss */
+/* line 54, ../sass/components/_activity-progress.scss */
 .activity-progress__item--requested.is-completed .activity-progress__icon {
   border-color: #f1b17f;
   color: #f1b17f;
 }
-/* line 68, ../sass/components/_activity-progress.scss */
+/* line 62, ../sass/components/_activity-progress.scss */
 .activity-progress__item--endorsed.is-completed .activity-progress__icon {
   border-color: #66c6ac;
   color: #66c6ac;
 }
-/* line 76, ../sass/components/_activity-progress.scss */
+/* line 70, ../sass/components/_activity-progress.scss */
 .activity-progress__item--published.is-completed .activity-progress__icon {
   border-color: #6693a5;
   color: #6693a5;
 }
 
-/* line 84, ../sass/components/_activity-progress.scss */
+/* line 78, ../sass/components/_activity-progress.scss */
 .activity-progress__label {
   font-size: 16px;
   color: #9e9e9e;
@@ -1972,13 +1994,13 @@ input[type="submit"]:disabled:hover {
   margin-top: .5em;
   margin-bottom: 0;
 }
-/* line 90, ../sass/components/_activity-progress.scss */
+/* line 84, ../sass/components/_activity-progress.scss */
 .is-completed .activity-progress__label {
   color: #000;
   font-weight: 400;
 }
 
-/* line 96, ../sass/components/_activity-progress.scss */
+/* line 90, ../sass/components/_activity-progress.scss */
 .activity-progress__icon {
   display: inline-block;
   position: relative;
@@ -1988,75 +2010,229 @@ input[type="submit"]:disabled:hover {
   text-align: center;
   line-height: 2.5em;
   border: 2px solid #e0e0e0;
-  color: #9e9e9e;
+  color: #bdbdbd;
 }
-/* line 106, ../sass/components/_activity-progress.scss */
+/* line 100, ../sass/components/_activity-progress.scss */
 .activity-progress__icon:before {
   font-family: "FontAwesome";
   position: relative;
   top: -1px;
 }
-/* line 112, ../sass/components/_activity-progress.scss */
+/* line 106, ../sass/components/_activity-progress.scss */
 .activity-progress__item--edited .activity-progress__icon:before {
   content: '\f040';
 }
-/* line 117, ../sass/components/_activity-progress.scss */
+/* line 111, ../sass/components/_activity-progress.scss */
 .activity-progress__item--requested .activity-progress__icon:before {
   content: '\f06e';
 }
-/* line 122, ../sass/components/_activity-progress.scss */
+/* line 116, ../sass/components/_activity-progress.scss */
 .activity-progress__item--endorsed .activity-progress__icon:before {
   content: '\f087';
 }
-/* line 127, ../sass/components/_activity-progress.scss */
+/* line 121, ../sass/components/_activity-progress.scss */
 .activity-progress__item--published .activity-progress__icon:before {
   content: '\f00c';
 }
 
 /* line 1, ../sass/components/_activity-summary.scss */
-.activity-summary {
-  margin-top: -1px;
+.activity-summary__changes {
+  margin: 0;
+}
+/* line 7, ../sass/core/_utilities.scss */
+.activity-summary__changes:before, .activity-summary__changes:after {
+  content: " ";
+  display: table;
+}
+/* line 11, ../sass/core/_utilities.scss */
+.activity-summary__changes:after {
+  clear: both;
 }
 
-/* line 5, ../sass/components/_activity-summary.scss */
-.activity-summary__toggle {
+/* line 6, ../sass/components/_activity-summary.scss */
+.activity-change {
+  background-color: #f5f5f5;
+  width: 22%;
+  height: 125px;
+  float: left;
+  margin-right: 4%;
+  margin-bottom: 4%;
   position: relative;
-  display: block;
-  font-size: 16px;
-  font-weight: 400;
-  color: #424242;
+  border: 1px solid #eeeeee;
 }
-/* line 11, ../sass/components/_activity-summary.scss */
-.activity-summary__toggle:after {
-  content: '\f107';
-  font-family: 'FontAwesome';
-  display: inline-block;
-  position: relative;
-  top: .1em;
-  margin-left: .5em;
+/* line 16, ../sass/components/_activity-summary.scss */
+.activity-change:nth-child(4n) {
+  margin-right: 0;
 }
 /* line 20, ../sass/components/_activity-summary.scss */
-.activity-summary__toggle.is-open:after {
-  content: '\f106';
+.activity-change--new, .activity-change--more {
+  background-color: transparent;
+  border: 2px dotted #eeeeee;
+  padding: .5em;
+  text-align: center;
+}
+/* line 25, ../sass/components/_activity-summary.scss */
+.activity-change--new:hover, .activity-change--more:hover {
+  box-shadow: none;
 }
 
-/* line 26, ../sass/components/_activity-summary.scss */
-.activity-summary__table {
-  margin-top: 1em;
+/* line 31, ../sass/components/_activity-summary.scss */
+.activity-change__link {
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.25);
+  padding: .5em;
+  color: inherit;
+  text-decoration: none;
+  display: block;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
 }
-
-/* line 30, ../sass/components/_activity-summary.scss */
-.activity-summary__name {
+/* line 43, ../sass/components/_activity-summary.scss */
+.activity-change__link:hover {
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+}
+/* line 47, ../sass/components/_activity-summary.scss */
+.activity-change--new .activity-change__link, .activity-change--more .activity-change__link {
+  top: 50%;
+  bottom: auto;
+  transform: translateY(-50%);
+  color: #2b93d1;
   font-weight: 400;
+  cursor: pointer;
+  box-shadow: none;
+  font-size: 14px;
+}
+
+/* line 60, ../sass/components/_activity-summary.scss */
+.activity-change__filename {
+  margin: 0;
+  font-size: 14px;
+  max-height: 4em;
+  overflow: hidden;
+  position: absolute;
+  top: .5rem;
+  left: .5rem;
+  right: .5rem;
+}
+/* line 69, ../sass/components/_activity-summary.scss */
+.activity-change__filename.is-deleted {
+  text-decoration: line-through;
+  color: #9e9e9e;
+}
+
+/* line 75, ../sass/components/_activity-summary.scss */
+.activity-change__changes {
+  font-size: 12px;
+  color: #757575;
+  position: absolute;
+  bottom: 1.5rem;
+  left: .5rem;
+  right: .5rem;
+  font-weight: 400;
+}
+
+/* line 85, ../sass/components/_activity-summary.scss */
+.activity-change__filetype {
+  background-color: #fff;
+  position: absolute;
+  height: 2rem;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  font-size: 12px;
+  font-weight: 400;
+  padding: .5rem;
+}
+/* line 96, ../sass/components/_activity-summary.scss */
+.activity-change__filetype:before {
+  font-family: "FontAwesome";
+  font-size: 12px;
+  display: inline-block;
+  margin-right: .5em;
+}
+/* line 104, ../sass/components/_activity-summary.scss */
+.activity-change__filetype--category:before {
+  content: '\f114';
+}
+/* line 109, ../sass/components/_activity-summary.scss */
+.activity-change__filetype--article:before {
+  content: '\f0f6';
+}
+
+/* line 1, ../sass/components/_review-modal.scss */
+.review-modal {
+  border-top: 4px solid #f5f5f5;
+}
+/* line 4, ../sass/components/_review-modal.scss */
+.review-modal--unreviewed-edits {
+  border-color: #f1b17f;
+}
+/* line 6, ../sass/components/_review-modal.scss */
+.review-modal--unreviewed-edits .review-modal__title {
+  color: #f1b17f;
+}
+/* line 10, ../sass/components/_review-modal.scss */
+.review-modal--feedback-requested {
+  border-color: #66c6ac;
+}
+/* line 12, ../sass/components/_review-modal.scss */
+.review-modal--feedback-requested .review-modal__title {
+  color: #66c6ac;
+}
+/* line 16, ../sass/components/_review-modal.scss */
+.review-modal--edits-endorsed {
+  border-color: #6693a5;
+}
+/* line 19, ../sass/components/_review-modal.scss */
+.review-modal--edits-endorsed .review-modal__title {
+  color: #6693a5;
+}
+/* line 24, ../sass/components/_review-modal.scss */
+.review-modal .activity-summary {
+  border-radius: 3px;
+  box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.25);
+  background-color: #fafafa;
+  padding: 1em;
+  margin-bottom: 1em;
+}
+/* line 31, ../sass/components/_review-modal.scss */
+.review-modal .activity-change {
+  margin-bottom: 0;
+}
+
+/* line 36, ../sass/components/_review-modal.scss */
+.review-modal__title {
+  margin-top: 0;
+}
+
+/* line 40, ../sass/components/_review-modal.scss */
+.review-modal__description-input {
+  resize: none;
+  padding: .5em;
+}
+
+/* line 45, ../sass/components/_review-modal.scss */
+.review-modal__title {
+  margin-bottom: 0;
+}
+
+/* line 49, ../sass/components/_review-modal.scss */
+.review-modal__subtitle {
+  color: #757575;
+  font-weight: 400;
+  font-size: 14px;
+  margin: 0;
+  margin-bottom: 1em;
 }
 
 /* line 1, ../sass/components/_comment.scss */
 .comment {
-  background-color: #fff;
-  border-radius: 3px;
+  background-color: #fafafa;
   padding: 1em;
-  box-shadow: 0 0 3px rgba(0, 0, 0, 0.25);
   margin-bottom: 1em;
+  border: 1px solid #e0e0e0;
 }
 /* line 7, ../sass/core/_utilities.scss */
 .comment:before, .comment:after {
@@ -2068,59 +2244,48 @@ input[type="submit"]:disabled:hover {
   clear: both;
 }
 
-/* line 10, ../sass/components/_comment.scss */
-.comment--new {
-  background-color: #f5f5f5;
-  border: 1px solid #e0e0e0;
-  box-shadow: none;
-}
-/* line 14, ../sass/components/_comment.scss */
-.comment--new .comment__author {
-  color: #757575;
-}
-
-/* line 19, ../sass/components/_comment.scss */
+/* line 9, ../sass/components/_comment.scss */
 .comment__note {
   font-size: 14px;
   color: #000;
   margin-bottom: 1em;
 }
-/* line 23, ../sass/components/_comment.scss */
+/* line 13, ../sass/components/_comment.scss */
 .comment__note .fa-info-circle {
   margin-right: .5em;
 }
 
-/* line 28, ../sass/components/_comment.scss */
+/* line 18, ../sass/components/_comment.scss */
 .comment__author {
   color: #757575;
   border-bottom: 1px solid #eeeeee;
   padding-bottom: 1em;
   margin-bottom: 1em;
+  font-size: 12px;
 }
 
-/* line 35, ../sass/components/_comment.scss */
+/* line 26, ../sass/components/_comment.scss */
 .comment__body {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: normal;
 }
 
-/* line 40, ../sass/components/_comment.scss */
+/* line 31, ../sass/components/_comment.scss */
 .comment__datetime {
   color: #757575;
   font-size: 12px;
   margin-top: 1em;
 }
 
-/* line 46, ../sass/components/_comment.scss */
+/* line 37, ../sass/components/_comment.scss */
 .comment__input {
   border: 1px solid #eeeeee;
   height: 70px;
   padding: .5em;
 }
 
-/* line 52, ../sass/components/_comment.scss */
+/* line 43, ../sass/components/_comment.scss */
 .comment__actions {
-  margin-top: 1em;
   padding: 0;
 }
 
@@ -2486,11 +2651,12 @@ input[type="submit"]:disabled:hover {
 
 /* line 1, ../sass/templates/_activity-overview.scss */
 .activity-overview__container {
-  background-color: #f5f5f5;
+  background-color: #fafafa;
   overflow: auto;
+  padding-bottom: 4em;
 }
 
-/* line 6, ../sass/templates/_activity-overview.scss */
+/* line 7, ../sass/templates/_activity-overview.scss */
 .activity-overview__subtitle {
   text-transform: uppercase;
   letter-spacing: .1em;
@@ -2499,46 +2665,65 @@ input[type="submit"]:disabled:hover {
   color: #616161;
 }
 
-/* line 13, ../sass/templates/_activity-overview.scss */
+/* line 14, ../sass/templates/_activity-overview.scss */
 .activity-overview__details {
   font-size: 14px;
   color: #757575;
 }
 
-/* line 18, ../sass/templates/_activity-overview.scss */
-.activity-overview__title {
-  margin-top: 0;
-}
-
-/* line 22, ../sass/templates/_activity-overview.scss */
-.activity-overview__main {
-  margin: 3em auto;
+/* line 20, ../sass/templates/_activity-overview.scss */
+.activity-overview__row {
+  margin: 2em auto;
   max-width: 680px;
-  box-shadow: 0 0 3px rgba(0, 0, 0, 0.25);
+  padding: 0.5em 40px;
+  border: 1px solid #eeeeee;
   background-color: #fff;
+  position: relative;
 }
-/* line 27, ../sass/templates/_activity-overview.scss */
-.activity-overview__main .row {
-  padding: 2em 40px;
-  border-top: 1px solid #eeeeee;
+/* line 7, ../sass/core/_utilities.scss */
+.activity-overview__row:before, .activity-overview__row:after {
+  content: " ";
+  display: table;
+}
+/* line 11, ../sass/core/_utilities.scss */
+.activity-overview__row:after {
+  clear: both;
 }
 
-/* line 35, ../sass/templates/_activity-overview.scss */
-.activity-overview .activity-log.row {
-  background-color: #fafafa;
-  margin-top: -1px;
+/* line 30, ../sass/templates/_activity-overview.scss */
+.activity-overview__header {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 2em;
+  padding-bottom: 1em;
+  border-bottom: 1px solid #eeeeee;
 }
 
-/* line 41, ../sass/templates/_activity-overview.scss */
-.activity-overview__description {
-  font-size: 16px;
-  font-weight: 600;
-  margin-top: 0;
+/* line 38, ../sass/templates/_activity-overview.scss */
+.activity-overview__title {
+  font-size: 28px;
+  font-weight: 700;
+  max-width: 680px;
+  margin: 1.5em auto .5em auto;
 }
-/* line 45, ../sass/templates/_activity-overview.scss */
-.activity-overview__description a {
+/* line 43, ../sass/templates/_activity-overview.scss */
+.activity-overview__title a {
   color: inherit;
   text-decoration: underline;
+}
+
+/* line 49, ../sass/templates/_activity-overview.scss */
+.activity-overview__actions {
+  padding: 0;
+  background-color: transparent;
+  border: 0;
+}
+
+/* line 56, ../sass/templates/_activity-overview.scss */
+.rename-modal textarea {
+  font-size: 18px;
+  resize: none;
+  padding: .5em;
 }
 
 /* line 1, ../sass/templates/_articles-list.scss */

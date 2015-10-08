@@ -9,6 +9,7 @@ from io import BytesIO
 from requests import post
 from slugify import slugify
 from datetime import datetime
+from urlparse import urlparse
 from flask import current_app, flash, render_template, redirect, request, Response, session, abort
 from git import Actor
 
@@ -221,14 +222,18 @@ def authorization_failed():
     kwargs = view_functions.common_template_args(current_app.config, session)
     return render_template('authorization-failed.html', **kwargs)
 
-@app.route('/start', methods=['POST'])
+@app.route('/start', methods=['GET', 'POST'])
 @log_application_errors
 @login_required
 @lock_on_user
 @synch_required
 def start_branch():
     repo = view_functions.get_repo(flask_app=current_app)
-    task_description = sub(r'\s+', ' ', request.form.get('task_description')).strip()
+    if request.method == 'POST':
+        task_description = sub(r'\s+', ' ', request.form.get('task_description', u'')).strip()
+    else:
+        task_description = view_functions.make_new_activity_description()
+
     master_name = current_app.config['default_branch']
 
     # require a task description
@@ -249,9 +254,10 @@ def update_activity():
     ''' Update the activity review state or merge, abandon, or clobber the posted branch
     '''
     comment_text = u''
+    task_description = u''
     action_list = [item for item in request.form if item != 'comment_text']
     safe_branch = view_functions.branch_name2path(view_functions.branch_var2name(request.form.get('branch')))
-    return view_functions.update_activity_review_state(safe_branch=safe_branch, comment_text=comment_text, action_list=action_list, redirect_path='/tree/{}/'.format(safe_branch))
+    return view_functions.update_activity_review_state(repo=view_functions.get_repo(flask_app=current_app), working_branch_name=safe_branch, default_branch_name=current_app.config['default_branch'], comment_text=comment_text, task_description=task_description, action_list=action_list, redirect_path='/tree/{}/'.format(safe_branch))
 
 @app.route('/checkouts/<ref>.zip')
 @log_application_errors
@@ -489,6 +495,8 @@ def branch_edit_file(branch_name, path=None):
     return redirect('/tree/{}/edit/{}'.format(safe_branch, redirect_path), code=303)
 
 @app.route('/tree/<branch_name>/', methods=['GET'])
+@app.route('/tree/<branch_name>/rename/', methods=['GET'])
+@app.route('/tree/<branch_name>/review/', methods=['GET'])
 @log_application_errors
 @login_required
 @lock_on_user
@@ -515,9 +523,42 @@ def show_activity_overview(branch_name):
     else:
         activity = chime_activity.ChimePublishedActivity(repo=repo, branch_name=safe_branch, default_branch_name=current_app.config['default_branch'])
 
-    kwargs.update(activity=activity, app_authorized=app_authorized, languages=languages)
+    kwargs.update(safe_branch=branch_name, activity=activity, app_authorized=app_authorized, languages=languages)
+
+    # check the request's base URL for modals
+    modal_type = urlparse(request.base_url).path.rstrip('/').split('/')[-1]
+    if modal_type == 'rename':
+        kwargs.update(show_rename_modal=True)
+    elif modal_type == 'review':
+        kwargs.update(show_review_modal=True)
 
     return render_template('activity-overview.html', **kwargs)
+
+@app.route('/tree/<branch_name>/comment/', methods=['POST'])
+@log_application_errors
+@login_required
+@lock_on_user
+@synched_checkout_required
+def handle_comment_form(branch_name):
+    ''' Handle the comment form on the overview page
+    '''
+    comment_text = request.form.get('comment_text', u'').strip() or u''
+    safe_branch = view_functions.branch_name2path(view_functions.branch_var2name(branch_name))
+    view_functions.submit_comment(repo=view_functions.get_repo(flask_app=current_app), working_branch_name=safe_branch, comment_text=comment_text)
+    return redirect('/tree/{}/'.format(safe_branch), code=303)
+
+@app.route('/tree/<branch_name>/rename/', methods=['POST'])
+@log_application_errors
+@login_required
+@lock_on_user
+@synched_checkout_required
+def handle_rename_form(branch_name):
+    ''' Handle the rename form on the overview page
+    '''
+    task_description = sub(r'\s+', ' ', request.form.get('task_description', u'')).strip()
+    safe_branch = view_functions.branch_name2path(view_functions.branch_var2name(branch_name))
+    view_functions.submit_description(repo=view_functions.get_repo(flask_app=current_app), default_branch_name=current_app.config['default_branch'], working_branch_name=safe_branch, task_description=task_description)
+    return redirect('/tree/{}/'.format(safe_branch), code=303)
 
 @app.route('/tree/<branch_name>/', methods=['POST'])
 @log_application_errors
@@ -527,10 +568,11 @@ def show_activity_overview(branch_name):
 def edit_activity_overview(branch_name):
     ''' Handle a POST from a form on the activity overview page
     '''
-    comment_text = request.form.get('comment_text', u'').strip()
-    action_list = [item for item in request.form if item != 'comment_text']
+    comment_text = request.form.get('comment_text', u'').strip() or u''
+    task_description = sub(r'\s+', ' ', request.form.get('task_description', u'')).strip()
+    action_list = [item for item in request.form if item not in ('comment_text', 'task_description')]
     safe_branch = view_functions.branch_name2path(view_functions.branch_var2name(branch_name))
-    return view_functions.update_activity_review_state(safe_branch=safe_branch, comment_text=comment_text, action_list=action_list, redirect_path='/tree/{}/'.format(safe_branch))
+    return view_functions.update_activity_review_state(repo=view_functions.get_repo(flask_app=current_app), working_branch_name=safe_branch, default_branch_name=current_app.config['default_branch'], comment_text=comment_text, task_description=task_description, action_list=action_list, redirect_path='/tree/{}/'.format(safe_branch))
 
 @app.route('/tree/<branch_name>/history/', methods=['GET'])
 @app.route('/tree/<branch_name>/history/<path:path>', methods=['GET'])
@@ -556,9 +598,9 @@ def branch_history(branch_name, path=None):
         app_authorized = True
 
     # see <http://git-scm.com/docs/git-log> for placeholders
-    log_format = '%x00Name: %an\tEmail: %ae\tDate: %ad\tSubject: %s'
+    log_format = '%x00Name: %an\tEmail: %ae\tDate: %ar\tSubject: %s'
     pattern = compile(r'^\x00Name: (.*?)\tEmail: (.*?)\tDate: (.*?)\tSubject: (.*?)$', MULTILINE)
-    log = repo.git.log('-30', '--format={}'.format(log_format), '--date=relative', path)
+    log = repo.git.log('-30', '--format={}'.format(log_format), path)
 
     history = []
 

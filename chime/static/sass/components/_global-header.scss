@@ -1,5 +1,7 @@
 .global-header {
 	@include main-padding;
+	position: relative;
+	z-index: 9999;
 	background-color: $color-brand-blue;
 	color: #fff;
 	padding: {
@@ -40,42 +42,4 @@
 		text-decoration: underline;
 		background-color: shade($color-brand-blue, 10%);
 	}
-}
-
-.activity-dropdown.global-header__link {
-	background-color: tint($color-brand-blue, 20%);
-	width: 30em;
-	padding-right: 4em;
-}
-
-.activity-dropdown__link {
-	display: block;
-	color: #fff;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	overflow: hidden;
-	height: 1.2em;
-	&:hover {
-		color: #fff;
-	}
-}
-
-.activity-dropdown__subtitle {
-	margin: 0em;
-}
-
-.activity-dropdown__title {
-	font-weight: 600;
-	padding-bottom: 1em;
-	margin-top: .2em;
-	margin-bottom: 1em;
-	border-bottom: 1px solid $color-grey-300;
-	color: $color-grey-900;
-	line-height: $heading-line-height;
-}
-
-.activity-dropdown__button {
-	width: 100%;
-	margin-bottom: 2em;
-	text-align: center;
 }

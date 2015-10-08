@@ -1,36 +1,31 @@
-.activity-log {
-	padding-left: $site-margins;
-}
-
 .activity-log-item {
 	@include clearfix();
 	position: relative;
-	border-left: 4px solid $color-grey-300;
-	padding-left: 3em;
-	padding-bottom: 3em;
-	margin-left: -$site-margins;
+	padding-left: 2.5em;
+	padding-bottom: 2em;
 	font-weight: 400;
-	&:last-child {
-		border: 0;
-		padding-bottom: 0;
-	}
+	border-left: 1px dotted $color-grey-300;
+	margin-left: 1em;
 	&:before {
 		content: '';
 		position: absolute;
 		display: block;
-		height: 2.5em;
-		width: 2.5em;
-		z-index: 2;
+		left: -1em;
+		height: 2em;
+		width: 2em;
+		line-height: 2em;
 		background-color: #fff;
-		border: 1px solid $color-grey-400;
-		border-radius: 50%;
-		left: -1.25em;
-		margin-left: -2px;
 		font-family: 'FontAwesome';
 		font-size: 14px;
 		text-align: center;
-		line-height: 2.5em;
-		color: $color-grey-800;
+		margin-top: -.2em;
+		color: $color-grey-600;
+	}
+	&:last-child {
+		border-left: 0;
+	}
+	p {
+		font-size: $base-font-size; 
 	}
 }
 
@@ -60,7 +55,7 @@
 }
 
 .activity-log-item__datetime {
-	margin-top: .5em;
+	margin-top: .3em;
 	font-size: $small-font-size;
 	color: $color-grey-600;
 }

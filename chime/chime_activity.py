@@ -26,8 +26,9 @@ class ChimeActivity:
             working_branch_name=self.safe_branch, actor_email=actor_email
         )
 
-        self.date_created = self.repo.git.log(self.safe_branch, '--format=%ad', '--date=relative', '--', repo_functions.TASK_METADATA_FILENAME).split('\n')[-1]
-        self.date_updated = self.repo.git.log(self.safe_branch, '-1', '--format=%ad', '--date=relative')
+        self.date_created = self.repo.git.log(self.safe_branch, '--format=%ar', '--', repo_functions.TASK_METADATA_FILENAME).split('\n')[-1]
+        self.date_updated = self.repo.git.log(self.safe_branch, '-1', '--format=%ar')
+        self.datetime_updated = datetime.fromtimestamp(float(self.repo.git.log(self.safe_branch, '-1', '--format=%at')))
 
         # the email of the last person who edited the activity
         self.last_edited_email = repo_functions.get_last_edited_email(
@@ -38,6 +39,11 @@ class ChimeActivity:
         self.edit_path = u'/tree/{}/edit/'.format(self.safe_branch)
         self.overview_path = u'/tree/{}/'.format(self.safe_branch)
         self.view_path = u'/tree/{}/view/'.format(self.safe_branch)
+        self.review_path = u'/tree/{}/review/'.format(self.safe_branch)
+        self.rename_path = u'/tree/{}/rename/'.format(self.safe_branch)
+
+        self.comment_action = u'/tree/{}/comment/'.format(self.safe_branch)
+        self.rename_action = u'/tree/{}/rename/'.format(self.safe_branch)
 
         # only build history and working state if requested
         self._history = None
@@ -75,13 +81,13 @@ class ChimeActivity:
         ''' Get a git log from which to create the activity's history
         '''
         hexsha = self.repo.branches[self.safe_branch].commit.hexsha
-        return self.repo.git.log('--format={}'.format(log_format), '--date=relative', 'master..{}'.format(hexsha))
+        return self.repo.git.log('--format={}'.format(log_format), 'master..{}'.format(hexsha))
 
     def _construct_history(self):
         ''' Create a list of log items from the raw history log
         '''
         # see <http://git-scm.com/docs/git-log> for placeholders
-        log = self._get_history_log(log_format='%x00Name: %an\tEmail: %ae\tDate: %ad\tSubject: %s\tBody: %b%x00')
+        log = self._get_history_log(log_format='%x00Name: %an\tEmail: %ae\tDate: %ar\tSubject: %s\tBody: %b%x00')
 
         history = []
         pattern = re.compile(r'\x00Name: (.*?)\tEmail: (.*?)\tDate: (.*?)\tSubject: (.*?)\tBody: (.*?)\x00', re.DOTALL)
@@ -115,17 +121,21 @@ class ChimeActivity:
 
             The object looks like this:
             {
-                'summary': u'3 articles and 1 category have been changed',
+                'description':
+                    {
+                        'long': u'3 articles and 1 topic have been changed',
+                        'short': u'4 changes'
+                    },
                 'changes': [
                     {'edit_path': u'', 'display_type': u'Article', 'actions': u'Created, Edited, Deleted', 'title': u'How to Find Us'},
                     {'edit_path': u'/tree/34246e3/edit/contact/hours-of-operation/', 'display_type': u'Article', 'actions': u'Created, Edited', 'title': u'Hours of Operation'},
                     {'edit_path': u'/tree/34246e3/edit/contact/driving-directions/', 'display_type': u'Article', 'actions': u'Created, Edited', 'title': u'Driving Directions'},
-                    {'edit_path': u'/tree/34246e3/edit/contact/', 'display_type': u'Category', 'actions': u'Created', 'title': u'Contact'}
+                    {'edit_path': u'/tree/34246e3/edit/contact/', 'display_type': u'Topic', 'actions': u'Created', 'title': u'Contact'}
                 ]
             }
         '''
         # an empty summary object
-        history_summary = dict(summary=u'', changes=[])
+        history_summary = dict(description=dict(long=u'', short=u''), changes=[])
 
         ed_lookup = {'create': u'created', 'edit': u'edited', 'delete': u'deleted'}
         change_lookup = {}
@@ -173,12 +183,13 @@ class ChimeActivity:
 
         # flatten and sort the changes
         changes = [change_lookup[item] for item in change_lookup]
-        if len(changes):
+        len_changes = len(changes)
+        if len_changes:
             changes.sort(key=lambda k: k['sort_time'], reverse=True)
             history_summary['changes'] = changes
 
-            # now construct the summary sentence
-            summary_sentence_parts = []
+            # now construct the summary sentences
+            long_description_parts = []
             display_type_tally = Counter(display_types_encountered)
             display_lookup = (
                 (display_type_tally[constants.ARTICLE_LAYOUT.title()], unicode(constants.LAYOUT_DISPLAY_LOOKUP[constants.ARTICLE_LAYOUT]), unicode(constants.LAYOUT_PLURAL_LOOKUP[constants.ARTICLE_LAYOUT])),
@@ -186,11 +197,14 @@ class ChimeActivity:
             )
             for tally, singular, plural in display_lookup:
                 if tally:
-                    summary_sentence_parts.append("{} {}".format(tally, singular if tally == 1 else plural))
-            has_have = u''
-            has_have = u'have' if len(changes) > 1 else u'has'
-            summary_sentence = u'{} {} been changed'.format(u', '.join(summary_sentence_parts[:-2] + [u' and '.join(summary_sentence_parts[-2:])]), has_have)
-            history_summary['summary'] = summary_sentence
+                    long_description_parts.append("{} {}".format(tally, singular if tally == 1 else plural))
+            has_have = u'have' if len_changes > 1 else u'has'
+            long_description = u'{} {} been changed'.format(u', '.join(long_description_parts[:-2] + [u' and '.join(long_description_parts[-2:])]), has_have)
+            history_summary['description']['long'] = long_description
+        else:
+            history_summary['description']['long'] = u'No changes in this activity yet'
+
+        history_summary['description']['short'] = u'{} {}'.format(len_changes, u'change' if len_changes == 1 else u'changes')
 
         return history_summary
 
@@ -221,7 +235,7 @@ class ChimePublishedActivity(ChimeActivity):
 
         # get date updated and last edited email from the tag's git log
         hexsha = repo.tags[self.safe_branch].tag.hexsha
-        date_updated, last_edited_email = repo.git.log('--format=%ad\t%ae', '--date=relative', '{}^!'.format(hexsha)).split('\t')
+        date_updated, last_edited_email = repo.git.log('--format=%ar\t%ae', '{}^!'.format(hexsha)).split('\t')
 
         # set date created and updated the same for now
         self.date_updated = date_updated
@@ -245,7 +259,7 @@ class ChimePublishedActivity(ChimeActivity):
         ''' Get a git log from which to create the activity's history
         '''
         hexsha = self.repo.tags[self.safe_branch].commit.hexsha
-        return self.repo.git.log('--format={}'.format(log_format), '--date=relative', hexsha)
+        return self.repo.git.log('--format={}'.format(log_format), hexsha)
 
     def _make_history(self):
         ''' Make an easily-parsable history of the activity since it was created.

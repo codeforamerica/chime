@@ -1,3 +1,7 @@
+{% from 'macros/global_header.html' import global_header as global_header %}
+{% from 'macros/activity_bar.html' import activity_bar as activity_bar %}
+
+
 <!DOCTYPE html>
 <!--[if lt IE 10]><html lang="en-us" class="lt-ie10"><![endif]-->
 <!--[if gt IE 9]><!--><html lang="en-us"><!--<![endif]-->
@@ -36,9 +40,9 @@
     </head>
     <body class="{% block body_class %}{% endblock %} col">
 
-    {% block global_header %}
-      {% from 'macros/macros.html' import globalHeader as globalHeader %}
-      {{ globalHeader(breadcrumb_items=breadcrumb_items, email=email, branch_name=safe_branch, activity=activity, live_site_url=live_site_url) }}
+    {{ global_header(breadcrumb_items=breadcrumb_items, email=email, live_site_url=live_site_url) }}
+    {% block activity_bar %}
+    {{ activity_bar(branch_name=safe_branch, activity=activity, show_review_modal=False) }}
     {% endblock %}
 
     {% include 'includes/flashes.html' %}
@@ -50,6 +54,7 @@
      <script src="/static/javascript/placeholders.min.js"></script>
      <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
      <script src="/static/javascript/button-states.js"></script>
+     <script src="/static/javascript/activity-bar.js"></script>
 
       {% block scripts %}{% endblock %}
     </body>

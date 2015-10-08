@@ -39,7 +39,7 @@ from .repo_functions import (
     clobber_default_branch, get_review_state_and_authorized, update_review_state,
     provide_feedback, move_existing_file, mark_upstream_push_needed, MergeConflict,
     get_activity_working_state, make_branch_name, save_local_working_file,
-    sync_with_branch, strip_index_file, make_commit_message
+    sync_with_branch, strip_index_file, save_task_metadata_for_branch, make_commit_message
 )
 from . import constants
 
@@ -584,7 +584,7 @@ def synch_required(route_function):
             if working_state == constants.WORKING_STATE_PUBLISHED:
                 tag_ref = repo.tag('refs/tags/{}'.format(branch_name))
                 commit = tag_ref.commit
-                published_date = repo.git.show('--format=%ad', '--date=relative', commit.hexsha).strip()
+                published_date = repo.git.show('--format=%ar', commit.hexsha).strip()
                 published_by = commit.committer.email
                 flash_only(MESSAGE_ACTIVITY_PUBLISHED.format(published_date=published_date, published_by=published_by), u'warning')
 
@@ -627,7 +627,7 @@ def synched_checkout_required(route_function):
         if working_state == constants.WORKING_STATE_PUBLISHED:
             tag_ref = repo.tag('refs/tags/{}'.format(branch_name))
             commit = tag_ref.commit
-            published_date = repo.git.show('--format=%ad', '--date=relative', commit.hexsha).strip()
+            published_date = repo.git.show('--format=%ar', commit.hexsha).strip()
             published_by = commit.committer.email
             flash_only(MESSAGE_ACTIVITY_PUBLISHED.format(published_date=published_date, published_by=published_by), u'warning')
 
@@ -681,7 +681,28 @@ def flash_only(message, category, by_category=False):
 def get_relative_date(repo, file_path):
     ''' Return the relative modified date for the passed path in the passed repo
     '''
-    return repo.git.log('-1', '--format=%ad', '--date=relative', '--', file_path)
+    return repo.git.log('-1', '--format=%ar', '--', file_path)
+
+def make_ordinal_number(number_in):
+    ''' Turn the passed number into an ordinal string representation
+
+        Adapted from solution by Gareth on StackExchange, here: http://codegolf.stackexchange.com/a/4712
+    '''
+    try:
+        number_in = int(number_in)
+    except ValueError:
+        number_in = 1
+    return "{num}{suffix}".format(num=number_in, suffix="tsnrhtdd"[(number_in / 10 % 10 != 1) * (number_in % 10 < 4) * number_in % 10::4])
+
+def make_new_activity_description():
+    ''' Make a generic new activity description
+    '''
+    # make a friendly date like "Tuesday, October 6th, at 4:10PM"
+    now = datetime.now()
+    ordinal_day = make_ordinal_number(now.strftime('%d'))
+    friendly_time = u'{}{}'.format(int(now.strftime('%I')), now.strftime(':%M%p'))
+    friendly_now = u'{} {}, at {}'.format(now.strftime('%A, %B'), ordinal_day, friendly_time)
+    return u'Changes started on {}'.format(friendly_now)
 
 def make_delete_display_commit_message(repo, working_branch_name, request_path):
     ''' Build a commit message about file deletion for display in the activity history
@@ -882,42 +903,70 @@ def publish_commit(repo, publish_path):
         else:
             del environ['GIT_WORK_TREE']
 
-def update_activity_review_state(safe_branch, comment_text, action_list, redirect_path):
+def submit_comment(repo, working_branch_name, comment_text):
+    ''' Submit a comment.
+    '''
+    if comment_text:
+        provide_feedback(clone=repo, working_branch_name=working_branch_name, comment_text=comment_text, push=True)
+    else:
+        # don't allow empty comments
+        flash(u'You can\'t leave an empty comment!', u'warning')
+
+def submit_description(repo, default_branch_name, working_branch_name, task_description):
+    ''' Submit a new activity description
+    '''
+    if task_description:
+        save_commit = save_task_metadata_for_branch(repo, default_branch_name, {'task_description': task_description})
+        # save_commit will be None if no change was made
+        if save_commit:
+            flash(u'Changed activity name to "{}"!'.format(task_description), u'notice')
+    else:
+        # don't allow empty descriptions
+        flash(u'You can\'t give the activity an empty name!', u'warning')
+
+def update_activity_review_state(repo, working_branch_name, default_branch_name, comment_text, task_description, action_list, redirect_path):
     ''' Update the activity review state, which may include merging, abandoning, or clobbering
         the associated branch.
     '''
-    repo = get_repo(flask_app=current_app)
-    action, action_authorized = get_activity_action_and_authorized(branch_name=safe_branch, comment_text=comment_text, action_list=action_list)
+    action, action_authorized = get_activity_action_and_authorized(working_branch_name=working_branch_name, default_branch_name=default_branch_name, action_list=action_list)
     if action_authorized:
         if action in ('merge', 'abandon', 'clobber'):
             try:
-                return_redirect = publish_or_destroy_activity(safe_branch, action, comment_text)
+                return_redirect = publish_or_destroy_activity(working_branch_name, action, comment_text)
             except MergeConflict as conflict:
                 raise conflict
         else:
-            # comment if comment text was sent and the action is authorized
+            # comment if comment text was sent
             if comment_text:
-                provide_feedback(clone=repo, working_branch_name=safe_branch, comment_text=comment_text, push=True)
+                provide_feedback(clone=repo, working_branch_name=working_branch_name, comment_text=comment_text, push=True)
 
-            # handle a review action
-            if action != 'comment':
-                if action == 'request_feedback':
-                    update_review_state(clone=repo, working_branch_name=safe_branch, new_review_state=current_app.config['REVIEW_STATE_FEEDBACK'], push=True)
-                elif action == 'endorse_edits':
-                    update_review_state(clone=repo, working_branch_name=safe_branch, new_review_state=current_app.config['REVIEW_STATE_ENDORSED'], push=True)
-            elif not comment_text:
-                flash(u'You can\'t leave an empty comment!', u'warning')
+            # rename if a new task description was sent
+            if task_description:
+                save_commit = save_task_metadata_for_branch(repo, default_branch_name, {'task_description': task_description})
+                if save_commit:
+                    flash(u'Changed activity name to "{}"!'.format(task_description), u'notice')
+
+            # handle a request feedback or endorse edits action
+            if action == 'request_feedback':
+                update_review_state(clone=repo, working_branch_name=working_branch_name, new_review_state=current_app.config['REVIEW_STATE_FEEDBACK'], push=True)
+            elif action == 'endorse_edits':
+                update_review_state(clone=repo, working_branch_name=working_branch_name, new_review_state=current_app.config['REVIEW_STATE_ENDORSED'], push=True)
 
             return_redirect = redirect(redirect_path, code=303)
     else:
-        # flash a message if the action wasn't authorized
+        # the action wasn't authorized, flash a message
         action_lookup = {
-            'comment': u'leave a comment',
             'request_feedback': u'request feedback',
             'endorse_edits': u'endorse the edits',
             'merge': u'publish the edits'
         }
-        flash(u'Something changed behind the scenes and we couldn\'t {}! Please try again.'.format(action_lookup[action]), u'error')
+        if action and action in action_lookup:
+            action_description = action_lookup[action]
+        else:
+            action_description = u'complete that action'
+            Logger.error("Got an unfamiliar action in update_activity_review_state: {}".format(action))
+
+        flash(u'Something changed behind the scenes and we couldn\'t {}! Please try again.'.format(action_description), u'error')
 
         return_redirect = redirect(redirect_path, code=303)
 
@@ -989,6 +1038,10 @@ def render_activities_list(task_description=None, show_new_activity_modal=False)
             activities['feedback'].append(activity)
         elif activity.review_state == constants.REVIEW_STATE_ENDORSED:
             activities['endorsed'].append(activity)
+
+    # sort the non-published activities
+    for activity_key in activities:
+        activities[activity_key].sort(key=lambda k: k.datetime_updated, reverse=True)
 
     activities['published'] = make_list_of_published_activities(repo=repo, limit=10)
 
@@ -1141,13 +1194,13 @@ def delete_page(repo, working_branch_name, browse_path, target_path):
 
     return redirect_path, do_save, commit_message
 
-def get_activity_action_and_authorized(branch_name, comment_text, action_list):
+def get_activity_action_and_authorized(working_branch_name, default_branch_name, action_list):
     ''' Return the proposed action and whether it's authorized
     '''
     repo = get_repo(flask_app=current_app)
     # which submit button was pressed?
     action = u''
-    possible_actions = ['comment', 'request_feedback', 'endorse_edits', 'merge', 'abandon', 'clobber']
+    possible_actions = ['comment', 'rename', 'request_feedback', 'endorse_edits', 'merge', 'abandon', 'clobber']
     for check_action in possible_actions:
         if check_action in action_list:
             action = check_action
@@ -1155,13 +1208,14 @@ def get_activity_action_and_authorized(branch_name, comment_text, action_list):
 
     # get the current review state and authorized status
     review_state, review_authorized = get_review_state_and_authorized(
-        repo=repo, default_branch_name=current_app.config['default_branch'],
-        working_branch_name=branch_name, actor_email=session.get('email', None)
+        repo=repo, default_branch_name=default_branch_name,
+        working_branch_name=working_branch_name, actor_email=session.get('email', None)
     )
-    action_authorized = (action == 'comment')
+    # these actions are all authorized independent of review state
+    action_authorized = (action in ('comment', 'rename', 'clobber', 'abandon'))
 
     # handle a review action
-    if action != 'comment':
+    if not action_authorized:
         if action == 'request_feedback':
             if review_state == current_app.config['REVIEW_STATE_EDITED'] and review_authorized:
                 action_authorized = True
@@ -1171,8 +1225,6 @@ def get_activity_action_and_authorized(branch_name, comment_text, action_list):
         elif action == 'merge':
             if review_state == current_app.config['REVIEW_STATE_ENDORSED'] and review_authorized:
                 action_authorized = True
-        elif action == 'clobber' or action == 'abandon':
-            action_authorized = True
 
     if not action:
         action_authorized = False
@@ -1309,7 +1361,7 @@ def save_page(repo, default_branch_name, working_branch_name, file_path, new_val
         try:
             repo.git.rebase(existing_branch.commit)
         except GitCommandError:
-            published_date = repo.git.show('--format=%ad', '--date=relative', existing_branch.commit.hexsha).split('\n')[0]
+            published_date = repo.git.show('--format=%ar', existing_branch.commit.hexsha).split('\n')[0]
             published_by = existing_branch.commit.committer.email
             flash(MESSAGE_PAGE_EDITED.format(published_date=published_date, published_by=published_by), u'error')
             did_save = False

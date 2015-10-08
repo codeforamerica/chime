@@ -27,7 +27,7 @@
     {% for column in dir_columns %}
     {% set column_depth = loop.index %}
     {% if column_depth != 1 or (column_depth == 1 and dir_columns|length == 1) %}
-    <div class="dir grid__item {% if column_depth == 4 %}width-one-half end-row{% else %}width-one-fourth{% endif %}">
+    <div class="dir grid__item{% if column_depth == 4 %} width-one-half end-row{% else %} width-one-fourth{% endif %}">
       {% if column_depth == 2 %}
       <h2 class="articles-list__title">Topics</h2>
       <p class="dir__description">are displayed on the homepage.</p>
@@ -71,7 +71,7 @@
       <ul class="dir">
         {% for file in column['files'] %}
          <!-- file type: {{file['display_type']}}, file name: {{file['name']}}, file title: {{file['title']}} -->
-         <li class="dir-item {% if file['selected'] == True %}is-selected{% endif %}">
+         <li class="dir-item{% if file['selected'] == True %} is-selected{% endif %}">
             <a class="dir-item__name {{file['display_type']}}" href="{{file['edit_path']}}"><span class="dir-item__display-type {{icon_class_lookup[file['display_type']]}}"></span>{{ file['title'] }}</a>
             {% if activity.working_state == config.WORKING_STATE_ACTIVE %}
             <div class="dir-item__actions toolbar--right">

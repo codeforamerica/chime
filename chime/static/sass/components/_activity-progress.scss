@@ -1,11 +1,5 @@
-.activity-overview__main .activity-progress.row {
-	@include clearfix();
-	margin: 0;
-	margin-top: -1px;
-	padding: {
-		right: 0;
-		left: 0;
-	}
+.activity-progress.activity-overview__row {
+	padding: 1.5em 0 1em 0;
 }
 
 .activity-progress__item {
@@ -102,7 +96,7 @@
 	text-align: center;
 	line-height: 2.5em;
 	border: 2px solid $color-grey-300;
-	color: $color-grey-500;
+	color: $color-grey-400;
 	&:before {
 		font-family: "FontAwesome";
 		position: relative;

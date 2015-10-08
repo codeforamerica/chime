@@ -4,157 +4,152 @@
 
 {% block title %}Activity Overview{% endblock %}
 
-
 {% set template_name = 'activity-overview' %}
 {% block body_class %}{{template_name}}{% endblock %}
 
 {% block scripts %}
-
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-
+<script src="/static/javascript/activity-overview.js"></script>
 {% endblock%}
 
 {% block content %}
 <!-- template name: {{template_name}} -->
 <div class="activity-overview__container">
-    <div class="activity-overview__main">
-        <div class="activity-overview__header row">
-            <p class="activity-overview__subtitle">Activity Overview</p>
-            <h1 class="activity-overview__title">{{ activity.task_description | title }}</h1>
-            <p class="activity-overview__details">Last edited by {{ activity.last_edited_email }}.</p>
+    <h1 class="activity-overview__title">{{ activity.task_description | title }}</h1>
+
+    {% if activity.working_state == config.WORKING_STATE_ACTIVE %}
+    <div class="activity-overview__actions activity-overview__row">
+        <div class="row__left toolbar toolbar--left">
+            <a href="{{ activity.rename_path }}" class="toolbar__item button button--medium button--text button--open-rename-modal"><span class="button__icon--left fa fa-pencil"></span> Rename</a>
+            <form action="/update" method="POST" class="toolbar__item">
+              <button class="button button--medium button--text" type="submit" name="abandon" value="Delete" id="{{ activity.safe_branch }}-delete"><span class="button__icon--left fa fa-trash"></span> Delete</button>
+              <input type="hidden" name="branch" value="{{ activity.safe_branch }}">
+            </form>
+            
         </div>
+        <div class="row__right toolbar toolbar--right">
+          {% if activity.review_authorized %}
+          {% if activity.review_state == config.REVIEW_STATE_FRESH %}
+          <span class="toolbar__item activity-bar__status">awaiting edits</span>
+          {% elif activity.review_state == config.REVIEW_STATE_EDITED %}
+          <a href="{{activity.review_path}}" class="toolbar__item button button--medium button--open-review-modal button--orange">Request feedback</a>
+          {% elif activity.review_state == config.REVIEW_STATE_FEEDBACK %}
+          <a href="{{activity.overview_path}}#activity-log" class="toolbar__item button"button--medium >Comment</a>
+          <a href="{{activity.review_path}}" class="toolbar__item button button--medium button--open-review-modal button--green">Endorse</a>
+          {% elif activity.review_state == config.REVIEW_STATE_ENDORSED %}
+          <a href="{{activity.review_path}}" class="toolbar__item button button--medium button--open-review-modal button--blue">Publish</a>
+          {% endif %}
+          {% else %}
+          <span class="toolbar__item activity-bar__status">awaiting feedback</span>
+          {% endif %}
+        </div>
+    </div>
+    {% endif %}
 
-        <ul class="activity-progress grid row">
-            {% set review_step = 0 %}
-            {% if activity.review_state == config.REVIEW_STATE_EDITED %}
-                {% set review_step = 1 %}
-            {% elif activity.review_state == config.REVIEW_STATE_FEEDBACK %}
-                {% set review_step = 2 %}
-            {% elif activity.review_state == config.REVIEW_STATE_ENDORSED %}
-                {% set review_step = 3 %}
-            {% elif activity.review_state == config.REVIEW_STATE_PUBLISHED %}
-                {% set review_step = 4 %}
-            {% endif %}
+    <ul class="activity-progress grid activity-overview__row">
+        {% set review_step = 0 %}
+        {% if activity.review_state == config.REVIEW_STATE_EDITED %}
+            {% set review_step = 1 %}
+        {% elif activity.review_state == config.REVIEW_STATE_FEEDBACK %}
+            {% set review_step = 2 %}
+        {% elif activity.review_state == config.REVIEW_STATE_ENDORSED %}
+            {% set review_step = 3 %}
+        {% elif activity.review_state == config.REVIEW_STATE_PUBLISHED %}
+            {% set review_step = 4 %}
+        {% endif %}
 
-            <li class="activity-progress__item  activity-progress__item--edited {% if review_step > 0 %}is-completed{% endif %} grid__item width-one-fourth">
-                <div class="activity-progress__icon"></div>
-                <p class="activity-progress__label">Edits Made</p>
+        <li class="activity-progress__item activity-progress__item--edited{% if review_step > 0 %} is-completed{% endif %} grid__item width-one-fourth">
+            <div class="activity-progress__icon"></div>
+            <p class="activity-progress__label">Edits Made</p>
+        </li>
+        <li class="activity-progress__item activity-progress__item--requested{% if review_step > 1 %} is-completed{% endif %} grid__item width-one-fourth">
+            <div class="activity-progress__icon"></div>
+            <p class="activity-progress__label">Feedback Requested</p>
+        </li>
+        <li class="activity-progress__item activity-progress__item--endorsed{% if review_step > 2 %} is-completed{% endif %} grid__item width-one-fourth">
+            <div class="activity-progress__icon"></div>
+            <p class="activity-progress__label">Edits Endorsed</p>
+        </li>
+        <li class="activity-progress__item activity-progress__item--published{% if review_step > 3 %} is-completed{% endif %} grid__item width-one-fourth end-row">
+            <div class="activity-progress__icon"></div>
+            <p class="activity-progress__label">Published</p>
+        </li>
+    </ul>
+
+    <div data-test-id="summary-div" class="activity-summary activity-overview__row activity-overview__row">
+        <p class="activity-overview__header">{{ activity.history_summary.description.long }}</p>
+        <ul class="activity-summary__changes">
+            {% for change in activity.history_summary.changes %}
+            <li class="activity-change">
+                {% if change.edit_path %}<a data-test-id="change-link" href="{{ change.edit_path }}" class="activity-change__link">{% endif %}
+                <h3 data-test-id="change-title" class="activity-change__filename{% if not change.edit_path %} is-deleted{% endif %}">{{ change.title }}</h3>
+                <p data-test-id="change-actions" class="activity-change__changes">{{ change.actions }}</p>
+                <div data-test-id="change-display-type" class="activity-change__filetype activity-change__filetype--{{change.display_type|lower}}">{{ change.display_type }}</div>
+                {% if change.edit_path %}</a>{% endif %}
             </li>
-            <li class="activity-progress__item  activity-progress__item--requested {% if review_step > 1 %}is-completed{% endif %} grid__item width-one-fourth">
-                <div class="activity-progress__icon"></div>
-                <p class="activity-progress__label">Feedback Requested</p>
-            </li>
-            <li class="activity-progress__item  activity-progress__item--endorsed {% if review_step > 2 %}is-completed{% endif %} grid__item width-one-fourth">
-                <div class="activity-progress__icon"></div>
-                <p class="activity-progress__label">Edits Endorsed</p>
-            </li>
-            <li class="activity-progress__item activity-progress__item--published {% if review_step > 3 %}is-completed{% endif %} grid__item width-one-fourth end-row">
-                <div class="activity-progress__icon "></div>
-                <p class="activity-progress__label">Published</p>
+            {% endfor %}
+            <li class="activity-change activity-change--new">
+                <a data-test-id="change-link" class="activity-change__link" href="{{activity.edit_path}}">{{ config.TEXT_ADD_CHANGE }}</a>
             </li>
         </ul>
+    </div>
 
-        {% if activity.history_summary.changes | length > 0 %}
-        <div class="activity-summary row">
-            <p class="activity-overview__description">{{ activity.history_summary.summary }}</p>
-            <table class="activity-summary__table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Type</th>
-                        <th>Changes</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for change in activity.history_summary.changes %}
-                    <tr>
-                        {% if change.edit_path %}
-                        <td class="activity-summary__name"><a href="{{ change.edit_path }}">{{ change.title }}</a></td>
-                        {% else %}
-                        <td class="activity-summary__name">{{ change.title }}</td>
-                        {% endif %}
-                        <td class="activity-summary__filetype">{{ change.display_type }}</td>
-                        <td class="activity-summary__changes">{{ change.actions }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <div class="activity-log activity-overview__row" id="activity-log">
+        <p class="activity-overview__header">History and discussion</p>
+
+        {% if activity.working_state == config.WORKING_STATE_ACTIVE %}
+        <div class="activity-log-item activity-log-item--comment">
+            <form data-test-id="leave-comment-form" action="{{ activity.comment_action }}" method="POST" class="comment comment--new">
+                <div class="comment__author">{% if email %}{{ email }}{% else %}unknown{% endif %}</div>
+                <div class="comment__body">
+                    <textarea class="comment__input" name="comment_text" placeholder="Leave your comment here"></textarea>
+                </div>
+                <div class="comment__actions toolbar toolbar--left">
+                    <button class="toolbar__item button" type="submit" name="comment" value="Leave a Comment">Leave a Comment</button>
+                </div>
+            </form>
         </div>
         {% endif %}
 
-        <div class="activity-log row">
-
-            {% set comment_note = "leave a comment" %}
-
-            {% if activity.review_authorized %}
-                {% if activity.review_state == config.REVIEW_STATE_EDITED %}
-                    {% set comment_note = "request feedback on your work" %}
-                {% elif activity.review_state == config.REVIEW_STATE_FEEDBACK %}
-                    {% set comment_note = "leave feedback on " + activity.last_edited_email + "'s changes" %}
-                {% elif activity.review_state == config.REVIEW_STATE_ENDORSED %}
-                    {% set comment_note = "publish changes to the site" %}
-                {% endif %}
+        {% for log_item in activity.history %}
+        <div class="activity-log-item activity-log-item--{{ log_item.commit_category }}">
+            {% if log_item.commit_type == config.COMMIT_TYPE_COMMENT %}
+            <div class="comment">
+                <div class="comment__author">{{ log_item.author_email }}</div>
+                <div class="comment__body">{{ log_item.message }}</div>
+                <div class="comment__datetime">{{ log_item.commit_date }}</div>
+            </div>
+            {% elif log_item.commit_type == config.COMMIT_TYPE_REVIEW_UPDATE %}
+            <div class="activity-log-item__content">
+                <p class="text-{% if log_item.commit_action == config.REVIEW_STATE_FEEDBACK %}orange{% elif log_item.commit_action == config.REVIEW_STATE_ENDORSED %}green{% else %}blue{% endif %}">{{ log_item.author_email }} {{ log_item.message }}</p>
+                <div class="activity-log-item__datetime">{{ log_item.commit_date }}</div>
+            </div>
             {% else %}
-                {% if activity.review_state == config.REVIEW_STATE_FEEDBACK %}
-                    {% set comment_note = "leave a comment. Currently awaiting someone to look over your work" %}
-                {% endif %}
-            {% endif %}
-
-            {% if activity.working_state == config.WORKING_STATE_ACTIVE %}
-            <p class="activity-overview__description"><a href="{{ activity.edit_path }}">Do more work on this activity</a> or {{ comment_note }}.</p>
-            {% elif activity.edit_path %}
-            <p class="activity-overview__description"><a href="{{ activity.edit_path }}">Browse this activity.</a></p>
-            {% endif %}
-
-            {% if activity.review_state != config.REVIEW_STATE_PUBLISHED and activity.working_state == config.WORKING_STATE_ACTIVE %}
-            <div class="activity-log-item activity-log-item--comment">
-                <form action="." method="POST" class="comment comment--new">
-                    <div class="comment__author">{% if email %}{{ email }}{% else %}unknown{% endif %}</div>
-                    <div class="comment__body">
-                        <textarea class="comment__input" name="comment_text" placeholder="Leave your comment here"></textarea>
-                    </div>
-                    <div class="comment__actions toolbar toolbar--right">
-                    {% if activity.review_authorized %}
-                        {% if activity.review_state == config.REVIEW_STATE_EDITED %}
-                        <button class="toolbar__item button button--orange" type="submit" name="request_feedback" value="Request Feedback">Request Feedback</button>
-                        {% elif activity.review_state == config.REVIEW_STATE_FEEDBACK %}
-                        <button class="toolbar__item button button--green" type="submit" name="endorse_edits" value="Endorse Edits">Endorse Edits</button>
-                        {% elif activity.review_state == config.REVIEW_STATE_ENDORSED %}
-                        <button class="toolbar__item button button--blue" type="submit" name="merge" value="Publish">Publish</button>
-                        {% endif %}
-                    {% endif %}
-                        <button class="toolbar__item button " type="submit" name="comment" value="Leave a Comment">Leave a Comment</button>
-                    </div>
-                </form>
-            </div>
-            {% endif %}
-
-            {% for log_item in activity.history %}
-            <div class="activity-log-item activity-log-item--{{ log_item.commit_category }}">
-                {% if log_item.commit_type == config.COMMIT_TYPE_COMMENT %}
-                <div class="comment">
-                    <div class="comment__author">{{ log_item.author_email }}</div>
-                    <div class="comment__body">{{ log_item.message }}</div>
-                    <div class="comment__datetime">{{ log_item.commit_date }}</div>
-                </div>
-                {% elif log_item.commit_type == config.COMMIT_TYPE_REVIEW_UPDATE %}
-                <div class="activity-log-item__content">
-                    <p class="text-{% if log_item.commit_action == config.REVIEW_STATE_FEEDBACK %}orange{% elif log_item.commit_action == config.REVIEW_STATE_ENDORSED %}green{% else %}blue{% endif %}">{{ log_item.author_email }} {{ log_item.message }}</p>
-                    <div class="activity-log-item__datetime">{{ log_item.commit_date }}</div>
-                </div>
+            <div class="activity-log-item__content">
+                {% if log_item.message %}
+                <p>{{ log_item.message }}</p>
                 {% else %}
-                <div class="activity-log-item__content">
-                    {% if log_item.message %}
-                    <p>{{ log_item.message }}</p>
-                    {% else %}
-                    <p>{{ log_item.commit_subject }} by {{ log_item.author_email }}.</p>
-                    {% endif %}
-                    <div class="activity-log-item__datetime">{{ log_item.commit_date }}</div>
-                </div>
+                <p>{{ log_item.commit_subject }} by {{ log_item.author_email }}.</p>
                 {% endif %}
+                <div class="activity-log-item__datetime">{{ log_item.commit_date }}</div>
             </div>
-            {% endfor %}
+            {% endif %}
         </div>
+        {% endfor %}
+    </div>
+</div>
+
+
+<div class="modal-container{% if show_rename_modal %} is-open{% endif %}">
+    <div class="modal rename-modal">
+        <label for="activity-name">Update the activity name to communicate the public need you're addressing.</label>
+        <form data-test-id="rename-activity-form" action="{{ activity.rename_action }}" method="POST">
+            <textarea name="task_description">{{activity.task_description}}</textarea>
+            <div class="toolbar toolbar--right">
+                <a href="{{activity.overview_path}}" class="toolbar__item button button--close-rename-modal">Cancel</a>
+                <button class="toolbar__item button button--green" type="submit" name="rename" value="Rename">Rename</button>
+            </div>
+        </form>
     </div>
 </div>
 

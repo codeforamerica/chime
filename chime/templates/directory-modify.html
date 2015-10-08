@@ -26,7 +26,7 @@
 <div class="articles-list__main grid col__flex">
     {% for column in dir_columns %}
     {% if (loop.index != 1 and loop.index != dir_columns|length) or (loop.index == 1 and dir_columns|length == 1) %}
-    <div class="dir grid__item {% if loop.index < 4 %}width-one-fourth{% endif %}">
+    <div class="dir grid__item{% if loop.index < 4 %} width-one-fourth{% endif %}">
       {% if loop.index == 2 %}
       <h2 class="articles-list__title">Topics</h2>
       <p class="dir__description">are displayed on the homepage.</p>
@@ -54,7 +54,7 @@
       <ul class="dir">
         {% for file in column['files'] %}
          <!-- file type: {{file['display_type']}}, file name: {{file['name']}}, file title: {{file['title']}} -->
-         <li class="dir-item {% if file['selected'] == True %}is-selected{% endif %}">
+         <li class="dir-item{% if file['selected'] == True %} is-selected{% endif %}">
             <a class="dir-item__name {{file['display_type']}}" href="{{file['edit_path']}}"><span class="dir-item__display-type {{icon_class_lookup[file['display_type']]}}"></span>{{ file['title'] }}</a>
             <div class="dir-item__actions toolbar--right">
               <a href="{{file['modify_path']}}" class="toolbar__item button dir-item__action"><span class="fa fa-pencil"></span></a>
@@ -66,7 +66,7 @@
     </div>
     {% endif %}
     {% endfor %}
-    <div class="grid__item {% if dir_columns|length == 3 %}width-three-fourths{% elif dir_columns|length == 4 %}width-one-half{% endif %} end-row directory-modify">
+    <div class="grid__item{% if dir_columns|length == 3 %} width-three-fourths{% elif dir_columns|length == 4 %} width-one-half{% endif %} end-row directory-modify">
       {% set dir_title = "Topic" %}
       {% if dir_columns|length == 4 %}
         {% set dir_title = "Subtopic" %}

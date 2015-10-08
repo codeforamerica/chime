@@ -3,16 +3,12 @@
 {% set template_name = 'activities-list' %}
 {% block body_class %}{{template_name}}{% endblock %}
 
-{% block scripts %}
-<script src="static/javascript/activities-list.js"></script>
-{% endblock %}
-
 {% block content %}
     <!-- template name: {{ template_name }} -->
     <div class="row row--main activities-list__header">
       <p class="row__left">A view of work in progress by you and your colleagues</p>
       <div class="toolbar toobar--right row__right">
-        <a id="submit-start-activity" class="button button--green button--medium button--new-activity" href="/start-activity">Start a new activity</a>
+        <a id="submit-start-activity" class="button button--green button--medium button--new-activity" href="/start">Start a new activity</a>
       </div>
     </div>
 
@@ -42,7 +38,7 @@
       {{ activity_box(activities.published, "published")}}
     </div>
 
-    <div class="modal-container {% if show_new_activity_modal %}is-open{% endif %}">
+    <div class="modal-container{% if show_new_activity_modal %} is-open{% endif %}">
     <div class="new-activity modal">
       <h3>Let teammates know what public need you are addressing.</h3>
       <form action="/start" method="POST">

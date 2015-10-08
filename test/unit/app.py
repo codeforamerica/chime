@@ -61,11 +61,8 @@ PATTERN_FORM_CATEGORY_TITLE = u'<input name="en-title" type="text" value="{title
 PATTERN_FORM_CATEGORY_DESCRIPTION = u'<textarea name="en-description" class="directory-modify__description" placeholder="Crime statistics and reports by district and map">{description}</textarea>'
 
 # review stuff
-PATTERN_REQUEST_FEEDBACK_BUTTON = u'<button class="toolbar__item button button--orange" type="submit" name="request_feedback" value="Request Feedback">Request Feedback</button>'
 PATTERN_UNREVIEWED_EDITS_LINK = u'<a href="/tree/{branch_name}/edit/">'
-PATTERN_ENDORSE_BUTTON = u'<button class="toolbar__item button button--green" type="submit" name="endorse_edits" value="Endorse Edits">Endorse Edits</button>'
 PATTERN_FEEDBACK_REQUESTED_LINK = u'<a href="/tree/{branch_name}/" class="toolbar__item button">Feedback requested</a>'
-PATTERN_PUBLISH_BUTTON = u'<button class="toolbar__item button button--blue" type="submit" name="merge" value="Publish">Publish</button>'
 PATTERN_READY_TO_PUBLISH_LINK = u'<a href="/tree/{branch_name}/" class="toolbar__item button">Ready to publish</a>'
 
 class TestAppConfig (TestCase):
@@ -690,6 +687,24 @@ class TestApp (TestCase):
             except AttributeError:
                 raise Exception('No match for generated branch name.')
 
+            # get the activity list page
+            response = self.test_client.get('/', follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            # verify that the project is listed in the edited column
+            soup = BeautifulSoup(response.data)
+            pub_ul = soup.select("#activity-list-edited")[0]
+            # there should be an HTML comment with the branch name
+            comments = pub_ul.findAll(text=lambda text: isinstance(text, Comment))
+            found = False
+            for comment in comments:
+                if generated_branch_name in comment:
+                    found = True
+                    pub_li = comment.find_parent('li')
+                    # and the activity title wrapped in an a tag
+                    self.assertIsNotNone(pub_li.find('a', text=fake_task_description))
+
+            self.assertEqual(True, found)
+
             # create a new file
             response = self.test_client.post('/tree/{}/edit/'.format(generated_branch_name),
                                              data={'action': 'create', 'create_what': constants.ARTICLE_LAYOUT, 'request_path': fake_page_slug},
@@ -700,13 +715,15 @@ class TestApp (TestCase):
             response = self.test_client.get('/tree/{}/edit/'.format(generated_branch_name), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # verify that there's a 'request feedback' button
-            self.assertTrue(PATTERN_REQUEST_FEEDBACK_BUTTON in response.data)
+            soup = BeautifulSoup(response.data)
+            self.assertIsNotNone(soup.find("button", {"data-test-id": "request-feedback-button"}))
 
             # get the overview page for the branch
             response = self.test_client.get('/tree/{}/'.format(generated_branch_name), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # verify that there's a 'request feedback' button
-            self.assertTrue(PATTERN_REQUEST_FEEDBACK_BUTTON in response.data)
+            soup = BeautifulSoup(response.data)
+            self.assertIsNotNone(soup.find("button", {"data-test-id": "request-feedback-button"}))
 
             # get the activity list page
             response = self.test_client.get('/', follow_redirects=True)
@@ -743,13 +760,15 @@ class TestApp (TestCase):
             response = self.test_client.get('/tree/{}/edit/'.format(generated_branch_name), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # verify that there's a 'Endorse Edits' button
-            self.assertTrue(PATTERN_ENDORSE_BUTTON in response.data)
+            soup = BeautifulSoup(response.data)
+            self.assertIsNotNone(soup.find("button", {"data-test-id": "endorse-edits-button"}))
 
             # get the overview page for the branch
             response = self.test_client.get('/tree/{}/'.format(generated_branch_name), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # verify that there's a 'Endorse Edits' button
-            self.assertTrue(PATTERN_ENDORSE_BUTTON in response.data)
+            soup = BeautifulSoup(response.data)
+            self.assertIsNotNone(soup.find("button", {"data-test-id": "endorse-edits-button"}))
 
             # get the activity list page
             response = self.test_client.get('/', follow_redirects=True)
@@ -779,13 +798,15 @@ class TestApp (TestCase):
             response = self.test_client.get('/tree/{}/edit/'.format(generated_branch_name), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # verify that there's a 'publish' button
-            self.assertTrue(PATTERN_PUBLISH_BUTTON in response.data)
+            soup = BeautifulSoup(response.data)
+            self.assertIsNotNone(soup.find("button", {"data-test-id": "publish-button"}))
 
             # get the overview page for the branch
             response = self.test_client.get('/tree/{}/'.format(generated_branch_name), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # verify that there's a 'publish' button
-            self.assertTrue(PATTERN_PUBLISH_BUTTON in response.data)
+            soup = BeautifulSoup(response.data)
+            self.assertIsNotNone(soup.find("button", {"data-test-id": "publish-button"}))
 
             # get the activity list page
             response = self.test_client.get('/', follow_redirects=True)
@@ -1443,15 +1464,15 @@ class TestApp (TestCase):
             for item in delete_history:
                 self.assertEqual(item['action'], u'delete')
                 if item['title'] in category_names:
-                    self.assertEqual(item['display_type'], u'category')
+                    self.assertEqual(item['display_type'], constants.CATEGORY_LAYOUT)
                     category_names.remove(item['title'])
 
                 elif item['title'] in subcategory_names:
-                    self.assertEqual(item['display_type'], u'category')
+                    self.assertEqual(item['display_type'], constants.CATEGORY_LAYOUT)
                     subcategory_names.remove(item['title'])
 
                 elif item['title'] in article_names:
-                    self.assertEqual(item['display_type'], u'article')
+                    self.assertEqual(item['display_type'], constants.ARTICLE_LAYOUT)
                     article_names.remove(item['title'])
 
             # we should have fewer category, subcategory, and article names
@@ -2010,10 +2031,7 @@ class TestApp (TestCase):
             branch_name = erica.get_branch_name()
 
             # Load the activity overview page
-            erica.follow_link(href='/tree/{}'.format(branch_name))
-            # there shouldn't be a summary yet
-            summary_div = erica.soup.find("div", class_="activity-summary")
-            self.assertIsNone(summary_div)
+            erica.follow_link(href='/tree/{}/'.format(branch_name))
 
             # Load the "other" folder
             erica.open_link(url='/tree/{}/edit/other/'.format(branch_name))
@@ -2038,44 +2056,47 @@ class TestApp (TestCase):
             # Load the activity overview page
             erica.open_link(url='/tree/{}/'.format(branch_name))
             # there is a summary
-            summary_div = erica.soup.find("div", class_="activity-summary")
+            summary_div = erica.soup.find("div", {"data-test-id": "summary-div"})
             self.assertIsNotNone(summary_div)
             # it's right about what's changed
             self.assertIsNotNone(summary_div.find(lambda tag: bool(tag.name == 'p' and '2 articles and 2 topics' in tag.text)))
-            # grab all the table rows
-            check_rows = summary_div.find_all('tr')
 
-            # make sure they match what we did above
+            # grab all the list items
+            check_rows = summary_div.find_all('li')
+
+            # the link to create a new change
+            change_row = check_rows.pop()
+            self.assertIsNotNone(change_row.find("a", {"data-test-id": "change-link"}))
+            self.assertEqual(change_row.find("a", {"data-test-id": "change-link"}).text, constants.TEXT_ADD_CHANGE)
+
+            # make sure the list items match what we did above
             category_row = check_rows.pop()
-            category_cells = category_row.find_all('td')
-            self.assertIsNotNone(category_cells[0].find('a'))
-            self.assertEqual(category_cells[0].text, category_name)
-            self.assertEqual(category_cells[1].text, constants.LAYOUT_DISPLAY_LOOKUP[constants.CATEGORY_LAYOUT].title())
-            self.assertEqual(category_cells[2].text, u'Created')
+            self.assertIsNotNone(category_row.find("a", {"data-test-id": "change-link"}))
+            self.assertEqual(category_row.find('h3', {"data-test-id": "change-title"}).text, category_name)
+            self.assertEqual(category_row.find('div', {"data-test-id": "change-display-type"}).text, constants.LAYOUT_DISPLAY_LOOKUP[constants.CATEGORY_LAYOUT].title())
+            self.assertEqual(category_row.find('p', {"data-test-id": "change-actions"}).text, u'Created')
 
             subcategory_row = check_rows.pop()
-            subcategory_cells = subcategory_row.find_all('td')
-            self.assertIsNotNone(subcategory_cells[0].find('a'))
-            self.assertEqual(subcategory_cells[0].text, subcategory_name)
-            self.assertEqual(subcategory_cells[1].text, constants.LAYOUT_DISPLAY_LOOKUP[constants.CATEGORY_LAYOUT].title())
-            self.assertEqual(subcategory_cells[2].text, u'Created')
+            self.assertIsNotNone(subcategory_row.find("a", {"data-test-id": "change-link"}))
+            self.assertEqual(subcategory_row.find('h3', {"data-test-id": "change-title"}).text, subcategory_name)
+            self.assertEqual(subcategory_row.find('div', {"data-test-id": "change-display-type"}).text, constants.LAYOUT_DISPLAY_LOOKUP[constants.CATEGORY_LAYOUT].title())
+            self.assertEqual(subcategory_row.find('p', {"data-test-id": "change-actions"}).text, u'Created')
 
             article_1_row = check_rows.pop()
-            article_1_cells = article_1_row.find_all('td')
-            self.assertIsNotNone(article_1_cells[0].find('a'))
-            self.assertEqual(article_1_cells[0].text, article_names[0])
-            self.assertEqual(article_1_cells[1].text, constants.LAYOUT_DISPLAY_LOOKUP[constants.ARTICLE_LAYOUT].title())
-            self.assertEqual(article_1_cells[2].text, u'Created, Edited')
+            self.assertIsNotNone(article_1_row.find("a", {"data-test-id": "change-link"}))
+            self.assertEqual(article_1_row.find('h3', {"data-test-id": "change-title"}).text, article_names[0])
+            self.assertEqual(article_1_row.find('div', {"data-test-id": "change-display-type"}).text, constants.LAYOUT_DISPLAY_LOOKUP[constants.ARTICLE_LAYOUT].title())
+            self.assertEqual(article_1_row.find('p', {"data-test-id": "change-actions"}).text, u'Created, Edited')
 
             article_2_row = check_rows.pop()
-            article_2_cells = article_2_row.find_all('td')
-            self.assertIsNone(article_2_cells[0].find('a'))
-            self.assertEqual(article_2_cells[0].text, article_names[1])
-            self.assertEqual(article_2_cells[1].text, constants.LAYOUT_DISPLAY_LOOKUP[constants.ARTICLE_LAYOUT].title())
-            self.assertEqual(article_2_cells[2].text, u'Created, Deleted')
+            self.assertIsNone(article_2_row.find("a", {"data-test-id": "change-link"}))
+            self.assertIsNone(article_2_row.find('h3', {"data-test-id": "change-title"}).find('a'))
+            self.assertEqual(article_2_row.find('h3', {"data-test-id": "change-title"}).text, article_names[1])
+            self.assertEqual(article_2_row.find('div', {"data-test-id": "change-display-type"}).text, constants.LAYOUT_DISPLAY_LOOKUP[constants.ARTICLE_LAYOUT].title())
+            self.assertEqual(article_2_row.find('p', {"data-test-id": "change-actions"}).text, u'Created, Deleted')
 
-            # only the header row's left
-            self.assertEqual(len(check_rows), 1)
+            # no rows left
+            self.assertEqual(len(check_rows), 0)
 
     # in TestApp
     def test_create_page_creates_directory_containing_index(self):
@@ -2636,7 +2657,7 @@ class TestApp (TestCase):
             branch_name = erica.quick_activity_setup(*args)
 
             # Ask for feedback
-            erica.follow_link(href='/tree/{}'.format(branch_name))
+            erica.follow_link(href='/tree/{}/'.format(branch_name))
             erica.request_feedback()
 
             #
@@ -2659,6 +2680,97 @@ class TestApp (TestCase):
             self.assertIsNotNone(pub_li.find('a', text=activity_title))
 
     # in TestApp
+    def test_renaming_activity(self):
+        ''' We can rename an activity
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
+
+            # Start a new task
+            erica.open_link('/')
+            erica.start_task('Ingest Wolffish, Capelin, Skate Eggs And Sometimes Rocks')
+            branch_name = erica.get_branch_name()
+
+            # rename the task
+            new_description = u'Eat Greenland Halibut, Polar And Arctic Cod, Cuttlefish, Shrimp And Armhook Squid'
+            erica.follow_link('/tree/{}/'.format(branch_name))
+            erica.rename_activity(task_description=new_description)
+
+            # the new name is on the page
+            self.assertIsNotNone(erica.soup.find(lambda tag: new_description in tag.text))
+
+            # the new name is in the task metadata
+            repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email='erica@example.com')
+            task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch_name)
+            self.assertEqual(task_metadata['task_description'], new_description)
+
+    # in TestApp
+    def test_renaming_activity_doesnt_affect_review_state(self):
+        ''' Renaming the activity shouldn't reset the review state.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in('erica@example.com')
+
+            # Start a new task and create a topic
+            erica.open_link('/')
+            args = u'Their Diets Consist Of Almost Any Creature They Are Capable Of Overpowering', u'When Living Near Water, They Will Eat Other Aquatic Animals'
+            branch_name = erica.quick_activity_setup(*args)
+
+            # request feedback for the task
+            erica.request_feedback()
+
+            # verify the feedback state
+            repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email='erica@example.com')
+            state, _ = repo_functions.get_review_state_and_author_email(repo, 'master', branch_name)
+            self.assertEqual(state, constants.REVIEW_STATE_FEEDBACK)
+
+            # change the activity description
+            new_description = u'Food is swallowed whole'
+            erica.follow_link('/tree/{}/'.format(branch_name))
+            erica.rename_activity(task_description=new_description)
+
+            # the new name is in the task metadata
+            task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch_name)
+            self.assertEqual(task_metadata['task_description'], new_description)
+
+            # the state hasn't changed
+            state, _ = repo_functions.get_review_state_and_author_email(repo, 'master', branch_name)
+            self.assertEqual(state, constants.REVIEW_STATE_FEEDBACK)
+
+    # in TestApp
+    def test_request_feedback_with_activity_rename(self):
+        ''' We can rename an activity by submitting a new name via the request feedback form
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in(erica_email)
+
+            # Start a new task and create a topic
+            erica.open_link('/')
+            args = u'Skates are cartilaginous fish', u'The Two Subfamilies Are Rajinae And Arhynchobatinae'
+            branch_name = erica.quick_activity_setup(*args)
+
+            # request feedback for the task with a new activity description
+            new_description = u'Skates Are Oviparous, That Is They Lay Eggs'
+            erica.request_feedback(task_description=new_description)
+
+            # the 'requested feedback' message is on the page
+            self.assertIsNotNone(erica.soup.find(text=u'{} {}'.format(erica_email, repo_functions.ACTIVITY_FEEDBACK_MESSAGE)))
+
+            # the new description is on the page
+            self.assertIsNotNone(erica.soup.find(lambda tag: new_description in tag.text))
+
+            # the new description is in the task metadata
+            repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email='erica@example.com')
+            task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch_name)
+            self.assertEqual(task_metadata['task_description'], new_description)
+
     def test_save_unchanged_article(self):
         ''' Saving an unchanged article doesn't raise any errors.
         '''

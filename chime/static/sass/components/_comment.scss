@@ -1,19 +1,9 @@
 .comment {
 	@include clearfix();
-	background-color: #fff;
-	border-radius: $border-radius;
+	background-color: $color-grey-50;
 	padding: 1em;
-	box-shadow: $box-shadow-1;
 	margin-bottom: 1em;
-}
-
-.comment--new {
-	background-color: $color-grey-100;
 	border: 1px solid $color-grey-300;
-	box-shadow: none;
-	.comment__author {
-		color: $color-grey-600;
-	}
 }
 
 .comment__note {
@@ -30,10 +20,11 @@
 	border-bottom: 1px solid $color-grey-200;
 	padding-bottom: 1em;
 	margin-bottom: 1em;
+	font-size: $small-font-size;
 }
 
 .comment__body {
-	font-size: $h4-font-size;
+	font-size: $text-font-size;
 	font-weight: normal;
 }
 
@@ -50,6 +41,5 @@
 }
 
 .comment__actions {
-	margin-top: 1em;
 	padding: 0;
 }
