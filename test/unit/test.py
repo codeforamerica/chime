@@ -216,7 +216,7 @@ mike@teczno.com,Code for America,Mike Migurski
             self.assertFalse(view_functions.is_allowed_email(no_file(), 'frances@codeforamerica.org'))
             self.assertFalse(view_functions.is_allowed_email(no_file(), 'mike@teczno.com'))
             self.assertFalse(view_functions.is_allowed_email(no_file(), 'whatever@teczno.com'))
-    
+
     def test_guess_branch_names_in_decorator(self):
         '''
         '''
@@ -224,24 +224,24 @@ mike@teczno.com,Code for America,Mike Migurski
 
         branch_name, master_name = \
             view_functions.guess_branch_names_in_decorator(dict(), config, dict())
-        
+
         self.assertEqual((branch_name, master_name), (None, 'abcd'))
 
         kwargs = dict(branch_name='xxyz')
         branch_name, master_name = \
             view_functions.guess_branch_names_in_decorator(kwargs, config, dict())
-        
+
         self.assertEqual((branch_name, master_name), ('xxyz', 'abcd'))
 
         form = dict(branch='lmnop')
         branch_name, master_name = \
             view_functions.guess_branch_names_in_decorator(dict(), config, form)
-        
+
         self.assertEqual((branch_name, master_name), ('lmnop', 'abcd'))
 
         branch_name, master_name = \
             view_functions.guess_branch_names_in_decorator(kwargs, config, form)
-        
+
         self.assertEqual((branch_name, master_name), ('xxyz', 'abcd'))
 
 ''' Test functions that are called outside of the google authing/analytics data fetching via the UI

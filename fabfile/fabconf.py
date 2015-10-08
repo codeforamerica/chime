@@ -42,7 +42,7 @@ fabconf['PROJECT_PATH'] = '{apps}/{project}'.format(
 fabconf['DOMAINS'] = os.environ.get('DOMAINS')
 
 # Name tag for your server instance on EC2
-# Use recommendation from https://docs.python.org/2/library/os.html#os.getlogin 
+# Use recommendation from https://docs.python.org/2/library/os.html#os.getlogin
 # to get around ioctl error thrown by os.getlogin() in a cron job.
 fabconf['INSTANCE_NAME_TAG'] = os.environ.get('INSTANCE_NAME_TAG', 'ChimeCMS Autotest')
 fabconf['INSTANCE_CREATED_BY'] = '{}-{}'.format(pwd.getpwuid(os.getuid())[0], os.uname()[1])
@@ -53,7 +53,7 @@ fabconf['AWS_ACCESS_KEY'] = os.environ['AWS_ACCESS_KEY']
 # EC2 secret.
 fabconf['AWS_SECRET_KEY'] = os.environ['AWS_SECRET_KEY']
 
-#EC2 region. Defaults to us-east-1
+# EC2 region. Defaults to us-east-1
 fabconf['EC2_REGION'] = os.environ.get('EC2_REGION', 'us-east-1')
 
 # AMI name. Either pass in a comma-delimited list of values.

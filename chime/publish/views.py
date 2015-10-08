@@ -9,10 +9,10 @@ from .functions import process_remote_commit
 def index():
     payload = request.get_json(force=True)
     commit = payload.get('commits', [None])[0]
-    
+
     if commit is None or 'url' not in commit:
         return Response('No', status=400)
-    
+
     process_remote_commit(commit['url'], commit['sha'])
-    
+
     return ''

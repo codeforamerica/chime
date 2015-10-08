@@ -1,9 +1,7 @@
-import os
 from unittest import TestCase, SkipTest
 from unittest.case import _ExpectedFailure, _UnexpectedSuccess
 import sys
 import warnings
-from acceptance.browser import Browser
 
 class ChimeTestCase(TestCase):
     def run(self, result=None):
@@ -30,8 +28,8 @@ class ChimeTestCase(TestCase):
                 getattr(testMethod, "__unittest_skip__", False)):
             # If the class or method was skipped.
             try:
-                skip_why = (getattr(self.__class__, '__unittest_skip_why__', '')
-                            or getattr(testMethod, '__unittest_skip_why__', ''))
+                skip_why = (getattr(self.__class__, '__unittest_skip_why__', '') or
+                            getattr(testMethod, '__unittest_skip_why__', ''))
                 self._addSkip(result, skip_why)
             finally:
                 result.stopTest(self)
@@ -115,12 +113,12 @@ def rewrite_for_all_browsers(test_class, browser_list, times=1, retry_count=1):
     """
     for name in [n for n in dir(test_class) if n.startswith('test_')]:
         test_method = getattr(test_class, name)
-        for count in range(1,times+1):
+        for count in range(1, times + 1):
             for browser in browser_list:
                 new_name = "{name}_{browser}".format(name=name, browser=browser.safe_name())
                 if times > 1:
-                    new_name+= "-{}".format(count)
-                if retry_count<=1:
+                    new_name += "-{}".format(count)
+                if retry_count <= 1:
                     new_function = lambda instance, browser_to_use=browser: test_method(instance, browser_to_use)
                 else:
                     def auto_retry(instance, test_method, browser_to_use):
@@ -143,5 +141,3 @@ def rewrite_for_all_browsers(test_class, browser_list, times=1, retry_count=1):
                 new_function.__name__ = new_name
                 setattr(test_class, new_name, new_function)
         delattr(test_class, name)
-
-

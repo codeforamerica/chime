@@ -19,8 +19,6 @@ from . import publish
 from .jekyll_functions import load_jekyll_doc, dump_jekyll_doc, load_languages
 from .storage.user_task import UserTask, UserTaskPublished, UserTaskDeleted
 
-from . import constants
-
 # the decorator functions
 from .view_functions import login_required, lock_on_user, browserid_hostname_required, synch_required, synched_checkout_required, log_application_errors
 # everything else
@@ -628,19 +626,19 @@ def branch_save(branch_name, path):
     working_dirname = current_app.config['WORK_PATH']
     task_id = view_functions.branch_name2path(view_functions.branch_var2name(branch_name))
     user_task = UserTask(actor, task_id, origin_dirname, working_dirname, start_point)
-    
+
     languages = load_languages(user_task.repo.working_dir)
     front, body = view_functions.prep_jekyll_content(request.form, languages)
-    
+
     data = BytesIO()
     dump_jekyll_doc(front, body, data)
     user_task.write(path, data.getvalue())
 
     end_path = path
-    
+
     if request.form.get('url-slug'):
         new_path = view_functions.calculate_new_slug(path, request.form['url-slug'])
-        
+
         if new_path:
             try:
                 user_task.move(path, new_path)
@@ -696,10 +694,10 @@ def styleguide():
 def admin():
     return render_template('admin.html')
 
-@app.route('/admin/publish', methods = ['POST'])
+@app.route('/admin/publish', methods=['POST'])
 @log_application_errors
 @login_required
-def publish():
+def publish_branch():
     repo = view_functions.get_repo(flask_app=current_app)
     master_name = current_app.config['default_branch']
     repo.git.checkout(master_name)

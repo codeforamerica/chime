@@ -10,7 +10,7 @@ import traceback
 
 from git import Repo
 
-from .repo_functions import NEEDS_PUSH_FILE, push_upstream_if_needed
+from .repo_functions import push_upstream_if_needed
 from .google_api_functions import (
     is_overdue_ga_config, read_ga_config, request_new_google_access_token
 )
@@ -40,7 +40,7 @@ if __name__ == '__main__':
                 request_new_google_access_token(*token_args)
         except:
             traceback.print_exc(file=sys.stderr)
-        
+
         #
         # Periodically push to upstream backup remote from origin, triggered
         # in @synch_required and @synched_checkout_required decorators.

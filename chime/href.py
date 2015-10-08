@@ -1,6 +1,6 @@
 from urlparse import urlparse
 from re import match
-    
+
 def get_redirect(req_path, ref_url):
     '''
     >>> get_redirect('/style.css', 'http://preview.local/tree/foo/view/')
@@ -14,7 +14,7 @@ def get_redirect(req_path, ref_url):
     '''
     _, ref_host, ref_path, _, _, _ = urlparse(ref_url)
     ref_git_preamble_match = match(r'((/[^/]+){3})', ref_path)
-    
+
     return ref_git_preamble_match.group(1) + req_path
 
 def needs_redirect(req_host, req_path, ref_url):
@@ -41,27 +41,27 @@ def needs_redirect(req_host, req_path, ref_url):
     True
     '''
     _, ref_host, ref_path, _, _, _ = urlparse(ref_url)
-    
+
     #
     # Don't redirect when the request and referer hosts don't match.
     #
     if req_host != ref_host:
         return False
-    
+
     ref_git_preamble_match = match(r'(/tree/[^/]+/view/)', ref_path)
-    
+
     #
     # Don't redirect when the referer doesn't appear to include a git path.
     #
     if not ref_git_preamble_match:
         return False
-    
+
     #
     # Don't redirect when the request path already includes the git preamble.
     #
     if req_path.startswith(ref_git_preamble_match.group(1)):
         return False
-    
+
     return True
 
 if __name__ == '__main__':

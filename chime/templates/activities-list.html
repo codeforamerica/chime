@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Activities{% endblock %}
 {% set template_name = 'activities-list' %}
-{% block body_class %}{{template_name}}{% endblock %}
+{% block body_class %}{{ template_name }}{% endblock %}
 
 {% block content %}
     <!-- template name: {{ template_name }} -->
@@ -32,10 +32,10 @@
     </ul>
 
     <div class="activities-list__main row row--main col__flex grid">
-      {{ activity_box(activities.in_progress, "edited")}}
-      {{ activity_box(activities.feedback, "feedback")}}
-      {{ activity_box(activities.endorsed, "endorsed")}}
-      {{ activity_box(activities.published, "published")}}
+      {{ activity_box(activities.in_progress, "edited") }}
+      {{ activity_box(activities.feedback, "feedback") }}
+      {{ activity_box(activities.endorsed, "endorsed") }}
+      {{ activity_box(activities.published, "published") }}
     </div>
 
     <div class="modal-container{% if show_new_activity_modal %} is-open{% endif %}">

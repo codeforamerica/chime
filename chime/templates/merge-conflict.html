@@ -14,7 +14,7 @@
       {% endfor %}
     </ul>
     <form action="/update" method="POST">
-      <input name="branch" value="{{branch}}" type="hidden">
+      <input name="branch" value="{{ branch }}" type="hidden">
       <button class="toolbar__item button button--red" type="submit" name="abandon">Abandon</button>
       <button class="toolbar__item button button--red" type="submit" name="clobber">Clobber</button>
     </form>
