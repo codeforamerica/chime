@@ -946,6 +946,12 @@ def update_activity_review_state(working_branch_name, default_branch_name, comme
             'endorse_edits': u'endorse the edits',
             'merge': u'publish the edits'
         }
+        if action and action in action_lookup:
+            action_description = action_lookup[action]
+        else:
+            action_description = u'complete that action'
+            Logger.error("Got an unfamiliar action in update_activity_review_state: {}".format(action))
+
         action_description = action_lookup[action] if action and action in action_lookup else u'complete that action'
         flash(u'Something changed behind the scenes and we couldn\'t {}! Please try again.'.format(action_description), u'error')
 
