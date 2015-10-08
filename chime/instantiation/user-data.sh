@@ -3,7 +3,7 @@ apt-get update -y
 apt-get install -y git htop curl
 
 # What is our public DNS name?
-ipaddr=$(ifconfig eth0 | grep 'inet addr:'| grep -v '127.0.0.1' | cut -d: -f2 | awk '{{print $1}}')
+ipaddr=$(ifconfig eth0 | grep 'inet addr:'| grep -v '127.0.0.1' | cut -d: -f2 | awk '{{ print $1}}')
 fullname=`curl -s http://169.254.169.254/latest/meta-data/public-hostname`
 shortname=`echo $fullname | cut -d. -f1`
 
