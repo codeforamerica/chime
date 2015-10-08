@@ -15,7 +15,6 @@ import sys
 from chime.repo_functions import ChimeRepo
 from slugify import slugify
 from multiprocessing import Process
-import json
 import time
 import logging
 import tempfile
@@ -387,7 +386,7 @@ class TestApp (TestCase):
             response = self.test_client.get('/')
             self.assertEqual(response.status_code, 200, 'Should have worked')
             self.assertEqual(get_auth_data_file.call_count, 0, 'Should not have called get_auth_data_file()')
-            
+
             # Show that a call to auth CSV was made, outside the timeout period.
             time.sleep(1.1)
             response = self.test_client.get('/')
@@ -2555,12 +2554,12 @@ class TestApp (TestCase):
             with HTTMock(self.mock_persona_verify_frances):
                 frances = ChimeTestClient(self.app.test_client(), self)
                 frances.sign_in('frances@example.com')
-            
+
             # Start a new task, "Diving for Dollars".
             frances.open_link('/')
             frances.start_task(description=u'Diving for Dollars')
             branch_name = frances.get_branch_name()
-            
+
             # Look for an "other" link that we know about - is it a category?
             frances.follow_link('/tree/{}/edit/other/'.format(branch_name))
 
@@ -2569,7 +2568,7 @@ class TestApp (TestCase):
             frances.add_subcategory('Flipping Out')
             frances.add_article('So Awesome')
             edit_path = frances.path
-            
+
             # Preview the new article.
             frances.preview_article('So, So Awesome', 'It was the best of times.')
 

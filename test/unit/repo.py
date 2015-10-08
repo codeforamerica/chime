@@ -445,7 +445,7 @@ class TestRepo (TestCase):
         self.assertNotEqual(front2b[title_key_name], front1[title_key_name])
         self.assertEqual(body2b.strip(), 'Another change to the body')
         self.assertFalse(self.clone2.commit().message.startswith('Merged work from'))
-        
+
         # There's no conflict; the merge would be clean.
         self.assertIsNone(repo_functions.get_conflict(self.clone2, 'master'), "There is no conflict")
         self.assertIsNotNone(repo_functions.get_changed(self.clone2, 'master'), "A change should be visible")
@@ -582,7 +582,7 @@ class TestRepo (TestCase):
         #
         # Merge the first branch to master.
         #
-        commit2 = repo_functions.complete_branch(self.clone1, 'master', branch1_name)
+        repo_functions.complete_branch(self.clone1, 'master', branch1_name)
         self.assertFalse(branch1_name in self.origin.branches)
 
         #
@@ -596,7 +596,7 @@ class TestRepo (TestCase):
 
         args2 = self.clone2, 'conflict.md', '...', branch2.commit.hexsha, 'master'
         repo_functions.save_working_file(*args2)
-        
+
         conflict = repo_functions.get_conflict(self.clone2, 'master')
 
         self.assertTrue(bool(conflict))

@@ -3,9 +3,7 @@ from logging import getLogger
 logger = getLogger('chime.httpd')
 
 from os.path import join, exists
-from subprocess import Popen, PIPE, check_output
-from shutil import rmtree
-from time import sleep
+from subprocess import Popen, check_output
 from re import compile
 from os import mkdir
 
@@ -82,17 +80,17 @@ def apache_version(httpd_path):
 
 def run_apache_forever(doc_root, root, port, watch):
     ''' Look for Apache executable and start it up.
-    
+
         Return an instance of subprocess.Process.
-        
+
         Assumes that jekyll build has already created root/_site.
     '''
     pid_path = join(root, 'httpd.pid')
-    
+
     if exists(pid_path):
         logger.debug('Refusing to run Apache because {} exists'.format(pid_path))
         return None
-    
+
     try:
         mkdir(join(root, 'logs'))
     except OSError:
@@ -103,10 +101,10 @@ def run_apache_forever(doc_root, root, port, watch):
     httpd_path = filter(exists, httpd_paths)[0]
 
     version_param = '-DVersion{}.{}'.format(*apache_version(httpd_path))
-    
+
     httpd_cmd = (httpd_path, '-d', root, '-f', 'httpd.conf',
                  '-DFOREGROUND', '-DNO_DETACH', version_param)
-    
+
     if exists(join(mod_path, 'mod_unixd.so')):
         httpd_cmd += ('-DUnixd', )
 
@@ -118,5 +116,5 @@ def run_apache_forever(doc_root, root, port, watch):
 
     httpd = Popen(httpd_cmd, stderr=stderr, stdout=stdout)
     logger.debug('Running Apache at http://127.0.0.1:{} from {}'.format(port, root))
-    
+
     return httpd

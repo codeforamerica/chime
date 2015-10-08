@@ -8,7 +8,7 @@ import subprocess
 import time
 import json
 
-from requests import get, post
+from requests import post
 from itertools import groupby
 from operator import itemgetter
 from io import StringIO
@@ -183,9 +183,6 @@ def _load_hosts():
     except IOError:
         return []
 
-        if self.output:
-            print(self, 'done', file=self.output)
-
 
 def _write_host_to_file(host):
     hosts = _load_hosts()
@@ -210,7 +207,7 @@ def _send_results_to_cloud(filename, slack_webhook_url):
         results = [json.loads(line) for line in file]
 
     headers = {'Content-Type': 'application/json'}
-    
+
     # The first and last lines have the start and end times.
     commit = subprocess.check_output('git rev-parse HEAD'.split()).decode('utf-8')[:12]
     output = dict(results=results[1:-1], commit=commit)
@@ -220,7 +217,7 @@ def _send_results_to_cloud(filename, slack_webhook_url):
 
     connection = connect_s3(fabconf.get('AWS_ACCESS_KEY'), fabconf.get('AWS_SECRET_KEY'))
 
-    for key_name in ('acceptance-test-nights.json', 'acceptance-test-nights-{:.0f}.json'.format(time.time())): 
+    for key_name in ('acceptance-test-nights.json', 'acceptance-test-nights-{:.0f}.json'.format(time.time())):
         key = connection.get_bucket('chimecms-test-results').new_key(key_name)
         key.set_contents_from_string(string, policy='public-read', headers=headers)
         url = key.generate_url(expires_in=0, query_auth=False, force_http=True)
@@ -246,11 +243,11 @@ def _send_results_to_slack(output, slack_webhook_url):
 
     for (browser, group) in groupby(sorted(results, key=rsort), rgroup):
         statuses, times = zip(*[(r['status'], r['elapsed']) for r in group])
-        
-        min_time, med_time, max_time = min(times), times[len(times)//2], max(times)
+
+        min_time, med_time, max_time = min(times), times[len(times) // 2], max(times)
         time_format = u'Completed in {med:.0f} seconds (max {max:.0f}s)'
         time_summary = time_format.format(min=min_time, med=med_time, max=max_time)
-        
+
         done_count = len([s for s in statuses if s == 'done'])
         fail_count = len([s for s in statuses if s == 'failed'])
         error_count = len([s for s in statuses if s == 'errored'])
@@ -258,7 +255,7 @@ def _send_results_to_slack(output, slack_webhook_url):
         status_format = u'*{percent:.0f}%:* {done} succeeded, {failed} failed, and {errored} errored'
         status_kwargs = dict(percent=status_percent, done=done_count, failed=fail_count, errored=error_count)
         status_summary = status_format.format(**status_kwargs)
-        
+
         print(u'• {}: {}'.format(browser, status_summary, time_summary), file=output)
 
     text = output.getvalue()

@@ -101,7 +101,7 @@ class _AssertLogsContext(_BaseTestCaseContext):
         if len(self.watcher.records) == 0:
             self._raiseFailure(
                 "no logs of level {} or higher triggered on {}"
-                    .format(logging.getLevelName(self.level), self.logger.name))
+                .format(logging.getLevelName(self.level), self.logger.name))
 
 
 class LogTestCase(TestCase):
@@ -258,11 +258,10 @@ class TestChimeErrorReportFormatter(TestCase):
                 return werkzeug.datastructures.Headers()
 
             def session(self):
-                return flask.sessions.SecureCookieSession({'key':'value'})
+                return flask.sessions.SecureCookieSession({'key': 'value'})
 
             def fail(self):
                 raise ValueError("argh")
-
 
         sample = Sample()
 
@@ -278,7 +277,6 @@ class TestChimeErrorReportFormatter(TestCase):
         # letting the caller specify where the object goes in the eval
         self.assertEqual({}, make_safe_for_json(sample, "dict({}.headers())"))
 
-
         # good failure handling
         self.assertEqual("SERIALIZATION_ERROR: For 'nonexistent': Sample instance has no attribute 'nonexistent'",
                          make_safe_for_json(sample, "nonexistent"))
@@ -288,7 +286,7 @@ class TestChimeErrorReportFormatter(TestCase):
                          make_safe_for_json(sample, "a_number()[0]"))
         self.assertRegexpMatches(make_safe_for_json(sample, "fail"),
                                  "^SERIALIZATION_ERROR: For 'fail': .* not JSON serializable$",
-                         )
+                                 )
 
 
 if __name__ == '__main__':

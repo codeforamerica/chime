@@ -540,7 +540,7 @@ def save_working_file(clone, path, message, base_sha, default_branch_name):
 
 def get_conflict(clone, other_branch_name):
     ''' Attempt to merge from origin default branch, return a conflict (if any).
-    
+
         Currently requires a clean working tree in the clone!
     '''
     clone.git.fetch('origin', other_branch_name)
@@ -553,25 +553,25 @@ def get_conflict(clone, other_branch_name):
         # Okay, we have a conflict. Make a new MergeConflict and return it.
         clone.git.merge('--abort')
         logging.info('Git command "{}" returned status {}'.format(' '.join(err.command), err.status))
-        
+
         remote_commit = clone.refs[_origin(other_branch_name)].commit
         return MergeConflict(remote_commit, local_commit=clone.commit())
-    
+
     else:
         # Merged clean, we're clean, everybody's clean.
         clone.git.reset('--hard')
 
 def get_changed(clone, other_branch_name):
     ''' Check differenace against origin default branch, return a boolean True if any.
-    
+
         Use the merge-base to see if further work has happened on the other branch.
     '''
     clone.git.fetch('origin', other_branch_name)
-    
+
     local_commit = clone.commit()
     base_hexsha = clone.git.merge_base(_origin(other_branch_name), local_commit)
     remote_commit = clone.refs[_origin(other_branch_name)].commit
-    
+
     if remote_commit.hexsha != base_hexsha:
         return True
 

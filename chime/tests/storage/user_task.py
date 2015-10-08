@@ -83,7 +83,7 @@ class TestFirst(TestCase):
             usertask.push()
         with get_usertask(Frances, self.task_id, *self.get_usertask_args, start_point=self.task_id) as usertask:
             self.assertEqual(usertask.read('parking.md'), '---\nnew stuff')
-            
+
             info = usertask.ref_info()
             self.assertEqual(info['published_by'], Erica.email)
             self.assertTrue('ago' in info['published_date'])
@@ -95,11 +95,11 @@ class TestFirst(TestCase):
             usertask.push()
         with get_usertask(Frances, self.task_id, *self.get_usertask_args, start_point=self.task_id) as usertask:
             self.assertEqual(usertask.read('jobs.md'), '---\nnew stuff')
-            
+
             info = usertask.ref_info()
             self.assertEqual(info['published_by'], Erica.email)
             self.assertTrue('ago' in info['published_date'])
-    
+
     def testMoveFile(self):
         with get_usertask(Erica, self.task_id, *self.get_usertask_args, start_point=self.task_id) as usertask:
             usertask.move('parking.md', 'carholing.md')
@@ -130,7 +130,7 @@ class TestFirst(TestCase):
             usertask.commit('I wrote the same things')
             usertask.push()
 
-    def testResubmitFileEdits(self):
+    def testSubmitConflictingFileEdits(self):
         ''' Simulate a single user's preview, back-button, and conflicting re-save.
         '''
         with get_usertask(Erica, self.task_id, *self.get_usertask_args, start_point=self.task_id) as usertask:
@@ -165,13 +165,13 @@ class TestFirst(TestCase):
 
         with get_usertask(Erica, self.task_id, *self.get_usertask_args, start_point=start_sha) as usertask:
             usertask.write('jobs.md', "---\nnew stuff\n\nmore stuff\n\nfinal stuff\n")
-            
+
             # Don't let Erica possibly clobber Frances's changes.
             # Kick this conflict upstairs.
             with self.assertRaises(MergeConflict) as conflict:
                 usertask.commit('I wrote final things')
                 usertask.push()
-            
+
             self.assertEqual(conflict.exception.local_commit.author, Erica)
             self.assertEqual(conflict.exception.remote_commit.author, Frances)
 
@@ -184,10 +184,10 @@ class TestFirst(TestCase):
             usertask.push()
             start_sha = usertask.commit_sha
 
-        with get_usertask(Erica, self.task_id, *self.get_usertask_args, start_point=start_sha) as usertask1:
+        with get_usertask(Erica, self.task_id, *self.get_usertask_args, start_point=start_sha):
             # Lock contention will bubble up as an IOError.
-            with self.assertRaises(IOError) as error:
-                with get_usertask(Erica, self.task_id, *self.get_usertask_args, start_point=start_sha) as usertask2:
+            with self.assertRaises(IOError):
+                with get_usertask(Erica, self.task_id, *self.get_usertask_args, start_point=start_sha):
                     pass
 
     def testInterleavedFileEditsWithInterloper(self):
@@ -200,7 +200,7 @@ class TestFirst(TestCase):
             start_sha = usertask.commit_sha
 
         with get_usertask(Frances, self.task_id, *self.get_usertask_args, start_point=start_sha) as usertaskF, \
-             get_usertask(Erica, self.task_id, *self.get_usertask_args, start_point=start_sha) as usertaskE:
+                get_usertask(Erica, self.task_id, *self.get_usertask_args, start_point=start_sha) as usertaskE:
             usertaskF.write('jobs.md', "---\nnew stuff\n\nmore stuff\n")
             usertaskF.commit('I wrote more things')
             usertaskF.push()
@@ -212,7 +212,7 @@ class TestFirst(TestCase):
             with self.assertRaises(MergeConflict) as conflict:
                 usertaskE.commit('I wrote different things')
                 usertaskE.push()
-            
+
             self.assertEqual(conflict.exception.local_commit.author, Erica)
             self.assertEqual(conflict.exception.remote_commit.author, Frances)
 

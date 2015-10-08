@@ -36,9 +36,8 @@ class Stats:
     def select(self, proc):
         return [i for i in self.records if proc(i)]
 
-
     def errors(self):
-        return self.select(lambda d: d.has_key('error_type'))
+        return self.select(lambda d: 'error_type' in d)
 
     def failure_count(self):
         failures = defaultdict(int)
@@ -82,5 +81,5 @@ keys = failures.keys()
 keys.sort(key=lambda x: -failures[x])
 for key in keys:
     print "  {key:<25} {value:>3}".format(key=key, value=failures[key])
-    for record in stats.select(lambda x:x['success']==False and x['error_type']==key):
+    for record in stats.select(lambda x: x['success'] == False and x['error_type'] == key):
         print "    {filename}".format(**record)

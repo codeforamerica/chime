@@ -137,7 +137,7 @@ class TestProcess (TestCase):
             with HTTMock(self.mock_persona_verify_erica):
                 erica = ChimeTestClient(self.app.test_client(), self)
                 erica.sign_in('erica@example.com')
-            
+
             with HTTMock(self.mock_persona_verify_frances):
                 frances = ChimeTestClient(self.app.test_client(), self)
                 frances.sign_in('frances@example.com')
@@ -146,14 +146,14 @@ class TestProcess (TestCase):
             erica.open_link('/')
             args = 'Diving for Dollars', 'Ninjas', 'Flipping Out', 'So Awesome'
             branch_name = erica.quick_activity_setup(*args)
-            
+
             # Edit the new article.
             erica.edit_article('So, So Awesome', 'It was the best of times.')
-            
+
             # Ask for feedback
             erica.follow_link('/tree/{}/'.format(branch_name))
             erica.request_feedback('Is this okay?')
-            
+
             #
             # Switch users and comment on the activity.
             #
@@ -177,44 +177,44 @@ class TestProcess (TestCase):
             with HTTMock(self.mock_persona_verify_erica):
                 erica = ChimeTestClient(self.app.test_client(), self)
                 erica.sign_in('erica@example.com')
-            
+
             with HTTMock(self.mock_persona_verify_frances):
                 frances = ChimeTestClient(self.app.test_client(), self)
                 frances.sign_in('frances@example.com')
-            
+
             # Erica starts a new task, "Diving for Dollars".
             erica.open_link('/')
             erica.start_task('Diving for Dollars')
             erica_branchname = erica.get_branch_name()
-            
+
             # Erica creates a new category and asks for feedback.
             erica.follow_link('/tree/{}/edit/other/'.format(erica_branchname))
             erica.add_category('Dollars')
             erica.follow_link('/tree/{}/'.format(erica_branchname))
             erica.request_feedback('Is this okay?')
-            
+
             # Frances starts a new task, "Bobbing for Apples".
             frances.open_link('/')
             frances.start_task('Bobbing for Apples')
             frances_branchname = frances.get_branch_name()
-            
+
             # Frances creates a new category.
             frances.follow_link('/tree/{}/edit/other/'.format(frances_branchname))
             frances.add_category('Apples')
-            
+
             # Frances approves Erica's new work and publishes it.
             frances.open_link(erica.path)
             frances.leave_feedback('It is super-great.')
             frances.approve_activity()
             frances.publish_activity()
-            
+
             # Erica should now expect to see her own new category.
             erica.open_link('/')
             erica.start_task('Canticle for Leibowitz')
             erica_branchname2 = erica.get_branch_name()
             erica.follow_link('/tree/{}/edit/other/'.format(erica_branchname2))
             self.assertIsNotNone(erica.soup.find(text='Dollars'), 'Should see first published category')
-            
+
             # Frances should still not expect to see Erica's published category.
             frances.open_link('/tree/{}/edit/'.format(frances_branchname))
             frances.follow_link('/tree/{}/edit/other/'.format(frances_branchname))
@@ -406,7 +406,7 @@ class TestProcess (TestCase):
             with HTTMock(self.mock_persona_verify_erica):
                 erica = ChimeTestClient(self.app.test_client(), self)
                 erica.sign_in('erica@example.com')
-            
+
             with HTTMock(self.mock_persona_verify_frances):
                 frances = ChimeTestClient(self.app.test_client(), self)
                 frances.sign_in('frances@example.com')
@@ -436,7 +436,7 @@ class TestProcess (TestCase):
             frances.leave_feedback(comment_text='It is super-great.')
             frances.approve_activity()
             frances.publish_activity()
-            
+
             #
             # Now introduce a conflicting change on the original activity,
             # and verify that the expected flash warning is displayed.
@@ -516,7 +516,7 @@ class TestProcess (TestCase):
             frances.leave_feedback(comment_text='It is super-great.')
             frances.approve_activity()
             frances.publish_activity()
-            
+
             #
             # Now introduce a conflicting change on the original activity,
             # and verify that the expected flash warning is displayed.
@@ -1033,7 +1033,7 @@ class TestProcess (TestCase):
             with HTTMock(self.mock_persona_verify_erica):
                 erica = ChimeTestClient(self.app.test_client(), self)
                 erica.sign_in('erica@example.com')
-            
+
             with HTTMock(self.mock_persona_verify_frances):
                 frances = ChimeTestClient(self.app.test_client(), self)
                 frances.sign_in('frances@example.com')
@@ -1043,14 +1043,14 @@ class TestProcess (TestCase):
             args = 'Bobbing for Apples', 'Ninjas', 'Flipping Out', 'So Awesome'
             frances.quick_activity_setup(*args)
             frances.edit_article(title_str='So, So Awesome', body_str='It was the best of times.')
-            
+
             # Erica now opens the article that Frances started.
             erica.open_link(frances.path)
-            
+
             # Frances starts a different article.
             frances.open_link(dirname(dirname(frances.path)) + '/')
             frances.add_article('So Terrible')
-            
+
             # Meanwhile, Erica completes her edits.
             erica.edit_article(title_str='So, So Awesome', body_str='It was the best of times.\n\nBut also the worst of times.')
 
