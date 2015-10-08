@@ -16,7 +16,7 @@
         <script src="https://login.persona.org/include.js"></script>
         {% endif %}
         <script type="text/javascript">
-          var currentUser = {{email|tojson|safe}};
+          var currentUser = {{ email|tojson|safe }};
         </script>
         <link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700,300italic,400italic,600italic,700italic' rel='stylesheet' type='text/css'>
         <link href="/static/stylesheets/main.css" rel="stylesheet" />
@@ -25,7 +25,7 @@
         <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
         {% if activity %}
         <!-- branch: {{ safe_branch }} -->
-        <!-- author: {% if activity.author_email %}{{activity.author_email}}{% else %}unknown{% endif %} -->
+        <!-- author: {% if activity.author_email %}{{ activity.author_email }}{% else %}unknown{% endif %} -->
         {% endif %}
         <script>
           (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
