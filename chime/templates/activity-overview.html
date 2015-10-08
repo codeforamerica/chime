@@ -10,7 +10,7 @@
 {% block scripts %}
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 <script src="/static/javascript/activity-overview.js"></script>
-{% endblock%}
+{% endblock %}
 
 {% block content %}
 <!-- template name: {{ template_name }} -->
@@ -32,12 +32,12 @@
           {% if activity.review_state == config.REVIEW_STATE_FRESH %}
           <span class="toolbar__item activity-bar__status">awaiting edits</span>
           {% elif activity.review_state == config.REVIEW_STATE_EDITED %}
-          <a href="{{activity.review_path}}" class="toolbar__item button button--medium button--open-review-modal button--orange">Request feedback</a>
+          <a href="{{ activity.review_path }}" class="toolbar__item button button--medium button--open-review-modal button--orange">Request feedback</a>
           {% elif activity.review_state == config.REVIEW_STATE_FEEDBACK %}
-          <a href="{{activity.overview_path}}#activity-log" class="toolbar__item button"button--medium >Comment</a>
-          <a href="{{activity.review_path}}" class="toolbar__item button button--medium button--open-review-modal button--green">Endorse</a>
+          <a href="{{ activity.overview_path }}#activity-log" class="toolbar__item button"button--medium >Comment</a>
+          <a href="{{ activity.review_path }}" class="toolbar__item button button--medium button--open-review-modal button--green">Endorse</a>
           {% elif activity.review_state == config.REVIEW_STATE_ENDORSED %}
-          <a href="{{activity.review_path}}" class="toolbar__item button button--medium button--open-review-modal button--blue">Publish</a>
+          <a href="{{ activity.review_path }}" class="toolbar__item button button--medium button--open-review-modal button--blue">Publish</a>
           {% endif %}
           {% else %}
           <span class="toolbar__item activity-bar__status">awaiting feedback</span>
@@ -84,12 +84,12 @@
                 {% if change.edit_path %}<a data-test-id="change-link" href="{{ change.edit_path }}" class="activity-change__link">{% endif %}
                 <h3 data-test-id="change-title" class="activity-change__filename{% if not change.edit_path %} is-deleted{% endif %}">{{ change.title }}</h3>
                 <p data-test-id="change-actions" class="activity-change__changes">{{ change.actions }}</p>
-                <div data-test-id="change-display-type" class="activity-change__filetype activity-change__filetype--{{change.display_type|lower}}">{{ change.display_type }}</div>
+                <div data-test-id="change-display-type" class="activity-change__filetype activity-change__filetype--{{ change.display_type|lower }}">{{ change.display_type }}</div>
                 {% if change.edit_path %}</a>{% endif %}
             </li>
             {% endfor %}
             <li class="activity-change activity-change--new">
-                <a data-test-id="change-link" class="activity-change__link" href="{{activity.edit_path}}">{{ config.TEXT_ADD_CHANGE }}</a>
+                <a data-test-id="change-link" class="activity-change__link" href="{{ activity.edit_path }}">{{ config.TEXT_ADD_CHANGE }}</a>
             </li>
         </ul>
     </div>
@@ -144,9 +144,9 @@
     <div class="modal rename-modal">
         <label for="activity-name">Update the activity name to communicate the public need you're addressing.</label>
         <form data-test-id="rename-activity-form" action="{{ activity.rename_action }}" method="POST">
-            <textarea name="task_description">{{activity.task_description}}</textarea>
+            <textarea name="task_description">{{ activity.task_description }}</textarea>
             <div class="toolbar toolbar--right">
-                <a href="{{activity.overview_path}}" class="toolbar__item button button--close-rename-modal">Cancel</a>
+                <a href="{{ activity.overview_path }}" class="toolbar__item button button--close-rename-modal">Cancel</a>
                 <button class="toolbar__item button button--green" type="submit" name="rename" value="Rename">Rename</button>
             </div>
         </form>
