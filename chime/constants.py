@@ -1,3 +1,4 @@
+# -- coding: utf-8 --
 # Pattern used in calculating directory names for UserTask.
 # This must be different from get_repo()'s, because they treat master differently.
 USERTASK_DIRECTORY_PATTERN = 'usertask-{sha}-{email}'
@@ -19,7 +20,7 @@ REVIEW_STATE_ENDORSED = u'edits endorsed'
 REVIEW_STATE_PUBLISHED = u'changes published'
 
 # the different working states for an activity
-# the activity is not an activity yet – its a representation of the live site
+# the activity is not an activity yet, it's a representation of the live site
 WORKING_STATE_LIVE = u'live'
 # the activity is current and active
 WORKING_STATE_ACTIVE = u'active'
