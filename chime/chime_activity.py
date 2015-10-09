@@ -271,7 +271,7 @@ class ChimePublishedActivity(BaseActivity):
         self.comment_action = None
         self.rename_action = None
 
-        task_metadata = repo_functions.get_task_metadata_from_tag(clone=self.repo, working_branch_name=self.safe_branch) # *
+        task_metadata = repo_functions.get_task_metadata_from_tag(clone=self.repo, working_branch_name=self.safe_branch)
         self.author_email, self.task_description = self._process_task_metadata(task_metadata)
 
         # get date updated and last edited email from the tag's git log
