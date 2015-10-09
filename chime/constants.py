@@ -19,6 +19,8 @@ REVIEW_STATE_ENDORSED = u'edits endorsed'
 REVIEW_STATE_PUBLISHED = u'changes published'
 
 # the different working states for an activity
+# the activity is not an activity yet – its a representation of the live site
+WORKING_STATE_LIVE = u'live'
 # the activity is current and active
 WORKING_STATE_ACTIVE = u'active'
 # the activity has been published

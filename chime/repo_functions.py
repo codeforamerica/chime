@@ -115,6 +115,9 @@ def get_activity_working_state(repo, default_branch_name, branch_name):
     if not get_branch_if_exists_at_origin(repo, default_branch_name, branch_name):
         return constants.WORKING_STATE_DELETED
 
+    if branch_name == default_branch_name:
+        return constants.WORKING_STATE_LIVE
+
     return constants.WORKING_STATE_ACTIVE
 
 def get_branch_start_point(clone, default_branch_name, new_branch_name):
