@@ -8,42 +8,42 @@ from collections import Counter
 from datetime import datetime
 from . import constants, repo_functions
 
-class ChimeActivity:
-    ''' A representation of an activity in Chime
+class BaseActivity(object):
+    ''' A base activity object for ChimeActivity and ChimePublishedActivity
     '''
-    def __init__(self, repo, branch_name, default_branch_name, actor_email):
+    def __init__(self, repo, branch_name, default_branch_name):
         ''' Create a new activity.
         '''
         self.repo = repo
         self.safe_branch = branch_name
         self.default_branch_name = default_branch_name
 
-        task_metadata = repo_functions.get_task_metadata_for_branch(self.repo, self.safe_branch)
-        self.author_email, self.task_description = self._process_task_metadata(task_metadata)
-
-        self.review_state, self.review_authorized = repo_functions.get_review_state_and_authorized(
-            repo=self.repo, default_branch_name=self.default_branch_name,
-            working_branch_name=self.safe_branch, actor_email=actor_email
-        )
-
-        self.date_created = self.repo.git.log(self.safe_branch, '--format=%ar', '--', repo_functions.TASK_METADATA_FILENAME).split('\n')[-1]
-        self.date_updated = self.repo.git.log(self.safe_branch, '-1', '--format=%ar')
-        self.datetime_updated = datetime.fromtimestamp(float(self.repo.git.log(self.safe_branch, '-1', '--format=%at')))
-
-        # the email of the last person who edited the activity
-        self.last_edited_email = repo_functions.get_last_edited_email(
-            repo=repo, default_branch_name=self.default_branch_name,
-            working_branch_name=self.safe_branch
-        )
-
-        self.edit_path = u'/tree/{}/edit/'.format(self.safe_branch)
+        # paths to various relevant routes
         self.overview_path = u'/tree/{}/'.format(self.safe_branch)
+        self.edit_path = u'/tree/{}/edit/'.format(self.safe_branch)
         self.view_path = u'/tree/{}/view/'.format(self.safe_branch)
         self.review_path = u'/tree/{}/review/'.format(self.safe_branch)
         self.rename_path = u'/tree/{}/rename/'.format(self.safe_branch)
-
+        # paths for form actions
         self.comment_action = u'/tree/{}/comment/'.format(self.safe_branch)
         self.rename_action = u'/tree/{}/rename/'.format(self.safe_branch)
+
+        # activity profile
+        self.author_email = None
+        self.task_description = None
+
+        # the email of the last person who edited the activity
+        self.last_edited_email = None
+
+        # review status
+        self.review_state = None
+        self.review_authorized = None
+
+        # relative dates
+        self.date_created = None
+        self.date_updated = None
+        # datetime object
+        self.datetime_updated = None
 
         # only build history and working state if requested
         self._history = None
@@ -78,10 +78,16 @@ class ChimeActivity:
         return self._working_state
 
     def _get_history_log(self, log_format):
-        ''' Get a git log from which to create the activity's history
+        ''' Get a git log from which to create the activity's history.
         '''
-        hexsha = self.repo.branches[self.safe_branch].commit.hexsha
-        return self.repo.git.log('--format={}'.format(log_format), 'master..{}'.format(hexsha))
+        # implemented by sub-classes
+        pass
+
+    def _make_history(self):
+        ''' Make an easily-parsable history of the activity since it was created.
+        '''
+        # implemented by sub-classes
+        pass
 
     def _construct_history(self):
         ''' Create a list of log items from the raw history log
@@ -110,11 +116,6 @@ class ChimeActivity:
             history.append(log_item)
 
         return history
-
-    def _make_history(self):
-        ''' Make an easily-parsable history of the activity since it was created.
-        '''
-        return self._construct_history()
 
     def _make_history_summary(self):
         ''' Make an object that summarizes the activity's history.
@@ -216,44 +217,78 @@ class ChimeActivity:
         return author_email, task_description
 
 
-class ChimePublishedActivity(ChimeActivity):
+class ChimeActivity(BaseActivity):
+    ''' A representation of an activity in Chime
+    '''
+    def __init__(self, repo, branch_name, default_branch_name, actor_email):
+        ''' Create a new activity.
+        '''
+        super(ChimeActivity, self).__init__(repo, branch_name, default_branch_name)
+
+        task_metadata = repo_functions.get_task_metadata_for_branch(self.repo, self.safe_branch)
+        self.author_email, self.task_description = self._process_task_metadata(task_metadata)
+
+        # the email of the last person who edited the activity
+        self.last_edited_email = repo_functions.get_last_edited_email(
+            repo=self.repo, default_branch_name=self.default_branch_name,
+            working_branch_name=self.safe_branch
+        )
+
+        self.review_state, self.review_authorized = repo_functions.get_review_state_and_authorized(
+            repo=self.repo, default_branch_name=self.default_branch_name,
+            working_branch_name=self.safe_branch, actor_email=actor_email
+        )
+
+        self.date_created = self.repo.git.log(self.safe_branch, '--format=%ar', '--', repo_functions.TASK_METADATA_FILENAME).split('\n')[-1]
+        self.date_updated = self.repo.git.log(self.safe_branch, '-1', '--format=%ar')
+        self.datetime_updated = datetime.fromtimestamp(float(self.repo.git.log(self.safe_branch, '-1', '--format=%at')))
+
+    def _get_history_log(self, log_format):
+        ''' Get a git log from which to create the activity's history
+        '''
+        hexsha = self.repo.branches[self.safe_branch].commit.hexsha
+        return self.repo.git.log('--format={}'.format(log_format), 'master..{}'.format(hexsha))
+
+    def _make_history(self):
+        ''' Make an easily-parsable history of the activity since it was created.
+        '''
+        return self._construct_history()
+
+
+class ChimePublishedActivity(BaseActivity):
     ''' A representation of a published activity in Chime
     '''
     def __init__(self, repo, branch_name, default_branch_name):
         ''' Create a new activity
         '''
-        self.repo = repo
-        self.safe_branch = branch_name
-        self.default_branch_name = default_branch_name
+        super(ChimePublishedActivity, self).__init__(repo, branch_name, default_branch_name)
+
+        # you can't edit, view, review, rename, or comment in a published activity
+        self.edit_path = None
+        self.view_path = None
+        self.review_path = None
+        self.rename_path = None
+        self.comment_action = None
+        self.rename_action = None
 
         task_metadata = repo_functions.get_task_metadata_from_tag(clone=self.repo, working_branch_name=self.safe_branch)
         self.author_email, self.task_description = self._process_task_metadata(task_metadata)
-
-        # we know the current review state and authorized status
-        self.review_state = constants.REVIEW_STATE_PUBLISHED
-        self.review_authorized = False
 
         # get date updated and last edited email from the tag's git log
         hexsha = repo.tags[self.safe_branch].tag.hexsha
         date_updated, last_edited_email = repo.git.log('--format=%ar\t%ae', '{}^!'.format(hexsha)).split('\t')
 
-        # set date created and updated the same for now
-        self.date_updated = date_updated
-        self.date_created = date_updated
-
         # the email of the last person who edited the activity (stripping angle brackets if they're there)
         self.last_edited_email = last_edited_email.lstrip(u'<').rstrip(u'>')
 
-        self.overview_path = u'/tree/{}/'.format(self.safe_branch)
+        # we know the current review state and authorized status
+        self.review_state = constants.REVIEW_STATE_PUBLISHED
+        self.review_authorized = False
 
-        # You can't edit or view a published activity
-        self.edit_path = None
-        self.view_path = None
-
-        # only build history and working state if requested
-        self._history = None
-        self._history_summary = None
-        self._working_state = None
+        # set date created and updated the same for now
+        self.date_created = date_updated
+        self.date_updated = date_updated
+        self.datetime_updated = datetime.fromtimestamp(float(self.repo.git.log('--format=%at', '{}^!'.format(hexsha))))
 
     def _get_history_log(self, log_format):
         ''' Get a git log from which to create the activity's history
