@@ -21,6 +21,7 @@
 
 {% block content %}
 <!-- template name: {{ template_name }} -->
+{% set edit_ok = activity.working_state == config.WORKING_STATE_ACTIVE or activity.working_state == config.WORKING_STATE_LIVE %}
 <form action="{{ save_path }}" method="POST" class="row col__flex col edit-article__form">
 
     <input name="layout" value="{{ front['layout'] }}" type="hidden" />
@@ -51,7 +52,7 @@
         </div>
         <div class="row__right toolbar--right">
             <a href="{{ history_path }}" class="button button--medium toolbar__item">History</a>
-            {% if activity.working_state == config.WORKING_STATE_ACTIVE %}
+            {% if edit_ok %}
             <button type="submit" class="button button--medium toolbar__item" name="action" value="Preview">Preview</button>
             <button type="submit" class="button button--medium button--green toolbar__item" value="Save">Save Progress</button>
             {% endif %}

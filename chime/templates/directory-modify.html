@@ -12,6 +12,7 @@
 <!-- task: {{ activity.task_description }} -->
 <!-- template name: {{ template_name }} -->
 {% set icon_class_lookup = {'folder': 'fa fa-folder-o', 'file': 'fa fa-file-text-o', 'category': 'fa fa-folder', 'article': 'fa fa-file-text'} %}
+{% set edit_ok = activity.working_state == config.WORKING_STATE_ACTIVE or activity.working_state == config.WORKING_STATE_LIVE %}
 <div class="articles-list__header row row--main">
     <ul class="nav-page-type toolbar toolbar--left row__left">
 <!--       <li class="nav-page-type__link toolbar__item">Homepage</li> -->
@@ -92,14 +93,14 @@
           <label>{{ dir_title }} Description</label>
           <textarea name="{{ iso }}-description" class="directory-modify__description" placeholder="Crime statistics and reports by district and map">{{ category_description }}</textarea>
           <div class="directory-modify__action-bar row">
-            {% if activity.working_state == config.WORKING_STATE_ACTIVE %}
+            {% if edit_ok %}
             <div class="row__left toolbar toolbar--left">
               <button name="delete" type="submit" class="button button--red toolbar__item"><span class="fa fa-trash"></span> Delete</button>
             </div>
             {% endif %}
             <div class="row__right toolbar toolbar--right">
               <a href="{{ category.edit_path }}" class="button toolbar__item">Cancel</a>
-              {% if activity.working_state == config.WORKING_STATE_ACTIVE %}<button name="save" type="submit" class="button button--green toolbar__item">Save</button>{% endif %}
+              {% if edit_ok %}<button name="save" type="submit" class="button button--green toolbar__item">Save</button>{% endif %}
             </div>
 
           </div>
