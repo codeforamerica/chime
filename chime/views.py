@@ -335,7 +335,7 @@ def branch_edit(branch_name, path=None):
 @synched_checkout_required
 def branch_edit_file(branch_name, path=None):
     repo = view_functions.get_repo(flask_app=current_app)
-    commit = repo.commit()
+    commit_hexsha = repo.commit().hexsha
     safe_branch = view_functions.branch_name2path(view_functions.branch_var2name(branch_name))
 
     path = path or u''
@@ -365,7 +365,7 @@ def branch_edit_file(branch_name, path=None):
 
         add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(repo, branch_name, create_path, request.form['request_path'], create_what)
         if do_save:
-            commit = repo.commit()
+            commit_hexsha = repo.commit().hexsha
             commit_message = add_message
             describe_what = view_functions.file_display_name(create_what)
             flash(u'Created a new {} named {}! Remember to submit this change for feedback when you\'re ready to go live.'.format(describe_what, request.form['request_path']), u'notice')
@@ -384,7 +384,7 @@ def branch_edit_file(branch_name, path=None):
     if do_save:
         master_name = current_app.config['default_branch']
         Logger.debug('save')
-        repo_functions.save_working_file(clone=repo, path=file_path, message=commit_message, base_sha=commit.hexsha, default_branch_name=master_name)
+        repo_functions.save_working_file(clone=repo, path=file_path, message=commit_message, base_sha=commit_hexsha, default_branch_name=master_name)
 
     return redirect('/tree/{}/edit/{}'.format(safe_branch, redirect_path), code=303)
 
