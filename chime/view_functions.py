@@ -39,7 +39,8 @@ from .repo_functions import (
     clobber_default_branch, get_review_state_and_authorized, update_review_state,
     provide_feedback, move_existing_file, mark_upstream_push_needed, MergeConflict,
     get_activity_working_state, make_branch_name, save_local_working_file,
-    sync_with_branch, strip_index_file, save_task_metadata_for_branch, make_commit_message
+    sync_with_branch, strip_index_file, save_task_metadata_for_branch, make_commit_message,
+    get_start_branch
 )
 from . import constants
 
@@ -902,6 +903,26 @@ def publish_commit(repo, publish_path):
             environ['GIT_WORK_TREE'] = old_GWT
         else:
             del environ['GIT_WORK_TREE']
+
+def start_activity_for_edits(repo, default_branch_name):
+    ''' Start a new activity for edits
+    '''
+    task_description = make_new_activity_description()
+    new_branch = get_start_branch(repo, default_branch_name, task_description, session['email']) # TODO: pull session reference out of this function
+    new_branch.checkout()
+    branch_name = branch_name2path(new_branch.name)
+    return branch_name
+
+def delete_activity_for_edits(repo, default_branch_name, working_branch_name, working_state):
+    ''' Delete an activity that was started for edits
+    '''
+    branch_name = working_branch_name
+    # if we're in a branch that was created for an edit...
+    if working_state == constants.WORKING_STATE_LIVE and working_branch_name != default_branch_name:
+        # ...delete it and go back to master
+        abandon_branch(clone=repo, default_branch_name=default_branch_name, working_branch_name=working_branch_name)
+        branch_name = default_branch_name
+    return branch_name
 
 def submit_comment(repo, working_branch_name, comment_text):
     ''' Submit a comment.
