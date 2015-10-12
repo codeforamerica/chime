@@ -343,10 +343,7 @@ def branch_edit_file(branch_name, path=None):
 
     # if we've been browsing the live site, start a new branch to hold the submitted changes
     if working_state == constants.WORKING_STATE_LIVE:
-        task_description = view_functions.make_new_activity_description()
-        new_branch = repo_functions.get_start_branch(repo, default_branch_name, task_description, session['email'])
-        new_branch.checkout()
-        safe_branch = view_functions.branch_name2path(new_branch.name)
+        safe_branch = view_functions.start_activity_for_edits(repo, default_branch_name)
 
     commit_hexsha = repo.commit().hexsha
 
@@ -373,11 +370,8 @@ def branch_edit_file(branch_name, path=None):
             else:
                 describe_what = u'an article' if create_what == 'article' else u'a topic'
                 flash(u'Please enter a name to create {}!'.format(describe_what), u'warning')
-            # if we're in a branch that was created for this edit...
-            if working_state == constants.WORKING_STATE_LIVE:
-                # ...delete it and go back to master
-                repo_functions.abandon_branch(clone=repo, default_branch_name=default_branch_name, working_branch_name=safe_branch)
-                safe_branch = default_branch_name
+            # clean up the branch that was created for the edit if necessary
+            safe_branch = view_functions.delete_activity_for_edits(repo, default_branch_name, safe_branch, working_state)
 
             return redirect('/tree/{}/edit/{}'.format(safe_branch, file_path), code=303)
 
@@ -403,12 +397,9 @@ def branch_edit_file(branch_name, path=None):
         default_branch_name = current_app.config['default_branch']
         Logger.debug('save')
         repo_functions.save_working_file(clone=repo, path=file_path, message=commit_message, base_sha=commit_hexsha, default_branch_name=default_branch_name)
-
-    # if we're not saving and we're in a branch that was created for this edit...
-    elif working_state == constants.WORKING_STATE_LIVE:
-        # ...delete it and go back to master
-        repo_functions.abandon_branch(clone=repo, default_branch_name=default_branch_name, working_branch_name=safe_branch)
-        safe_branch = default_branch_name
+    else:
+        # clean up the branch that was created for the edit if necessary
+        safe_branch = view_functions.delete_activity_for_edits(repo, default_branch_name, safe_branch, working_state)
 
     return redirect('/tree/{}/edit/{}'.format(safe_branch, redirect_path), code=303)
 
@@ -458,26 +449,38 @@ def branch_modify_category(branch_name, path=u''):
         index_slug = join(path, u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
         index_path = join(dir_path, u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
 
+    safe_branch = view_functions.branch_name2path(view_functions.branch_var2name(branch_name))
+    default_branch_name = current_app.config['default_branch']
+    working_state = repo_functions.get_activity_working_state(repo, default_branch_name, safe_branch)
+
+    # if we've been browsing the live site, start a new branch to hold the submitted changes
+    if working_state == constants.WORKING_STATE_LIVE:
+        safe_branch = view_functions.start_activity_for_edits(repo, default_branch_name)
+
     # delete the passed category
     if 'delete' in request.form:
         # delete the page
-        redirect_path, do_save, commit_message = view_functions.delete_page(repo=repo, working_branch_name=branch_name, browse_path=path, target_path=path)
+        redirect_path, do_save, commit_message = view_functions.delete_page(repo=repo, working_branch_name=safe_branch, browse_path=path, target_path=path)
         # save and redirect
         if do_save:
-            master_name = current_app.config['default_branch']
             Logger.debug('save')
-            repo_functions.save_working_file(clone=repo, path=path, message=commit_message, base_sha=repo.commit().hexsha, default_branch_name=master_name)
+            repo_functions.save_working_file(clone=repo, path=path, message=commit_message, base_sha=repo.commit().hexsha, default_branch_name=default_branch_name)
             # flash the human-readable part of the commit message
             flash_message = commit_message.split('\n')[0]
             flash(flash_message, u'notice')
+        else:
+            # clean up the branch that was created for the edit if necessary
+            safe_branch = view_functions.delete_activity_for_edits(repo, default_branch_name, safe_branch, working_state)
 
-        safe_branch = view_functions.branch_name2path(view_functions.branch_var2name(branch_name))
         return redirect('/tree/{}/edit/{}'.format(safe_branch, redirect_path), code=303)
 
     # save the passed category
     elif 'save' in request.form:
+        did_save = False
         # verify that it exists
         if isdir(index_path) or not exists(index_path):
+            # clean up the branch that was created for the edit if necessary
+            safe_branch = view_functions.delete_activity_for_edits(repo, default_branch_name, safe_branch, working_state)
             raise Exception(u'No writable file exists at {}!'.format(index_path))
 
         # get the form values
@@ -499,21 +502,26 @@ def branch_modify_category(branch_name, path=u''):
         try:
             front_matter.update(new_values)
         except ValueError:
+            # clean up the branch that was created for the edit if necessary
+            safe_branch = view_functions.delete_activity_for_edits(repo, default_branch_name, safe_branch, working_state)
             raise Exception(u'Unable to update file at {}!'.format(index_path))
 
         # only write if there are changes
-        safe_branch = view_functions.branch_name2path(view_functions.branch_var2name(branch_name))
         new_path = path
         if check_front_matter != front_matter:
-            new_path, did_save = view_functions.save_page(repo, current_app.config['default_branch'], branch_name, index_slug, new_values)
-            if not did_save:
-                flash(u'Unable to save changes to {}!'.format(front_matter['title']), u'error')
-            else:
+            new_path, did_save = view_functions.save_page(repo, default_branch_name, safe_branch, index_slug, new_values)
+            if did_save:
                 flash(u'Saved changes to the {} topic! Remember to submit this change for feedback when you\'re ready to go live.'.format(front_matter['en-title']), u'notice')
+            else:
+                # clean up the branch that was created for the edit if necessary
+                safe_branch = view_functions.delete_activity_for_edits(repo, default_branch_name, safe_branch, working_state)
+                flash(u'Unable to save changes to {}!'.format(front_matter['title']), u'error')
 
         return redirect('/tree/{}/modify/{}'.format(safe_branch, repo_functions.strip_index_file(new_path)), code=303)
 
     else:
+        # clean up the branch that was created for the edit if necessary
+        safe_branch = view_functions.delete_activity_for_edits(repo, default_branch_name, safe_branch, working_state)
         raise Exception(u'Tried to modify a category, but received an unfamiliar command.')
 
 @app.route('/tree/<branch_name>/', methods=['GET'])
@@ -644,12 +652,22 @@ def branch_history(branch_name, path=None):
 def branch_save(branch_name, path):
     ''' Handle a submission from the article-edit form.
     '''
+    default_branch_name = current_app.config['default_branch']
     actor = Actor(' ', session['email'])
     start_point = request.form['hexsha']
     origin_dirname = current_app.config['REPO_PATH']
     working_dirname = current_app.config['WORK_PATH']
     task_id = view_functions.branch_name2path(view_functions.branch_var2name(branch_name))
-    user_task = UserTask(actor, task_id, origin_dirname, working_dirname, start_point)
+    # if we've been browsing the live site, start a new branch to hold the submitted changes
+    if task_id == default_branch_name:
+        repo = view_functions.get_repo(flask_app=current_app)
+        task_id = view_functions.start_activity_for_edits(repo, default_branch_name)
+        start_point = repo.branches[task_id].commit.hexsha
+        user_task = UserTask(actor, task_id, default_branch_name, origin_dirname, working_dirname, start_point)
+        working_state = constants.WORKING_STATE_LIVE
+    else:
+        user_task = UserTask(actor, task_id, default_branch_name, origin_dirname, working_dirname, start_point)
+        working_state = user_task.working_state
 
     languages = load_languages(user_task.repo.working_dir)
     front, body = view_functions.prep_jekyll_content(request.form, languages)
@@ -672,11 +690,11 @@ def branch_save(branch_name, path):
             else:
                 end_path = new_path
 
-    committed = False
+    did_save = False
     try:
         title_layout = request.form.get('en-title'), request.form.get('layout')
         message = view_functions.format_commit_message(end_path, *title_layout)
-        committed = user_task.commit(message)
+        did_save = user_task.commit(message)
         user_task.push()
     except UserTaskPublished as e:
         ref_info = user_task.ref_info()
@@ -687,9 +705,11 @@ def branch_save(branch_name, path):
         ref_info = user_task.ref_info(e.remote_commit.hexsha)
         view_functions.flash(view_functions.MESSAGE_PAGE_EDITED.format(**ref_info), u'error')
     else:
-        if committed:
+        if did_save:
             view_functions.flash(u'Saved changes to the {} article! Remember to submit this change for feedback when you\'re ready to go live.'.format(request.form['en-title']), u'notice')
         else:
+            # clean up the branch that was created for the edit if necessary
+            task_id = view_functions.delete_activity_for_edits(user_task.repo, default_branch_name, task_id, working_state)
             view_functions.flash(u'No changes to save!', u'warning')
 
     if request.form.get('action', '').lower() == 'preview':
