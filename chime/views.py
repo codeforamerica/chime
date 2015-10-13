@@ -324,7 +324,7 @@ def branch_edit(branch_name, path=None):
             return redirect(redirect_path, code=302)
 
         # render the directory contents
-        return view_functions.render_list_dir(repo, branch_name, path)
+        return view_functions.render_articles_list(repo, branch_name, path)
 
     # it's a file, edit it
     return view_functions.render_edit_view(repo, branch_name, path, open(full_path, 'r'))
@@ -420,7 +420,7 @@ def branch_show_category_form(branch_name, path=None):
 
     if view_functions.is_category_dir(full_path):
         # render the directory modification view
-        return view_functions.render_modify_dir(repo, branch_name, path)
+        return view_functions.render_category_modify(repo, branch_name, path)
 
     # if this is an article directory, redirect to edit
     if view_functions.is_article_dir(full_path):

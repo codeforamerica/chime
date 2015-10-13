@@ -1075,7 +1075,7 @@ def render_activities_list(task_description=None, show_new_activity_modal=False)
 
     return render_template('activities-list.html', **kwargs)
 
-def make_kwargs_for_activity_files_page(repo, branch_name, path):
+def common_article_list_args(repo, branch_name, path):
     ''' Assemble the kwargs for a page that shows an activity's files.
     '''
     # NOTE: temporarily turning off filtering if 'showallfiles=true' is in the request
@@ -1091,13 +1091,13 @@ def make_kwargs_for_activity_files_page(repo, branch_name, path):
 
     return kwargs
 
-def render_list_dir(repo, branch_name, path):
+def render_articles_list(repo, branch_name, path):
     ''' Render a page showing an activity's files
     '''
-    kwargs = make_kwargs_for_activity_files_page(repo, branch_name, path)
+    kwargs = common_article_list_args(repo, branch_name, path)
     return render_template('articles-list.html', **kwargs)
 
-def render_modify_dir(repo, branch_name, path):
+def render_category_modify(repo, branch_name, path):
     ''' Render a page showing an activity's files with an edit form for the selected category directory.
     '''
     path = path or '.'
@@ -1113,7 +1113,7 @@ def render_modify_dir(repo, branch_name, path):
 
     languages = load_languages(repo.working_dir)
 
-    kwargs = make_kwargs_for_activity_files_page(repo, branch_name, path)
+    kwargs = common_article_list_args(repo, branch_name, path)
     # cancel redirects to the edit page for that category
     category['edit_path'] = join(kwargs['activity'].edit_path, path)
     url_slug = re.sub(ur'index.{}$'.format(constants.CONTENT_FILE_EXTENSION), u'', path)
