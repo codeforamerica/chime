@@ -282,13 +282,13 @@ def branch_view(branch_name, path=None):
     repo = view_functions.get_repo(flask_app=current_app)
     return view_functions.get_preview_asset_response(repo.working_dir, path)
 
-@app.route('/browse/', methods=['GET'])
-@app.route('/browse/<path:path>', methods=['GET'])
+@app.route('/look/in/', methods=['GET'])
+@app.route('/look/in/<path:path>', methods=['GET'])
 @log_application_errors
 @login_required
 @lock_on_user
 @synched_checkout_required
-def browse_master(path=None):
+def look_in_master(path=None):
     repo = view_functions.get_repo(flask_app=current_app)
     default_branch_name = current_app.config['default_branch']
     full_path = join(repo.working_dir, path or '.').rstrip('/')
@@ -301,25 +301,58 @@ def browse_master(path=None):
         # if this is a directory representing an article, redirect to to the index file within
         if view_functions.is_article_dir(full_path):
             index_path = join(path or u'', u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
-            return redirect('/browse/{}'.format(index_path))
+            return redirect('/look/in/{}'.format(index_path))
 
         # if the directory path didn't end with a slash, add it and redirect
         if path and not path.endswith('/'):
-            return redirect('/browse/{}/'.format(path), code=302)
+            return redirect('/look/in/{}/'.format(path), code=302)
 
         # redirect inside solo directories if necessary
-        redirect_path = view_functions.get_redirect_path_for_solo_directory(repo, default_branch_name, path, '/browse/')
+        redirect_path = view_functions.get_redirect_path_for_solo_directory(
+            repo=repo, branch_name=default_branch_name,
+            path=path, route_base_url='/look/in/'
+        )
         if redirect_path:
             return redirect(redirect_path, code=302)
 
         # render the directory contents
         return view_functions.render_articles_list(
             repo=repo, branch_name=default_branch_name,
-            path=path, edit_base_url='/browse/'
+            path=path, edit_base_url='/look/in/',
+            modify_base_url='/look/at/'
         )
 
     # it's a file, show the edit view
     return view_functions.render_edit_view(repo, default_branch_name, path, open(full_path, 'r'))
+
+@app.route('/look/at/', methods=['GET'])
+@app.route('/look/at/<path:path>', methods=['GET'])
+@log_application_errors
+@login_required
+@lock_on_user
+@synched_checkout_required
+def look_at_master(path=None):
+    repo = view_functions.get_repo(flask_app=current_app)
+    default_branch_name = current_app.config['default_branch']
+    full_path = join(repo.working_dir, path or '.').rstrip('/')
+
+    # if the directory path didn't end with a slash, add it and redirect
+    if isdir(full_path) and path and not path.endswith('/'):
+        return redirect('/look/at/{}/'.format(path), code=302)
+
+    # if this is a category directory, render the modification view
+    if view_functions.is_category_dir(full_path):
+        return view_functions.render_category_modify(
+            repo=repo, branch_name=default_branch_name, path=path,
+            edit_base_url='/look/in/', modify_base_url='/look/at/'
+        )
+
+    # if this is an article directory, add the index file and redirect to /look/in/
+    if view_functions.is_article_dir(full_path):
+        path = join(path or u'', u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
+
+    # this is not a category or article directory; redirect to /look/in/
+    return redirect('/look/in/{}'.format(path))
 
 @app.route('/tree/<branch_name>/edit/', methods=['GET'])
 @app.route('/tree/<branch_name>/edit/<path:path>', methods=['GET'])
@@ -358,7 +391,9 @@ def branch_edit(branch_name, path=None):
             return redirect('/tree/{}/edit/{}/'.format(safe_branch, path), code=302)
 
         # redirect inside solo directories if necessary
-        redirect_path = view_functions.get_redirect_path_for_solo_directory(repo, branch_name, path)
+        redirect_path = view_functions.get_redirect_path_for_solo_directory(
+            repo=repo, branch_name=branch_name, path=path
+        )
         if redirect_path:
             return redirect(redirect_path, code=302)
 
@@ -465,8 +500,7 @@ def branch_show_category_form(branch_name, path=None):
 
     # if this is an article directory, redirect to edit
     if view_functions.is_article_dir(full_path):
-        index_path = join(path or u'', u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
-        return redirect('/tree/{}/edit/{}'.format(view_functions.branch_name2path(branch_name), index_path))
+        path = join(path or u'', u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
 
     # this is not a category or article directory; redirect to edit
     return redirect('/tree/{}/edit/{}'.format(branch_name, path))

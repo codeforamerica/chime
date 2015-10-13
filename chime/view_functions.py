@@ -835,7 +835,7 @@ def make_edit_path(branch, path, dir_name):
     base_path = path[:dir_index] + dir_name + '/'
     return join('/tree/{}/edit'.format(branch_name2path(branch)), base_path)
 
-def make_directory_columns(clone, branch_name, repo_path=None, edit_base_url=None, showallfiles=False):
+def make_directory_columns(clone, branch_name, repo_path=None, edit_base_url=None, modify_base_url=None, showallfiles=False):
     ''' Get a list of lists of dicts for the passed path, with file listings for each level.
         example: passing repo_path='hello/world/wide' will return something like:
             [
@@ -862,12 +862,9 @@ def make_directory_columns(clone, branch_name, repo_path=None, edit_base_url=Non
     dirs.insert(0, u'')
 
     # Create the listings
-    # We may've been passed an alternate edit URL
-    if not edit_base_url:
-        edit_path_root = u'/tree/{}/edit'.format(branch_name)
-    else:
-        edit_path_root = edit_base_url.rstrip('/')
-    modify_path_root = u'/tree/{}/modify'.format(branch_name)
+    # We may've been passed alternate edit and modify URLs
+    edit_path_root = u'/tree/{}/edit'.format(branch_name) if not edit_base_url else edit_base_url.rstrip('/')
+    modify_path_root = u'/tree/{}/modify'.format(branch_name) if not modify_base_url else modify_base_url.rstrip('/')
     dir_listings = []
     for i in range(len(dirs)):
         last = False
@@ -1083,7 +1080,7 @@ def render_activities_list(task_description=None, show_new_activity_modal=False)
 
     return render_template('activities-list.html', **kwargs)
 
-def common_article_list_args(repo, branch_name, path, edit_base_url=None):
+def common_article_list_args(repo, branch_name, path, edit_base_url=None, modify_base_url=None):
     ''' Assemble the kwargs for a page that shows an activity's files.
     '''
     # NOTE: temporarily turning off filtering if 'showallfiles=true' is in the request
@@ -1092,20 +1089,23 @@ def common_article_list_args(repo, branch_name, path, edit_base_url=None):
     activity = chime_activity.ChimeActivity(repo=repo, branch_name=branch_name, default_branch_name=current_app.config['default_branch'], actor_email=session.get('email', None))
 
     kwargs = common_template_args(current_app.config, session)
+    dir_columns = make_directory_columns(
+        clone=repo, branch_name=branch_name, repo_path=path, edit_base_url=edit_base_url,
+        modify_base_url=modify_base_url, showallfiles=showallfiles
+    )
     kwargs.update(safe_branch=branch_name2path(branch_name),
                   breadcrumb_paths=make_breadcrumb_paths(branch_name, path),
-                  dir_columns=make_directory_columns(repo, branch_name, path, edit_base_url, showallfiles),
-                  activity=activity)
+                  dir_columns=dir_columns, activity=activity)
 
     return kwargs
 
-def render_articles_list(repo, branch_name, path, edit_base_url=None):
+def render_articles_list(repo, branch_name, path, edit_base_url=None, modify_base_url=None):
     ''' Render a page showing an activity's files
     '''
-    kwargs = common_article_list_args(repo, branch_name, path, edit_base_url)
+    kwargs = common_article_list_args(repo, branch_name, path, edit_base_url, modify_base_url)
     return render_template('articles-list.html', **kwargs)
 
-def render_category_modify(repo, branch_name, path):
+def render_category_modify(repo, branch_name, path, edit_base_url=None, modify_base_url=None):
     ''' Render a page showing an activity's files with an edit form for the selected category directory.
     '''
     path = path or '.'
@@ -1121,7 +1121,7 @@ def render_category_modify(repo, branch_name, path):
 
     languages = load_languages(repo.working_dir)
 
-    kwargs = common_article_list_args(repo, branch_name, path)
+    kwargs = common_article_list_args(repo, branch_name, path, edit_base_url, modify_base_url)
     # cancel redirects to the edit page for that category
     category['edit_path'] = join(kwargs['activity'].edit_path, path)
     url_slug = re.sub(ur'index.{}$'.format(constants.CONTENT_FILE_EXTENSION), u'', path)
