@@ -411,73 +411,9 @@ def branch_edit(branch_name, path=None):
 @login_required
 @lock_on_user
 @synched_checkout_required
-def branch_edit_file(branch_name, path=None):
+def handle_edit_submit(branch_name, path=None):
     repo = view_functions.get_repo(flask_app=current_app)
-    safe_branch = view_functions.branch_name2path(view_functions.branch_var2name(branch_name))
-    default_branch_name = current_app.config['default_branch']
-    working_state = repo_functions.get_activity_working_state(repo, default_branch_name, safe_branch)
-
-    # if we've been browsing the live site, start a new branch to hold the submitted changes
-    if working_state == constants.WORKING_STATE_LIVE:
-        safe_branch = view_functions.start_activity_for_edits(repo, default_branch_name)
-
-    commit_hexsha = repo.commit().hexsha
-
-    path = path or u''
-    action = request.form.get('action', '').lower()
-    create_what = request.form.get('create_what', '').lower()
-    create_path = request.form.get('create_path', path)
-    do_save = True
-
-    file_path = path
-    commit_message = u''
-    if action == 'upload' and 'file' in request.files:
-        file_path = edit_functions.upload_new_file(repo, path, request.files['file'])
-        redirect_path = path
-        commit_message = u'Uploaded file "{}"'.format(file_path)
-
-    elif action == 'create' and (create_what == constants.ARTICLE_LAYOUT or create_what == constants.CATEGORY_LAYOUT) and create_path is not None:
-        # don't allow empty names for categories or articles
-        request_path = request.form['request_path'].strip()
-        if len(request_path) == 0 or len(slugify(request_path)) == 0:
-            if len(request_path) != 0:
-                display_what = view_functions.file_display_name(create_what)
-                flash(u'{} is not an acceptable {} name!'.format(request_path, display_what), u'warning')
-            else:
-                describe_what = u'an article' if create_what == 'article' else u'a topic'
-                flash(u'Please enter a name to create {}!'.format(describe_what), u'warning')
-            # clean up the branch that was created for the edit if necessary
-            safe_branch = view_functions.delete_activity_for_edits(repo, default_branch_name, safe_branch, working_state)
-
-            return redirect('/tree/{}/edit/{}'.format(safe_branch, file_path), code=303)
-
-        add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(repo, safe_branch, create_path, request.form['request_path'], create_what)
-        if do_save:
-            commit_hexsha = repo.commit().hexsha
-            commit_message = add_message
-            describe_what = view_functions.file_display_name(create_what)
-            flash(u'Created a new {} named {}! Remember to submit this change for feedback when you\'re ready to go live.'.format(describe_what, request.form['request_path']), u'notice')
-        else:
-            flash(add_message, u'notice')
-
-    elif action == 'delete' and 'request_path' in request.form:
-        redirect_path, do_save, commit_message = view_functions.delete_page(repo=repo, working_branch_name=safe_branch, browse_path=path, target_path=request.form['request_path'])
-        if do_save:
-            # flash the human-readable part of the commit message
-            flash(u'{}! Remember to submit this change for feedback when you\'re ready to go live.'.format(commit_message.split('\n')[0]), u'notice')
-
-    else:
-        raise Exception(u'Tried to edit a file, but received an unfamiliar command.')
-
-    if do_save:
-        default_branch_name = current_app.config['default_branch']
-        Logger.debug('save')
-        repo_functions.save_working_file(clone=repo, path=file_path, message=commit_message, base_sha=commit_hexsha, default_branch_name=default_branch_name)
-    else:
-        # clean up the branch that was created for the edit if necessary
-        safe_branch = view_functions.delete_activity_for_edits(repo, default_branch_name, safe_branch, working_state)
-
-    return redirect('/tree/{}/edit/{}'.format(safe_branch, redirect_path), code=303)
+    return view_functions.handle_article_list_submit(repo, branch_name, path)
 
 @app.route('/tree/<branch_name>/modify/', methods=['GET'])
 @app.route('/tree/<branch_name>/modify/<path:path>', methods=['GET'])

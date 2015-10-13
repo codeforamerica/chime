@@ -30,7 +30,7 @@ from flask import request, session, current_app, redirect, flash, render_templat
 
 from requests import get
 
-from .edit_functions import create_new_page, delete_file, update_page
+from .edit_functions import create_new_page, delete_file, update_page, upload_new_file
 from .jekyll_functions import load_jekyll_doc, load_languages, build_jekyll_site
 from .google_api_functions import read_ga_config, fetch_google_analytics_for_page
 from .repo_functions import (
@@ -40,7 +40,7 @@ from .repo_functions import (
     provide_feedback, move_existing_file, mark_upstream_push_needed, MergeConflict,
     get_activity_working_state, make_branch_name, save_local_working_file,
     sync_with_branch, strip_index_file, save_task_metadata_for_branch, make_commit_message,
-    get_start_branch
+    get_start_branch, save_working_file
 )
 from . import constants
 
@@ -1161,6 +1161,75 @@ def render_edit_view(repo, branch_name, path, file):
                   app_authorized=app_authorized, activity=activity)
     kwargs.update(analytics_dict)
     return render_template('article-edit.html', **kwargs)
+
+def handle_article_list_submit(repo, branch_name, path):
+    ''' Handle a form submit from the article list pages
+    '''
+    safe_branch = branch_name2path(branch_var2name(branch_name))
+    default_branch_name = current_app.config['default_branch']
+    working_state = get_activity_working_state(repo, default_branch_name, safe_branch)
+
+    # if we've been browsing the live site, start a new branch to hold the submitted changes
+    if working_state == constants.WORKING_STATE_LIVE:
+        safe_branch = start_activity_for_edits(repo, default_branch_name)
+
+    commit_hexsha = repo.commit().hexsha
+
+    path = path or u''
+    action = request.form.get('action', '').lower()
+    create_what = request.form.get('create_what', '').lower()
+    create_path = request.form.get('create_path', path)
+    do_save = True
+
+    file_path = path
+    commit_message = u''
+    if action == 'upload' and 'file' in request.files:
+        file_path = upload_new_file(repo, path, request.files['file'])
+        redirect_path = path
+        commit_message = u'Uploaded file "{}"'.format(file_path)
+
+    elif action == 'create' and (create_what == constants.ARTICLE_LAYOUT or create_what == constants.CATEGORY_LAYOUT) and create_path is not None:
+        # don't allow empty names for categories or articles
+        request_path = re.sub(r'\s+', ' ', request.form['request_path']).strip()
+        if len(request_path) == 0 or len(slugify(request_path)) == 0:
+            if len(request_path) != 0:
+                display_what = file_display_name(create_what)
+                flash(u'{} is not an acceptable {} name!'.format(request_path, display_what), u'warning')
+            else:
+                describe_what = u'an article' if create_what == 'article' else u'a topic'
+                flash(u'Please enter a name to create {}!'.format(describe_what), u'warning')
+            # clean up the branch that was created for the edit if necessary
+            safe_branch = delete_activity_for_edits(repo, default_branch_name, safe_branch, working_state)
+
+            return redirect('/tree/{}/edit/{}'.format(safe_branch, file_path), code=303)
+
+        add_message, file_path, redirect_path, do_save = add_article_or_category(repo, safe_branch, create_path, request.form['request_path'], create_what)
+        if do_save:
+            commit_hexsha = repo.commit().hexsha
+            commit_message = add_message
+            describe_what = file_display_name(create_what)
+            flash(u'Created a new {} named {}! Remember to submit this change for feedback when you\'re ready to go live.'.format(describe_what, request.form['request_path']), u'notice')
+        else:
+            flash(add_message, u'notice')
+
+    elif action == 'delete' and 'request_path' in request.form:
+        redirect_path, do_save, commit_message = delete_page(repo=repo, working_branch_name=safe_branch, browse_path=path, target_path=request.form['request_path'])
+        if do_save:
+            # flash the human-readable part of the commit message
+            flash(u'{}! Remember to submit this change for feedback when you\'re ready to go live.'.format(commit_message.split('\n')[0]), u'notice')
+
+    else:
+        raise Exception(u'Tried to edit a file, but received an unfamiliar command.')
+
+    if do_save:
+        default_branch_name = current_app.config['default_branch']
+        Logger.debug('save')
+        save_working_file(clone=repo, path=file_path, message=commit_message, base_sha=commit_hexsha, default_branch_name=default_branch_name)
+    else:
+        # clean up the branch that was created for the edit if necessary
+        safe_branch = delete_activity_for_edits(repo, default_branch_name, safe_branch, working_state)
+
+    return redirect('/tree/{}/edit/{}'.format(safe_branch, redirect_path), code=303)
 
 def add_article_or_category(repo, working_branch_name, dir_path, request_path, create_what):
     ''' Add an article or category
