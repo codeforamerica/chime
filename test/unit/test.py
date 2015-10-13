@@ -225,7 +225,7 @@ mike@teczno.com,Code for America,Mike Migurski
         branch_name, master_name = \
             view_functions.guess_branch_names_in_decorator(dict(), config, dict())
 
-        self.assertEqual((branch_name, master_name), (None, 'abcd'))
+        self.assertEqual((branch_name, master_name), ('abcd', 'abcd'))
 
         kwargs = dict(branch_name='xxyz')
         branch_name, master_name = \
