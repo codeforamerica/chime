@@ -282,6 +282,45 @@ def branch_view(branch_name, path=None):
     repo = view_functions.get_repo(flask_app=current_app)
     return view_functions.get_preview_asset_response(repo.working_dir, path)
 
+@app.route('/browse/', methods=['GET'])
+@app.route('/browse/<path:path>', methods=['GET'])
+@log_application_errors
+@login_required
+@lock_on_user
+@synched_checkout_required
+def browse_master(path=None):
+    repo = view_functions.get_repo(flask_app=current_app)
+    default_branch_name = current_app.config['default_branch']
+    full_path = join(repo.working_dir, path or '.').rstrip('/')
+
+    # make sure the path points to something that exists
+    if not exists(full_path):
+        abort(404)
+
+    if isdir(full_path):
+        # if this is a directory representing an article, redirect to to the index file within
+        if view_functions.is_article_dir(full_path):
+            index_path = join(path or u'', u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
+            return redirect('/browse/{}'.format(index_path))
+
+        # if the directory path didn't end with a slash, add it and redirect
+        if path and not path.endswith('/'):
+            return redirect('/browse/{}/'.format(path), code=302)
+
+        # redirect inside solo directories if necessary
+        redirect_path = view_functions.get_redirect_path_for_solo_directory(repo, default_branch_name, path, '/browse/')
+        if redirect_path:
+            return redirect(redirect_path, code=302)
+
+        # render the directory contents
+        return view_functions.render_articles_list(
+            repo=repo, branch_name=default_branch_name,
+            path=path, edit_base_url='/browse/'
+        )
+
+    # it's a file, show the edit view
+    return view_functions.render_edit_view(repo, default_branch_name, path, open(full_path, 'r'))
+
 @app.route('/tree/<branch_name>/edit/', methods=['GET'])
 @app.route('/tree/<branch_name>/edit/<path:path>', methods=['GET'])
 @log_application_errors
@@ -324,7 +363,9 @@ def branch_edit(branch_name, path=None):
             return redirect(redirect_path, code=302)
 
         # render the directory contents
-        return view_functions.render_articles_list(repo, branch_name, path)
+        return view_functions.render_articles_list(
+            repo=repo, branch_name=branch_name, path=path
+        )
 
     # it's a file, edit it
     return view_functions.render_edit_view(repo, branch_name, path, open(full_path, 'r'))

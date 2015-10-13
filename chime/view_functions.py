@@ -313,7 +313,7 @@ def get_solo_directory_name(repo, branch_name, path):
 
     return None
 
-def get_redirect_path_for_solo_directory(repo, branch_name, path):
+def get_redirect_path_for_solo_directory(repo, branch_name, path, route_base_url=None):
     ''' If, in the passed directory, there is a non-article or -category directory
         that's the only visible object in the hierarchy, return a redirect URL inside
         that directory
@@ -321,8 +321,9 @@ def get_redirect_path_for_solo_directory(repo, branch_name, path):
     solo_directory_name = get_solo_directory_name(repo, branch_name, path)
     if solo_directory_name:
         path = join(path, solo_directory_name) if path else solo_directory_name
-        vars = dict(branch_name=branch_name2path(branch_name), path=path)
-        return '/tree/{branch_name}/edit/{path}/'.format(**vars)
+        if not route_base_url:
+            route_base_url = '/tree/{branch_name}/edit/'.format(branch_name=branch_name2path(branch_name))
+        return '{route_base_url}{path}/'.format(route_base_url=route_base_url, path=path)
 
     # no redirect necessary
     return None
@@ -560,7 +561,10 @@ def guess_branch_names_in_decorator(kwargs, config, form):
 
     branch_name = branch_name_raw and branch_var2name(branch_name_raw)
     master_name = config['default_branch']
-    
+
+    if not branch_name:
+        branch_name = master_name
+
     return branch_name, master_name
 
 def synch_required(route_function):
@@ -831,7 +835,7 @@ def make_edit_path(branch, path, dir_name):
     base_path = path[:dir_index] + dir_name + '/'
     return join('/tree/{}/edit'.format(branch_name2path(branch)), base_path)
 
-def make_directory_columns(clone, branch_name, repo_path=None, showallfiles=False):
+def make_directory_columns(clone, branch_name, repo_path=None, edit_base_url=None, showallfiles=False):
     ''' Get a list of lists of dicts for the passed path, with file listings for each level.
         example: passing repo_path='hello/world/wide' will return something like:
             [
@@ -858,7 +862,11 @@ def make_directory_columns(clone, branch_name, repo_path=None, showallfiles=Fals
     dirs.insert(0, u'')
 
     # Create the listings
-    edit_path_root = u'/tree/{}/edit'.format(branch_name)
+    # We may've been passed an alternate edit URL
+    if not edit_base_url:
+        edit_path_root = u'/tree/{}/edit'.format(branch_name)
+    else:
+        edit_path_root = edit_base_url.rstrip('/')
     modify_path_root = u'/tree/{}/modify'.format(branch_name)
     dir_listings = []
     for i in range(len(dirs)):
@@ -1075,7 +1083,7 @@ def render_activities_list(task_description=None, show_new_activity_modal=False)
 
     return render_template('activities-list.html', **kwargs)
 
-def common_article_list_args(repo, branch_name, path):
+def common_article_list_args(repo, branch_name, path, edit_base_url=None):
     ''' Assemble the kwargs for a page that shows an activity's files.
     '''
     # NOTE: temporarily turning off filtering if 'showallfiles=true' is in the request
@@ -1086,15 +1094,15 @@ def common_article_list_args(repo, branch_name, path):
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(safe_branch=branch_name2path(branch_name),
                   breadcrumb_paths=make_breadcrumb_paths(branch_name, path),
-                  dir_columns=make_directory_columns(repo, branch_name, path, showallfiles),
+                  dir_columns=make_directory_columns(repo, branch_name, path, edit_base_url, showallfiles),
                   activity=activity)
 
     return kwargs
 
-def render_articles_list(repo, branch_name, path):
+def render_articles_list(repo, branch_name, path, edit_base_url=None):
     ''' Render a page showing an activity's files
     '''
-    kwargs = common_article_list_args(repo, branch_name, path)
+    kwargs = common_article_list_args(repo, branch_name, path, edit_base_url)
     return render_template('articles-list.html', **kwargs)
 
 def render_category_modify(repo, branch_name, path):
