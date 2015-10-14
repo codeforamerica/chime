@@ -5,19 +5,16 @@ Logger = getLogger('chime.views')
 
 from os.path import join, isdir, exists
 from re import compile, MULTILINE, sub
-from io import BytesIO
 
 from requests import post
 from datetime import datetime
 from urlparse import urlparse
 from flask import current_app, flash, render_template, redirect, request, Response, session, abort
-from git import Actor
 
 from . import chime as app
 from . import constants, repo_functions, chime_activity
 from . import publish
-from .jekyll_functions import dump_jekyll_doc, load_languages
-from .storage.user_task import UserTask, UserTaskPublished, UserTaskDeleted
+from .jekyll_functions import load_languages
 
 # the decorator functions
 from .view_functions import login_required, lock_on_user, browserid_hostname_required, synch_required, synched_checkout_required, log_application_errors
