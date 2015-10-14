@@ -322,7 +322,11 @@ def look_in_master(path=None):
         )
 
     # it's a file, show the edit view
-    return view_functions.render_edit_view(repo, default_branch_name, path, open(full_path, 'r'))
+    return view_functions.render_edit_view(
+        repo=repo, branch_name=default_branch_name,
+        path=path, file=open(full_path, 'r'),
+        base_save_path='/look/save'
+    )
 
 @app.route('/look/in/', methods=['POST'])
 @app.route('/look/in/<path:path>', methods=['POST'])
@@ -351,6 +355,36 @@ def handle_look_in_submit(path=None):
         return redirect('/look/in/{}'.format(path), code=303)
 
     # redirect to the edit page in the new branch
+    return redirect(redirect_path, code=303)
+
+@app.route('/look/save/<path:path>', methods=['POST'])
+@log_application_errors
+@login_required
+@lock_on_user
+def handle_look_article_submit(path):
+    ''' Handle a submission from the article-edit form.
+    '''
+    repo = view_functions.get_repo(flask_app=current_app)
+    default_branch_name = current_app.config['default_branch']
+    # start a new branch to save any changes in
+    working_branch_name = view_functions.start_activity_for_edits(repo, default_branch_name)
+    start_point = repo.branches[working_branch_name].commit.hexsha
+    try:
+        redirect_path, did_save = view_functions.handle_article_edit_submit(
+            repo=repo, branch_name=working_branch_name, path=path, start_point=start_point
+        )
+    except Exception:
+        # abandon the new branch and raise the exception
+        repo_functions.abandon_branch(repo, default_branch_name, working_branch_name)
+        raise
+
+    if not did_save:
+        # abandon the new branch
+        repo_functions.abandon_branch(repo, default_branch_name, working_branch_name)
+        # redirect to where we started
+        return redirect('/look/in/{}'.format(path), code=303)
+
+    # redirect to the edit or view page in the new branch
     return redirect(redirect_path, code=303)
 
 @app.route('/look/at/', methods=['GET'])
@@ -460,7 +494,10 @@ def branch_edit(branch_name, path=None):
         )
 
     # it's a file, edit it
-    return view_functions.render_edit_view(repo, branch_name, path, open(full_path, 'r'))
+    return view_functions.render_edit_view(
+        repo=repo, branch_name=branch_name,
+        path=path, file=open(full_path, 'r')
+    )
 
 @app.route('/tree/<branch_name>/edit/', methods=['POST'])
 @app.route('/tree/<branch_name>/edit/<path:path>', methods=['POST'])
@@ -643,7 +680,9 @@ def branch_save(branch_name, path):
     ''' Handle a submission from the article-edit form.
     '''
     repo = view_functions.get_repo(flask_app=current_app)
-    redirect_path, _ = view_functions.handle_article_edit_submit(repo, branch_name, path)
+    redirect_path, _ = view_functions.handle_article_edit_submit(
+        repo=repo, branch_name=branch_name, path=path
+    )
     return redirect(redirect_path, code=303)
 
 @app.route('/.well-known/deploy-key.txt')

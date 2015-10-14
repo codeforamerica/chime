@@ -1132,17 +1132,20 @@ def render_category_modify(repo, branch_name, path, edit_base_url=None, modify_b
 
     return render_template('directory-modify.html', **kwargs)
 
-def render_edit_view(repo, branch_name, path, file):
+def render_edit_view(repo, branch_name, path, file, base_save_path=None):
     ''' Render the page that lets you edit a file
     '''
     front, body = load_jekyll_doc(file)
     languages = load_languages(repo.working_dir)
     url_slug = path
+    safe_branch = branch_name2path(branch_name)
     # strip the index file from the slug if appropriate
     url_slug = re.sub(ur'index.{}$'.format(constants.CONTENT_FILE_EXTENSION), u'', url_slug)
-    view_path = join('/tree/{}/view'.format(branch_name2path(branch_name)), path)
-    history_path = join('/tree/{}/history'.format(branch_name2path(branch_name)), path)
-    save_path = join('/tree/{}/save'.format(branch_name2path(branch_name)), path)
+    view_path = join('/tree/{}/view'.format(safe_branch), path)
+    history_path = join('/tree/{}/history'.format(safe_branch), path)
+    # we might've been passed a custom save path
+    base_save_path = base_save_path or '/tree/{}/save'.format(safe_branch)
+    save_path = join(base_save_path, path)
     folder_root_slug = u'/'.join([item for item in url_slug.split('/') if item][:-1]) + u'/'
     app_authorized = False
     ga_config = read_ga_config(current_app.config['RUNNING_STATE_DIR'])
@@ -1155,7 +1158,7 @@ def render_edit_view(repo, branch_name, path, file):
     activity = chime_activity.ChimeActivity(repo=repo, branch_name=branch_name, default_branch_name=current_app.config['default_branch'], actor_email=session.get('email', None))
 
     kwargs = common_template_args(current_app.config, session)
-    kwargs.update(safe_branch=branch_name2path(branch_name),
+    kwargs.update(safe_branch=safe_branch,
                   body=body, hexsha=commit.hexsha, url_slug=url_slug,
                   front=front, view_path=view_path, edit_path=path,
                   history_path=history_path, save_path=save_path, languages=languages,
@@ -1329,28 +1332,22 @@ def handle_category_modify_submit(repo, branch_name, path):
     else:
         raise Exception(u'Tried to modify a category, but received an unfamiliar command.')
 
-def handle_article_edit_submit(repo, branch_name, path):
+def handle_article_edit_submit(repo, branch_name, path, start_point=None):
     ''' Handle a form submit from the category modify pages.
 
         The request object persists from the calling method, which was called by the
         submission of a form.
     '''
+    print u'--> bloop <--'
     default_branch_name = current_app.config['default_branch']
     actor = Actor(' ', session['email'])
-    start_point = request.form['hexsha']
+    # we may've been passed a start point
+    start_point = start_point or request.form['hexsha']
+    action = request.form.get('action', '').lower()
     origin_dirname = current_app.config['REPO_PATH']
     working_dirname = current_app.config['WORK_PATH']
     task_id = branch_name2path(branch_var2name(branch_name))
-    # if we've been browsing the live site, start a new branch to hold the submitted changes
-    if task_id == default_branch_name:
-        repo = get_repo(flask_app=current_app)
-        task_id = start_activity_for_edits(repo, default_branch_name)
-        start_point = repo.branches[task_id].commit.hexsha
-        user_task = UserTask(actor, task_id, default_branch_name, origin_dirname, working_dirname, start_point)
-        working_state = constants.WORKING_STATE_LIVE
-    else:
-        user_task = UserTask(actor, task_id, default_branch_name, origin_dirname, working_dirname, start_point)
-        working_state = user_task.working_state
+    user_task = UserTask(actor, task_id, default_branch_name, origin_dirname, working_dirname, start_point)
 
     languages = load_languages(user_task.repo.working_dir)
     front, body = prep_jekyll_content(request.form, languages)
@@ -1390,12 +1387,12 @@ def handle_article_edit_submit(repo, branch_name, path):
     else:
         if did_save:
             flash(u'Saved changes to the {} article! Remember to submit this change for feedback when you\'re ready to go live.'.format(request.form['en-title']), u'notice')
-        else:
-            # clean up the branch that was created for the edit if necessary
-            task_id = delete_activity_for_edits(user_task.repo, default_branch_name, task_id, working_state)
+        elif action == 'save':
             flash(u'No changes to save!', u'warning')
 
-    if request.form.get('action', '').lower() == 'preview':
+    print u'action={}, did_save={}'.format(action, did_save)
+
+    if action == 'preview':
         return '/tree/{}/view/{}'.format(task_id, end_path), did_save
     else:
         return '/tree/{}/edit/{}'.format(task_id, end_path), did_save
