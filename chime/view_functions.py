@@ -1134,7 +1134,7 @@ def render_category_modify(repo, branch_name, path, edit_base_url=None, modify_b
 
     return render_template('directory-modify.html', **kwargs)
 
-def render_edit_view(repo, branch_name, path, file, base_save_path=None):
+def render_edit_view(repo, branch_name, path, file, base_save_path=None, browse_path=None):
     ''' Render the page that lets you edit a file
     '''
     front, body = load_jekyll_doc(file)
@@ -1159,11 +1159,15 @@ def render_edit_view(repo, branch_name, path, file, base_save_path=None):
 
     activity = chime_activity.ChimeActivity(repo=repo, branch_name=branch_name, default_branch_name=current_app.config['default_branch'], actor_email=session.get('email', None))
 
+    # we might've been passed a custom browse link
+    browse_path = browse_path or activity.edit_path
+
     kwargs = common_template_args(current_app.config, session)
     kwargs.update(safe_branch=safe_branch,
                   body=body, hexsha=commit.hexsha, url_slug=url_slug,
                   front=front, view_path=view_path, edit_path=path,
-                  history_path=history_path, save_path=save_path, languages=languages,
+                  history_path=history_path, save_path=save_path,
+                  browse_path=browse_path, languages=languages,
                   breadcrumb_paths=make_breadcrumb_paths(branch_name, folder_root_slug),
                   app_authorized=app_authorized, activity=activity)
     kwargs.update(analytics_dict)

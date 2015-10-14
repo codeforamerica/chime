@@ -319,10 +319,12 @@ def look_in_master(path=None):
         )
 
     # it's a file, show the edit view
+    # make a browse link by stripping the article from the path
+    browse_path = join(constants.ROUTE_BROWSE_LIVE, repo_functions.strip_last_item(path))
     return view_functions.render_edit_view(
         repo=repo, branch_name=default_branch_name,
         path=path, file=open(full_path, 'r'),
-        base_save_path='/look/save'
+        base_save_path='/look/save', browse_path=browse_path
     )
 
 @app.route(constants.ROUTE_BROWSE_LIVE, methods=['POST'])
@@ -491,9 +493,12 @@ def branch_edit(branch_name, path=None):
         )
 
     # it's a file, show the edit view
+    # make a browse link by stripping the article from the path
+    browse_path = join('/tree/{}/edit'.format(safe_branch), repo_functions.strip_last_item(path))
     return view_functions.render_edit_view(
         repo=repo, branch_name=branch_name,
-        path=path, file=open(full_path, 'r')
+        path=path, file=open(full_path, 'r'),
+        browse_path=browse_path
     )
 
 @app.route('/tree/<branch_name>/edit/', methods=['POST'])
@@ -638,13 +643,8 @@ def branch_history(branch_name, path=None):
     branch_name = view_functions.branch_var2name(branch_name)
     safe_branch = view_functions.branch_name2path(branch_name)
     repo = view_functions.get_repo(flask_app=current_app)
-
     activity = chime_activity.ChimeActivity(repo=repo, branch_name=safe_branch, default_branch_name=current_app.config['default_branch'], actor_email=session.get('email', None))
-
-    article_edit_path = join('/tree/{}/edit'.format(view_functions.branch_name2path(branch_name)), path)
-
     languages = load_languages(repo.working_dir)
-
     app_authorized = False
 
     ga_config = read_ga_config(current_app.config['RUNNING_STATE_DIR'])
@@ -662,10 +662,13 @@ def branch_history(branch_name, path=None):
         history.append(dict(name=name, email=email, date=date, subject=subject))
 
     kwargs = view_functions.common_template_args(current_app.config, session)
+    article_edit_path = join('/tree/{}/edit'.format(safe_branch), path)
+    # make a browse link by stripping the article from the path
+    browse_path = join('/tree/{}/edit'.format(safe_branch), repo_functions.strip_last_item(path))
     kwargs.update(safe_branch=safe_branch,
                   history=history, path=path, languages=languages,
                   app_authorized=app_authorized, article_edit_path=article_edit_path,
-                  activity=activity)
+                  activity=activity, browse_path=browse_path)
 
     return render_template('article-history.html', **kwargs)
 

@@ -205,7 +205,15 @@ def get_start_branch(clone, default_branch_name, task_description, author_email)
     return branch
 
 def strip_index_file(file_path):
+    ''' Strip the index file from the end of the passed path
+    '''
     return re.sub(r'index.{}$'.format(constants.CONTENT_FILE_EXTENSION), '', file_path)
+
+def strip_last_item(file_path):
+    ''' Strip the last topic or article from the end of the passed path
+    '''
+    index_stripped = strip_index_file(file_path).rstrip('/')
+    return '{}/'.format('/'.join(index_stripped.split('/')[:-1]))
 
 def ignore_task_metadata_on_merge(clone):
     ''' Tell this repo to ignore merge conflicts on the task metadata file
