@@ -1270,11 +1270,6 @@ def handle_category_modify_submit(repo, branch_name, path):
 
     safe_branch = branch_name2path(branch_var2name(branch_name))
     default_branch_name = current_app.config['default_branch']
-    working_state = get_activity_working_state(repo, default_branch_name, safe_branch)
-
-    # if we've been browsing the live site, start a new branch to hold the submitted changes
-    if working_state == constants.WORKING_STATE_LIVE:
-        safe_branch = start_activity_for_edits(repo, default_branch_name)
 
     # delete the passed category
     if 'delete' in request.form:
@@ -1287,9 +1282,6 @@ def handle_category_modify_submit(repo, branch_name, path):
             # flash the human-readable part of the commit message
             flash_message = commit_message.split('\n')[0]
             flash(flash_message, u'notice')
-        else:
-            # clean up the branch that was created for the edit if necessary
-            safe_branch = delete_activity_for_edits(repo, default_branch_name, safe_branch, working_state)
 
         return '/tree/{}/edit/{}'.format(safe_branch, redirect_path), do_save
 
@@ -1298,8 +1290,6 @@ def handle_category_modify_submit(repo, branch_name, path):
         did_save = False
         # verify that it exists
         if isdir(index_path) or not exists(index_path):
-            # clean up the branch that was created for the edit if necessary
-            safe_branch = delete_activity_for_edits(repo, default_branch_name, safe_branch, working_state)
             raise Exception(u'No writable file exists at {}!'.format(index_path))
 
         # get the form values
@@ -1321,8 +1311,6 @@ def handle_category_modify_submit(repo, branch_name, path):
         try:
             front_matter.update(new_values)
         except ValueError:
-            # clean up the branch that was created for the edit if necessary
-            safe_branch = delete_activity_for_edits(repo, default_branch_name, safe_branch, working_state)
             raise Exception(u'Unable to update file at {}!'.format(index_path))
 
         # only write if there are changes
@@ -1332,15 +1320,11 @@ def handle_category_modify_submit(repo, branch_name, path):
             if did_save:
                 flash(u'Saved changes to the {} topic! Remember to submit this change for feedback when you\'re ready to go live.'.format(front_matter['en-title']), u'notice')
             else:
-                # clean up the branch that was created for the edit if necessary
-                safe_branch = delete_activity_for_edits(repo, default_branch_name, safe_branch, working_state)
                 flash(u'Unable to save changes to {}!'.format(front_matter['title']), u'error')
 
         return '/tree/{}/modify/{}'.format(safe_branch, strip_index_file(new_path)), did_save
 
     else:
-        # clean up the branch that was created for the edit if necessary
-        safe_branch = delete_activity_for_edits(repo, default_branch_name, safe_branch, working_state)
         raise Exception(u'Tried to modify a category, but received an unfamiliar command.')
 
 def add_article_or_category(repo, working_branch_name, dir_path, request_path, create_what):
