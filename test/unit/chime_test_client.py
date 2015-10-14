@@ -15,8 +15,8 @@ class ChimeTestClient:
         self.client = client
         self.test = test
 
-        response = self.client.get('/')
-        self.test.assertFalse('Start' in response.data)
+        response = self.client.get('/', follow_redirects=True)
+        self.test.assertTrue('Sign in' in response.data)
 
         self.path, self.soup, self.headers = '/', BeautifulSoup(response.data), response.headers
 
@@ -29,8 +29,8 @@ class ChimeTestClient:
         response = self.client.post('/sign-in', data={'assertion': email})
         self.test.assertEqual(response.status_code, 200)
 
-        response = self.client.get('/')
-        self.test.assertTrue('Start' in response.data)
+        response = self.client.get('/', follow_redirects=True)
+        self.test.assertTrue('<!-- template name: articles-list -->' in response.data)
 
     def reload(self):
         ''' Reload the current path.

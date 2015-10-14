@@ -37,7 +37,7 @@ def after_request(response):
 @lock_on_user
 @synch_required
 def index():
-    return view_functions.render_activities_list()
+    return redirect(constants.ROUTE_BROWSE_LIVE, code=303)
 
 @app.route(constants.ROUTE_ACTIVITY, methods=['GET'])
 @log_application_errors
