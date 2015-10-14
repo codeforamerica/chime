@@ -1162,41 +1162,6 @@ def render_edit_view(repo, branch_name, path, file):
     kwargs.update(analytics_dict)
     return render_template('article-edit.html', **kwargs)
 
-def check_valid_create(repo, path):
-    ''' Checks an article or topic creation, returns a boolean and, if it's not valid,
-        an appropriate error message.
-
-        The request object persists from the calling method, which was called by the
-        submission of a form.
-    '''
-    action = request.form.get('action', '').lower()
-    create_what = request.form.get('create_what', '').lower()
-    create_path = request.form.get('create_path', path)
-    if is_create_request(path, action, create_what, create_path):
-        display_name = re.sub(r'\s+', ' ', request.form['request_path']).strip().rstrip('/')
-        slug_name = slugify(display_name)
-        display_what = file_display_name(create_what)
-        # don't allow empty names
-        if len(display_name) == 0:
-            describe_what = u'an article' if create_what == 'article' else u'a topic'
-            return False, u'Please enter a name to create {}!'.format(describe_what)
-
-        # don't allow names whose slugs are empty
-        if len(slug_name) == 0:
-            return False, u'{} is not an acceptable {} name!'.format(display_name, display_what)
-
-        # don't allow creation of things that already exist
-        index_path = u'{}/index.{}'.format(slug_name, constants.CONTENT_FILE_EXTENSION)
-        file_path = repo.canonicalize_path(create_path, index_path)
-        if repo.exists(file_path):
-            return False, u'{} "{}" already exists'.format(display_what.title(), display_name)
-
-        # it passed all the tests
-        return True, u''
-
-    # it's not a create request
-    return False, u''
-
 def is_file_upload_request(action=None, file_in_files=None):
     ''' Return True if this is a file upload request.
 
