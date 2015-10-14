@@ -1202,12 +1202,6 @@ def handle_article_list_submit(repo, branch_name, path):
     '''
     safe_branch = branch_name2path(branch_var2name(branch_name))
     default_branch_name = current_app.config['default_branch']
-    working_state = get_activity_working_state(repo, default_branch_name, safe_branch)
-
-    # if we've been browsing the live site, start a new branch to hold the submitted changes
-    if working_state == constants.WORKING_STATE_LIVE:
-        safe_branch = start_activity_for_edits(repo, default_branch_name)
-
     commit_hexsha = repo.commit().hexsha
 
     path = path or u''
@@ -1233,8 +1227,6 @@ def handle_article_list_submit(repo, branch_name, path):
             else:
                 describe_what = u'an article' if create_what == 'article' else u'a topic'
                 flash(u'Please enter a name to create {}!'.format(describe_what), u'warning')
-            # clean up the branch that was created for the edit if necessary
-            safe_branch = delete_activity_for_edits(repo, default_branch_name, safe_branch, working_state)
 
             return redirect('/tree/{}/edit/{}'.format(safe_branch, file_path), code=303)
 
@@ -1260,9 +1252,6 @@ def handle_article_list_submit(repo, branch_name, path):
         default_branch_name = current_app.config['default_branch']
         Logger.debug('save')
         save_working_file(clone=repo, path=file_path, message=commit_message, base_sha=commit_hexsha, default_branch_name=default_branch_name)
-    else:
-        # clean up the branch that was created for the edit if necessary
-        safe_branch = delete_activity_for_edits(repo, default_branch_name, safe_branch, working_state)
 
     return redirect('/tree/{}/edit/{}'.format(safe_branch, redirect_path), code=303)
 
