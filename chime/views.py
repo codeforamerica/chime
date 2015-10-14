@@ -4,20 +4,19 @@ from logging import getLogger
 Logger = getLogger('chime.views')
 
 from os.path import join, isdir, exists
-from re import compile, MULTILINE, sub, search
+from re import compile, MULTILINE, sub
 from io import BytesIO
 
 from requests import post
-from slugify import slugify
 from datetime import datetime
 from urlparse import urlparse
 from flask import current_app, flash, render_template, redirect, request, Response, session, abort
 from git import Actor
 
 from . import chime as app
-from . import constants, repo_functions, edit_functions, chime_activity
+from . import constants, repo_functions, chime_activity
 from . import publish
-from .jekyll_functions import load_jekyll_doc, dump_jekyll_doc, load_languages
+from .jekyll_functions import dump_jekyll_doc, load_languages
 from .storage.user_task import UserTask, UserTaskPublished, UserTaskDeleted
 
 # the decorator functions
@@ -643,70 +642,9 @@ def branch_history(branch_name, path=None):
 def branch_save(branch_name, path):
     ''' Handle a submission from the article-edit form.
     '''
-    default_branch_name = current_app.config['default_branch']
-    actor = Actor(' ', session['email'])
-    start_point = request.form['hexsha']
-    origin_dirname = current_app.config['REPO_PATH']
-    working_dirname = current_app.config['WORK_PATH']
-    task_id = view_functions.branch_name2path(view_functions.branch_var2name(branch_name))
-    # if we've been browsing the live site, start a new branch to hold the submitted changes
-    if task_id == default_branch_name:
-        repo = view_functions.get_repo(flask_app=current_app)
-        task_id = view_functions.start_activity_for_edits(repo, default_branch_name)
-        start_point = repo.branches[task_id].commit.hexsha
-        user_task = UserTask(actor, task_id, default_branch_name, origin_dirname, working_dirname, start_point)
-        working_state = constants.WORKING_STATE_LIVE
-    else:
-        user_task = UserTask(actor, task_id, default_branch_name, origin_dirname, working_dirname, start_point)
-        working_state = user_task.working_state
-
-    languages = load_languages(user_task.repo.working_dir)
-    front, body = view_functions.prep_jekyll_content(request.form, languages)
-
-    data = BytesIO()
-    dump_jekyll_doc(front, body, data)
-    user_task.write(path, data.getvalue())
-
-    end_path = path
-
-    if request.form.get('url-slug'):
-        new_path = view_functions.calculate_new_slug(path, request.form['url-slug'])
-
-        if new_path:
-            try:
-                user_task.move(path, new_path)
-            except ValueError as e:
-                e_message, e_type = e.args[0], e.args[1] if len(e.args) > 1 else None
-                view_functions.flash(e_message, e_type)
-            else:
-                end_path = new_path
-
-    did_save = False
-    try:
-        title_layout = request.form.get('en-title'), request.form.get('layout')
-        message = view_functions.format_commit_message(end_path, *title_layout)
-        did_save = user_task.commit(message)
-        user_task.push()
-    except UserTaskPublished as e:
-        ref_info = user_task.ref_info()
-        view_functions.flash_only(view_functions.MESSAGE_ACTIVITY_PUBLISHED.format(**ref_info), u'warning')
-    except UserTaskDeleted as e:
-        view_functions.flash_only(view_functions.MESSAGE_ACTIVITY_DELETED, u'warning')
-    except repo_functions.MergeConflict as e:
-        ref_info = user_task.ref_info(e.remote_commit.hexsha)
-        view_functions.flash(view_functions.MESSAGE_PAGE_EDITED.format(**ref_info), u'error')
-    else:
-        if did_save:
-            view_functions.flash(u'Saved changes to the {} article! Remember to submit this change for feedback when you\'re ready to go live.'.format(request.form['en-title']), u'notice')
-        else:
-            # clean up the branch that was created for the edit if necessary
-            task_id = view_functions.delete_activity_for_edits(user_task.repo, default_branch_name, task_id, working_state)
-            view_functions.flash(u'No changes to save!', u'warning')
-
-    if request.form.get('action', '').lower() == 'preview':
-        return redirect('/tree/{}/view/{}'.format(task_id, end_path), code=303)
-    else:
-        return redirect('/tree/{}/edit/{}'.format(task_id, end_path), code=303)
+    repo = view_functions.get_repo(flask_app=current_app)
+    redirect_path, _ = view_functions.handle_article_edit_submit(repo, branch_name, path)
+    return redirect(redirect_path, code=303)
 
 @app.route('/.well-known/deploy-key.txt')
 @log_application_errors

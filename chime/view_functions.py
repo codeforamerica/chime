@@ -17,6 +17,7 @@ from slugify import slugify
 from tempfile import mkdtemp
 from subprocess import Popen
 from git.cmd import GitCommandError
+from git import Actor
 from glob import glob
 import csv
 import re
@@ -31,7 +32,7 @@ from flask import request, session, current_app, redirect, flash, render_templat
 from requests import get
 
 from .edit_functions import create_new_page, delete_file, update_page, upload_new_file
-from .jekyll_functions import load_jekyll_doc, load_languages, build_jekyll_site
+from .jekyll_functions import load_jekyll_doc, load_languages, build_jekyll_site, dump_jekyll_doc
 from .google_api_functions import read_ga_config, fetch_google_analytics_for_page
 from .repo_functions import (
     get_existing_branch, get_branch_if_exists_locally, ignore_task_metadata_on_merge,
@@ -43,6 +44,7 @@ from .repo_functions import (
     get_start_branch, save_working_file
 )
 from . import constants
+from .storage.user_task import UserTask, UserTaskPublished, UserTaskDeleted
 
 from .href import needs_redirect, get_redirect
 
@@ -1326,6 +1328,77 @@ def handle_category_modify_submit(repo, branch_name, path):
 
     else:
         raise Exception(u'Tried to modify a category, but received an unfamiliar command.')
+
+def handle_article_edit_submit(repo, branch_name, path):
+    ''' Handle a form submit from the category modify pages.
+
+        The request object persists from the calling method, which was called by the
+        submission of a form.
+    '''
+    default_branch_name = current_app.config['default_branch']
+    actor = Actor(' ', session['email'])
+    start_point = request.form['hexsha']
+    origin_dirname = current_app.config['REPO_PATH']
+    working_dirname = current_app.config['WORK_PATH']
+    task_id = branch_name2path(branch_var2name(branch_name))
+    # if we've been browsing the live site, start a new branch to hold the submitted changes
+    if task_id == default_branch_name:
+        repo = get_repo(flask_app=current_app)
+        task_id = start_activity_for_edits(repo, default_branch_name)
+        start_point = repo.branches[task_id].commit.hexsha
+        user_task = UserTask(actor, task_id, default_branch_name, origin_dirname, working_dirname, start_point)
+        working_state = constants.WORKING_STATE_LIVE
+    else:
+        user_task = UserTask(actor, task_id, default_branch_name, origin_dirname, working_dirname, start_point)
+        working_state = user_task.working_state
+
+    languages = load_languages(user_task.repo.working_dir)
+    front, body = prep_jekyll_content(request.form, languages)
+
+    data = BytesIO()
+    dump_jekyll_doc(front, body, data)
+    user_task.write(path, data.getvalue())
+
+    end_path = path
+
+    if request.form.get('url-slug'):
+        new_path = calculate_new_slug(path, request.form['url-slug'])
+
+        if new_path:
+            try:
+                user_task.move(path, new_path)
+            except ValueError as e:
+                e_message, e_type = e.args[0], e.args[1] if len(e.args) > 1 else None
+                flash(e_message, e_type)
+            else:
+                end_path = new_path
+
+    did_save = False
+    try:
+        title_layout = request.form.get('en-title'), request.form.get('layout')
+        message = format_commit_message(end_path, *title_layout)
+        did_save = user_task.commit(message)
+        user_task.push()
+    except UserTaskPublished as e:
+        ref_info = user_task.ref_info()
+        flash_only(MESSAGE_ACTIVITY_PUBLISHED.format(**ref_info), u'warning')
+    except UserTaskDeleted as e:
+        flash_only(MESSAGE_ACTIVITY_DELETED, u'warning')
+    except MergeConflict as e:
+        ref_info = user_task.ref_info(e.remote_commit.hexsha)
+        flash(MESSAGE_PAGE_EDITED.format(**ref_info), u'error')
+    else:
+        if did_save:
+            flash(u'Saved changes to the {} article! Remember to submit this change for feedback when you\'re ready to go live.'.format(request.form['en-title']), u'notice')
+        else:
+            # clean up the branch that was created for the edit if necessary
+            task_id = delete_activity_for_edits(user_task.repo, default_branch_name, task_id, working_state)
+            flash(u'No changes to save!', u'warning')
+
+    if request.form.get('action', '').lower() == 'preview':
+        return '/tree/{}/view/{}'.format(task_id, end_path), did_save
+    else:
+        return '/tree/{}/edit/{}'.format(task_id, end_path), did_save
 
 def add_article_or_category(repo, working_branch_name, dir_path, request_path, create_what):
     ''' Add an article or category
