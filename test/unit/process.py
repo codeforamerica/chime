@@ -143,7 +143,7 @@ class TestProcess (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             args = 'Diving for Dollars', 'Ninjas', 'Flipping Out', 'So Awesome'
             branch_name = erica.quick_activity_setup(*args)
 
@@ -183,7 +183,7 @@ class TestProcess (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Erica starts a new task, "Diving for Dollars".
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             erica.start_task('Diving for Dollars')
             erica_branchname = erica.get_branch_name()
 
@@ -194,7 +194,7 @@ class TestProcess (TestCase):
             erica.request_feedback('Is this okay?')
 
             # Frances starts a new task, "Bobbing for Apples".
-            frances.open_link('/')
+            frances.open_link(constants.ROUTE_ACTIVITY)
             frances.start_task('Bobbing for Apples')
             frances_branchname = frances.get_branch_name()
 
@@ -209,7 +209,7 @@ class TestProcess (TestCase):
             frances.publish_activity()
 
             # Erica should now expect to see her own new category.
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             erica.start_task('Canticle for Leibowitz')
             erica_branchname2 = erica.get_branch_name()
             erica.follow_link('/tree/{}/edit/other/'.format(erica_branchname2))
@@ -236,7 +236,7 @@ class TestProcess (TestCase):
                 frances.sign_in(frances_email)
 
             # Start a new task
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             args = 'Diving for Dollars', 'Ninjas', 'Flipping Out', 'So Awesome'
             branch_name = erica.quick_activity_setup(*args)
 
@@ -290,7 +290,7 @@ class TestProcess (TestCase):
                 frances.sign_in(frances_email)
 
             # Start a new task, topic, subtopic, article
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             task_description = u'Squeeze A School Of Fish Into A Bait Ball for Dolphins'
             article_name = u'Stunned Fish'
             args = task_description, u'Plowing Through', u'Feeding On', article_name
@@ -357,7 +357,7 @@ class TestProcess (TestCase):
                 frances.sign_in(frances_email)
 
             # Start a new task
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             erica.start_task(description='Eating Carrion for Vultures')
             erica_branch_name = erica.get_branch_name()
 
@@ -412,13 +412,13 @@ class TestProcess (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task
-            frances.open_link('/')
+            frances.open_link(constants.ROUTE_ACTIVITY)
             args = 'Bobbing for Apples', 'Ninjas', 'Flipping Out', 'So Awesome'
             f_branch_name = frances.quick_activity_setup(*args)
             f_article_path = frances.path
 
             # Start a new task
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             args = 'Diving for Dollars', 'Ninjas', 'Flipping Out', 'So Awesome'
             e_branch_name = erica.quick_activity_setup(*args)
 
@@ -464,12 +464,12 @@ class TestProcess (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Frances: Start a new task
-            frances.open_link('/')
+            frances.open_link(constants.ROUTE_ACTIVITY)
             args = 'Bobbing for Apples', 'Ninjas', 'Flipping Out', 'So Awesome'
             frances.quick_activity_setup(*args)
 
             # Erica: Start a new task
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             args = 'Diving for Dollars', 'Ninjas', 'Flipping Out', 'So Awesome'
             erica.quick_activity_setup(*args)
 
@@ -492,13 +492,13 @@ class TestProcess (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task
-            frances.open_link('/')
+            frances.open_link(constants.ROUTE_ACTIVITY)
             args = 'Bobbing for Apples', 'Ninjas', 'Flipping Out', 'So Awesome'
             f_branch_name = frances.quick_activity_setup(*args)
             f_article_path = frances.path
 
             # Start a new task
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             args = 'Diving for Dollars', 'Samurai', 'Flipping Out', 'So Awesome'
             e_branch_name = erica.quick_activity_setup(*args)
 
@@ -546,7 +546,7 @@ class TestProcess (TestCase):
                 frances.sign_in(frances_email)
 
             # Frances: Start a new task, topic, subtopic, article
-            frances.open_link('/')
+            frances.open_link(constants.ROUTE_ACTIVITY)
             args = 'Triassic for Artemia', 'Biological', 'Toxicity', 'Assays'
             frances.quick_activity_setup(*args)
             branch_name = frances.get_branch_name()
@@ -567,7 +567,7 @@ class TestProcess (TestCase):
             # Frances successfully browses elsewhere in the activity
             frances.open_link(url='/tree/{}/'.format(branch_name))
             # Frances successfully deletes the task
-            frances.open_link(url='/')
+            frances.open_link(url=constants.ROUTE_ACTIVITY)
             frances.delete_task(branch_name=branch_name)
             # Frances successfully creates a new task
             frances.start_task(description='Narrow Braincase for Larger Carnassials')
@@ -586,7 +586,7 @@ class TestProcess (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             erica.start_task(description='Eating Carrion for Vultures')
             erica_branch_name = erica.get_branch_name()
 
@@ -609,7 +609,7 @@ class TestProcess (TestCase):
             # Switch users
             #
             # Start a new task
-            frances.open_link('/')
+            frances.open_link(constants.ROUTE_ACTIVITY)
             frances.start_task(description='Flying in Circles for Vultures')
             frances_branch_name = frances.get_branch_name()
 
@@ -669,7 +669,7 @@ class TestProcess (TestCase):
                 frances.sign_in(frances_email)
 
             # Start a new task
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             erica.start_task(description='Eating Carrion for Vultures')
             erica_branch_name = erica.get_branch_name()
 
@@ -731,7 +731,7 @@ class TestProcess (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             task_description = u'Eating Carrion for Vultures'
             erica.start_task(description=task_description)
             erica_branch_name = erica.get_branch_name()
@@ -743,7 +743,7 @@ class TestProcess (TestCase):
             # Switch users
             #
             # delete erica's task
-            frances.open_link(url='/')
+            frances.open_link(url=constants.ROUTE_ACTIVITY)
             frances.delete_task(branch_name=erica_branch_name)
             self.assertEqual(PATTERN_FLASH_TASK_DELETED.format(description=task_description), frances.soup.find('li', class_='flash').text)
 
@@ -769,7 +769,7 @@ class TestProcess (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             task_description = u'Eating Carrion for Vultures'
             erica.start_task(description=task_description)
             erica_branch_name = erica.get_branch_name()
@@ -781,7 +781,7 @@ class TestProcess (TestCase):
             # Switch users
             #
             # delete erica's task
-            frances.open_link(url='/')
+            frances.open_link(url=constants.ROUTE_ACTIVITY)
             frances.delete_task(branch_name=erica_branch_name)
             self.assertEqual(PATTERN_FLASH_TASK_DELETED.format(description=task_description), frances.soup.find('li', class_='flash').text)
 
@@ -817,7 +817,7 @@ class TestProcess (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             task_description = u'Squeeze A School Of Fish Into A Bait Ball for Dolphins'
             erica.start_task(description=task_description)
             erica_branch_name = erica.get_branch_name()
@@ -841,7 +841,7 @@ class TestProcess (TestCase):
             # Switch users
             #
             # delete erica's task
-            frances.open_link(url='/')
+            frances.open_link(url=constants.ROUTE_ACTIVITY)
             frances.delete_task(branch_name=erica_branch_name)
             self.assertEqual(PATTERN_FLASH_TASK_DELETED.format(description=task_description), frances.soup.find('li', class_='flash').text)
 
@@ -881,7 +881,7 @@ class TestProcess (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             task_description = u'Eating Carrion for Vultures'
             erica.start_task(description=task_description)
             erica_branch_name = erica.get_branch_name()
@@ -957,7 +957,7 @@ class TestProcess (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             task_description = u'Eating Carrion for Vultures'
             erica.start_task(description=task_description)
             erica_branch_name = erica.get_branch_name()
@@ -980,7 +980,7 @@ class TestProcess (TestCase):
             # Switch users
             #
             # delete erica's task
-            frances.open_link(url='/')
+            frances.open_link(url=constants.ROUTE_ACTIVITY)
             frances.delete_task(branch_name=erica_branch_name)
             self.assertEqual(PATTERN_FLASH_TASK_DELETED.format(description=task_description), frances.soup.find('li', class_='flash').text)
 
@@ -1039,7 +1039,7 @@ class TestProcess (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task
-            frances.open_link('/')
+            frances.open_link(constants.ROUTE_ACTIVITY)
             args = 'Bobbing for Apples', 'Ninjas', 'Flipping Out', 'So Awesome'
             frances.quick_activity_setup(*args)
             frances.edit_article(title_str='So, So Awesome', body_str='It was the best of times.')
@@ -1070,7 +1070,7 @@ class TestProcess (TestCase):
                 frances.sign_in(email=frances_email)
 
             # Erica starts a new task, topic, sub-topic, article
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             activity_description = u'Reef-Associated Roving Coralgroupers'
             topic_name = u'Plectropomus Pessuliferus'
             subtopic_name = u'Recruit Giant Morays'
@@ -1100,7 +1100,7 @@ class TestProcess (TestCase):
             #
             # Switch users and load the activity page.
             #
-            erica.open_link(url='/')
+            erica.open_link(url=constants.ROUTE_ACTIVITY)
             # verify that the project is listed in the recently published column
             pub_ul = erica.soup.select("#activity-list-published")[0]
             # there should be an HTML comment with the branch name
@@ -1216,12 +1216,12 @@ class TestProcess (TestCase):
                 frances.sign_in(email=frances_email)
 
             # Erica starts two new tasks
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             first_activity_description = u'Use Gestures To Coordinate Hunts'
             first_branch_name = erica.quick_activity_setup(first_activity_description)
             first_edit_path = erica.path
 
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             second_activity_description = u'Come To The Coral Trout\'s Aid When Signalled'
             second_branch_name = erica.quick_activity_setup(second_activity_description)
             second_edit_path = erica.path

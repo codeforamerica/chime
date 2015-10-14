@@ -17,7 +17,7 @@ def common_error_template_args(app_config):
     ''' Return dictionary of template arguments common to error pages.
     '''
     return {
-        "activities_path": u'/',
+        "activities_path": constants.ROUTE_ACTIVITY,
         "support_email": app_config.get('SUPPORT_EMAIL_ADDRESS'),
         "support_phone_number": app_config.get('SUPPORT_PHONE_NUMBER')
     }

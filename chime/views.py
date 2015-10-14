@@ -42,7 +42,7 @@ def after_request(response):
 def index():
     return view_functions.render_activities_list()
 
-@app.route('/activity', methods=['GET'])
+@app.route(constants.ROUTE_ACTIVITY, methods=['GET'])
 @log_application_errors
 @login_required
 @lock_on_user
@@ -237,7 +237,7 @@ def start_branch():
     # require a task description
     if len(task_description) == 0:
         flash(u'Please describe what you\'re doing when you start a new activity!', u'warning')
-        return redirect('/activity', code=303)
+        return redirect(constants.ROUTE_ACTIVITY, code=303)
 
     branch = repo_functions.get_start_branch(repo, master_name, task_description, session['email'])
     safe_branch = view_functions.branch_name2path(branch.name)
@@ -281,8 +281,8 @@ def branch_view(branch_name, path=None):
     repo = view_functions.get_repo(flask_app=current_app)
     return view_functions.get_preview_asset_response(repo.working_dir, path)
 
-@app.route('/look/in/', methods=['GET'])
-@app.route('/look/in/<path:path>', methods=['GET'])
+@app.route(constants.ROUTE_BROWSE_LIVE, methods=['GET'])
+@app.route('{}<path:path>'.format(constants.ROUTE_BROWSE_LIVE), methods=['GET'])
 @log_application_errors
 @login_required
 @lock_on_user
@@ -300,16 +300,16 @@ def look_in_master(path=None):
         # if this is a directory representing an article, redirect to to the index file within
         if view_functions.is_article_dir(full_path):
             index_path = join(path or u'', u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
-            return redirect('/look/in/{}'.format(index_path))
+            return redirect('{}{}'.format(constants.ROUTE_BROWSE_LIVE, index_path))
 
         # if the directory path didn't end with a slash, add it and redirect
         if path and not path.endswith('/'):
-            return redirect('/look/in/{}/'.format(path), code=302)
+            return redirect('{}{}/'.format(constants.ROUTE_BROWSE_LIVE, path), code=302)
 
         # redirect inside solo directories if necessary
         redirect_path = view_functions.get_redirect_path_for_solo_directory(
             repo=repo, branch_name=default_branch_name,
-            path=path, route_base_url='/look/in/'
+            path=path, route_base_url=constants.ROUTE_BROWSE_LIVE
         )
         if redirect_path:
             return redirect(redirect_path, code=302)
@@ -317,8 +317,8 @@ def look_in_master(path=None):
         # render the directory contents
         return view_functions.render_articles_list(
             repo=repo, branch_name=default_branch_name,
-            path=path, edit_base_url='/look/in/',
-            modify_base_url='/look/at/'
+            path=path, edit_base_url=constants.ROUTE_BROWSE_LIVE,
+            modify_base_url=constants.ROUTE_MODIFY_LIVE
         )
 
     # it's a file, show the edit view
@@ -328,8 +328,8 @@ def look_in_master(path=None):
         base_save_path='/look/save'
     )
 
-@app.route('/look/in/', methods=['POST'])
-@app.route('/look/in/<path:path>', methods=['POST'])
+@app.route(constants.ROUTE_BROWSE_LIVE, methods=['POST'])
+@app.route('{}<path:path>'.format(constants.ROUTE_BROWSE_LIVE), methods=['POST'])
 @log_application_errors
 @login_required
 @lock_on_user
@@ -352,7 +352,7 @@ def handle_look_in_submit(path=None):
         # abandon the new branch
         repo_functions.abandon_branch(repo, default_branch_name, working_branch_name)
         # redirect to where we started
-        return redirect('/look/in/{}'.format(path), code=303)
+        return redirect('{}{}'.format(constants.ROUTE_BROWSE_LIVE, path), code=303)
 
     # redirect to the edit page in the new branch
     return redirect(redirect_path, code=303)
@@ -382,13 +382,13 @@ def handle_look_article_submit(path):
         # abandon the new branch
         repo_functions.abandon_branch(repo, default_branch_name, working_branch_name)
         # redirect to where we started
-        return redirect('/look/in/{}'.format(path), code=303)
+        return redirect('{}{}'.format(constants.ROUTE_BROWSE_LIVE, path), code=303)
 
     # redirect to the edit or view page in the new branch
     return redirect(redirect_path, code=303)
 
-@app.route('/look/at/', methods=['GET'])
-@app.route('/look/at/<path:path>', methods=['GET'])
+@app.route(constants.ROUTE_MODIFY_LIVE, methods=['GET'])
+@app.route('{}<path:path>'.format(constants.ROUTE_MODIFY_LIVE), methods=['GET'])
 @log_application_errors
 @login_required
 @lock_on_user
@@ -400,24 +400,24 @@ def look_at_master(path=None):
 
     # if the directory path didn't end with a slash, add it and redirect
     if isdir(full_path) and path and not path.endswith('/'):
-        return redirect('/look/at/{}/'.format(path), code=302)
+        return redirect('{}{}/'.format(constants.ROUTE_MODIFY_LIVE, path), code=302)
 
     # if this is a category directory, render the modification view
     if view_functions.is_category_dir(full_path):
         return view_functions.render_category_modify(
             repo=repo, branch_name=default_branch_name, path=path,
-            edit_base_url='/look/in/', modify_base_url='/look/at/'
+            edit_base_url=constants.ROUTE_BROWSE_LIVE, modify_base_url=constants.ROUTE_MODIFY_LIVE
         )
 
-    # if this is an article directory, add the index file and redirect to /look/in/
+    # if this is an article directory, add the index file and redirect to constants.ROUTE_BROWSE_LIVE
     if view_functions.is_article_dir(full_path):
         path = join(path or u'', u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
 
-    # this is not a category or article directory; redirect to /look/in/
-    return redirect('/look/in/{}'.format(path))
+    # this is not a category or article directory; redirect to constants.ROUTE_BROWSE_LIVE
+    return redirect('{}{}'.format(constants.ROUTE_BROWSE_LIVE, path))
 
-@app.route('/look/at/', methods=['POST'])
-@app.route('/look/at/<path:path>', methods=['POST'])
+@app.route(constants.ROUTE_MODIFY_LIVE, methods=['POST'])
+@app.route('{}<path:path>'.format(constants.ROUTE_MODIFY_LIVE), methods=['POST'])
 @log_application_errors
 @login_required
 @lock_on_user
@@ -440,7 +440,7 @@ def handle_look_at_submit(path=u''):
         # abandon the new branch
         repo_functions.abandon_branch(repo, default_branch_name, working_branch_name)
         # redirect where we started
-        return redirect('/look/at/{}'.format(path), code=303)
+        return redirect('{}{}'.format(constants.ROUTE_MODIFY_LIVE, path), code=303)
 
     # redirect to the modify or edit page in the new branch
     return redirect(redirect_path, code=303)

@@ -292,7 +292,7 @@ class TestApp (TestCase):
                 erica = ChimeTestClient(self.test_client, self)
                 erica.sign_in(email='erica@example.com')
 
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
 
             # The static no-cache headers are as expected
             self.assertEqual(erica.headers['Cache-Control'], 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0')
@@ -308,7 +308,7 @@ class TestApp (TestCase):
     def test_bad_login(self):
         ''' Check basic log in / log out flow without talking to Persona.
         '''
-        response = self.test_client.get('/')
+        response = self.test_client.get(constants.ROUTE_ACTIVITY)
         self.assertFalse('erica@example.com' in response.data)
 
         with HTTMock(self.mock_persona_verify_erica):
@@ -316,14 +316,14 @@ class TestApp (TestCase):
             self.assertEqual(response.status_code, 200)
 
         with HTTMock(self.auth_csv_example_disallowed):
-            response = self.test_client.get('/')
+            response = self.test_client.get(constants.ROUTE_ACTIVITY)
             self.assertFalse('Create' in response.data)
 
     # in TestApp
     def test_login(self):
         ''' Check basic log in / log out flow without talking to Persona.
         '''
-        response = self.test_client.get('/')
+        response = self.test_client.get(constants.ROUTE_ACTIVITY)
         self.assertFalse('Start' in response.data)
 
         with HTTMock(self.mock_persona_verify_erica):
@@ -331,21 +331,21 @@ class TestApp (TestCase):
             self.assertEqual(response.status_code, 200)
 
         with HTTMock(self.auth_csv_example_allowed):
-            response = self.test_client.get('/')
+            response = self.test_client.get(constants.ROUTE_ACTIVITY)
             self.assertTrue('Start' in response.data)
             self.assertTrue('http://example.org' in response.data, 'Should see LIVE_SITE_URL in response')
 
             response = self.test_client.post('/sign-out')
             self.assertEqual(response.status_code, 200)
 
-            response = self.test_client.get('/')
+            response = self.test_client.get(constants.ROUTE_ACTIVITY)
             self.assertFalse('Start' in response.data)
 
     # in TestApp
     def test_login_splat(self):
         ''' Check basic log in / log out flow without talking to Persona.
         '''
-        response = self.test_client.get('/')
+        response = self.test_client.get(constants.ROUTE_ACTIVITY)
         self.assertFalse('Start' in response.data)
 
         with HTTMock(self.mock_persona_verify_william):
@@ -353,7 +353,7 @@ class TestApp (TestCase):
             self.assertEqual(response.status_code, 200)
 
         with HTTMock(self.auth_csv_example_allowed):
-            response = self.test_client.get('/')
+            response = self.test_client.get(constants.ROUTE_ACTIVITY)
             self.assertTrue('Start' in response.data)
 
     # in TestApp
@@ -370,7 +370,7 @@ class TestApp (TestCase):
     def test_login_timeout(self):
         ''' Check basic log in / log out flow with auth check lifespan.
         '''
-        response = self.test_client.get('/')
+        response = self.test_client.get(constants.ROUTE_ACTIVITY)
         self.assertFalse('Start' in response.data)
 
         with HTTMock(self.mock_persona_verify_erica):
@@ -378,29 +378,29 @@ class TestApp (TestCase):
             self.assertEqual(response.status_code, 200)
 
         with HTTMock(self.auth_csv_example_allowed):
-            response = self.test_client.get('/')
+            response = self.test_client.get(constants.ROUTE_ACTIVITY)
             self.assertTrue('Start' in response.data)
 
         with patch('chime.view_functions.get_auth_data_file') as get_auth_data_file:
             # Show that email status does not require a call to auth CSV.
-            response = self.test_client.get('/')
+            response = self.test_client.get(constants.ROUTE_ACTIVITY)
             self.assertEqual(response.status_code, 200, 'Should have worked')
             self.assertEqual(get_auth_data_file.call_count, 0, 'Should not have called get_auth_data_file()')
 
             # Show that a call to auth CSV was made, outside the timeout period.
             time.sleep(1.1)
-            response = self.test_client.get('/')
+            response = self.test_client.get(constants.ROUTE_ACTIVITY)
             self.assertEqual(get_auth_data_file.call_count, 1, 'Should have called get_auth_data_file()')
 
         with HTTMock(self.auth_csv_example_allowed):
             # Show that email status was correctly updatedw with call to CSV.
-            response = self.test_client.get('/')
+            response = self.test_client.get(constants.ROUTE_ACTIVITY)
             self.assertEqual(response.status_code, 200, 'Should have worked')
 
             response = self.test_client.post('/sign-out')
             self.assertEqual(response.status_code, 200)
 
-            response = self.test_client.get('/')
+            response = self.test_client.get(constants.ROUTE_ACTIVITY)
             self.assertFalse('Start' in response.data)
 
     # in TestApp
@@ -416,7 +416,7 @@ class TestApp (TestCase):
             flash_message_text = u'Please describe what you\'re doing when you start a new activity!'
 
             # start a new task without a description
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             erica.start_task(description=u'')
             # the activities-list template reloaded
             comments = erica.soup.findAll(text=lambda text: isinstance(text, Comment))
@@ -434,7 +434,7 @@ class TestApp (TestCase):
                 erica.sign_in(email='erica@example.com')
 
             # start a new task with a lot of random whitespace
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             task_description = u'I think\n\r\n\rI am      so   \t\t\t   coool!!\n\n\nYeah.\n\nOK\n\rERWEREW      dkkdk'
             task_description_stripped = u'I think I am so coool!! Yeah. OK ERWEREW dkkdk'
             erica.start_task(description=task_description)
@@ -459,7 +459,7 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             erica.start_task(description=u'Lick Water Droplets From Leaves for Leopard Geckos')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -487,7 +487,7 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             erica.start_task(description=u'Lick Water Droplets From Leaves for Leopard Geckos')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -650,7 +650,7 @@ class TestApp (TestCase):
                     self.assertFalse(check_branch.name in new_clone.branches)
 
             # load the activity list and verify that the branch is visible there
-            response = self.test_client.get('/', follow_redirects=True)
+            response = self.test_client.get(constants.ROUTE_ACTIVITY, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             self.assertTrue(check_branch.name in response.data)
 
@@ -687,7 +687,7 @@ class TestApp (TestCase):
                 raise Exception('No match for generated branch name.')
 
             # get the activity list page
-            response = self.test_client.get('/', follow_redirects=True)
+            response = self.test_client.get(constants.ROUTE_ACTIVITY, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # verify that the project is listed in the edited column
             soup = BeautifulSoup(response.data)
@@ -725,7 +725,7 @@ class TestApp (TestCase):
             self.assertIsNotNone(soup.find("button", {"data-test-id": "request-feedback-button"}))
 
             # get the activity list page
-            response = self.test_client.get('/', follow_redirects=True)
+            response = self.test_client.get(constants.ROUTE_ACTIVITY, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # verify that the project is listed in the edited column
             soup = BeautifulSoup(response.data)
@@ -770,7 +770,7 @@ class TestApp (TestCase):
             self.assertIsNotNone(soup.find("button", {"data-test-id": "endorse-edits-button"}))
 
             # get the activity list page
-            response = self.test_client.get('/', follow_redirects=True)
+            response = self.test_client.get(constants.ROUTE_ACTIVITY, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # verify that the project is listed in the feedback needed column
             soup = BeautifulSoup(response.data)
@@ -808,7 +808,7 @@ class TestApp (TestCase):
             self.assertIsNotNone(soup.find("button", {"data-test-id": "publish-button"}))
 
             # get the activity list page
-            response = self.test_client.get('/', follow_redirects=True)
+            response = self.test_client.get(constants.ROUTE_ACTIVITY, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # verify that the project is listed in the ready to publish column
             soup = BeautifulSoup(response.data)
@@ -1207,7 +1207,7 @@ class TestApp (TestCase):
                 erica.sign_in(email='erica@example.com')
 
             # Start a new task
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             erica.start_task(description=u'Be Shot Hundreds Of Feet Into The Air for A Geyser Of Highly Pressurized Water')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -1242,7 +1242,7 @@ class TestApp (TestCase):
             pattern_template_comment_stripped = sub(ur'<!--|-->', u'', PATTERN_TEMPLATE_COMMENT)
 
             # Start a new task
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             erica.start_task(description=u'Deep-Fry a Buffalo in Forty Seconds for Moe')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -1420,7 +1420,7 @@ class TestApp (TestCase):
                 erica.sign_in(email=erica_email)
 
             # Start a new task
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             erica.start_task(description=u'Ferment Tuber Fibres Using Symbiotic Bacteria in the Intestines for Naked Mole Rats')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -1583,7 +1583,7 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task, topic, subtopic, article
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             args = 'Mermithergate for Ant Worker', 'Enoplia Nematode', 'Genus Mermis', 'Cephalotes Atratus'
             erica.quick_activity_setup(*args)
 
@@ -2024,7 +2024,7 @@ class TestApp (TestCase):
                 erica.sign_in(email='erica@example.com')
 
             # Start a new task
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             erica.start_task(description=u'Parasitize with Ichneumonidae for Moth Larvae')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -2324,7 +2324,7 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             erica.start_task(description=u'Take Malarone for People Susceptible to Malaria')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -2350,7 +2350,7 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             erica.start_task(description=u'Chew Mulberry Leaves for Silkworms')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -2375,7 +2375,7 @@ class TestApp (TestCase):
             response = self.test_client.post('/sign-in', data={'assertion': 'erica@example.com'})
 
         with HTTMock(self.mock_internal_server_error):
-            response = self.test_client.get('/', follow_redirects=True)
+            response = self.test_client.get(constants.ROUTE_ACTIVITY, follow_redirects=True)
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('error-500') in response.data)
             # these values are set in setUp() above
             self.assertTrue(u'support@example.com' in response.data)
@@ -2389,7 +2389,7 @@ class TestApp (TestCase):
             response = self.test_client.post('/sign-in', data={'assertion': 'erica@example.com'})
 
         with HTTMock(self.mock_exception):
-            response = self.test_client.get('/', follow_redirects=True)
+            response = self.test_client.get(constants.ROUTE_ACTIVITY, follow_redirects=True)
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('error-500') in response.data)
             # these values are set in setUp() above
             self.assertTrue(u'support@example.com' in response.data)
@@ -2527,7 +2527,7 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             erica.start_task(description=u'Be Shot Hundreds Of Feet Into The Air for A Geyser Of Highly Pressurized Water')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -2556,7 +2556,7 @@ class TestApp (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task, "Diving for Dollars".
-            frances.open_link('/')
+            frances.open_link(constants.ROUTE_ACTIVITY)
             frances.start_task(description=u'Diving for Dollars')
             branch_name = frances.get_branch_name()
 
@@ -2590,7 +2590,7 @@ class TestApp (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task
-            frances.open_link('/')
+            frances.open_link(constants.ROUTE_ACTIVITY)
             frances.start_task(description=u'Crunching Beetles for Trap-Door Spiders')
             branch_name = frances.get_branch_name()
 
@@ -2615,14 +2615,14 @@ class TestApp (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task
-            frances.open_link('/')
+            frances.open_link(constants.ROUTE_ACTIVITY)
             frances.start_task(description=u'Beating Crunches for Door-Spider Traps')
 
             # hit the front page a bunch of times
             times = 20
             pros = []
             for blip in range(times):
-                process = Process(target=frances.open_link, args=('/',))
+                process = Process(target=frances.open_link, kwargs=dict(url='/', expected_status_code=303))
                 process.start()
                 pros.append(process)
 
@@ -2650,7 +2650,7 @@ class TestApp (TestCase):
                 frances.sign_in(frances_email)
 
             # Start a new task and create a topic, subtopic and article
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             activity_title = u'Flicking Ants Off My Laptop'
             args = activity_title, u'Flying', u'Through The Air', u'Goodbye'
             branch_name = erica.quick_activity_setup(*args)
@@ -2669,7 +2669,7 @@ class TestApp (TestCase):
             #
             # Load the front page and make sure the activity is listed as published
             #
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             pub_ul = erica.soup.select("#activity-list-published")[0]
             # there should be an HTML comment with the branch name
             comment = pub_ul.findAll(text=lambda text: isinstance(text, Comment))[0]
@@ -2688,7 +2688,7 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             erica.start_task('Ingest Wolffish, Capelin, Skate Eggs And Sometimes Rocks')
             branch_name = erica.get_branch_name()
 
@@ -2715,7 +2715,7 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task and create a topic
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             args = u'Their Diets Consist Of Almost Any Creature They Are Capable Of Overpowering', u'When Living Near Water, They Will Eat Other Aquatic Animals'
             branch_name = erica.quick_activity_setup(*args)
 
@@ -2751,7 +2751,7 @@ class TestApp (TestCase):
                 erica.sign_in(erica_email)
 
             # Start a new task and create a topic
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             args = u'Skates are cartilaginous fish', u'The Two Subfamilies Are Rajinae And Arhynchobatinae'
             branch_name = erica.quick_activity_setup(*args)
 
@@ -2780,7 +2780,7 @@ class TestApp (TestCase):
                 erica.sign_in(erica_email)
 
             # Start a new task and create a topic, subtopic and article
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             article_title = u'Open-Ocean'
             args = u'The Eggs Are Spherical And Buoyant', u'The Fry Are Tiny', u'Pelagic', article_title
             erica.quick_activity_setup(*args)

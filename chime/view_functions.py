@@ -1039,7 +1039,7 @@ def publish_or_destroy_activity(branch_name, action, comment_text=None):
         elif action == 'clobber':
             flash(u'You clobbered the {activity_blurb}!'.format(activity_blurb=activity_blurb), u'notice')
 
-        return redirect('/', code=303)
+        return redirect(constants.ROUTE_ACTIVITY, code=303)
 
 def render_activities_list(task_description=None, show_new_activity_modal=False):
     ''' Render the activities list page

@@ -83,5 +83,10 @@ LAYOUT_PLURAL_LOOKUP = {
     IMAGE_FILE_TYPE: 'images'
 }
 
+# routes
+ROUTE_ACTIVITY = '/activity'
+ROUTE_BROWSE_LIVE = '/look/in/'
+ROUTE_MODIFY_LIVE = '/look/at/'
+
 # interface text
 TEXT_ADD_CHANGE = u'Add a change to this activity'
