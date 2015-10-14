@@ -1228,7 +1228,7 @@ def handle_article_list_submit(repo, branch_name, path):
                 describe_what = u'an article' if create_what == 'article' else u'a topic'
                 flash(u'Please enter a name to create {}!'.format(describe_what), u'warning')
 
-            return redirect('/tree/{}/edit/{}'.format(safe_branch, file_path), code=303)
+            return file_path, False
 
         add_message, file_path, redirect_path, do_save = add_article_or_category(repo, safe_branch, create_path, request.form['request_path'], create_what)
         if do_save:
@@ -1249,11 +1249,10 @@ def handle_article_list_submit(repo, branch_name, path):
         raise Exception(u'Tried to edit a file, but received an unfamiliar command.')
 
     if do_save:
-        default_branch_name = current_app.config['default_branch']
         Logger.debug('save')
         save_working_file(clone=repo, path=file_path, message=commit_message, base_sha=commit_hexsha, default_branch_name=default_branch_name)
 
-    return redirect('/tree/{}/edit/{}'.format(safe_branch, redirect_path), code=303)
+    return redirect_path, do_save
 
 def add_article_or_category(repo, working_branch_name, dir_path, request_path, create_what):
     ''' Add an article or category
