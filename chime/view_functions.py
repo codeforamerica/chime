@@ -1193,7 +1193,6 @@ def is_delete_request(action=None, request_path_in_form=None):
     request_path_in_form = request_path_in_form or 'request_path' in request.form
     return action == 'delete' and request_path_in_form
 
-# ;;;
 def handle_article_list_submit(repo, branch_name, path):
     ''' Handle a form submit from the article list pages.
 
@@ -1228,7 +1227,7 @@ def handle_article_list_submit(repo, branch_name, path):
                 describe_what = u'an article' if create_what == 'article' else u'a topic'
                 flash(u'Please enter a name to create {}!'.format(describe_what), u'warning')
 
-            return file_path, False
+            return '/tree/{}/edit/{}'.format(safe_branch, file_path), False
 
         add_message, file_path, redirect_path, do_save = add_article_or_category(repo, safe_branch, create_path, request.form['request_path'], create_what)
         if do_save:
@@ -1252,7 +1251,7 @@ def handle_article_list_submit(repo, branch_name, path):
         Logger.debug('save')
         save_working_file(clone=repo, path=file_path, message=commit_message, base_sha=commit_hexsha, default_branch_name=default_branch_name)
 
-    return redirect_path, do_save
+    return '/tree/{}/edit/{}'.format(safe_branch, redirect_path), do_save
 
 def add_article_or_category(repo, working_branch_name, dir_path, request_path, create_what):
     ''' Add an article or category

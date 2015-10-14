@@ -331,7 +331,7 @@ def look_in_master(path=None):
 @login_required
 @lock_on_user
 @synched_checkout_required
-def handle_look_submit(path=None):
+def handle_look_in_submit(path=None):
     repo = view_functions.get_repo(flask_app=current_app)
     default_branch_name = current_app.config['default_branch']
     # start a new branch to save any changes in
@@ -346,11 +346,11 @@ def handle_look_submit(path=None):
     if not did_save:
         # abandon the new branch
         repo_functions.abandon_branch(repo, default_branch_name, working_branch_name)
-        # redirect to where we started and show any errors raised
-        return redirect('/look/in/{}'.format(redirect_path), code=303)
+        # redirect to where we started
+        return redirect('/look/in/{}'.format(path), code=303)
 
     # redirect to the edit page in the new branch
-    return redirect('/tree/{}/edit/{}'.format(working_branch_name, redirect_path), code=303)
+    return redirect(redirect_path, code=303)
 
 @app.route('/look/at/', methods=['GET'])
 @app.route('/look/at/<path:path>', methods=['GET'])
@@ -441,7 +441,7 @@ def branch_edit(branch_name, path=None):
 def handle_edit_submit(branch_name, path=None):
     repo = view_functions.get_repo(flask_app=current_app)
     redirect_path, _ = view_functions.handle_article_list_submit(repo, branch_name, path)
-    return redirect('/tree/{}/edit/{}'.format(branch_name, redirect_path), code=303)
+    return redirect(redirect_path, code=303)
 
 @app.route('/tree/<branch_name>/modify/', methods=['GET'])
 @app.route('/tree/<branch_name>/modify/<path:path>', methods=['GET'])
