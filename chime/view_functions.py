@@ -1237,7 +1237,7 @@ def handle_article_list_submit(repo, branch_name, path):
             describe_what = file_display_name(create_what)
             flash(u'Created a new {} named {}! Remember to submit this change for feedback when you\'re ready to go live.'.format(describe_what, request.form['request_path']), u'notice')
         else:
-            flash(add_message, u'notice')
+            flash(add_message, u'warning')
 
     elif is_delete_request(action):
         redirect_path, do_save, commit_message = delete_page(repo=repo, working_branch_name=safe_branch, browse_path=path, target_path=request.form['request_path'])
