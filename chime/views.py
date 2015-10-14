@@ -353,35 +353,6 @@ def handle_look_in_submit(path=None):
     # redirect to the edit page in the new branch
     return redirect(redirect_path, code=303)
 
-@app.route('/look/at/', methods=['POST'])
-@app.route('/look/at/<path:path>', methods=['POST'])
-@log_application_errors
-@login_required
-@lock_on_user
-@synched_checkout_required
-def handle_look_at_submit(path=u''):
-    ''' Handle submits from forms on the category modify page
-    '''
-    repo = view_functions.get_repo(flask_app=current_app)
-    default_branch_name = current_app.config['default_branch']
-    # start a new branch to save any changes in
-    working_branch_name = view_functions.start_activity_for_edits(repo, default_branch_name)
-    try:
-        redirect_path, did_save = view_functions.handle_category_modify_submit(repo, working_branch_name, path)
-    except Exception:
-        # abandon the new branch and raise the exception
-        repo_functions.abandon_branch(repo, default_branch_name, working_branch_name)
-        raise
-
-    if not did_save:
-        # abandon the new branch
-        repo_functions.abandon_branch(repo, default_branch_name, working_branch_name)
-        # redirect where we started
-        return redirect('/look/at/{}'.format(path), code=303)
-
-    # redirect to the modify or edit page in the new branch
-    return redirect(redirect_path, code=303)
-
 @app.route('/look/at/', methods=['GET'])
 @app.route('/look/at/<path:path>', methods=['GET'])
 @log_application_errors
@@ -410,6 +381,35 @@ def look_at_master(path=None):
 
     # this is not a category or article directory; redirect to /look/in/
     return redirect('/look/in/{}'.format(path))
+
+@app.route('/look/at/', methods=['POST'])
+@app.route('/look/at/<path:path>', methods=['POST'])
+@log_application_errors
+@login_required
+@lock_on_user
+@synched_checkout_required
+def handle_look_at_submit(path=u''):
+    ''' Handle submits from forms on the category modify page
+    '''
+    repo = view_functions.get_repo(flask_app=current_app)
+    default_branch_name = current_app.config['default_branch']
+    # start a new branch to save any changes in
+    working_branch_name = view_functions.start_activity_for_edits(repo, default_branch_name)
+    try:
+        redirect_path, did_save = view_functions.handle_category_modify_submit(repo, working_branch_name, path)
+    except Exception:
+        # abandon the new branch and raise the exception
+        repo_functions.abandon_branch(repo, default_branch_name, working_branch_name)
+        raise
+
+    if not did_save:
+        # abandon the new branch
+        repo_functions.abandon_branch(repo, default_branch_name, working_branch_name)
+        # redirect where we started
+        return redirect('/look/at/{}'.format(path), code=303)
+
+    # redirect to the modify or edit page in the new branch
+    return redirect(redirect_path, code=303)
 
 @app.route('/tree/<branch_name>/edit/', methods=['GET'])
 @app.route('/tree/<branch_name>/edit/<path:path>', methods=['GET'])
