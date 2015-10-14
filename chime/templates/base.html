@@ -42,7 +42,8 @@
 
     {{ global_header(breadcrumb_items=breadcrumb_items, email=email, live_site_url=live_site_url) }}
     {% block activity_bar %}
-    {{ activity_bar(branch_name=safe_branch, activity=activity, show_review_modal=False) }}
+    {% set show_bar = safe_branch and safe_branch != default_branch_name %}
+    {{ activity_bar(show_bar=show_bar, activity=activity, show_review_modal=False) }}
     {% endblock %}
 
     {% include 'includes/flashes.html' %}

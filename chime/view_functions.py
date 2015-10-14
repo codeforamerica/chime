@@ -450,7 +450,8 @@ def common_template_args(app_config, session):
     '''
     return {
         'email': session.get('email', None),
-        'live_site_url': app_config['LIVE_SITE_URL']
+        'live_site_url': app_config['LIVE_SITE_URL'],
+        'default_branch_name': app_config['default_branch']
     }
 
 def log_application_errors(route_function):
@@ -1091,6 +1092,7 @@ def common_article_list_args(repo, branch_name, path, edit_base_url=None, modify
     activity = chime_activity.ChimeActivity(repo=repo, branch_name=branch_name, default_branch_name=current_app.config['default_branch'], actor_email=session.get('email', None))
 
     kwargs = common_template_args(current_app.config, session)
+
     dir_columns = make_directory_columns(
         clone=repo, branch_name=branch_name, repo_path=path, edit_base_url=edit_base_url,
         modify_base_url=modify_base_url, showallfiles=showallfiles

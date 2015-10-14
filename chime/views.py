@@ -469,7 +469,7 @@ def branch_edit(branch_name, path=None):
         abort(404)
 
     if isdir(full_path):
-        # if this is a directory representing an article, redirect to edit
+        # if this is a directory representing an article, redirect to the index file within
         if view_functions.is_article_dir(full_path):
             index_path = join(path or u'', u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
             return redirect('/tree/{}/edit/{}'.format(safe_branch, index_path))
@@ -490,7 +490,7 @@ def branch_edit(branch_name, path=None):
             repo=repo, branch_name=branch_name, path=path
         )
 
-    # it's a file, edit it
+    # it's a file, show the edit view
     return view_functions.render_edit_view(
         repo=repo, branch_name=branch_name,
         path=path, file=open(full_path, 'r')
