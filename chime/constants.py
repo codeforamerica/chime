@@ -85,8 +85,7 @@ LAYOUT_PLURAL_LOOKUP = {
 
 # routes
 ROUTE_ACTIVITY = '/activity'
-ROUTE_BROWSE_LIVE = '/look/in/'
-ROUTE_MODIFY_LIVE = '/look/at/'
+ROUTE_BROWSE_LIVE = '/browse/'
 
 # interface text
 TEXT_ADD_CHANGE = u'Add a change to this activity'

@@ -838,7 +838,7 @@ def make_edit_path(branch, path, dir_name):
     base_path = path[:dir_index] + dir_name + '/'
     return join('/tree/{}/edit'.format(branch_name2path(branch)), base_path)
 
-def make_directory_columns(clone, branch_name, repo_path=None, edit_base_url=None, modify_base_url=None, showallfiles=False):
+def make_directory_columns(clone, branch_name, repo_path=None, edit_base_url=None, showallfiles=False):
     ''' Get a list of lists of dicts for the passed path, with file listings for each level.
         example: passing repo_path='hello/world/wide' will return something like:
             [
@@ -867,7 +867,7 @@ def make_directory_columns(clone, branch_name, repo_path=None, edit_base_url=Non
     # Create the listings
     # We may've been passed alternate edit and modify URLs
     edit_path_root = u'/tree/{}/edit'.format(branch_name) if not edit_base_url else edit_base_url.rstrip('/')
-    modify_path_root = u'/tree/{}/modify'.format(branch_name) if not modify_base_url else modify_base_url.rstrip('/')
+    index_filename = u'index.{}'.format(constants.CONTENT_FILE_EXTENSION)
     dir_listings = []
     for i in range(len(dirs)):
         last = False
@@ -879,10 +879,9 @@ def make_directory_columns(clone, branch_name, repo_path=None, edit_base_url=Non
 
         base_path = sep.join(dirs[1:i + 1])
         current_edit_path = join(edit_path_root, base_path)
-        current_modify_path = join(modify_path_root, base_path)
         files = sorted_paths(clone, branch_name, base_path, showallfiles)
         # name, title, base_path, file_path, edit_path, view_path, display_type, is_editable, modified_date, selected
-        listing = [{'name': item['name'], 'title': item['title'], 'base_path': base_path, 'file_path': join(base_path, item['link_name']), 'edit_path': join(current_edit_path, item['link_name']), 'modify_path': join(current_modify_path, item['link_name']), 'view_path': item['view_path'], 'display_type': item['display_type'], 'is_editable': item['is_editable'], 'modified_date': item['modified_date'], 'selected': (current_dir == item['name'] and not last)} for item in files]
+        listing = [{'name': item['name'], 'title': item['title'], 'base_path': base_path, 'file_path': join(base_path, item['link_name']), 'edit_path': join(current_edit_path, item['link_name']), 'modify_path': join(current_edit_path, item['link_name'], index_filename), 'view_path': item['view_path'], 'display_type': item['display_type'], 'is_editable': item['is_editable'], 'modified_date': item['modified_date'], 'selected': (current_dir == item['name'] and not last)} for item in files]
         # explicitly sort the list alphabetically by title
         listing.sort(key=lambda k: k['title'])
         dir_listings.append({'base_path': base_path, 'files': listing})
@@ -1083,7 +1082,7 @@ def render_activities_list(task_description=None, show_new_activity_modal=False)
 
     return render_template('activities-list.html', **kwargs)
 
-def common_article_list_args(repo, branch_name, path, edit_base_url=None, modify_base_url=None):
+def common_article_list_args(repo, branch_name, path, edit_base_url=None):
     ''' Assemble the kwargs for a page that shows an activity's files.
     '''
     # NOTE: temporarily turning off filtering if 'showallfiles=true' is in the request
@@ -1095,7 +1094,7 @@ def common_article_list_args(repo, branch_name, path, edit_base_url=None, modify
 
     dir_columns = make_directory_columns(
         clone=repo, branch_name=branch_name, repo_path=path, edit_base_url=edit_base_url,
-        modify_base_url=modify_base_url, showallfiles=showallfiles
+        showallfiles=showallfiles
     )
     kwargs.update(safe_branch=branch_name2path(branch_name),
                   breadcrumb_paths=make_breadcrumb_paths(branch_name, path),
@@ -1103,18 +1102,21 @@ def common_article_list_args(repo, branch_name, path, edit_base_url=None, modify
 
     return kwargs
 
-def render_articles_list(repo, branch_name, path, edit_base_url=None, modify_base_url=None):
+def render_articles_list(repo, branch_name, path, edit_base_url=None):
     ''' Render a page showing an activity's files
     '''
-    kwargs = common_article_list_args(repo, branch_name, path, edit_base_url, modify_base_url)
+    kwargs = common_article_list_args(repo, branch_name, path, edit_base_url)
     return render_template('articles-list.html', **kwargs)
 
-def render_category_modify(repo, branch_name, path, edit_base_url=None, modify_base_url=None):
+def render_category_modify(repo, branch_name, path, edit_base_url=None):
     ''' Render a page showing an activity's files with an edit form for the selected category directory.
     '''
     path = path or '.'
     full_path = join(repo.working_dir, path).rstrip('/')
-    full_index_path = join(full_path, u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
+    full_index_path = full_path
+    index_filename = u'index.{}'.format(constants.CONTENT_FILE_EXTENSION)
+    if not re.search(ur'\/{}$'.format(index_filename), full_index_path):
+        full_index_path = join(full_path, index_filename)
     # init a category object with the contents of the category's front matter
     category = get_front_matter(full_index_path)
 
@@ -1125,7 +1127,7 @@ def render_category_modify(repo, branch_name, path, edit_base_url=None, modify_b
 
     languages = load_languages(repo.working_dir)
 
-    kwargs = common_article_list_args(repo, branch_name, path, edit_base_url, modify_base_url)
+    kwargs = common_article_list_args(repo, branch_name, path, edit_base_url)
     # cancel redirects to the edit page for that category
     category['edit_path'] = join(kwargs['activity'].edit_path, path)
     url_slug = re.sub(ur'index.{}$'.format(constants.CONTENT_FILE_EXTENSION), u'', path)
@@ -1194,15 +1196,33 @@ def is_create_request(path, action=None, create_what=None, create_path=None):
     create_path = create_path or request.form.get('create_path', path)
     return action == 'create' and (create_what == constants.ARTICLE_LAYOUT or create_what == constants.CATEGORY_LAYOUT) and create_path is not None
 
-def is_delete_request(action=None, request_path_in_form=None):
-    ''' Return True if this is a delete topic or article request.
+def is_delete_article_request(action=None, request_path_in_form=None):
+    ''' Return True if this is a delete article request.
 
         The request object persists from the calling method, which was called by the
         submission of a form.
     '''
     action = action or request.form.get('action', '').lower()
     request_path_in_form = request_path_in_form or 'request_path' in request.form
-    return action == 'delete' and request_path_in_form
+    return action == 'delete_article' and request_path_in_form
+
+def is_delete_category_request(action=None):
+    ''' Return True if this is a delete category request.
+
+        The request object persists from the calling method, which was called by the
+        submission of a form.
+    '''
+    action = action or request.form.get('action', '').lower()
+    return action == 'delete_category'
+
+def is_save_category_request(action=None):
+    ''' Return True if this is a save category request.
+
+        The request object persists from the calling method, which was called by the
+        submission of a form.
+    '''
+    action = action or request.form.get('action', '').lower()
+    return action == 'save_category'
 
 def handle_article_list_submit(repo, branch_name, path):
     ''' Handle a form submit from the article list pages.
@@ -1215,17 +1235,18 @@ def handle_article_list_submit(repo, branch_name, path):
     commit_hexsha = repo.commit().hexsha
 
     path = path or u''
+    save_path = path
     action = request.form.get('action', '').lower()
     create_what = request.form.get('create_what', '').lower()
     create_path = request.form.get('create_path', path)
     do_save = True
-
-    file_path = path
+    did_save = False
     commit_message = u''
+
     if is_file_upload_request(action):
-        file_path = upload_new_file(repo, path, request.files['file'])
+        save_path = upload_new_file(repo, path, request.files['file'])
         redirect_path = path
-        commit_message = u'Uploaded file "{}"'.format(file_path)
+        commit_message = u'Uploaded file "{}"'.format(save_path)
 
     elif is_create_request(path, action, create_what, create_path):
         # don't allow empty names for categories or articles
@@ -1238,9 +1259,9 @@ def handle_article_list_submit(repo, branch_name, path):
                 describe_what = u'an article' if create_what == 'article' else u'a topic'
                 flash(u'Please enter a name to create {}!'.format(describe_what), u'warning')
 
-            return '/tree/{}/edit/{}'.format(safe_branch, file_path), False
+            return '/tree/{}/edit/{}'.format(safe_branch, path), False
 
-        add_message, file_path, redirect_path, do_save = add_article_or_category(repo, safe_branch, create_path, request.form['request_path'], create_what)
+        add_message, save_path, redirect_path, do_save = add_article_or_category(repo, safe_branch, create_path, request.form['request_path'], create_what)
         if do_save:
             commit_hexsha = repo.commit().hexsha
             commit_message = add_message
@@ -1249,56 +1270,28 @@ def handle_article_list_submit(repo, branch_name, path):
         else:
             flash(add_message, u'warning')
 
-    elif is_delete_request(action):
+    elif is_delete_article_request(action):
         redirect_path, do_save, commit_message = delete_page(repo=repo, working_branch_name=safe_branch, browse_path=path, target_path=request.form['request_path'])
         if do_save:
             # flash the human-readable part of the commit message
             flash(u'{}! Remember to submit this change for feedback when you\'re ready to go live.'.format(commit_message.split('\n')[0]), u'notice')
 
-    else:
-        raise Exception(u'Tried to edit a file, but received an unfamiliar command.')
-
-    if do_save:
-        Logger.debug('save')
-        save_working_file(clone=repo, path=file_path, message=commit_message, base_sha=commit_hexsha, default_branch_name=default_branch_name)
-
-    return '/tree/{}/edit/{}'.format(safe_branch, redirect_path), do_save
-
-def handle_category_modify_submit(repo, branch_name, path):
-    ''' Handle a form submit from the category modify pages.
-
-        The request object persists from the calling method, which was called by the
-        submission of a form.
-    '''
-    # get a path to the category's index file
-    path = path.rstrip('/')
-    index_slug = path
-    dir_path = join(repo.working_dir, index_slug)
-    index_path = dir_path
-    if not re.search(r'\/index.{}$'.format(constants.CONTENT_FILE_EXTENSION), path):
-        index_slug = join(path, u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
-        index_path = join(dir_path, u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
-
-    safe_branch = branch_name2path(branch_var2name(branch_name))
-    default_branch_name = current_app.config['default_branch']
-
-    # delete the passed category
-    if 'delete' in request.form:
-        # delete the page
-        redirect_path, do_save, commit_message = delete_page(repo=repo, working_branch_name=safe_branch, browse_path=path, target_path=path)
+    elif is_delete_category_request(action):
+        redirect_path, do_save, commit_message = delete_page(repo=repo, working_branch_name=safe_branch, browse_path=path, target_path=path.rstrip('/'))
         # save and redirect
         if do_save:
-            Logger.debug('save')
-            save_working_file(clone=repo, path=path, message=commit_message, base_sha=repo.commit().hexsha, default_branch_name=default_branch_name)
             # flash the human-readable part of the commit message
-            flash_message = commit_message.split('\n')[0]
-            flash(flash_message, u'notice')
+            flash(commit_message.split('\n')[0], u'notice')
 
-        return '/tree/{}/edit/{}'.format(safe_branch, redirect_path), do_save
+    elif is_save_category_request(action):
+        index_slug = path.rstrip('/')
+        dir_path = join(repo.working_dir, index_slug)
+        index_path = dir_path
+        index_filename = u'index.{}'.format(constants.CONTENT_FILE_EXTENSION)
+        if not re.search(ur'\/{}$'.format(index_filename), path):
+            index_slug = join(path, index_filename)
+            index_path = join(dir_path, index_filename)
 
-    # save the passed category
-    elif 'save' in request.form:
-        did_save = False
         # verify that it exists
         if isdir(index_path) or not exists(index_path):
             raise Exception(u'No writable file exists at {}!'.format(index_path))
@@ -1325,18 +1318,23 @@ def handle_category_modify_submit(repo, branch_name, path):
             raise Exception(u'Unable to update file at {}!'.format(index_path))
 
         # only write if there are changes
-        new_path = path
+        redirect_path = path
         if check_front_matter != front_matter:
-            new_path, did_save = save_page(repo, default_branch_name, safe_branch, index_slug, new_values)
+            redirect_path, did_save = save_page(repo, default_branch_name, safe_branch, index_slug, new_values)
             if did_save:
+                Logger.debug('save')
                 flash(u'Saved changes to the {} topic! Remember to submit this change for feedback when you\'re ready to go live.'.format(front_matter['en-title']), u'notice')
             else:
                 flash(u'Unable to save changes to {}!'.format(front_matter['title']), u'error')
 
-        return '/tree/{}/modify/{}'.format(safe_branch, strip_index_file(new_path)), did_save
-
     else:
-        raise Exception(u'Tried to modify a category, but received an unfamiliar command.')
+        raise Exception(u'Tried to handle an article list form submission, but received an unfamiliar command.')
+
+    if do_save and not did_save:
+        Logger.debug('save')
+        save_working_file(clone=repo, path=save_path, message=commit_message, base_sha=commit_hexsha, default_branch_name=default_branch_name)
+
+    return '/tree/{}/edit/{}'.format(safe_branch, redirect_path), do_save
 
 def handle_article_edit_submit(repo, branch_name, path, start_point=None):
     ''' Handle a form submit from the category modify pages.
@@ -1344,7 +1342,6 @@ def handle_article_edit_submit(repo, branch_name, path, start_point=None):
         The request object persists from the calling method, which was called by the
         submission of a form.
     '''
-    print u'--> bloop <--'
     default_branch_name = current_app.config['default_branch']
     actor = Actor(' ', session['email'])
     # we may've been passed a start point

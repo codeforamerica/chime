@@ -284,7 +284,7 @@ def branch_view(branch_name, path=None):
 @login_required
 @lock_on_user
 @synched_checkout_required
-def look_in_master(path=None):
+def browse_master(path=None):
     repo = view_functions.get_repo(flask_app=current_app)
     default_branch_name = current_app.config['default_branch']
     full_path = join(repo.working_dir, path or '.').rstrip('/')
@@ -314,8 +314,16 @@ def look_in_master(path=None):
         # render the directory contents
         return view_functions.render_articles_list(
             repo=repo, branch_name=default_branch_name,
-            path=path, edit_base_url=constants.ROUTE_BROWSE_LIVE,
-            modify_base_url=constants.ROUTE_MODIFY_LIVE
+            path=path, edit_base_url=constants.ROUTE_BROWSE_LIVE
+        )
+
+    # if it's the index file of a category, show the modify view
+    path_type, _ = view_functions.index_path_display_type_and_title(full_path)
+    if path_type == constants.CATEGORY_LAYOUT:
+        # render the directory modification view
+        return view_functions.render_category_modify(
+            repo=repo, branch_name=default_branch_name, path=path,
+            edit_base_url=constants.ROUTE_BROWSE_LIVE
         )
 
     # it's a file, show the edit view
@@ -386,64 +394,6 @@ def handle_look_article_submit(path):
     # redirect to the edit or view page in the new branch
     return redirect(redirect_path, code=303)
 
-@app.route(constants.ROUTE_MODIFY_LIVE, methods=['GET'])
-@app.route('{}<path:path>'.format(constants.ROUTE_MODIFY_LIVE), methods=['GET'])
-@log_application_errors
-@login_required
-@lock_on_user
-@synched_checkout_required
-def look_at_master(path=None):
-    repo = view_functions.get_repo(flask_app=current_app)
-    default_branch_name = current_app.config['default_branch']
-    full_path = join(repo.working_dir, path or '.').rstrip('/')
-
-    # if the directory path didn't end with a slash, add it and redirect
-    if isdir(full_path) and path and not path.endswith('/'):
-        return redirect('{}{}/'.format(constants.ROUTE_MODIFY_LIVE, path), code=302)
-
-    # if this is a category directory, render the modification view
-    if view_functions.is_category_dir(full_path):
-        return view_functions.render_category_modify(
-            repo=repo, branch_name=default_branch_name, path=path,
-            edit_base_url=constants.ROUTE_BROWSE_LIVE, modify_base_url=constants.ROUTE_MODIFY_LIVE
-        )
-
-    # if this is an article directory, add the index file and redirect to constants.ROUTE_BROWSE_LIVE
-    if view_functions.is_article_dir(full_path):
-        path = join(path or u'', u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
-
-    # this is not a category or article directory; redirect to constants.ROUTE_BROWSE_LIVE
-    return redirect('{}{}'.format(constants.ROUTE_BROWSE_LIVE, path))
-
-@app.route(constants.ROUTE_MODIFY_LIVE, methods=['POST'])
-@app.route('{}<path:path>'.format(constants.ROUTE_MODIFY_LIVE), methods=['POST'])
-@log_application_errors
-@login_required
-@lock_on_user
-@synched_checkout_required
-def handle_look_at_submit(path=u''):
-    ''' Handle submits from forms on the category modify page
-    '''
-    repo = view_functions.get_repo(flask_app=current_app)
-    default_branch_name = current_app.config['default_branch']
-    # start a new branch to save any changes in
-    working_branch_name = view_functions.start_activity_for_edits(repo, default_branch_name)
-    try:
-        redirect_path, did_save = view_functions.handle_category_modify_submit(repo, working_branch_name, path)
-    except Exception:
-        # abandon the new branch and raise the exception
-        repo_functions.abandon_branch(repo, default_branch_name, working_branch_name)
-        raise
-
-    if not did_save:
-        # abandon the new branch
-        repo_functions.abandon_branch(repo, default_branch_name, working_branch_name)
-        # redirect where we started
-        return redirect('{}{}'.format(constants.ROUTE_MODIFY_LIVE, path), code=303)
-
-    # redirect to the modify or edit page in the new branch
-    return redirect(redirect_path, code=303)
-
 @app.route('/tree/<branch_name>/edit/', methods=['GET'])
 @app.route('/tree/<branch_name>/edit/<path:path>', methods=['GET'])
 @log_application_errors
@@ -492,6 +442,14 @@ def branch_edit(branch_name, path=None):
             repo=repo, branch_name=branch_name, path=path
         )
 
+    # if it's the index file of a category, show the modify view
+    path_type, _ = view_functions.index_path_display_type_and_title(full_path)
+    if path_type == constants.CATEGORY_LAYOUT:
+        # render the directory modification view
+        return view_functions.render_category_modify(
+            repo=repo, branch_name=branch_name, path=path
+        )
+
     # it's a file, show the edit view
     # make a browse link by stripping the article from the path
     browse_path = join('/tree/{}/edit'.format(safe_branch), repo_functions.strip_last_item(path))
@@ -508,49 +466,10 @@ def branch_edit(branch_name, path=None):
 @lock_on_user
 @synched_checkout_required
 def handle_edit_submit(branch_name, path=None):
-    ''' Handle submits from forms on the article list page
+    ''' Handle submits from forms on the article list pages
     '''
     repo = view_functions.get_repo(flask_app=current_app)
     redirect_path, _ = view_functions.handle_article_list_submit(repo, branch_name, path)
-    return redirect(redirect_path, code=303)
-
-@app.route('/tree/<branch_name>/modify/', methods=['GET'])
-@app.route('/tree/<branch_name>/modify/<path:path>', methods=['GET'])
-@log_application_errors
-@login_required
-@lock_on_user
-@synched_checkout_required
-def branch_show_category_form(branch_name, path=None):
-    repo = view_functions.get_repo(flask_app=current_app)
-    branch_name = view_functions.branch_var2name(branch_name)
-    full_path = join(repo.working_dir, path or '.').rstrip('/')
-
-    # if the directory path didn't end with a slash, add it
-    if isdir(full_path) and path and not path.endswith('/'):
-        return redirect('/tree/{}/modify/{}/'.format(view_functions.branch_name2path(branch_name), path), code=302)
-
-    if view_functions.is_category_dir(full_path):
-        # render the directory modification view
-        return view_functions.render_category_modify(repo, branch_name, path)
-
-    # if this is an article directory, redirect to edit
-    if view_functions.is_article_dir(full_path):
-        path = join(path or u'', u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
-
-    # this is not a category or article directory; redirect to edit
-    return redirect('/tree/{}/edit/{}'.format(branch_name, path))
-
-@app.route('/tree/<branch_name>/modify/', methods=['POST'])
-@app.route('/tree/<branch_name>/modify/<path:path>', methods=['POST'])
-@log_application_errors
-@login_required
-@lock_on_user
-@synched_checkout_required
-def branch_modify_category(branch_name, path=u''):
-    ''' Save edits to a category's title and description or delete a category and its contents.
-    '''
-    repo = view_functions.get_repo(flask_app=current_app)
-    redirect_path, _ = view_functions.handle_category_modify_submit(repo, branch_name, path)
     return redirect(redirect_path, code=303)
 
 @app.route('/tree/<branch_name>/', methods=['GET'])
