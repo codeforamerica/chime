@@ -296,7 +296,7 @@ class ChimeTestClient:
 
         data = {i['name']: i.get('value', u'')
                 for i in form.find_all(['input', 'button', 'textarea'])
-                if i.get('name') != 'save'}
+                if i.get('value', u'') != 'save_category'}
 
         delete_category_path = urlparse(urljoin(self.path, form['action'])).path
         response = self.client.post(delete_category_path, data=data)

@@ -925,12 +925,13 @@ class TestProcess (TestCase):
             self.assertIsNotNone(article_li.find(lambda tag: bool(tag.name == 'span' and 'fa-trash' in tag.get('class'))))
 
             # load a modify page
-            erica.open_link(url='/tree/{}/modify/other/{}/'.format(erica_branch_name, category_slug))
+            index_filename = u'index.{}'.format(constants.CONTENT_FILE_EXTENSION)
+            erica.open_link(url='/tree/{}/edit/other/{}'.format(erica_branch_name, join(category_slug, index_filename)))
 
             # there's a save and delete button on the modify category form
-            modify_form = erica.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'en-description')).find_parent('form')
-            delete_button = modify_form.find('button', attrs={'name': 'delete'})
-            save_button = modify_form.find('button', attrs={'name': 'save'})
+            modify_form = erica.soup.find('textarea', attrs={'name': 'en-description'}).find_parent('form')
+            delete_button = modify_form.find('button', attrs={'value': 'delete_category'})
+            save_button = modify_form.find('button', attrs={'value': 'save_category'})
             self.assertIsNotNone(delete_button)
             self.assertIsNotNone(save_button)
 
@@ -1008,12 +1009,13 @@ class TestProcess (TestCase):
             self.assertIsNone(article_li.find(lambda tag: bool(tag.name == 'span' and 'fa-trash' in tag.get('class'))))
 
             # load a modify page
-            erica.open_link(url='/tree/{}/modify/other/{}/'.format(erica_branch_name, category_slug))
+            index_filename = u'index.{}'.format(constants.CONTENT_FILE_EXTENSION)
+            erica.open_link(url='/tree/{}/edit/other/{}'.format(erica_branch_name, join(category_slug, index_filename)))
 
             # there's no save or delete button on the modify category form
-            modify_form = erica.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'en-description')).find_parent('form')
-            delete_button = modify_form.find('button', attrs={'name': 'delete'})
-            save_button = modify_form.find('button', attrs={'name': 'save'})
+            modify_form = erica.soup.find('textarea', attrs={'name': 'en-description'}).find_parent('form')
+            delete_button = modify_form.find('button', attrs={'value': 'delete_category'})
+            save_button = modify_form.find('button', attrs={'value': 'save_category'})
             self.assertIsNone(delete_button)
             self.assertIsNone(save_button)
 

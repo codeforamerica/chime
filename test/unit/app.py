@@ -1395,9 +1395,9 @@ class TestApp (TestCase):
             self.assertTrue(exists(art_location))
             self.assertTrue(view_functions.is_article_dir(art_location))
 
-            # delete category a while in category b
-            response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, join(categories_slug, cata_slug, catb_slug)),
-                                             data={'action': 'delete', 'request_path': join(categories_slug, cata_slug)},
+            # delete category a
+            response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, join(categories_slug, cata_slug)),
+                                             data={'action': 'delete_category'},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
 
@@ -1516,7 +1516,7 @@ class TestApp (TestCase):
 
             # delete the article
             response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, art_slug),
-                                             data={'action': 'delete', 'request_path': art_slug},
+                                             data={'action': 'delete_article', 'request_path': art_slug},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
 
@@ -1713,7 +1713,7 @@ class TestApp (TestCase):
 
             # get the modify page and verify that the form renders with the correct values
             cat_path = join(categories_slug, cat_slug, u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
-            response = self.test_client.get('/tree/{}/modify/{}'.format(working_branch_name, repo_functions.strip_index_file(cat_path)), follow_redirects=True)
+            response = self.test_client.get('/tree/{}/edit/{}'.format(working_branch_name, cat_path), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             self.assertTrue(PATTERN_FORM_CATEGORY_TITLE.format(title=cat_title) in response.data)
             self.assertTrue(PATTERN_FORM_CATEGORY_DESCRIPTION.format(description=u'') in response.data)
@@ -1721,9 +1721,9 @@ class TestApp (TestCase):
             # now save a new title and description for the category
             new_cat_title = u'Caecum'
             cat_description = u'An intraperitoneal pouch, that is considered to be the beginning of the large intestine.'
-            response = self.test_client.post('/tree/{}/modify/{}'.format(working_branch_name, cat_path),
+            response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, cat_path),
                                              data={'layout': constants.CATEGORY_LAYOUT, 'hexsha': hexsha, 'url-slug': u'{}/{}/'.format(categories_slug, cat_slug),
-                                                   'en-title': new_cat_title, 'en-description': cat_description, 'order': u'0', 'save': u''},
+                                                   'en-title': new_cat_title, 'en-description': cat_description, 'order': u'0', 'action': u'save_category'},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # check the returned HTML for the description and title values (format will change as pages are designed)
@@ -1793,9 +1793,10 @@ class TestApp (TestCase):
             # now delete the category
             cat_description = u''
             url_slug = u'{}/{}/'.format(categories_slug, cat_slug)
-            response = self.test_client.post('/tree/{}/modify/{}'.format(working_branch_name, url_slug.rstrip('/')),
+            response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, url_slug.rstrip('/')),
                                              data={'layout': constants.CATEGORY_LAYOUT, 'hexsha': hexsha, 'url-slug': url_slug,
-                                                   'en-title': cat_title, 'en-description': cat_description, 'order': u'0', 'delete': u''},
+                                                   'en-title': cat_title, 'en-description': cat_description, 'order': u'0',
+                                                   'action': u'delete_category'},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # check the returned HTML for the description and title values (format will change as pages are designed)
@@ -1857,14 +1858,16 @@ class TestApp (TestCase):
             cat_description = u'The part of the GI tract following the stomach and followed by the large intestine where much of the digestion and absorption of food takes place.'
             cat_order = 3
             cat_path = join(categories_slug, cat_slug, u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
-            response = self.test_client.post('/tree/{}/save/{}'.format(working_branch_name, cat_path),
+            response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, cat_path),
                                              data={'layout': constants.CATEGORY_LAYOUT, 'hexsha': hexsha,
-                                                   'en-title': new_cat_title, 'en-description': cat_description, 'order': cat_order},
+                                                   'en-title': new_cat_title, 'en-description': cat_description,
+                                                   'order': cat_order, 'action': u'save_category'},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # check the returned HTML for the description and order values (format will change as pages are designed)
-            self.assertTrue(u'<input name="en-description" type="hidden" value="{}" />'.format(cat_description) in response.data)
-            self.assertTrue(u'<input name="order" type="hidden" value="{}" />'.format(cat_order) in response.data)
+            soup = BeautifulSoup(response.data)
+            self.assertEqual(soup.find('textarea', {'name': 'en-description'}).text, cat_description)
+            self.assertEqual(int(soup.find('input', {'name': 'order'})['value']), cat_order)
 
             # pull the changes
             self.clone1.git.pull('origin', working_branch_name)
@@ -1996,9 +1999,9 @@ class TestApp (TestCase):
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
 
-            # delete a directory
-            response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'delete', 'request_path': slug_fig_zh},
+            # delete a topic
+            response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, slug_fig_zh),
+                                             data={'action': 'delete_category'},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
 
