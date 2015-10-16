@@ -233,7 +233,7 @@ class ChimeTestClient:
 
         data = {i['name']: i.get('value', u'')
                 for i in form.find_all(['input', 'button', 'textarea'])
-                if i.get('type') != 'submit'}
+                if i.get('type', u'') != 'submit' or i.get('value', u'') != 'Preview'}
 
         data[title['name']] = title_str
         data[body['name']] = body_str

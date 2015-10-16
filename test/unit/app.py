@@ -55,6 +55,7 @@ PATTERN_FLASH_SAVED_CATEGORY = u'<li class="flash flash--notice">Saved changes t
 PATTERN_FLASH_CREATED_CATEGORY = u'Created a new topic named {title}! Remember to submit this change for feedback when you\'re ready to go live.'
 PATTERN_FLASH_CREATED_ARTICLE = u'Created a new article named {title}! Remember to submit this change for feedback when you\'re ready to go live.'
 PATTERN_FLASH_SAVED_ARTICLE = u'Saved changes to the {title} article! Remember to submit this change for feedback when you\'re ready to go live.'
+PATTERN_FLASH_DELETED_CATEGORY = u'The "{title}" topic was deleted! Remember to submit this change for feedback when you\'re ready to go live.'
 PATTERN_FLASH_DELETED_ARTICLE = u'The "{title}" article was deleted! Remember to submit this change for feedback when you\'re ready to go live.'
 PATTERN_FORM_CATEGORY_TITLE = u'<input name="en-title" type="text" value="{title}" class="directory-modify__name" placeholder="Crime Statistics and Maps">'
 PATTERN_FORM_CATEGORY_DESCRIPTION = u'<textarea name="en-description" class="directory-modify__description" placeholder="Crime statistics and reports by district and map">{description}</textarea>'
@@ -1943,8 +1944,8 @@ class TestApp (TestCase):
 
             # test that the contents match our expectations
             self.assertEqual(len(dir_columns), 4)
-            self.assertEqual(len(dir_columns[0]['files']), 6)
-            expected = {'hello': u'category', 'img': u'folder', 'index.md': u'file', 'other': u'folder', 'other.md': u'file', 'sub': u'folder'}
+            self.assertEqual(len(dir_columns[0]['files']), 7)
+            expected = {'hello': u'category', 'img': u'folder', 'index.md': u'file', 'other': u'folder', 'other.md': u'file', 'sub': u'folder', 'test-articles': u'folder'}
             for item in dir_columns[0]['files']:
                 self.assertTrue(item['name'] in expected)
                 self.assertTrue(expected[item['name']] == item['display_type'])
@@ -2031,9 +2032,6 @@ class TestApp (TestCase):
             erica.start_task(description=u'Parasitize with Ichneumonidae for Moth Larvae')
             # Get the branch name
             branch_name = erica.get_branch_name()
-
-            # Load the activity overview page
-            erica.follow_link(href='/tree/{}/'.format(branch_name))
 
             # Load the "other" folder
             erica.open_link(url='/tree/{}/edit/other/'.format(branch_name))
@@ -2840,7 +2838,7 @@ class TestApp (TestCase):
             repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email=erica_email)
 
             # Enter the "other" folder
-            articles_slug = u'articles'
+            articles_slug = u'test-articles'
             erica.open_link(url='/browse/{}/'.format(articles_slug))
 
             # there's only the master branch
@@ -2875,7 +2873,7 @@ class TestApp (TestCase):
             repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email=erica_email)
 
             # Enter the category folder in browse mode
-            articles_slug = u'articles'
+            articles_slug = u'test-articles'
             topic_slug = u'test-topic'
             erica.open_link(url='/browse/{}/'.format(join(articles_slug, topic_slug)))
 
@@ -2911,7 +2909,7 @@ class TestApp (TestCase):
             repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email=erica_email)
 
             # Enter the category folder in browse mode
-            articles_slug = u'articles'
+            articles_slug = u'test-articles'
             topic_slug = u'test-topic'
             subtopic_slug = u'test-subtopic'
             erica.open_link(url='/browse/{}/'.format(join(articles_slug, topic_slug, subtopic_slug)))

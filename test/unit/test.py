@@ -120,7 +120,9 @@ class TestViewFunctions (TestCase):
             {'modified_date': view_functions.get_relative_date(self.clone, 'index.md'), 'name': 'index.md', 'title': 'index.md', 'view_path': '/tree/master/view/index.md', 'is_editable': True, 'link_name': 'index.md', 'display_type': constants.FILE_FILE_TYPE},
             {'modified_date': view_functions.get_relative_date(self.clone, 'other'), 'name': 'other', 'title': 'other', 'view_path': '/tree/master/view/other', 'is_editable': False, 'link_name': u'other/', 'display_type': constants.FOLDER_FILE_TYPE},
             {'modified_date': view_functions.get_relative_date(self.clone, 'other.md'), 'name': 'other.md', 'title': 'other.md', 'view_path': '/tree/master/view/other.md', 'is_editable': True, 'link_name': 'other.md', 'display_type': constants.FILE_FILE_TYPE},
-            {'modified_date': view_functions.get_relative_date(self.clone, 'sub'), 'name': 'sub', 'title': 'sub', 'view_path': '/tree/master/view/sub', 'is_editable': False, 'link_name': u'sub/', 'display_type': constants.FOLDER_FILE_TYPE}]
+            {'modified_date': view_functions.get_relative_date(self.clone, 'sub'), 'name': 'sub', 'title': 'sub', 'view_path': '/tree/master/view/sub', 'is_editable': False, 'link_name': u'sub/', 'display_type': constants.FOLDER_FILE_TYPE},
+            {'modified_date': view_functions.get_relative_date(self.clone, 'test-articles'), 'name': 'test-articles', 'title': 'test-articles', 'view_path': '/tree/master/view/test-articles', 'is_editable': False, 'link_name': u'test-articles/', 'display_type': constants.FOLDER_FILE_TYPE}
+        ]
 
         self.assertEqual(sorted_list, expected_list)
 
