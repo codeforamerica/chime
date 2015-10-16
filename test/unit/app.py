@@ -2795,6 +2795,67 @@ class TestApp (TestCase):
             # Edit the article again with the same variables
             erica.edit_article(article_title, article_text)
 
+    def test_browse_is_default_view(self):
+        ''' Loading root redirects to browsing the live site.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in(erica_email)
+
+            erica.open_link('/', expected_status_code=303)
+            # it's the right url
+            self.assertEqual(erica.path, '/browse/')
+            # the test client can't derive a branch name
+            self.assertRaises(AssertionError, lambda: erica.get_branch_name())
+            # it's the right template
+            pattern_template_comment_stripped = sub(ur'<!--|-->', u'', PATTERN_TEMPLATE_COMMENT)
+            comments = erica.soup.findAll(text=lambda text: isinstance(text, Comment))
+            self.assertTrue(pattern_template_comment_stripped.format(u'articles-list') in comments)
+
+    def test_no_activity_bar_when_browsing(self):
+        ''' There's no activity bar when you're browsing the live site.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in(erica_email)
+
+            erica.open_link('/', expected_status_code=303)
+
+            # there's no activity bar
+            self.assertIsNone(erica.soup.find("div", {"data-test-id": "activity-bar"}))
+
+    def test_new_category_in_browse_starts_activity(self):
+        ''' Starting a new category from browse view starts a new activity.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in(erica_email)
+
+            repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email=erica_email)
+
+            # Enter the "other" folder
+            other_slug = u'other'
+            erica.open_link(url='/browse/{}/'.format(other_slug))
+
+            # there's only the master branch
+            self.assertEqual(len(repo.branches), 1)
+            self.assertTrue('master' in repo.branches)
+
+            # create a category
+            category_name = u'Confuse The Predator\'s Visual Acuity'
+            erica.add_category(category_name=category_name)
+
+            # there is a branch name
+            branch_name = erica.get_branch_name()
+            # verify that the branch exists in the repo
+            self.assertEqual(len(repo.branches), 2)
+            self.assertTrue(branch_name in repo.branches)
 
 class TestPublishApp (TestCase):
 

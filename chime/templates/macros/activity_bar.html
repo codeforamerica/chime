@@ -1,6 +1,6 @@
 {% macro activity_bar(show_bar, activity, show_review_modal=False) -%}
 {% if show_bar %}
-<div class="activity-bar activity-bar--{{ activity.review_state|replace(' ', '-') }} row row--main">
+<div data-test-id="activity-bar" class="activity-bar activity-bar--{{ activity.review_state|replace(' ', '-') }} row row--main">
   <h2 class="activity-bar__title row__left">{{ activity.task_description | title }} <span class="activity-bar__subtitle">({{ activity.history_summary.description.short }})</span></h2>
     <div class="toolbar toolbar--right">
     {% if activity.working_state == config.WORKING_STATE_ACTIVE %}
