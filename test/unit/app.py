@@ -2840,8 +2840,8 @@ class TestApp (TestCase):
             repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email=erica_email)
 
             # Enter the "other" folder
-            other_slug = u'other'
-            erica.open_link(url='/browse/{}/'.format(other_slug))
+            articles_slug = u'articles'
+            erica.open_link(url='/browse/{}/'.format(articles_slug))
 
             # there's only the master branch
             self.assertEqual(len(repo.branches), 1)
@@ -2856,6 +2856,85 @@ class TestApp (TestCase):
             # verify that the branch exists in the repo
             self.assertEqual(len(repo.branches), 2)
             self.assertTrue(branch_name in repo.branches)
+
+            # the branch name and the new category name slug are in the path
+            self.assertTrue(branch_name in erica.path)
+            self.assertTrue(slugify(category_name) in erica.path)
+            # a flash about the topic's creation is on the page
+            self.assertEqual(PATTERN_FLASH_CREATED_CATEGORY.format(title=category_name), erica.soup.find('li', class_='flash').text)
+
+    def test_new_subcategory_in_browse_starts_activity(self):
+        ''' Starting a new subcategory from browse view starts a new activity.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in(erica_email)
+
+            repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email=erica_email)
+
+            # Enter the category folder in browse mode
+            articles_slug = u'articles'
+            topic_slug = u'test-topic'
+            erica.open_link(url='/browse/{}/'.format(join(articles_slug, topic_slug)))
+
+            # there's only the master branch
+            self.assertEqual(len(repo.branches), 1)
+            self.assertTrue('master' in repo.branches)
+
+            # create a subcategory
+            subcategory_name = u'Rolling Into A Spiny Ball'
+            erica.add_subcategory(subcategory_name=subcategory_name)
+
+            # there is a branch name
+            branch_name = erica.get_branch_name()
+            # verify that the branch exists in the repo
+            self.assertEqual(len(repo.branches), 2)
+            self.assertTrue(branch_name in repo.branches)
+
+            # the branch name and the new subcategory name slug are in the path
+            self.assertTrue(branch_name in erica.path)
+            self.assertTrue(slugify(subcategory_name) in erica.path)
+            # a flash about the topic's creation is on the page
+            self.assertEqual(PATTERN_FLASH_CREATED_CATEGORY.format(title=subcategory_name), erica.soup.find('li', class_='flash').text)
+
+    def test_new_article_in_browse_starts_activity(self):
+        ''' Starting a new subcategory from browse view starts a new activity.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in(erica_email)
+
+            repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email=erica_email)
+
+            # Enter the category folder in browse mode
+            articles_slug = u'articles'
+            topic_slug = u'test-topic'
+            subtopic_slug = u'test-subtopic'
+            erica.open_link(url='/browse/{}/'.format(join(articles_slug, topic_slug, subtopic_slug)))
+
+            # there's only the master branch
+            self.assertEqual(len(repo.branches), 1)
+            self.assertTrue('master' in repo.branches)
+
+            # create a subcategory
+            article_name = u'Grunts, Snuffles And Squeals'
+            erica.add_article(article_name=article_name)
+
+            # there is a branch name
+            branch_name = erica.get_branch_name()
+            # verify that the branch exists in the repo
+            self.assertEqual(len(repo.branches), 2)
+            self.assertTrue(branch_name in repo.branches)
+
+            # the branch name and the new subcategory name slug are in the path
+            self.assertTrue(branch_name in erica.path)
+            self.assertTrue(slugify(article_name) in erica.path)
+            # a flash about the topic's creation is on the page
+            self.assertEqual(PATTERN_FLASH_CREATED_ARTICLE.format(title=article_name), erica.soup.find('li', class_='flash').text)
 
 class TestPublishApp (TestCase):
 
