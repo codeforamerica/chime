@@ -51,11 +51,11 @@ PATTERN_OVERVIEW_COMMENT_BODY = u'<div class="comment__body">{comment_body}</div
 PATTERN_OVERVIEW_ITEM_DELETED = u'<p>The "{deleted_name}" {deleted_type} {deleted_also}was deleted by {author_email}.</p>'
 PATTERN_FLASH_TASK_DELETED = u'You deleted the "{description}" activity!'
 
-PATTERN_FLASH_SAVED_CATEGORY = u'<li class="flash flash--notice">Saved changes to the {title} topic! Remember to submit this change for feedback when you\'re ready to go live.</li>'
 PATTERN_FLASH_CREATED_CATEGORY = u'Created a new topic named {title}! Remember to submit this change for feedback when you\'re ready to go live.'
+PATTERN_FLASH_SAVED_CATEGORY = u'Saved changes to the {title} topic! Remember to submit this change for feedback when you\'re ready to go live.'
 PATTERN_FLASH_CREATED_ARTICLE = u'Created a new article named {title}! Remember to submit this change for feedback when you\'re ready to go live.'
 PATTERN_FLASH_SAVED_ARTICLE = u'Saved changes to the {title} article! Remember to submit this change for feedback when you\'re ready to go live.'
-PATTERN_FLASH_DELETED_CATEGORY = u'The "{title}" topic was deleted! Remember to submit this change for feedback when you\'re ready to go live.'
+PATTERN_FLASH_DELETED_CATEGORY = u'The "{title}" topic {containing}was deleted! Remember to submit this change for feedback when you\'re ready to go live.'
 PATTERN_FLASH_DELETED_ARTICLE = u'The "{title}" article was deleted! Remember to submit this change for feedback when you\'re ready to go live.'
 PATTERN_FORM_CATEGORY_TITLE = u'<input name="en-title" type="text" value="{title}" class="directory-modify__name" placeholder="Crime Statistics and Maps">'
 PATTERN_FORM_CATEGORY_DESCRIPTION = u'<textarea name="en-description" class="directory-modify__description" placeholder="Crime statistics and reports by district and map">{description}</textarea>'
@@ -580,13 +580,6 @@ class TestApp (TestCase):
             self.assertEqual(response.status_code, 200)
             self.assertTrue(fake_page_path in response.data)
             self.assertTrue(fake_page_content in response.data)
-
-        # Check that English and French forms are both present.
-        self.assertTrue('name="fr-title"' in response.data)
-        self.assertTrue('name="en-title"' in response.data)
-
-        # Verify that navigation tabs are in the correct order.
-        self.assertTrue(response.data.index('id="fr-nav"') < response.data.index('id="en-nav"'))
 
         # Request feedback on the change
         with HTTMock(self.auth_csv_example_allowed):
@@ -1801,8 +1794,8 @@ class TestApp (TestCase):
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # check the returned HTML for the description and title values (format will change as pages are designed)
-            response_data = sub('&#34;', '"', response.data.decode('utf-8'))
-            self.assertTrue(u'<li class="flash flash--notice">The "{}" topic was deleted</li>'.format(cat_title) in response_data)
+            soup = BeautifulSoup(response.data)
+            self.assertEqual(PATTERN_FLASH_DELETED_CATEGORY.format(title=cat_title, containing=u''), soup.find('li', class_='flash').text)
 
             # pull the changes
             self.clone1.git.pull('origin', working_branch_name)
@@ -1813,7 +1806,7 @@ class TestApp (TestCase):
 
             # the title is not displayed on the article list page
             response = self.test_client.get('/tree/{}/edit/{}'.format(working_branch_name, categories_slug), follow_redirects=True)
-            self.assertFalse(PATTERN_FILE_COMMENT.format(**{"file_name": cat_slug, "file_title": cat_title, "file_type": constants.CATEGORY_LAYOUT}) in response.data)
+            self.assertFalse(PATTERN_FILE_COMMENT.format(file_name=cat_slug, file_title=cat_title, file_type=constants.CATEGORY_LAYOUT) in response.data)
 
     # in TestApp
     def test_set_and_retrieve_order_and_description(self):
@@ -2012,11 +2005,11 @@ class TestApp (TestCase):
             response_data = sub('&#34;', '"', response.data.decode('utf-8'))
             # make sure everything we did above is shown on the activity page
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('activity-overview') in response_data)
-            self.assertTrue(PATTERN_OVERVIEW_ACTIVITY_STARTED.format(**{"activity_name": task_description, "author_email": fake_author_email}) in response_data)
-            self.assertTrue(PATTERN_OVERVIEW_COMMENT_BODY.format(**{"comment_body": comment_text}) in response_data)
-            self.assertTrue(PATTERN_OVERVIEW_ITEM_DELETED.format(**{"deleted_name": title_fig_zh, "deleted_type": view_functions.file_display_name(constants.CATEGORY_LAYOUT), "deleted_also": u'(containing 1 topic and 1 article) ', "author_email": fake_author_email}) in response_data)
+            self.assertTrue(PATTERN_OVERVIEW_ACTIVITY_STARTED.format(activity_name=task_description, author_email=fake_author_email) in response_data)
+            self.assertTrue(PATTERN_OVERVIEW_COMMENT_BODY.format(comment_body=comment_text) in response_data)
+            self.assertTrue(PATTERN_OVERVIEW_ITEM_DELETED.format(deleted_name=title_fig_zh, deleted_type=view_functions.file_display_name(constants.CATEGORY_LAYOUT), deleted_also=u'(containing 1 topic and 1 article) ', author_email=fake_author_email) in response_data)
             for detail in create_details:
-                self.assertTrue(PATTERN_OVERVIEW_ITEM_CREATED.format(**{"created_name": detail[1], "created_type": detail[2], "author_email": fake_author_email}), response_data)
+                self.assertTrue(PATTERN_OVERVIEW_ITEM_CREATED.format(created_name=detail[1], created_type=detail[2], author_email=fake_author_email), response_data)
 
     # in TestApp
     def test_activity_history_summary_accuracy(self):
@@ -2771,6 +2764,7 @@ class TestApp (TestCase):
             task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch_name)
             self.assertEqual(task_metadata['task_description'], new_description)
 
+    # in TestApp
     def test_save_unchanged_article(self):
         ''' Saving an unchanged article doesn't raise any errors.
         '''
@@ -2793,6 +2787,7 @@ class TestApp (TestCase):
             # Edit the article again with the same variables
             erica.edit_article(article_title, article_text)
 
+    # in TestApp
     def test_browse_is_default_view(self):
         ''' Loading root redirects to browsing the live site.
         '''
@@ -2812,6 +2807,7 @@ class TestApp (TestCase):
             comments = erica.soup.findAll(text=lambda text: isinstance(text, Comment))
             self.assertTrue(pattern_template_comment_stripped.format(u'articles-list') in comments)
 
+    # in TestApp
     def test_no_activity_bar_when_browsing(self):
         ''' There's no activity bar when you're browsing the live site.
         '''
@@ -2826,6 +2822,7 @@ class TestApp (TestCase):
             # there's no activity bar
             self.assertIsNone(erica.soup.find("div", {"data-test-id": "activity-bar"}))
 
+    # in TestApp
     def test_new_category_in_browse_starts_activity(self):
         ''' Starting a new category from browse view starts a new activity.
         '''
@@ -2861,6 +2858,7 @@ class TestApp (TestCase):
             # a flash about the topic's creation is on the page
             self.assertEqual(PATTERN_FLASH_CREATED_CATEGORY.format(title=category_name), erica.soup.find('li', class_='flash').text)
 
+    # in TestApp
     def test_new_subcategory_in_browse_starts_activity(self):
         ''' Starting a new subcategory from browse view starts a new activity.
         '''
@@ -2897,6 +2895,7 @@ class TestApp (TestCase):
             # a flash about the topic's creation is on the page
             self.assertEqual(PATTERN_FLASH_CREATED_CATEGORY.format(title=subcategory_name), erica.soup.find('li', class_='flash').text)
 
+    # in TestApp
     def test_new_article_in_browse_starts_activity(self):
         ''' Starting a new subcategory from browse view starts a new activity.
         '''
@@ -2933,6 +2932,119 @@ class TestApp (TestCase):
             self.assertTrue(slugify(article_name) in erica.path)
             # a flash about the topic's creation is on the page
             self.assertEqual(PATTERN_FLASH_CREATED_ARTICLE.format(title=article_name), erica.soup.find('li', class_='flash').text)
+
+    # in TestApp
+    def test_delete_category_in_browse_starts_activity(self):
+        ''' Deleting a category from browse view starts a new activity.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in(erica_email)
+
+            repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email=erica_email)
+
+            # Enter the category folder in browse mode
+            articles_slug = u'test-articles'
+            erica.open_link(url='/browse/{}/'.format(articles_slug))
+
+            # there's only the master branch
+            self.assertEqual(len(repo.branches), 1)
+            self.assertTrue('master' in repo.branches)
+
+            # delete a category
+            topic_title = u'Test Topic'
+            erica.follow_modify_category_link(topic_title)
+            erica.delete_category()
+
+            # there is a branch name
+            branch_name = erica.get_branch_name()
+            # verify that the branch exists in the repo
+            self.assertEqual(len(repo.branches), 2)
+            self.assertTrue(branch_name in repo.branches)
+
+            # the branch name is in the path
+            self.assertTrue(branch_name in erica.path)
+            # a flash about the topic's deletion is on the page
+            self.assertEqual(PATTERN_FLASH_DELETED_CATEGORY.format(title=topic_title, containing=u'(containing 1 topic and 1 article) '), erica.soup.find('li', class_='flash').text)
+
+    # in TestApp
+    def test_delete_article_in_browse_starts_activity(self):
+        ''' Deleting an article from browse view starts a new activity.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in(erica_email)
+
+            repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email=erica_email)
+
+            # Enter the category folder in browse mode
+            articles_slug = u'test-articles'
+            topic_slug = u'test-topic'
+            subtopic_slug = u'test-subtopic'
+            erica.open_link(url='/browse/{}/'.format(join(articles_slug, topic_slug, subtopic_slug)))
+
+            # there's only the master branch
+            self.assertEqual(len(repo.branches), 1)
+            self.assertTrue('master' in repo.branches)
+
+            # delete the article
+            article_title = u'Test Article'
+            erica.delete_article(article_title)
+
+            # there is a branch name
+            branch_name = erica.get_branch_name()
+            # verify that the branch exists in the repo
+            self.assertEqual(len(repo.branches), 2)
+            self.assertTrue(branch_name in repo.branches)
+
+            # the branch name is in the path
+            self.assertTrue(branch_name in erica.path)
+            # a flash about the topic's deletion is on the page
+            self.assertEqual(PATTERN_FLASH_DELETED_ARTICLE.format(title=article_title), erica.soup.find('li', class_='flash').text)
+
+    # in TestApp
+    def test_modify_category_in_browse_starts_activity(self):
+        ''' Modifying a category from browse view starts a new activity.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in(erica_email)
+
+            repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email=erica_email)
+
+            # Enter the category folder in browse mode
+            articles_slug = u'test-articles'
+            erica.open_link(url='/browse/{}/'.format(articles_slug))
+
+            # there's only the master branch
+            self.assertEqual(len(repo.branches), 1)
+            self.assertTrue('master' in repo.branches)
+
+            # edit a category
+            topic_title = u'Test Topic'
+            erica.follow_modify_category_link(topic_title)
+
+            # make a change
+            new_title = u'A Fluffy Tail That Stabilizes In Flight'
+            erica.edit_category(title_str=new_title, description_str=u'The tail acts as an adjunct airfoil, working as an air brake before landing on a tree trunk.')
+
+            # there is a branch name
+            branch_name = erica.get_branch_name()
+            # verify that the branch exists in the repo
+            self.assertEqual(len(repo.branches), 2)
+            self.assertTrue(branch_name in repo.branches)
+
+            # the branch name is in the path
+            self.assertTrue(branch_name in erica.path)
+            # a flash about the topic's edit is on the page
+            self.assertEqual(PATTERN_FLASH_SAVED_CATEGORY.format(title=new_title), erica.soup.find('li', class_='flash').text)
+
 
 class TestPublishApp (TestCase):
 
