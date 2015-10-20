@@ -224,7 +224,7 @@ class ChimeTestClient:
     def submit_edit_article_form(self, title_str, body_str):
         ''' Submit the edit article form and return the response for testing or passing on.
 
-            Note: This will submit the form even if it doesn't have a save/submit button.
+            Note: This will submit the form even if it doesn't have a visible save/submit button.
         '''
         body = self.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'en-body'))
         form = body.find_parent('form')
@@ -244,7 +244,7 @@ class ChimeTestClient:
     def edit_article(self, title_str, body_str):
         ''' Look for form to edit an article, submit it.
 
-            Note: This will submit the form even if it doesn't have a save/submit button.
+            Note: This will submit the form even if it doesn't have a visible save/submit button.
         '''
         response = self.submit_edit_article_form(title_str, body_str)
         # View the updated article.
@@ -287,16 +287,46 @@ class ChimeTestClient:
         mod_link = mod_span.find_parent('a')
         self.follow_link(mod_link['href'])
 
-    def delete_category(self):
-        ''' Look for the delete button, submit it.
+    def submit_edit_category_form(self, title_str, description_str):
+        ''' Submit the edit category form and return the response for testing or passing on.
+
+            Note: This will submit the form even if it doesn't have a visible save/submit button.
         '''
-        body = self.soup.find(lambda tag: bool(tag.name == 'textarea' and tag.get('name') == 'en-description'))
-        form = body.find_parent('form')
+        description = self.soup.find('textarea', {'name': 'en-description'})
+        form = description.find_parent('form')
+        title = form.find('input', {'name': 'en-title'})
         self.test.assertEqual(form['method'].upper(), 'POST')
 
         data = {i['name']: i.get('value', u'')
                 for i in form.find_all(['input', 'button', 'textarea'])
-                if i.get('value', u'') != 'save_category'}
+                if i.get('type', u'') != 'submit' or i.get('value', u'') != 'delete_category'}
+
+        data[title['name']] = title_str
+        data[description['name']] = description_str
+
+        edit_article_path = urlparse(urljoin(self.path, form['action'])).path
+        return self.client.post(edit_article_path, data=data)
+
+    def edit_category(self, title_str, description_str):
+        ''' Look for form to edit a category's details, submit it.
+
+            Note: This will submit the form even if it doesn't have a visible save/submit button.
+        '''
+        response = self.submit_edit_category_form(title_str, description_str)
+
+        # View the updated article.
+        self.follow_redirect(response, 303)
+
+    def delete_category(self):
+        ''' Look for the delete button, submit it.
+        '''
+        description = self.soup.find('textarea', {'name': 'en-description'})
+        form = description.find_parent('form')
+        self.test.assertEqual(form['method'].upper(), 'POST')
+
+        data = {i['name']: i.get('value', u'')
+                for i in form.find_all(['input', 'button', 'textarea'])
+                if i.get('type', u'') != 'submit' or i.get('value', u'') != 'save_category'}
 
         delete_category_path = urlparse(urljoin(self.path, form['action'])).path
         response = self.client.post(delete_category_path, data=data)
