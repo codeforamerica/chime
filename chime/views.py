@@ -332,7 +332,7 @@ def browse_master(path=None):
     return view_functions.render_edit_view(
         repo=repo, branch_name=default_branch_name,
         path=path, file=open(full_path, 'r'),
-        base_save_path='/look/save', browse_path=browse_path
+        base_save_path='{}save'.format(constants.ROUTE_BROWSE_LIVE), browse_path=browse_path
     )
 
 @app.route(constants.ROUTE_BROWSE_LIVE, methods=['POST'])
@@ -364,7 +364,7 @@ def handle_look_in_submit(path=None):
     # redirect to the edit page in the new branch
     return redirect(redirect_path, code=303)
 
-@app.route('/look/save/<path:path>', methods=['POST'])
+@app.route('{}save/<path:path>'.format(constants.ROUTE_BROWSE_LIVE), methods=['POST'])
 @log_application_errors
 @login_required
 @lock_on_user
