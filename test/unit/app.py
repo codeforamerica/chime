@@ -3045,6 +3045,45 @@ class TestApp (TestCase):
             # a flash about the topic's edit is on the page
             self.assertEqual(PATTERN_FLASH_SAVED_CATEGORY.format(title=new_title), erica.soup.find('li', class_='flash').text)
 
+    # in TestApp
+    def test_edit_article_in_browse_starts_activity(self):
+        ''' Editing an article from browse view starts a new activity.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in(erica_email)
+
+            repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email=erica_email)
+
+            # Enter the test article edit page in browse mode
+            articles_slug = u'test-articles'
+            topic_slug = u'test-topic'
+            subtopic_slug = u'test-subtopic'
+            article_slug = u'test-article'
+            article_url = '/browse/{}'.format(join(articles_slug, topic_slug, subtopic_slug, article_slug, u'index.{}'.format(constants.CONTENT_FILE_EXTENSION)))
+            erica.open_link(url=article_url)
+
+            # there's only the master branch
+            self.assertEqual(len(repo.branches), 1)
+            self.assertTrue('master' in repo.branches)
+
+            # edit the article
+            new_title = u'Mostly Hairless, Apart From Their Whiskers'
+            new_body = u'Their internal organs are visible through the skin.'
+            erica.edit_article(title_str=new_title, body_str=new_body)
+
+            # there is a branch name
+            branch_name = erica.get_branch_name()
+            # verify that the branch exists in the repo
+            self.assertEqual(len(repo.branches), 2)
+            self.assertTrue(branch_name in repo.branches)
+
+            # the branch name is in the path
+            self.assertTrue(branch_name in erica.path)
+            # a flash about the article's edit is on the page
+            self.assertEqual(PATTERN_FLASH_SAVED_ARTICLE.format(title=new_title), erica.soup.find('li', class_='flash').text)
 
 class TestPublishApp (TestCase):
 
