@@ -406,6 +406,10 @@ def branch_edit(branch_name, path=None):
     safe_branch = view_functions.branch_name2path(branch_name)
     working_state = repo_functions.get_activity_working_state(repo, current_app.config['default_branch'], safe_branch)
 
+    # if this is the master branch, redirect to browse
+    if working_state == constants.WORKING_STATE_LIVE:
+        return redirect('{}{}'.format(constants.ROUTE_BROWSE_LIVE, path))
+
     # if this is a published branch, redirect to overview
     if working_state == constants.WORKING_STATE_PUBLISHED:
         return redirect('/tree/{}/'.format(safe_branch), code=303)
@@ -483,6 +487,11 @@ def show_activity_overview(branch_name):
     branch_name = view_functions.branch_var2name(branch_name)
     repo = view_functions.get_repo(flask_app=current_app)
     safe_branch = view_functions.branch_name2path(branch_name)
+    working_state = repo_functions.get_activity_working_state(repo, current_app.config['default_branch'], safe_branch)
+
+    # if this is the master branch, redirect to browse
+    if working_state == constants.WORKING_STATE_LIVE:
+        return redirect('{}'.format(constants.ROUTE_BROWSE_LIVE))
 
     if repo_functions.get_conflict(repo, current_app.config['default_branch']):
         view_functions.flash_unique(repo_functions.MERGE_CONFLICT_WARNING_FLASH_MESSAGE, u'warning')
