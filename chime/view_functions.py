@@ -1281,7 +1281,7 @@ def handle_article_list_submit(repo, branch_name, path):
         # save and redirect
         if do_save:
             # flash the human-readable part of the commit message
-            flash(commit_message.split('\n')[0], u'notice')
+            flash(u'{}! Remember to submit this change for feedback when you\'re ready to go live.'.format(commit_message.split('\n')[0]), u'notice')
 
     elif is_save_category_request(action):
         index_slug = path.rstrip('/')
@@ -1360,10 +1360,8 @@ def handle_article_edit_submit(repo, branch_name, path, start_point=None):
     user_task.write(path, data.getvalue())
 
     end_path = path
-
     if request.form.get('url-slug'):
         new_path = calculate_new_slug(path, request.form['url-slug'])
-
         if new_path:
             try:
                 user_task.move(path, new_path)
@@ -1392,8 +1390,6 @@ def handle_article_edit_submit(repo, branch_name, path, start_point=None):
             flash(u'Saved changes to the {} article! Remember to submit this change for feedback when you\'re ready to go live.'.format(request.form['en-title']), u'notice')
         elif action == 'save':
             flash(u'No changes to save!', u'warning')
-
-    print u'action={}, did_save={}'.format(action, did_save)
 
     if action == 'preview':
         return '/tree/{}/view/{}'.format(task_id, end_path), did_save
@@ -1557,21 +1553,17 @@ def calculate_new_slug(file_path, new_slug):
     '''
     # they may've renamed the page by editing the URL slug
     original_slug = file_path
-    #if re.search(r'\/index.{}$'.format(CONTENT_FILE_EXTENSION), file_path):
-    #    original_slug = re.sub(ur'index.{}$'.format(CONTENT_FILE_EXTENSION), u'', file_path)
-
     # do some simple input cleaning
     newer_slug = re.sub(r'\/+', '/', new_slug)
-    
+
     # We may need to treat this as a directory name, with an index.whatever inside.
     _, ext = splitext(basename(newer_slug))
     if not ext:
         newer_slug = join(newer_slug, u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
 
     if newer_slug != original_slug:
-        from sys import stderr; print >> stderr, newer_slug, '!=', original_slug
         return newer_slug
-    
+
     return None
 
 def format_commit_message(file_path, en_title, layout):
