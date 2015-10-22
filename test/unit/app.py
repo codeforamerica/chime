@@ -51,10 +51,11 @@ PATTERN_OVERVIEW_COMMENT_BODY = u'<div class="comment__body">{comment_body}</div
 PATTERN_OVERVIEW_ITEM_DELETED = u'<p>The "{deleted_name}" {deleted_type} {deleted_also}was deleted by {author_email}.</p>'
 PATTERN_FLASH_TASK_DELETED = u'You deleted the "{description}" activity!'
 
-PATTERN_FLASH_SAVED_CATEGORY = u'<li class="flash flash--notice">Saved changes to the {title} topic! Remember to submit this change for feedback when you\'re ready to go live.</li>'
 PATTERN_FLASH_CREATED_CATEGORY = u'Created a new topic named {title}! Remember to submit this change for feedback when you\'re ready to go live.'
+PATTERN_FLASH_SAVED_CATEGORY = u'Saved changes to the {title} topic! Remember to submit this change for feedback when you\'re ready to go live.'
 PATTERN_FLASH_CREATED_ARTICLE = u'Created a new article named {title}! Remember to submit this change for feedback when you\'re ready to go live.'
 PATTERN_FLASH_SAVED_ARTICLE = u'Saved changes to the {title} article! Remember to submit this change for feedback when you\'re ready to go live.'
+PATTERN_FLASH_DELETED_CATEGORY = u'The "{title}" topic {containing}was deleted! Remember to submit this change for feedback when you\'re ready to go live.'
 PATTERN_FLASH_DELETED_ARTICLE = u'The "{title}" article was deleted! Remember to submit this change for feedback when you\'re ready to go live.'
 PATTERN_FORM_CATEGORY_TITLE = u'<input name="en-title" type="text" value="{title}" class="directory-modify__name" placeholder="Crime Statistics and Maps">'
 PATTERN_FORM_CATEGORY_DESCRIPTION = u'<textarea name="en-description" class="directory-modify__description" placeholder="Crime statistics and reports by district and map">{description}</textarea>'
@@ -292,7 +293,7 @@ class TestApp (TestCase):
                 erica = ChimeTestClient(self.test_client, self)
                 erica.sign_in(email='erica@example.com')
 
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
 
             # The static no-cache headers are as expected
             self.assertEqual(erica.headers['Cache-Control'], 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0')
@@ -308,7 +309,7 @@ class TestApp (TestCase):
     def test_bad_login(self):
         ''' Check basic log in / log out flow without talking to Persona.
         '''
-        response = self.test_client.get('/')
+        response = self.test_client.get(constants.ROUTE_ACTIVITY)
         self.assertFalse('erica@example.com' in response.data)
 
         with HTTMock(self.mock_persona_verify_erica):
@@ -316,14 +317,14 @@ class TestApp (TestCase):
             self.assertEqual(response.status_code, 200)
 
         with HTTMock(self.auth_csv_example_disallowed):
-            response = self.test_client.get('/')
+            response = self.test_client.get(constants.ROUTE_ACTIVITY)
             self.assertFalse('Create' in response.data)
 
     # in TestApp
     def test_login(self):
         ''' Check basic log in / log out flow without talking to Persona.
         '''
-        response = self.test_client.get('/')
+        response = self.test_client.get(constants.ROUTE_ACTIVITY)
         self.assertFalse('Start' in response.data)
 
         with HTTMock(self.mock_persona_verify_erica):
@@ -331,21 +332,21 @@ class TestApp (TestCase):
             self.assertEqual(response.status_code, 200)
 
         with HTTMock(self.auth_csv_example_allowed):
-            response = self.test_client.get('/')
+            response = self.test_client.get(constants.ROUTE_ACTIVITY)
             self.assertTrue('Start' in response.data)
             self.assertTrue('http://example.org' in response.data, 'Should see LIVE_SITE_URL in response')
 
             response = self.test_client.post('/sign-out')
             self.assertEqual(response.status_code, 200)
 
-            response = self.test_client.get('/')
+            response = self.test_client.get(constants.ROUTE_ACTIVITY)
             self.assertFalse('Start' in response.data)
 
     # in TestApp
     def test_login_splat(self):
         ''' Check basic log in / log out flow without talking to Persona.
         '''
-        response = self.test_client.get('/')
+        response = self.test_client.get(constants.ROUTE_ACTIVITY)
         self.assertFalse('Start' in response.data)
 
         with HTTMock(self.mock_persona_verify_william):
@@ -353,7 +354,7 @@ class TestApp (TestCase):
             self.assertEqual(response.status_code, 200)
 
         with HTTMock(self.auth_csv_example_allowed):
-            response = self.test_client.get('/')
+            response = self.test_client.get(constants.ROUTE_ACTIVITY)
             self.assertTrue('Start' in response.data)
 
     # in TestApp
@@ -370,7 +371,7 @@ class TestApp (TestCase):
     def test_login_timeout(self):
         ''' Check basic log in / log out flow with auth check lifespan.
         '''
-        response = self.test_client.get('/')
+        response = self.test_client.get(constants.ROUTE_ACTIVITY)
         self.assertFalse('Start' in response.data)
 
         with HTTMock(self.mock_persona_verify_erica):
@@ -378,29 +379,29 @@ class TestApp (TestCase):
             self.assertEqual(response.status_code, 200)
 
         with HTTMock(self.auth_csv_example_allowed):
-            response = self.test_client.get('/')
+            response = self.test_client.get(constants.ROUTE_ACTIVITY)
             self.assertTrue('Start' in response.data)
 
         with patch('chime.view_functions.get_auth_data_file') as get_auth_data_file:
             # Show that email status does not require a call to auth CSV.
-            response = self.test_client.get('/')
+            response = self.test_client.get(constants.ROUTE_ACTIVITY)
             self.assertEqual(response.status_code, 200, 'Should have worked')
             self.assertEqual(get_auth_data_file.call_count, 0, 'Should not have called get_auth_data_file()')
 
             # Show that a call to auth CSV was made, outside the timeout period.
             time.sleep(1.1)
-            response = self.test_client.get('/')
+            response = self.test_client.get(constants.ROUTE_ACTIVITY)
             self.assertEqual(get_auth_data_file.call_count, 1, 'Should have called get_auth_data_file()')
 
         with HTTMock(self.auth_csv_example_allowed):
             # Show that email status was correctly updatedw with call to CSV.
-            response = self.test_client.get('/')
+            response = self.test_client.get(constants.ROUTE_ACTIVITY)
             self.assertEqual(response.status_code, 200, 'Should have worked')
 
             response = self.test_client.post('/sign-out')
             self.assertEqual(response.status_code, 200)
 
-            response = self.test_client.get('/')
+            response = self.test_client.get(constants.ROUTE_ACTIVITY)
             self.assertFalse('Start' in response.data)
 
     # in TestApp
@@ -416,7 +417,7 @@ class TestApp (TestCase):
             flash_message_text = u'Please describe what you\'re doing when you start a new activity!'
 
             # start a new task without a description
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             erica.start_task(description=u'')
             # the activities-list template reloaded
             comments = erica.soup.findAll(text=lambda text: isinstance(text, Comment))
@@ -434,7 +435,7 @@ class TestApp (TestCase):
                 erica.sign_in(email='erica@example.com')
 
             # start a new task with a lot of random whitespace
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             task_description = u'I think\n\r\n\rI am      so   \t\t\t   coool!!\n\n\nYeah.\n\nOK\n\rERWEREW      dkkdk'
             task_description_stripped = u'I think I am so coool!! Yeah. OK ERWEREW dkkdk'
             erica.start_task(description=task_description)
@@ -459,7 +460,7 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             erica.start_task(description=u'Lick Water Droplets From Leaves for Leopard Geckos')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -487,7 +488,7 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             erica.start_task(description=u'Lick Water Droplets From Leaves for Leopard Geckos')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -580,13 +581,6 @@ class TestApp (TestCase):
             self.assertTrue(fake_page_path in response.data)
             self.assertTrue(fake_page_content in response.data)
 
-        # Check that English and French forms are both present.
-        self.assertTrue('name="fr-title"' in response.data)
-        self.assertTrue('name="en-title"' in response.data)
-
-        # Verify that navigation tabs are in the correct order.
-        self.assertTrue(response.data.index('id="fr-nav"') < response.data.index('id="en-nav"'))
-
         # Request feedback on the change
         with HTTMock(self.auth_csv_example_allowed):
             response = self.test_client.post('/tree/{}/'.format(generated_branch_name), data={'comment_text': u'', 'request_feedback': u'Request Feedback'}, follow_redirects=True)
@@ -650,7 +644,7 @@ class TestApp (TestCase):
                     self.assertFalse(check_branch.name in new_clone.branches)
 
             # load the activity list and verify that the branch is visible there
-            response = self.test_client.get('/', follow_redirects=True)
+            response = self.test_client.get(constants.ROUTE_ACTIVITY, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             self.assertTrue(check_branch.name in response.data)
 
@@ -687,7 +681,7 @@ class TestApp (TestCase):
                 raise Exception('No match for generated branch name.')
 
             # get the activity list page
-            response = self.test_client.get('/', follow_redirects=True)
+            response = self.test_client.get(constants.ROUTE_ACTIVITY, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # verify that the project is listed in the edited column
             soup = BeautifulSoup(response.data)
@@ -725,7 +719,7 @@ class TestApp (TestCase):
             self.assertIsNotNone(soup.find("button", {"data-test-id": "request-feedback-button"}))
 
             # get the activity list page
-            response = self.test_client.get('/', follow_redirects=True)
+            response = self.test_client.get(constants.ROUTE_ACTIVITY, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # verify that the project is listed in the edited column
             soup = BeautifulSoup(response.data)
@@ -770,7 +764,7 @@ class TestApp (TestCase):
             self.assertIsNotNone(soup.find("button", {"data-test-id": "endorse-edits-button"}))
 
             # get the activity list page
-            response = self.test_client.get('/', follow_redirects=True)
+            response = self.test_client.get(constants.ROUTE_ACTIVITY, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # verify that the project is listed in the feedback needed column
             soup = BeautifulSoup(response.data)
@@ -808,7 +802,7 @@ class TestApp (TestCase):
             self.assertIsNotNone(soup.find("button", {"data-test-id": "publish-button"}))
 
             # get the activity list page
-            response = self.test_client.get('/', follow_redirects=True)
+            response = self.test_client.get(constants.ROUTE_ACTIVITY, follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # verify that the project is listed in the ready to publish column
             soup = BeautifulSoup(response.data)
@@ -1207,7 +1201,7 @@ class TestApp (TestCase):
                 erica.sign_in(email='erica@example.com')
 
             # Start a new task
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             erica.start_task(description=u'Be Shot Hundreds Of Feet Into The Air for A Geyser Of Highly Pressurized Water')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -1242,7 +1236,7 @@ class TestApp (TestCase):
             pattern_template_comment_stripped = sub(ur'<!--|-->', u'', PATTERN_TEMPLATE_COMMENT)
 
             # Start a new task
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             erica.start_task(description=u'Deep-Fry a Buffalo in Forty Seconds for Moe')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -1395,9 +1389,9 @@ class TestApp (TestCase):
             self.assertTrue(exists(art_location))
             self.assertTrue(view_functions.is_article_dir(art_location))
 
-            # delete category a while in category b
-            response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, join(categories_slug, cata_slug, catb_slug)),
-                                             data={'action': 'delete', 'request_path': join(categories_slug, cata_slug)},
+            # delete category a
+            response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, join(categories_slug, cata_slug)),
+                                             data={'action': 'delete_category'},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
 
@@ -1420,7 +1414,7 @@ class TestApp (TestCase):
                 erica.sign_in(email=erica_email)
 
             # Start a new task
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             erica.start_task(description=u'Ferment Tuber Fibres Using Symbiotic Bacteria in the Intestines for Naked Mole Rats')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -1516,7 +1510,7 @@ class TestApp (TestCase):
 
             # delete the article
             response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, art_slug),
-                                             data={'action': 'delete', 'request_path': art_slug},
+                                             data={'action': 'delete_article', 'request_path': art_slug},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
 
@@ -1583,7 +1577,7 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task, topic, subtopic, article
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             args = 'Mermithergate for Ant Worker', 'Enoplia Nematode', 'Genus Mermis', 'Cephalotes Atratus'
             erica.quick_activity_setup(*args)
 
@@ -1713,7 +1707,7 @@ class TestApp (TestCase):
 
             # get the modify page and verify that the form renders with the correct values
             cat_path = join(categories_slug, cat_slug, u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
-            response = self.test_client.get('/tree/{}/modify/{}'.format(working_branch_name, repo_functions.strip_index_file(cat_path)), follow_redirects=True)
+            response = self.test_client.get('/tree/{}/edit/{}'.format(working_branch_name, cat_path), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             self.assertTrue(PATTERN_FORM_CATEGORY_TITLE.format(title=cat_title) in response.data)
             self.assertTrue(PATTERN_FORM_CATEGORY_DESCRIPTION.format(description=u'') in response.data)
@@ -1721,9 +1715,9 @@ class TestApp (TestCase):
             # now save a new title and description for the category
             new_cat_title = u'Caecum'
             cat_description = u'An intraperitoneal pouch, that is considered to be the beginning of the large intestine.'
-            response = self.test_client.post('/tree/{}/modify/{}'.format(working_branch_name, cat_path),
+            response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, cat_path),
                                              data={'layout': constants.CATEGORY_LAYOUT, 'hexsha': hexsha, 'url-slug': u'{}/{}/'.format(categories_slug, cat_slug),
-                                                   'en-title': new_cat_title, 'en-description': cat_description, 'order': u'0', 'save': u''},
+                                                   'en-title': new_cat_title, 'en-description': cat_description, 'order': u'0', 'action': u'save_category'},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # check the returned HTML for the description and title values (format will change as pages are designed)
@@ -1793,14 +1787,15 @@ class TestApp (TestCase):
             # now delete the category
             cat_description = u''
             url_slug = u'{}/{}/'.format(categories_slug, cat_slug)
-            response = self.test_client.post('/tree/{}/modify/{}'.format(working_branch_name, url_slug.rstrip('/')),
+            response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, url_slug.rstrip('/')),
                                              data={'layout': constants.CATEGORY_LAYOUT, 'hexsha': hexsha, 'url-slug': url_slug,
-                                                   'en-title': cat_title, 'en-description': cat_description, 'order': u'0', 'delete': u''},
+                                                   'en-title': cat_title, 'en-description': cat_description, 'order': u'0',
+                                                   'action': u'delete_category'},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # check the returned HTML for the description and title values (format will change as pages are designed)
-            response_data = sub('&#34;', '"', response.data.decode('utf-8'))
-            self.assertTrue(u'<li class="flash flash--notice">The "{}" topic was deleted</li>'.format(cat_title) in response_data)
+            soup = BeautifulSoup(response.data)
+            self.assertEqual(PATTERN_FLASH_DELETED_CATEGORY.format(title=cat_title, containing=u''), soup.find('li', class_='flash').text)
 
             # pull the changes
             self.clone1.git.pull('origin', working_branch_name)
@@ -1811,7 +1806,7 @@ class TestApp (TestCase):
 
             # the title is not displayed on the article list page
             response = self.test_client.get('/tree/{}/edit/{}'.format(working_branch_name, categories_slug), follow_redirects=True)
-            self.assertFalse(PATTERN_FILE_COMMENT.format(**{"file_name": cat_slug, "file_title": cat_title, "file_type": constants.CATEGORY_LAYOUT}) in response.data)
+            self.assertFalse(PATTERN_FILE_COMMENT.format(file_name=cat_slug, file_title=cat_title, file_type=constants.CATEGORY_LAYOUT) in response.data)
 
     # in TestApp
     def test_set_and_retrieve_order_and_description(self):
@@ -1857,14 +1852,16 @@ class TestApp (TestCase):
             cat_description = u'The part of the GI tract following the stomach and followed by the large intestine where much of the digestion and absorption of food takes place.'
             cat_order = 3
             cat_path = join(categories_slug, cat_slug, u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
-            response = self.test_client.post('/tree/{}/save/{}'.format(working_branch_name, cat_path),
+            response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, cat_path),
                                              data={'layout': constants.CATEGORY_LAYOUT, 'hexsha': hexsha,
-                                                   'en-title': new_cat_title, 'en-description': cat_description, 'order': cat_order},
+                                                   'en-title': new_cat_title, 'en-description': cat_description,
+                                                   'order': cat_order, 'action': u'save_category'},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             # check the returned HTML for the description and order values (format will change as pages are designed)
-            self.assertTrue(u'<input name="en-description" type="hidden" value="{}" />'.format(cat_description) in response.data)
-            self.assertTrue(u'<input name="order" type="hidden" value="{}" />'.format(cat_order) in response.data)
+            soup = BeautifulSoup(response.data)
+            self.assertEqual(soup.find('textarea', {'name': 'en-description'}).text, cat_description)
+            self.assertEqual(int(soup.find('input', {'name': 'order'})['value']), cat_order)
 
             # pull the changes
             self.clone1.git.pull('origin', working_branch_name)
@@ -1940,8 +1937,8 @@ class TestApp (TestCase):
 
             # test that the contents match our expectations
             self.assertEqual(len(dir_columns), 4)
-            self.assertEqual(len(dir_columns[0]['files']), 6)
-            expected = {'hello': u'category', 'img': u'folder', 'index.md': u'file', 'other': u'folder', 'other.md': u'file', 'sub': u'folder'}
+            self.assertEqual(len(dir_columns[0]['files']), 7)
+            expected = {'hello': u'category', 'img': u'folder', 'index.md': u'file', 'other': u'folder', 'other.md': u'file', 'sub': u'folder', 'test-articles': u'folder'}
             for item in dir_columns[0]['files']:
                 self.assertTrue(item['name'] in expected)
                 self.assertTrue(expected[item['name']] == item['display_type'])
@@ -1996,9 +1993,9 @@ class TestApp (TestCase):
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
 
-            # delete a directory
-            response = self.test_client.post('/tree/{}/edit/'.format(working_branch_name),
-                                             data={'action': 'delete', 'request_path': slug_fig_zh},
+            # delete a topic
+            response = self.test_client.post('/tree/{}/edit/{}'.format(working_branch_name, slug_fig_zh),
+                                             data={'action': 'delete_category'},
                                              follow_redirects=True)
             self.assertEqual(response.status_code, 200)
 
@@ -2008,11 +2005,11 @@ class TestApp (TestCase):
             response_data = sub('&#34;', '"', response.data.decode('utf-8'))
             # make sure everything we did above is shown on the activity page
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('activity-overview') in response_data)
-            self.assertTrue(PATTERN_OVERVIEW_ACTIVITY_STARTED.format(**{"activity_name": task_description, "author_email": fake_author_email}) in response_data)
-            self.assertTrue(PATTERN_OVERVIEW_COMMENT_BODY.format(**{"comment_body": comment_text}) in response_data)
-            self.assertTrue(PATTERN_OVERVIEW_ITEM_DELETED.format(**{"deleted_name": title_fig_zh, "deleted_type": view_functions.file_display_name(constants.CATEGORY_LAYOUT), "deleted_also": u'(containing 1 topic and 1 article) ', "author_email": fake_author_email}) in response_data)
+            self.assertTrue(PATTERN_OVERVIEW_ACTIVITY_STARTED.format(activity_name=task_description, author_email=fake_author_email) in response_data)
+            self.assertTrue(PATTERN_OVERVIEW_COMMENT_BODY.format(comment_body=comment_text) in response_data)
+            self.assertTrue(PATTERN_OVERVIEW_ITEM_DELETED.format(deleted_name=title_fig_zh, deleted_type=view_functions.file_display_name(constants.CATEGORY_LAYOUT), deleted_also=u'(containing 1 topic and 1 article) ', author_email=fake_author_email) in response_data)
             for detail in create_details:
-                self.assertTrue(PATTERN_OVERVIEW_ITEM_CREATED.format(**{"created_name": detail[1], "created_type": detail[2], "author_email": fake_author_email}), response_data)
+                self.assertTrue(PATTERN_OVERVIEW_ITEM_CREATED.format(created_name=detail[1], created_type=detail[2], author_email=fake_author_email), response_data)
 
     # in TestApp
     def test_activity_history_summary_accuracy(self):
@@ -2024,13 +2021,10 @@ class TestApp (TestCase):
                 erica.sign_in(email='erica@example.com')
 
             # Start a new task
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             erica.start_task(description=u'Parasitize with Ichneumonidae for Moth Larvae')
             # Get the branch name
             branch_name = erica.get_branch_name()
-
-            # Load the activity overview page
-            erica.follow_link(href='/tree/{}/'.format(branch_name))
 
             # Load the "other" folder
             erica.open_link(url='/tree/{}/edit/other/'.format(branch_name))
@@ -2324,7 +2318,7 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             erica.start_task(description=u'Take Malarone for People Susceptible to Malaria')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -2350,7 +2344,7 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             erica.start_task(description=u'Chew Mulberry Leaves for Silkworms')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -2375,7 +2369,7 @@ class TestApp (TestCase):
             response = self.test_client.post('/sign-in', data={'assertion': 'erica@example.com'})
 
         with HTTMock(self.mock_internal_server_error):
-            response = self.test_client.get('/', follow_redirects=True)
+            response = self.test_client.get(constants.ROUTE_ACTIVITY, follow_redirects=True)
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('error-500') in response.data)
             # these values are set in setUp() above
             self.assertTrue(u'support@example.com' in response.data)
@@ -2389,7 +2383,7 @@ class TestApp (TestCase):
             response = self.test_client.post('/sign-in', data={'assertion': 'erica@example.com'})
 
         with HTTMock(self.mock_exception):
-            response = self.test_client.get('/', follow_redirects=True)
+            response = self.test_client.get(constants.ROUTE_ACTIVITY, follow_redirects=True)
             self.assertTrue(PATTERN_TEMPLATE_COMMENT.format('error-500') in response.data)
             # these values are set in setUp() above
             self.assertTrue(u'support@example.com' in response.data)
@@ -2527,7 +2521,7 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             erica.start_task(description=u'Be Shot Hundreds Of Feet Into The Air for A Geyser Of Highly Pressurized Water')
             # Get the branch name
             branch_name = erica.get_branch_name()
@@ -2556,7 +2550,7 @@ class TestApp (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task, "Diving for Dollars".
-            frances.open_link('/')
+            frances.open_link(constants.ROUTE_ACTIVITY)
             frances.start_task(description=u'Diving for Dollars')
             branch_name = frances.get_branch_name()
 
@@ -2590,7 +2584,7 @@ class TestApp (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task
-            frances.open_link('/')
+            frances.open_link(constants.ROUTE_ACTIVITY)
             frances.start_task(description=u'Crunching Beetles for Trap-Door Spiders')
             branch_name = frances.get_branch_name()
 
@@ -2615,14 +2609,14 @@ class TestApp (TestCase):
                 frances.sign_in('frances@example.com')
 
             # Start a new task
-            frances.open_link('/')
+            frances.open_link(constants.ROUTE_ACTIVITY)
             frances.start_task(description=u'Beating Crunches for Door-Spider Traps')
 
             # hit the front page a bunch of times
             times = 20
             pros = []
             for blip in range(times):
-                process = Process(target=frances.open_link, args=('/',))
+                process = Process(target=frances.open_link, kwargs=dict(url='/', expected_status_code=303))
                 process.start()
                 pros.append(process)
 
@@ -2650,7 +2644,7 @@ class TestApp (TestCase):
                 frances.sign_in(frances_email)
 
             # Start a new task and create a topic, subtopic and article
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             activity_title = u'Flicking Ants Off My Laptop'
             args = activity_title, u'Flying', u'Through The Air', u'Goodbye'
             branch_name = erica.quick_activity_setup(*args)
@@ -2669,7 +2663,7 @@ class TestApp (TestCase):
             #
             # Load the front page and make sure the activity is listed as published
             #
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             pub_ul = erica.soup.select("#activity-list-published")[0]
             # there should be an HTML comment with the branch name
             comment = pub_ul.findAll(text=lambda text: isinstance(text, Comment))[0]
@@ -2688,7 +2682,7 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             erica.start_task('Ingest Wolffish, Capelin, Skate Eggs And Sometimes Rocks')
             branch_name = erica.get_branch_name()
 
@@ -2715,7 +2709,7 @@ class TestApp (TestCase):
                 erica.sign_in('erica@example.com')
 
             # Start a new task and create a topic
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             args = u'Their Diets Consist Of Almost Any Creature They Are Capable Of Overpowering', u'When Living Near Water, They Will Eat Other Aquatic Animals'
             branch_name = erica.quick_activity_setup(*args)
 
@@ -2751,7 +2745,7 @@ class TestApp (TestCase):
                 erica.sign_in(erica_email)
 
             # Start a new task and create a topic
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             args = u'Skates are cartilaginous fish', u'The Two Subfamilies Are Rajinae And Arhynchobatinae'
             branch_name = erica.quick_activity_setup(*args)
 
@@ -2770,6 +2764,7 @@ class TestApp (TestCase):
             task_metadata = repo_functions.get_task_metadata_for_branch(repo, branch_name)
             self.assertEqual(task_metadata['task_description'], new_description)
 
+    # in TestApp
     def test_save_unchanged_article(self):
         ''' Saving an unchanged article doesn't raise any errors.
         '''
@@ -2780,7 +2775,7 @@ class TestApp (TestCase):
                 erica.sign_in(erica_email)
 
             # Start a new task and create a topic, subtopic and article
-            erica.open_link('/')
+            erica.open_link(constants.ROUTE_ACTIVITY)
             article_title = u'Open-Ocean'
             args = u'The Eggs Are Spherical And Buoyant', u'The Fry Are Tiny', u'Pelagic', article_title
             erica.quick_activity_setup(*args)
@@ -2792,6 +2787,303 @@ class TestApp (TestCase):
             # Edit the article again with the same variables
             erica.edit_article(article_title, article_text)
 
+    # in TestApp
+    def test_browse_is_default_view(self):
+        ''' Loading root redirects to browsing the live site.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in(erica_email)
+
+            erica.open_link('/', expected_status_code=303)
+            # it's the right url
+            self.assertEqual(erica.path, '/browse/')
+            # the test client can't derive a branch name
+            self.assertRaises(AssertionError, lambda: erica.get_branch_name())
+            # it's the right template
+            pattern_template_comment_stripped = sub(ur'<!--|-->', u'', PATTERN_TEMPLATE_COMMENT)
+            comments = erica.soup.findAll(text=lambda text: isinstance(text, Comment))
+            self.assertTrue(pattern_template_comment_stripped.format(u'articles-list') in comments)
+
+    # in TestApp
+    def test_no_activity_bar_when_browsing(self):
+        ''' There's no activity bar when you're browsing the live site.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in(erica_email)
+
+            erica.open_link('/', expected_status_code=303)
+
+            # there's no activity bar
+            self.assertIsNone(erica.soup.find("div", {"data-test-id": "activity-bar"}))
+
+    # in TestApp
+    def test_new_category_in_browse_starts_activity(self):
+        ''' Starting a new category from browse view starts a new activity.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in(erica_email)
+
+            repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email=erica_email)
+
+            # Enter the "other" folder
+            articles_slug = u'test-articles'
+            erica.open_link(url='/browse/{}/'.format(articles_slug))
+
+            # there's only the master branch
+            self.assertEqual(len(repo.branches), 1)
+            self.assertTrue('master' in repo.branches)
+
+            # create a category
+            category_name = u'Confuse The Predator\'s Visual Acuity'
+            erica.add_category(category_name=category_name)
+
+            # there is a branch name
+            branch_name = erica.get_branch_name()
+            # verify that the branch exists in the repo
+            self.assertEqual(len(repo.branches), 2)
+            self.assertTrue(branch_name in repo.branches)
+
+            # the branch name and the new category name slug are in the path
+            self.assertTrue(branch_name in erica.path)
+            self.assertTrue(slugify(category_name) in erica.path)
+            # a flash about the topic's creation is on the page
+            self.assertEqual(PATTERN_FLASH_CREATED_CATEGORY.format(title=category_name), erica.soup.find('li', class_='flash').text)
+
+    # in TestApp
+    def test_new_subcategory_in_browse_starts_activity(self):
+        ''' Starting a new subcategory from browse view starts a new activity.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in(erica_email)
+
+            repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email=erica_email)
+
+            # Enter the category folder in browse mode
+            articles_slug = u'test-articles'
+            topic_slug = u'test-topic'
+            erica.open_link(url='/browse/{}/'.format(join(articles_slug, topic_slug)))
+
+            # there's only the master branch
+            self.assertEqual(len(repo.branches), 1)
+            self.assertTrue('master' in repo.branches)
+
+            # create a subcategory
+            subcategory_name = u'Rolling Into A Spiny Ball'
+            erica.add_subcategory(subcategory_name=subcategory_name)
+
+            # there is a branch name
+            branch_name = erica.get_branch_name()
+            # verify that the branch exists in the repo
+            self.assertEqual(len(repo.branches), 2)
+            self.assertTrue(branch_name in repo.branches)
+
+            # the branch name and the new subcategory name slug are in the path
+            self.assertTrue(branch_name in erica.path)
+            self.assertTrue(slugify(subcategory_name) in erica.path)
+            # a flash about the topic's creation is on the page
+            self.assertEqual(PATTERN_FLASH_CREATED_CATEGORY.format(title=subcategory_name), erica.soup.find('li', class_='flash').text)
+
+    # in TestApp
+    def test_new_article_in_browse_starts_activity(self):
+        ''' Starting a new subcategory from browse view starts a new activity.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in(erica_email)
+
+            repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email=erica_email)
+
+            # Enter the category folder in browse mode
+            articles_slug = u'test-articles'
+            topic_slug = u'test-topic'
+            subtopic_slug = u'test-subtopic'
+            erica.open_link(url='/browse/{}/'.format(join(articles_slug, topic_slug, subtopic_slug)))
+
+            # there's only the master branch
+            self.assertEqual(len(repo.branches), 1)
+            self.assertTrue('master' in repo.branches)
+
+            # create a subcategory
+            article_name = u'Grunts, Snuffles And Squeals'
+            erica.add_article(article_name=article_name)
+
+            # there is a branch name
+            branch_name = erica.get_branch_name()
+            # verify that the branch exists in the repo
+            self.assertEqual(len(repo.branches), 2)
+            self.assertTrue(branch_name in repo.branches)
+
+            # the branch name and the new subcategory name slug are in the path
+            self.assertTrue(branch_name in erica.path)
+            self.assertTrue(slugify(article_name) in erica.path)
+            # a flash about the topic's creation is on the page
+            self.assertEqual(PATTERN_FLASH_CREATED_ARTICLE.format(title=article_name), erica.soup.find('li', class_='flash').text)
+
+    # in TestApp
+    def test_delete_category_in_browse_starts_activity(self):
+        ''' Deleting a category from browse view starts a new activity.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in(erica_email)
+
+            repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email=erica_email)
+
+            # Enter the category folder in browse mode
+            articles_slug = u'test-articles'
+            erica.open_link(url='/browse/{}/'.format(articles_slug))
+
+            # there's only the master branch
+            self.assertEqual(len(repo.branches), 1)
+            self.assertTrue('master' in repo.branches)
+
+            # delete a category
+            topic_title = u'Test Topic'
+            erica.follow_modify_category_link(topic_title)
+            erica.delete_category()
+
+            # there is a branch name
+            branch_name = erica.get_branch_name()
+            # verify that the branch exists in the repo
+            self.assertEqual(len(repo.branches), 2)
+            self.assertTrue(branch_name in repo.branches)
+
+            # the branch name is in the path
+            self.assertTrue(branch_name in erica.path)
+            # a flash about the topic's deletion is on the page
+            self.assertEqual(PATTERN_FLASH_DELETED_CATEGORY.format(title=topic_title, containing=u'(containing 1 topic and 1 article) '), erica.soup.find('li', class_='flash').text)
+
+    # in TestApp
+    def test_delete_article_in_browse_starts_activity(self):
+        ''' Deleting an article from browse view starts a new activity.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in(erica_email)
+
+            repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email=erica_email)
+
+            # Enter the category folder in browse mode
+            articles_slug = u'test-articles'
+            topic_slug = u'test-topic'
+            subtopic_slug = u'test-subtopic'
+            erica.open_link(url='/browse/{}/'.format(join(articles_slug, topic_slug, subtopic_slug)))
+
+            # there's only the master branch
+            self.assertEqual(len(repo.branches), 1)
+            self.assertTrue('master' in repo.branches)
+
+            # delete the article
+            article_title = u'Test Article'
+            erica.delete_article(article_title)
+
+            # there is a branch name
+            branch_name = erica.get_branch_name()
+            # verify that the branch exists in the repo
+            self.assertEqual(len(repo.branches), 2)
+            self.assertTrue(branch_name in repo.branches)
+
+            # the branch name is in the path
+            self.assertTrue(branch_name in erica.path)
+            # a flash about the topic's deletion is on the page
+            self.assertEqual(PATTERN_FLASH_DELETED_ARTICLE.format(title=article_title), erica.soup.find('li', class_='flash').text)
+
+    # in TestApp
+    def test_modify_category_in_browse_starts_activity(self):
+        ''' Modifying a category from browse view starts a new activity.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in(erica_email)
+
+            repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email=erica_email)
+
+            # Enter the category folder in browse mode
+            articles_slug = u'test-articles'
+            erica.open_link(url='/browse/{}/'.format(articles_slug))
+
+            # there's only the master branch
+            self.assertEqual(len(repo.branches), 1)
+            self.assertTrue('master' in repo.branches)
+
+            # edit a category
+            topic_title = u'Test Topic'
+            erica.follow_modify_category_link(topic_title)
+
+            # make a change
+            new_title = u'A Fluffy Tail That Stabilizes In Flight'
+            erica.edit_category(title_str=new_title, description_str=u'The tail acts as an adjunct airfoil, working as an air brake before landing on a tree trunk.')
+
+            # there is a branch name
+            branch_name = erica.get_branch_name()
+            # verify that the branch exists in the repo
+            self.assertEqual(len(repo.branches), 2)
+            self.assertTrue(branch_name in repo.branches)
+
+            # the branch name is in the path
+            self.assertTrue(branch_name in erica.path)
+            # a flash about the topic's edit is on the page
+            self.assertEqual(PATTERN_FLASH_SAVED_CATEGORY.format(title=new_title), erica.soup.find('li', class_='flash').text)
+
+    # in TestApp
+    def test_edit_article_in_browse_starts_activity(self):
+        ''' Editing an article from browse view starts a new activity.
+        '''
+        with HTTMock(self.auth_csv_example_allowed):
+            erica_email = u'erica@example.com'
+            with HTTMock(self.mock_persona_verify_erica):
+                erica = ChimeTestClient(self.app.test_client(), self)
+                erica.sign_in(erica_email)
+
+            repo = view_functions.get_repo(repo_path=self.app.config['REPO_PATH'], work_path=self.app.config['WORK_PATH'], email=erica_email)
+
+            # Enter the test article edit page in browse mode
+            articles_slug = u'test-articles'
+            topic_slug = u'test-topic'
+            subtopic_slug = u'test-subtopic'
+            article_slug = u'test-article'
+            article_url = '/browse/{}'.format(join(articles_slug, topic_slug, subtopic_slug, article_slug, u'index.{}'.format(constants.CONTENT_FILE_EXTENSION)))
+            erica.open_link(url=article_url)
+
+            # there's only the master branch
+            self.assertEqual(len(repo.branches), 1)
+            self.assertTrue('master' in repo.branches)
+
+            # edit the article
+            new_title = u'Mostly Hairless, Apart From Their Whiskers'
+            new_body = u'Their internal organs are visible through the skin.'
+            erica.edit_article(title_str=new_title, body_str=new_body)
+
+            # there is a branch name
+            branch_name = erica.get_branch_name()
+            # verify that the branch exists in the repo
+            self.assertEqual(len(repo.branches), 2)
+            self.assertTrue(branch_name in repo.branches)
+
+            # the branch name is in the path
+            self.assertTrue(branch_name in erica.path)
+            # a flash about the article's edit is on the page
+            self.assertEqual(PATTERN_FLASH_SAVED_ARTICLE.format(title=new_title), erica.soup.find('li', class_='flash').text)
 
 class TestPublishApp (TestCase):
 

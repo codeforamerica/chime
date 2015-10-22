@@ -9,7 +9,7 @@ from git import Repo, GitCommandError
 from slugify import slugify
 
 from ..repo_functions import MergeConflict
-from ..constants import WORKING_STATE_PUBLISHED, WORKING_STATE_DELETED, USERTASK_DIRECTORY_PATTERN
+from ..constants import WORKING_STATE_PUBLISHED, WORKING_STATE_DELETED, WORKING_STATE_LIVE, WORKING_STATE_ACTIVE, USERTASK_DIRECTORY_PATTERN
 
 def _calculate_dirname(actor, origin):
     ''' Prepare a consistent directory for this user and this repository.
@@ -28,6 +28,8 @@ class UserTaskPublished(RuntimeError):
     pass
 class UserTaskDeleted(RuntimeError):
     pass
+class UserTaskLive(RuntimeError):
+    pass
 class UserTaskUnpushable(RuntimeError):
     pass
 
@@ -38,13 +40,14 @@ class UserTask():
     _committed = False
     _pushed = False
 
-    def __init__(self, actor, task_id, origin_dirname, working_dirname, start_point=None):
+    def __init__(self, actor, task_id, default_id, origin_dirname, working_dirname, start_point=None):
         '''
 
             start_point: task ID or commit SHA.
         '''
         self.actor = actor
         self.task_id = task_id
+        self.default_id = default_id
 
         # Prepare a clone directory.
         origin = Repo(origin_dirname)
@@ -108,6 +111,37 @@ class UserTask():
     def _open(self, path, *args, **kwargs):
         return open(join(self.repo.working_dir, path), *args, **kwargs)
 
+    @property
+    def published(self):
+        ''' True if this task is published
+        '''
+        return self.task_id in self.repo.tags
+
+    @property
+    def deleted(self):
+        ''' True if this task is deleted
+        '''
+        return 'origin/{}'.format(self.task_id) not in self.repo.refs
+
+    @property
+    def live(self):
+        ''' True if this task is live (is the 'master' branch)
+        '''
+        return self.task_id == self.default_id
+
+    @property
+    def working_state(self):
+        ''' The working state of this activity
+        '''
+        if self.published:
+            return WORKING_STATE_PUBLISHED
+        if self.deleted:
+            return WORKING_STATE_DELETED
+        if self.live:
+            return WORKING_STATE_LIVE
+
+        return WORKING_STATE_ACTIVE
+
     def read(self, filename):
         with self._open(filename, 'r') as file:
             return file.read()
@@ -163,11 +197,14 @@ class UserTask():
         if not self._committed:
             return False
 
-        if self.task_id in self.repo.tags:
+        if self.published:
             return WORKING_STATE_PUBLISHED
 
-        if 'origin/{}'.format(self.task_id) not in self.repo.refs:
+        if self.deleted:
             return WORKING_STATE_DELETED
+
+        if self.live:
+            return WORKING_STATE_LIVE
 
         return True
 
@@ -183,6 +220,8 @@ class UserTask():
             raise UserTaskPublished()
         elif pushable is WORKING_STATE_DELETED:
             raise UserTaskDeleted()
+        elif pushable is WORKING_STATE_LIVE:
+            raise UserTaskLive()
         elif pushable is False:
             raise UserTaskUnpushable()
 

@@ -24,7 +24,7 @@ class TestFirst(TestCase):
         # one master commit, and one branch called task-xyz.
 
         self.origin_dirname = join(self.working_dirname, 'origin')
-        self.get_usertask_args = self.origin_dirname, self.working_dirname
+        self.get_usertask_args = 'master', self.origin_dirname, self.working_dirname
         clone_dirname = join(self.working_dirname, 'clone')
 
         mkdir(self.origin_dirname)

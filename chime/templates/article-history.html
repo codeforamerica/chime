@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% set breadcrumb_items = [{'name': 'Activities', 'url': '/'}, {'name': 'Browse', 'url': activity.edit_path}, {'name': 'Edit Article', 'url': article_edit_path }] %}
+{% set breadcrumb_items = [{'name': 'Activities', 'url': config.ROUTE_ACTIVITY}, {'name': 'Browse', 'url': browse_path}, {'name': 'Edit Article', 'url': article_edit_path }] %}
 
 {% block title %}History{% endblock %}
 {% block body_class %}article-history{% endblock %}

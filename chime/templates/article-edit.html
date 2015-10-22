@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% set breadcrumb_items = [{'name': 'Activities', 'url': '/'}, {'name': 'Browse', 'url': activity.edit_path}] %}
+{% set breadcrumb_items = [{'name': 'Activities', 'url': config.ROUTE_ACTIVITY}, {'name': 'Browse', 'url': browse_path}] %}
 
 {% block title %}Edit Article{% endblock %}
 
@@ -21,25 +21,17 @@
 
 {% block content %}
 <!-- template name: {{ template_name }} -->
+{% set edit_ok = activity.working_state == config.WORKING_STATE_ACTIVE or activity.working_state == config.WORKING_STATE_LIVE %}
 <form action="{{ save_path }}" method="POST" class="row col__flex col edit-article__form">
-
+    {% set iso = config.ISO_CODE_ENGLISH %}
+    {% set form_title = front['title'] %}
+    {% set form_description = front['description'] %}
+    {% set form_body = body %}
+    {% set display_class = '' %}
     <input name="layout" value="{{ front['layout'] }}" type="hidden" />
     <input name="hexsha" value="{{ hexsha }}" type="hidden" />
     <input name="url-slug" type="hidden" value="{{ url_slug }}" />
     <input name="order" type="hidden" value="{{ front['order'] }}" />
-{% for iso in languages %}
-    {% if iso == config.ISO_CODE_ENGLISH %}
-        {% set form_title = front['title'] %}
-        {% set form_description = front['description'] %}
-        {% set form_body = body %}
-        {% set display_class = '' %}
-    {% else %}
-        {% set form_title = front['title-'+iso] %}
-        {% set form_description = front['description-'+iso] %}
-        {% set form_body = front['body-'+iso] %}
-        {% set display_class = 'is-hidden' %}
-    {% endif %}
-
     <input name="{{ iso }}-description" type="hidden" value="{{ form_description }}" />
 
     <div class="edit-article__header row">
@@ -50,10 +42,9 @@
             </div>
         </div>
         <div class="row__right toolbar--right">
-            <a href="{{ history_path }}" class="button button--medium toolbar__item">History</a>
-            {% if activity.working_state == config.WORKING_STATE_ACTIVE %}
+            {% if edit_ok %}
             <button type="submit" class="button button--medium toolbar__item" name="action" value="Preview">Preview</button>
-            <button type="submit" class="button button--medium button--green toolbar__item" value="Save">Save Progress</button>
+            <button type="submit" class="button button--medium button--green toolbar__item" name="action" value="Save">Save Progress</button>
             {% endif %}
         </div>
     </div>    
@@ -173,7 +164,6 @@
                 {% endif %}
             </div>
     </div>
-{% endfor %}
 </form>
 <script type="text/javascript">
     {% for iso in languages %}

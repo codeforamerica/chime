@@ -1,23 +1,20 @@
+# -- coding: utf-8 --
 from __future__ import absolute_import
 from logging import getLogger
 Logger = getLogger('chime.views')
 
 from os.path import join, isdir, exists
-from re import compile, MULTILINE, sub, search
-from io import BytesIO
+from re import compile, MULTILINE, sub
 
 from requests import post
-from slugify import slugify
 from datetime import datetime
 from urlparse import urlparse
 from flask import current_app, flash, render_template, redirect, request, Response, session, abort
-from git import Actor
 
 from . import chime as app
-from . import constants, repo_functions, edit_functions, chime_activity
+from . import constants, repo_functions, chime_activity
 from . import publish
-from .jekyll_functions import load_jekyll_doc, dump_jekyll_doc, load_languages
-from .storage.user_task import UserTask, UserTaskPublished, UserTaskDeleted
+from .jekyll_functions import load_languages
 
 # the decorator functions
 from .view_functions import login_required, lock_on_user, browserid_hostname_required, synch_required, synched_checkout_required, log_application_errors
@@ -40,9 +37,9 @@ def after_request(response):
 @lock_on_user
 @synch_required
 def index():
-    return view_functions.render_activities_list()
+    return redirect(constants.ROUTE_BROWSE_LIVE, code=303)
 
-@app.route('/activity', methods=['GET'])
+@app.route(constants.ROUTE_ACTIVITY, methods=['GET'])
 @log_application_errors
 @login_required
 @lock_on_user
@@ -237,7 +234,7 @@ def start_branch():
     # require a task description
     if len(task_description) == 0:
         flash(u'Please describe what you\'re doing when you start a new activity!', u'warning')
-        return redirect('/activity', code=303)
+        return redirect(constants.ROUTE_ACTIVITY, code=303)
 
     branch = repo_functions.get_start_branch(repo, master_name, task_description, session['email'])
     safe_branch = view_functions.branch_name2path(branch.name)
@@ -281,6 +278,122 @@ def branch_view(branch_name, path=None):
     repo = view_functions.get_repo(flask_app=current_app)
     return view_functions.get_preview_asset_response(repo.working_dir, path)
 
+@app.route(constants.ROUTE_BROWSE_LIVE, methods=['GET'])
+@app.route('{}<path:path>'.format(constants.ROUTE_BROWSE_LIVE), methods=['GET'])
+@log_application_errors
+@login_required
+@lock_on_user
+@synched_checkout_required
+def browse_master(path=None):
+    repo = view_functions.get_repo(flask_app=current_app)
+    default_branch_name = current_app.config['default_branch']
+    full_path = join(repo.working_dir, path or '.').rstrip('/')
+
+    # make sure the path points to something that exists
+    if not exists(full_path):
+        abort(404)
+
+    if isdir(full_path):
+        # if this is a directory representing an article, redirect to to the index file within
+        if view_functions.is_article_dir(full_path):
+            index_path = join(path or u'', u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
+            return redirect('{}{}'.format(constants.ROUTE_BROWSE_LIVE, index_path))
+
+        # if the directory path didn't end with a slash, add it and redirect
+        if path and not path.endswith('/'):
+            return redirect('{}{}/'.format(constants.ROUTE_BROWSE_LIVE, path), code=302)
+
+        # redirect inside solo directories if necessary
+        redirect_path = view_functions.get_redirect_path_for_solo_directory(
+            repo=repo, branch_name=default_branch_name,
+            path=path, route_base_url=constants.ROUTE_BROWSE_LIVE
+        )
+        if redirect_path:
+            return redirect(redirect_path, code=302)
+
+        # render the directory contents
+        return view_functions.render_articles_list(
+            repo=repo, branch_name=default_branch_name,
+            path=path, edit_base_url=constants.ROUTE_BROWSE_LIVE
+        )
+
+    # if it's the index file of a category, show the modify view
+    path_type, _ = view_functions.index_path_display_type_and_title(full_path)
+    if path_type == constants.CATEGORY_LAYOUT:
+        # render the directory modification view
+        return view_functions.render_category_modify(
+            repo=repo, branch_name=default_branch_name, path=path,
+            edit_base_url=constants.ROUTE_BROWSE_LIVE
+        )
+
+    # it's a file, show the edit view
+    # make a browse link by stripping the article from the path
+    browse_path = join(constants.ROUTE_BROWSE_LIVE, repo_functions.strip_last_item(path))
+    return view_functions.render_edit_view(
+        repo=repo, branch_name=default_branch_name,
+        path=path, file=open(full_path, 'r'),
+        base_save_path='{}save'.format(constants.ROUTE_BROWSE_LIVE), browse_path=browse_path
+    )
+
+@app.route(constants.ROUTE_BROWSE_LIVE, methods=['POST'])
+@app.route('{}<path:path>'.format(constants.ROUTE_BROWSE_LIVE), methods=['POST'])
+@log_application_errors
+@login_required
+@lock_on_user
+@synched_checkout_required
+def handle_look_in_submit(path=None):
+    ''' Handle submits from forms on the article list page
+    '''
+    repo = view_functions.get_repo(flask_app=current_app)
+    default_branch_name = current_app.config['default_branch']
+    # start a new branch to save any changes in
+    working_branch_name = view_functions.start_activity_for_edits(repo, default_branch_name)
+    try:
+        redirect_path, did_save = view_functions.handle_article_list_submit(repo, working_branch_name, path)
+    except Exception:
+        # abandon the new branch and raise the exception
+        repo_functions.abandon_branch(repo, default_branch_name, working_branch_name)
+        raise
+
+    if not did_save:
+        # abandon the new branch
+        repo_functions.abandon_branch(repo, default_branch_name, working_branch_name)
+        # redirect to where we started
+        return redirect('{}{}'.format(constants.ROUTE_BROWSE_LIVE, path), code=303)
+
+    # redirect to the edit page in the new branch
+    return redirect(redirect_path, code=303)
+
+@app.route('{}save/<path:path>'.format(constants.ROUTE_BROWSE_LIVE), methods=['POST'])
+@log_application_errors
+@login_required
+@lock_on_user
+def handle_look_article_submit(path):
+    ''' Handle a submission from the article-edit form.
+    '''
+    repo = view_functions.get_repo(flask_app=current_app)
+    default_branch_name = current_app.config['default_branch']
+    # start a new branch to save any changes in
+    working_branch_name = view_functions.start_activity_for_edits(repo, default_branch_name)
+    start_point = repo.branches[working_branch_name].commit.hexsha
+    try:
+        redirect_path, did_save = view_functions.handle_article_edit_submit(
+            repo=repo, branch_name=working_branch_name, path=path, start_point=start_point
+        )
+    except Exception:
+        # abandon the new branch and raise the exception
+        repo_functions.abandon_branch(repo, default_branch_name, working_branch_name)
+        raise
+
+    if not did_save:
+        # abandon the new branch
+        repo_functions.abandon_branch(repo, default_branch_name, working_branch_name)
+        # redirect to where we started
+        return redirect('{}{}'.format(constants.ROUTE_BROWSE_LIVE, path), code=303)
+
+    # redirect to the edit or view page in the new branch
+    return redirect(redirect_path, code=303)
+
 @app.route('/tree/<branch_name>/edit/', methods=['GET'])
 @app.route('/tree/<branch_name>/edit/<path:path>', methods=['GET'])
 @log_application_errors
@@ -291,9 +404,14 @@ def branch_edit(branch_name, path=None):
     repo = view_functions.get_repo(flask_app=current_app)
     branch_name = view_functions.branch_var2name(branch_name)
     safe_branch = view_functions.branch_name2path(branch_name)
+    working_state = repo_functions.get_activity_working_state(repo, current_app.config['default_branch'], safe_branch)
+
+    # if this is the master branch, redirect to browse
+    if working_state == constants.WORKING_STATE_LIVE:
+        return redirect('{}{}'.format(constants.ROUTE_BROWSE_LIVE, path))
 
     # if this is a published branch, redirect to overview
-    if repo_functions.get_activity_working_state(repo, current_app.config['default_branch'], safe_branch) == constants.WORKING_STATE_PUBLISHED:
+    if working_state == constants.WORKING_STATE_PUBLISHED:
         return redirect('/tree/{}/'.format(safe_branch), code=303)
 
     # flash a conflict warning if necessary
@@ -307,7 +425,7 @@ def branch_edit(branch_name, path=None):
         abort(404)
 
     if isdir(full_path):
-        # if this is a directory representing an article, redirect to edit
+        # if this is a directory representing an article, redirect to the index file within
         if view_functions.is_article_dir(full_path):
             index_path = join(path or u'', u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
             return redirect('/tree/{}/edit/{}'.format(safe_branch, index_path))
@@ -317,119 +435,33 @@ def branch_edit(branch_name, path=None):
             return redirect('/tree/{}/edit/{}/'.format(safe_branch, path), code=302)
 
         # redirect inside solo directories if necessary
-        redirect_path = view_functions.get_redirect_path_for_solo_directory(repo, branch_name, path)
+        redirect_path = view_functions.get_redirect_path_for_solo_directory(
+            repo=repo, branch_name=branch_name, path=path
+        )
         if redirect_path:
             return redirect(redirect_path, code=302)
 
         # render the directory contents
-        return view_functions.render_list_dir(repo, branch_name, path)
+        return view_functions.render_articles_list(
+            repo=repo, branch_name=branch_name, path=path
+        )
 
-    # it's a file, edit it
-    return view_functions.render_edit_view(repo, branch_name, path, open(full_path, 'r'))
-
-@app.route('/tree/<branch_name>/modify/', methods=['GET'])
-@app.route('/tree/<branch_name>/modify/<path:path>', methods=['GET'])
-@log_application_errors
-@login_required
-@lock_on_user
-@synched_checkout_required
-def branch_show_category_form(branch_name, path=None):
-    repo = view_functions.get_repo(flask_app=current_app)
-    branch_name = view_functions.branch_var2name(branch_name)
-    full_path = join(repo.working_dir, path or '.').rstrip('/')
-
-    # if the directory path didn't end with a slash, add it
-    if isdir(full_path) and path and not path.endswith('/'):
-        return redirect('/tree/{}/modify/{}/'.format(view_functions.branch_name2path(branch_name), path), code=302)
-
-    if view_functions.is_category_dir(full_path):
+    # if it's the index file of a category, show the modify view
+    path_type, _ = view_functions.index_path_display_type_and_title(full_path)
+    if path_type == constants.CATEGORY_LAYOUT:
         # render the directory modification view
-        return view_functions.render_modify_dir(repo, branch_name, path)
+        return view_functions.render_category_modify(
+            repo=repo, branch_name=branch_name, path=path
+        )
 
-    # if this is an article directory, redirect to edit
-    if view_functions.is_article_dir(full_path):
-        index_path = join(path or u'', u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
-        return redirect('/tree/{}/edit/{}'.format(view_functions.branch_name2path(branch_name), index_path))
-
-    # this is not a category or article directory; redirect to edit
-    return redirect('/tree/{}/edit/{}'.format(branch_name, path))
-
-@app.route('/tree/<branch_name>/modify/', methods=['POST'])
-@app.route('/tree/<branch_name>/modify/<path:path>', methods=['POST'])
-@log_application_errors
-@login_required
-@lock_on_user
-@synched_checkout_required
-def branch_modify_category(branch_name, path=u''):
-    ''' Save edits to a category's title and description or delete a category and its contents.
-    '''
-    repo = view_functions.get_repo(flask_app=current_app)
-    # get a path to the category's index file
-    path = path.rstrip('/')
-    index_slug = path
-    dir_path = join(repo.working_dir, index_slug)
-    index_path = dir_path
-    if not search(r'\/index.{}$'.format(constants.CONTENT_FILE_EXTENSION), path):
-        index_slug = join(path, u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
-        index_path = join(dir_path, u'index.{}'.format(constants.CONTENT_FILE_EXTENSION))
-
-    # delete the passed category
-    if 'delete' in request.form:
-        # delete the page
-        redirect_path, do_save, commit_message = view_functions.delete_page(repo=repo, working_branch_name=branch_name, browse_path=path, target_path=path)
-        # save and redirect
-        if do_save:
-            master_name = current_app.config['default_branch']
-            Logger.debug('save')
-            repo_functions.save_working_file(clone=repo, path=path, message=commit_message, base_sha=repo.commit().hexsha, default_branch_name=master_name)
-            # flash the human-readable part of the commit message
-            flash_message = commit_message.split('\n')[0]
-            flash(flash_message, u'notice')
-
-        safe_branch = view_functions.branch_name2path(view_functions.branch_var2name(branch_name))
-        return redirect('/tree/{}/edit/{}'.format(safe_branch, redirect_path), code=303)
-
-    # save the passed category
-    elif 'save' in request.form:
-        # verify that it exists
-        if isdir(index_path) or not exists(index_path):
-            raise Exception(u'No writable file exists at {}!'.format(index_path))
-
-        # get the form values
-        new_values = {}
-        for key in request.form:
-            # ImmutableMultiDicts can have multiple values assigned to the same key
-            values = request.form.getlist(key)
-            new_values[key] = values[0] if len(values) == 1 else values
-
-        # get the current contents of the file
-        with open(index_path) as file:
-            front_matter, en_body = load_jekyll_doc(file)
-
-        # add en_body to the front matter
-        front_matter['en_body'] = en_body
-        check_front_matter = dict(front_matter)
-
-        # now update the file description with the values from the form
-        try:
-            front_matter.update(new_values)
-        except ValueError:
-            raise Exception(u'Unable to update file at {}!'.format(index_path))
-
-        # only write if there are changes
-        safe_branch = view_functions.branch_name2path(view_functions.branch_var2name(branch_name))
-        new_path = path
-        if check_front_matter != front_matter:
-            new_path, did_save = view_functions.save_page(repo, current_app.config['default_branch'], branch_name, index_slug, new_values)
-            if not did_save:
-                flash(u'Unable to save changes to {}!'.format(front_matter['title']), u'error')
-            else:
-                flash(u'Saved changes to the {} topic! Remember to submit this change for feedback when you\'re ready to go live.'.format(front_matter['en-title']), u'notice')
-
-        return redirect('/tree/{}/modify/{}'.format(safe_branch, repo_functions.strip_index_file(new_path)), code=303)
-
-    else:
-        raise Exception(u'Tried to modify a category, but received an unfamiliar command.')
+    # it's a file, show the edit view
+    # make a browse link by stripping the article from the path
+    browse_path = join('/tree/{}/edit'.format(safe_branch), repo_functions.strip_last_item(path))
+    return view_functions.render_edit_view(
+        repo=repo, branch_name=branch_name,
+        path=path, file=open(full_path, 'r'),
+        browse_path=browse_path
+    )
 
 @app.route('/tree/<branch_name>/edit/', methods=['POST'])
 @app.route('/tree/<branch_name>/edit/<path:path>', methods=['POST'])
@@ -437,60 +469,12 @@ def branch_modify_category(branch_name, path=u''):
 @login_required
 @lock_on_user
 @synched_checkout_required
-def branch_edit_file(branch_name, path=None):
+def handle_edit_submit(branch_name, path=None):
+    ''' Handle submits from forms on the article list pages
+    '''
     repo = view_functions.get_repo(flask_app=current_app)
-    commit = repo.commit()
-    safe_branch = view_functions.branch_name2path(view_functions.branch_var2name(branch_name))
-
-    path = path or u''
-    action = request.form.get('action', '').lower()
-    create_what = request.form.get('create_what', '').lower()
-    create_path = request.form.get('create_path', path)
-    do_save = True
-
-    file_path = path
-    commit_message = u''
-    if action == 'upload' and 'file' in request.files:
-        file_path = edit_functions.upload_new_file(repo, path, request.files['file'])
-        redirect_path = path
-        commit_message = u'Uploaded file "{}"'.format(file_path)
-
-    elif action == 'create' and (create_what == constants.ARTICLE_LAYOUT or create_what == constants.CATEGORY_LAYOUT) and create_path is not None:
-        # don't allow empty names for categories or articles
-        request_path = request.form['request_path'].strip()
-        if len(request_path) == 0 or len(slugify(request_path)) == 0:
-            if len(request_path) != 0:
-                display_what = view_functions.file_display_name(create_what)
-                flash(u'{} is not an acceptable {} name!'.format(request_path, display_what), u'warning')
-            else:
-                describe_what = u'an article' if create_what == 'article' else u'a topic'
-                flash(u'Please enter a name to create {}!'.format(describe_what), u'warning')
-            return redirect('/tree/{}/edit/{}'.format(safe_branch, file_path), code=303)
-
-        add_message, file_path, redirect_path, do_save = view_functions.add_article_or_category(repo, branch_name, create_path, request.form['request_path'], create_what)
-        if do_save:
-            commit = repo.commit()
-            commit_message = add_message
-            describe_what = view_functions.file_display_name(create_what)
-            flash(u'Created a new {} named {}! Remember to submit this change for feedback when you\'re ready to go live.'.format(describe_what, request.form['request_path']), u'notice')
-        else:
-            flash(add_message, u'notice')
-
-    elif action == 'delete' and 'request_path' in request.form:
-        redirect_path, do_save, commit_message = view_functions.delete_page(repo=repo, working_branch_name=branch_name, browse_path=path, target_path=request.form['request_path'])
-        if do_save:
-            # flash the human-readable part of the commit message
-            flash(u'{}! Remember to submit this change for feedback when you\'re ready to go live.'.format(commit_message.split('\n')[0]), u'notice')
-
-    else:
-        raise Exception(u'Tried to edit a file, but received an unfamiliar command.')
-
-    if do_save:
-        master_name = current_app.config['default_branch']
-        Logger.debug('save')
-        repo_functions.save_working_file(clone=repo, path=file_path, message=commit_message, base_sha=commit.hexsha, default_branch_name=master_name)
-
-    return redirect('/tree/{}/edit/{}'.format(safe_branch, redirect_path), code=303)
+    redirect_path, _ = view_functions.handle_article_list_submit(repo, branch_name, path)
+    return redirect(redirect_path, code=303)
 
 @app.route('/tree/<branch_name>/', methods=['GET'])
 @app.route('/tree/<branch_name>/rename/', methods=['GET'])
@@ -503,6 +487,11 @@ def show_activity_overview(branch_name):
     branch_name = view_functions.branch_var2name(branch_name)
     repo = view_functions.get_repo(flask_app=current_app)
     safe_branch = view_functions.branch_name2path(branch_name)
+    working_state = repo_functions.get_activity_working_state(repo, current_app.config['default_branch'], safe_branch)
+
+    # if this is the master branch, redirect to browse
+    if working_state == constants.WORKING_STATE_LIVE:
+        return redirect('{}'.format(constants.ROUTE_BROWSE_LIVE))
 
     if repo_functions.get_conflict(repo, current_app.config['default_branch']):
         view_functions.flash_unique(repo_functions.MERGE_CONFLICT_WARNING_FLASH_MESSAGE, u'warning')
@@ -582,13 +571,8 @@ def branch_history(branch_name, path=None):
     branch_name = view_functions.branch_var2name(branch_name)
     safe_branch = view_functions.branch_name2path(branch_name)
     repo = view_functions.get_repo(flask_app=current_app)
-
     activity = chime_activity.ChimeActivity(repo=repo, branch_name=safe_branch, default_branch_name=current_app.config['default_branch'], actor_email=session.get('email', None))
-
-    article_edit_path = join('/tree/{}/edit'.format(view_functions.branch_name2path(branch_name)), path)
-
     languages = load_languages(repo.working_dir)
-
     app_authorized = False
 
     ga_config = read_ga_config(current_app.config['RUNNING_STATE_DIR'])
@@ -606,10 +590,13 @@ def branch_history(branch_name, path=None):
         history.append(dict(name=name, email=email, date=date, subject=subject))
 
     kwargs = view_functions.common_template_args(current_app.config, session)
+    article_edit_path = join('/tree/{}/edit'.format(safe_branch), path)
+    # make a browse link by stripping the article from the path
+    browse_path = join('/tree/{}/edit'.format(safe_branch), repo_functions.strip_last_item(path))
     kwargs.update(safe_branch=safe_branch,
                   history=history, path=path, languages=languages,
                   app_authorized=app_authorized, article_edit_path=article_edit_path,
-                  activity=activity)
+                  activity=activity, browse_path=browse_path)
 
     return render_template('article-history.html', **kwargs)
 
@@ -620,58 +607,11 @@ def branch_history(branch_name, path=None):
 def branch_save(branch_name, path):
     ''' Handle a submission from the article-edit form.
     '''
-    actor = Actor(' ', session['email'])
-    start_point = request.form['hexsha']
-    origin_dirname = current_app.config['REPO_PATH']
-    working_dirname = current_app.config['WORK_PATH']
-    task_id = view_functions.branch_name2path(view_functions.branch_var2name(branch_name))
-    user_task = UserTask(actor, task_id, origin_dirname, working_dirname, start_point)
-
-    languages = load_languages(user_task.repo.working_dir)
-    front, body = view_functions.prep_jekyll_content(request.form, languages)
-
-    data = BytesIO()
-    dump_jekyll_doc(front, body, data)
-    user_task.write(path, data.getvalue())
-
-    end_path = path
-
-    if request.form.get('url-slug'):
-        new_path = view_functions.calculate_new_slug(path, request.form['url-slug'])
-
-        if new_path:
-            try:
-                user_task.move(path, new_path)
-            except ValueError as e:
-                e_message, e_type = e.args[0], e.args[1] if len(e.args) > 1 else None
-                view_functions.flash(e_message, e_type)
-            else:
-                end_path = new_path
-
-    committed = False
-    try:
-        title_layout = request.form.get('en-title'), request.form.get('layout')
-        message = view_functions.format_commit_message(end_path, *title_layout)
-        committed = user_task.commit(message)
-        user_task.push()
-    except UserTaskPublished as e:
-        ref_info = user_task.ref_info()
-        view_functions.flash_only(view_functions.MESSAGE_ACTIVITY_PUBLISHED.format(**ref_info), u'warning')
-    except UserTaskDeleted as e:
-        view_functions.flash_only(view_functions.MESSAGE_ACTIVITY_DELETED, u'warning')
-    except repo_functions.MergeConflict as e:
-        ref_info = user_task.ref_info(e.remote_commit.hexsha)
-        view_functions.flash(view_functions.MESSAGE_PAGE_EDITED.format(**ref_info), u'error')
-    else:
-        if committed:
-            view_functions.flash(u'Saved changes to the {} article! Remember to submit this change for feedback when you\'re ready to go live.'.format(request.form['en-title']), u'notice')
-        else:
-            view_functions.flash(u'No changes to save!', u'warning')
-
-    if request.form.get('action', '').lower() == 'preview':
-        return redirect('/tree/{}/view/{}'.format(task_id, end_path), code=303)
-    else:
-        return redirect('/tree/{}/edit/{}'.format(task_id, end_path), code=303)
+    repo = view_functions.get_repo(flask_app=current_app)
+    redirect_path, _ = view_functions.handle_article_edit_submit(
+        repo=repo, branch_name=branch_name, path=path
+    )
+    return redirect(redirect_path, code=303)
 
 @app.route('/.well-known/deploy-key.txt')
 @log_application_errors
