@@ -1,9 +1,8 @@
 # What is this?
 
-This is part of the Digital Front Door inititive.  You can read more about it here: https://github.com/codeforamerica/digitalfrontdoor
+Chime was a part of Code for America’s Digital Front Door inititive.  You can read more about it here: https://github.com/codeforamerica/digitalfrontdoor
 
-## Logging issues / ideas 
-Make an issue: https://github.com/chimecms/chime/issues/new
+**Development was halted in October 2015.**
 
 # Install
 
@@ -34,9 +33,9 @@ the source:
 
 # Who maintains this?
 
-[Mike Migurski](http://github.com/migurski) and [Frances Berriman](http://github.com/phae)
+Prior to October 2015, [Mike Migurski](http://github.com/migurski) and [Frances Berriman](http://github.com/phae). Currently, Chime is not maintained.
 
-You can read a bit more about what we're up to over here http://digifrodo.tumblr.com
+You can read a bit more about what we were up to over here http://digifrodo.tumblr.com
 
 [![Stories in Ready](https://badge.waffle.io/chimecms/chime.svg?label=current-sprint&title=WorkingOn)](http://waffle.io/chimecms/chime)
 [![Build Status](https://travis-ci.org/chimecms/chime.svg?branch=master)](https://travis-ci.org/chimecms/chime)
