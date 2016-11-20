@@ -16,8 +16,10 @@ install:
 - ./jekyll/install-jekyll.sh
 - pip install -r requirements.txt
 - pip install -r fabfile/requirements.txt
+- pip install pep8
 script:
 - "$SUITE"
+- find . -name \*.py -exec pep8 --ignore=E402 {} +
 notifications:
   webhooks:
     - http://project-monitor.codeforamerica.org/projects/1bf2f3b3-bed8-42bc-91e8-d47f873443de/status
